@@ -104,3 +104,64 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# =========================================================================
+# AI Code Agent local working files
+# 说明：仅忽略各 Agent 的本地态/缓存/会话历史等工作路径。
+#       项目级共享内容（如 .vibe/、AGENTS.md）不在此忽略，随母仓库同步。
+# =========================================================================
+
+# Cursor
+.cursor/
+.cursorignore
+.cursorindexingignore
+
+# Claude Code（保留共享的 CLAUDE.md，仅忽略本地设置/缓存）
+.claude/
+!CLAUDE.md
+.claude/settings.local.json
+
+# Codex CLI / OpenAI
+.codex/
+
+# Gemini CLI
+.gemini/
+
+# GitHub Copilot（保留共享指令文件）
+.copilot/
+!.github/copilot-instructions.md
+
+# Continue
+.continue/
+
+# Cline / Roo Code
+.cline/
+.roo/
+
+# Windsurf / Codeium
+.windsurf/
+.codeium/
+
+# Aider
+.aider*
+.aider.tags.cache.v*/
+
+# Sourcegraph Cody
+.cody/
+
+# Amazon Q / CodeWhisperer
+.amazonq/
+
+# Tabnine
+.tabnine/
+
+# Trae / Augment / Qoder
+.trae/
+.augment/
+.qoder/
+
+# CodeBuddy 本地态（项目数据保留，仅忽略本地设置与缓存）
+.codebuddy/**/settings.local.json
+.codebuddy/**/cache/
+.codebuddy/**/*.local.*
+
