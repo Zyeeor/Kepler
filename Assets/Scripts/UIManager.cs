@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
@@ -16,6 +16,10 @@ public class UIManager : MonoBehaviour
     public Button pauseButton;
     public Text pauseButtonText;
     private bool isPaused = false;
+
+    [Header("Health Bars")]
+    public Button healthBarToggleButton;
+    public Text healthBarToggleText;
 
     void Awake()
     {
@@ -41,7 +45,11 @@ public class UIManager : MonoBehaviour
         if (pauseButton != null)
             pauseButton.onClick.AddListener(OnPauseClicked);
 
+        if (healthBarToggleButton != null)
+            healthBarToggleButton.onClick.AddListener(OnHealthBarToggleClicked);
+
         UpdatePauseButtonText();
+        UpdateHealthBarToggleText();
     }
 
     public void ShowGameOver()
@@ -94,6 +102,19 @@ public class UIManager : MonoBehaviour
     {
         if (pauseButtonText != null)
             pauseButtonText.text = isPaused ? "\u25B6" : "| |";
+    }
+
+    public void OnHealthBarToggleClicked()
+    {
+        Enemy.ShowHealthBars = !Enemy.ShowHealthBars;
+        Debug.Log("Health bars: " + (Enemy.ShowHealthBars ? "ON" : "OFF"));
+        UpdateHealthBarToggleText();
+    }
+
+    void UpdateHealthBarToggleText()
+    {
+        if (healthBarToggleText != null)
+            healthBarToggleText.text = Enemy.ShowHealthBars ? "HP: ON" : "HP: OFF";
     }
 
     void OnDestroy()

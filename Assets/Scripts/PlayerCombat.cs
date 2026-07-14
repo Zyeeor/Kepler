@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 public class PlayerCombat : MonoBehaviour
@@ -24,6 +24,13 @@ public class PlayerCombat : MonoBehaviour
     [Header("Skills")]
     public SkillData[] skills = new SkillData[4];
 
+    [Header("Projectile")]
+    public GameObject projectilePrefab;
+    public float projectileSpeed = 12f;
+    public float projectileLifetime = 5f;
+    public GameObject hitEffectPrefab;
+    public float hitEffectDuration = 0.5f;
+
     private float autoAttackTimer;
     private Transform nearestEnemy;
     private PlayerHealth health;
@@ -36,7 +43,7 @@ public class PlayerCombat : MonoBehaviour
         public float damage;
         public float range;
         public SkillType type;
-        [HideInInspector] public float currentCooldown;
+        public float currentCooldown;
     }
 
     public enum SkillType
@@ -52,7 +59,7 @@ public class PlayerCombat : MonoBehaviour
         health = GetComponent<PlayerHealth>();
         skills = new SkillData[4];
         skills[0] = new SkillData { skillName = "Slash", cooldown = 0.3f, damage = 10f, range = 3.5f, type = SkillType.MeleeSlash };
-        skills[1] = new SkillData { skillName = "Slash", cooldown = 0.3f, damage = 10f, range = 3.5f, type = SkillType.MeleeSlash };
+        skills[1] = new SkillData { skillName = "Soul Bullet", cooldown = 0.5f, damage = 5f, range = 20f, type = SkillType.Projectile };
         skills[2] = new SkillData { skillName = "Slash", cooldown = 0.3f, damage = 10f, range = 3.5f, type = SkillType.MeleeSlash };
         skills[3] = new SkillData { skillName = "Ghost Dash", cooldown = 3f, damage = 10f, range = 4f, type = SkillType.Dash };
     }
@@ -356,12 +363,80 @@ public class PlayerCombat : MonoBehaviour
 
     void PerformProjectile(SkillData skill)
     {
-        FindNearestEnemy();
-        if (nearestEnemy != null)
+        // Spawn position: in front of the player
+        Vector3 spawnPos = transform.position + transform.forward * 1.5f + Vector3.up * 0.5f;
+
+        GameObject bullet;
+
+        if (projectilePrefab != null)
         {
-            var enemy = nearestEnemy.GetComponent<Enemy>();
-            if (enemy != null) enemy.TakeDamage(skill.damage);
+            bullet = Instantiate(projectilePrefab, spawnPos, transform.rotation);
         }
+        else
+        {
+            // No prefab assigned — create a default glowing sphere bullet
+            bullet = CreateDefaultBullet(spawnPos, transform.rotation);
+        }
+
+        // Configure the projectile component
+        var projectile = bullet.GetComponent<Projectile>();
+        if (projectile == null)
+            projectile = bullet.AddComponent<Projectile>();
+
+        projectile.speed = projectileSpeed;
+        projectile.damage = skill.damage;
+        projectile.maxLifetime = projectileLifetime;
+        projectile.isPlayerProjectile = true;
+        projectile.hitEffectPrefab = hitEffectPrefab;
+        projectile.hitEffectDuration = hitEffectDuration;
+
+        Debug.Log("[PlayerCombat] Fired Soul Bullet! Damage: " + skill.damage + " Speed: " + projectileSpeed);
+    }
+
+    /// <summary>
+    /// Create a default glowing sphere bullet when no prefab is assigned
+    /// </summary>
+    GameObject CreateDefaultBullet(Vector3 position, Quaternion rotation)
+    {
+        var bullet = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        bullet.name = "SoulBullet";
+        bullet.transform.position = position;
+        bullet.transform.rotation = rotation;
+        bullet.transform.localScale = Vector3.one * 0.3f;
+
+        // Make it glow with a bright blue-white color
+        var renderer = bullet.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) shader = Shader.Find("Standard");
+            Material mat = new Material(shader);
+            mat.color = new Color(0.3f, 0.7f, 1f, 1f);
+            mat.SetInt("_Surface", 1);
+            mat.SetInt("_Blend", 0);
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            mat.SetInt("_ZWrite", 0);
+            mat.renderQueue = 3000;
+            renderer.material = mat;
+        }
+
+        // Remove the default sphere collider and add a trigger collider
+        var defaultCollider = bullet.GetComponent<SphereCollider>();
+        if (defaultCollider != null)
+        {
+            defaultCollider.isTrigger = true;
+            defaultCollider.radius = 0.5f;
+        }
+
+        // Ensure Rigidbody for trigger detection
+        var rb = bullet.GetComponent<Rigidbody>();
+        if (rb == null)
+            rb = bullet.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        return bullet;
     }
 
     void PerformAOE(SkillData skill)

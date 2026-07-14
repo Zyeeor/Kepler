@@ -14,9 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Runner
   maxHealth: 50
+  maxTenacity: 100
   damage: 8
   moveSpeed: 3
   attackRange: 0.6
   isRanged: 0
-  enemyColor: {r: 1, g: 0.7, b: 0.1, a: 1}
+  detectionRadius: 8
+  collisionDamageMultiplier: 1
+  enemyColor: {r: 1, g: 0.8910906, b: 0.6761006, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
+  downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1

@@ -14,9 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Archer
   maxHealth: 60
+  maxTenacity: 100
   damage: 15
   moveSpeed: 1
   attackRange: 5
   isRanged: 1
-  enemyColor: {r: 0.1, g: 0.8, b: 0.3, a: 1}
+  detectionRadius: 8
+  collisionDamageMultiplier: 1
+  enemyColor: {r: 0.7704402, g: 1, b: 0.83492327, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
+  downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1

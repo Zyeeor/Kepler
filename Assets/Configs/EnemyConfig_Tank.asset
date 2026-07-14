@@ -14,9 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Tank
   maxHealth: 200
+  maxTenacity: 100
   damage: 20
   moveSpeed: 0.8
   attackRange: 1.2
   isRanged: 0
-  enemyColor: {r: 0.5, g: 0.2, b: 0.6, a: 1}
+  detectionRadius: 8
+  collisionDamageMultiplier: 1
+  enemyColor: {r: 0.95897436, g: 0.83333325, b: 1, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
+  downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1

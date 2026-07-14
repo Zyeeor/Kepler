@@ -1,13 +1,18 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// Spawns enemies from a prefab list. Each prefab is self-contained (stats + abilities configured on the prefab).
+/// </summary>
 public class EnemySpawner : MonoBehaviour
 {
     public static EnemySpawner Instance { get; private set; }
 
+    [Header("Enemy Prefabs (drag enemy prefabs here)")]
+    [Tooltip("List of enemy prefabs the spawner can pick from. Each prefab has its own stats/abilities configured in the Inspector.")]
+    public List<GameObject> enemyPrefabs = new List<GameObject>();
+
     [Header("Spawn Settings")]
-    public GameObject enemyPrefab;
-    public EnemyConfig[] enemyConfigs;
     public float spawnRadius = 8f;
     public float spawnInterval = 2f;
     public int maxEnemies = 20;
@@ -15,9 +20,11 @@ public class EnemySpawner : MonoBehaviour
 
     [Header("Difficulty Curve")]
     public float difficultyRampRate = 0.1f;
+    [Tooltip("Multiply spawned enemy HP by currentDifficulty.")]
+    public bool scaleHealthWithDifficulty = true;
 
     private float spawnTimer;
-    private List<GameObject> activeEnemies = new List<GameObject>();
+    private readonly List<GameObject> activeEnemies = new List<GameObject>();
     private float currentDifficulty = 1f;
 
     void Awake()
@@ -46,34 +53,34 @@ public class EnemySpawner : MonoBehaviour
     void SpawnWave()
     {
         int count = Mathf.Min(enemiesPerWave + Mathf.FloorToInt(currentDifficulty * 0.5f), maxEnemies - activeEnemies.Count);
-        for (int i = 0; i < count; i++)
-            SpawnEnemy();
+        for (int i = 0; i < count; i++) SpawnEnemy();
     }
 
-    void SpawnEnemy()
+    public GameObject SpawnEnemy()
     {
-        if (enemyPrefab == null) { Debug.LogWarning("Enemy prefab not assigned!"); return; }
+        if (enemyPrefabs == null || enemyPrefabs.Count == 0)
+        {
+            Debug.LogWarning("EnemySpawner: no enemy prefabs in list!");
+            return null;
+        }
+        // Filter null entries
+        var valid = enemyPrefabs.FindAll(p => p != null);
+        if (valid.Count == 0) return null;
+
+        var prefab = valid[Random.Range(0, valid.Count)];
         float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
         Vector3 spawnPos = transform.position + new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * spawnRadius;
-        var enemyGO = Object.Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
-        enemyGO.tag = "Enemy";
-        var enemy = enemyGO.GetComponent<Enemy>();
-        if (enemy != null)
+        var go = Instantiate(prefab, spawnPos, Quaternion.identity);
+        go.tag = "Enemy";
+        var enemy = go.GetComponent<Enemy>();
+        if (enemy != null && scaleHealthWithDifficulty)
         {
-            // Assign random config from available configs
-            if (enemyConfigs != null && enemyConfigs.Length > 0)
-            {
-                enemy.config = enemyConfigs[Random.Range(0, enemyConfigs.Length)];
-                enemy.ApplyConfig();
-                // Difficulty scaling on stats
-                if (enemy.config != null)
-                {
-                    enemy.currentHealth = enemy.config.maxHealth * currentDifficulty;
-                    enemy.currentTenacity = enemy.config.maxHealth * currentDifficulty;
-                }
-            }
+            enemy.currentHealth = enemy.maxHealth * currentDifficulty;
+            enemy.currentTenacity = enemy.maxTenacity * currentDifficulty;
+            enemy.UpdateHealthUI();
         }
-        activeEnemies.Add(enemyGO);
+        activeEnemies.Add(go);
+        return go;
     }
 
     void OnDrawGizmosSelected()

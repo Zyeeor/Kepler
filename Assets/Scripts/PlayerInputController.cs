@@ -50,7 +50,7 @@ public class PlayerInputController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (health != null && (health.isPossessing || health.isFlyingToPossess)) return;
+        if (health != null && health.isFlyingToPossess) return;
         if (rb != null && moveDirection != Vector3.zero)
         {
             Vector3 targetPos = rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime;
@@ -98,7 +98,7 @@ public class PlayerInputController : MonoBehaviour
         if (combat != null)
         {
             if (skillQPressed) combat.SlashAttack();
-            if (skillWPressed) combat.SlashAttack();
+            if (skillWPressed) combat.CastSkill(1);   // W = Soul Bullet (Projectile)
             if (skillEPressed) combat.SlashAttack();
         }
 

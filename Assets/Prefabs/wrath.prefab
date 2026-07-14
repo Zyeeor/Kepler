@@ -126,7 +126,7 @@ GameObject:
   - component: {fileID: 9140944656497353942}
   - component: {fileID: 7033069984581584914}
   m_Layer: 0
-  m_Name: Enemy
+  m_Name: wrath
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -160,13 +160,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 0}
-  currentHealth: 0
-  currentTenacity: 0
+  displayName: Enemy
+  maxHealth: 150
+  maxTenacity: 150
+  moveSpeed: 5
+  damage: 30
+  attackRange: 1.5
+  detectionRadius: 8
+  bodyColor: {r: 1, g: 0, b: 0, a: 1}
+  weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
+  downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1
   isWeakened: 0
+  isDowned: 0
   isPossessed: 0
+  playerDetected: 0
   healthSlider: {fileID: 6258926636717018531}
   healthCanvas: {fileID: 6933788589787540818}
+  showHealthBar: 0
+  abilities:
+  - {fileID: 0}
+  basicAbilities: []
+  skillAbilities: []
+  currentHealth: 20
+  currentTenacity: 0
+  targetPlayer: {fileID: 0}
+  targetEnemy: {fileID: 0}
+  bodyType: 3
+  weaponDescription: "\u53CC\u624B\u9501\u94FE"
+  attackDowntime: 10
+  meshRenderer: {fileID: 0}
+  rb: {fileID: 0}
 --- !u!54 &7074434169732310013
 Rigidbody:
   m_ObjectHideFlags: 0

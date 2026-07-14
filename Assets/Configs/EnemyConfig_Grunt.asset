@@ -14,9 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Grunt
   maxHealth: 80
+  maxTenacity: 100
   damage: 10
   moveSpeed: 1.5
   attackRange: 0.8
   isRanged: 0
-  enemyColor: {r: 0.9, g: 0.3, b: 0.2, a: 1}
+  detectionRadius: 8
+  collisionDamageMultiplier: 1
+  enemyColor: {r: 1, g: 0.7592143, b: 0.7201257, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
+  downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1

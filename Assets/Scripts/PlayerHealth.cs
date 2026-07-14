@@ -169,7 +169,7 @@ public class PlayerHealth : MonoBehaviour
         
         possessedEnemy = enemy;
         isPossessing = true;
-        maxHealth = enemy.config != null ? enemy.config.maxHealth : 100f;
+        maxHealth = enemy.maxHealth;
         currentHealth = maxHealth; // Full heal on possess
         
         // Save player's original stats before applying enemy config
@@ -238,17 +238,16 @@ public class PlayerHealth : MonoBehaviour
     /// </summary>
     void ApplyEnemyConfigToPlayer(Enemy enemy)
     {
-        var config = enemy.config;
-        if (config == null) return;
+        if (enemy == null) return;
 
         // Apply enemy movement speed
-        if (input != null) input.moveSpeed = config.moveSpeed;
+        if (input != null) input.moveSpeed = enemy.moveSpeed;
 
         // Apply enemy combat stats
         if (combat != null)
         {
-            combat.autoAttackRange = config.attackRange;
-            combat.autoAttackDamage = config.damage;
+            combat.autoAttackRange = enemy.attackRange;
+            combat.autoAttackDamage = enemy.damage;
             combat.autoAttackInterval = 0.5f;
             combat.enableAutoAttack = true;
             combat.enableSlash = true;
@@ -262,12 +261,12 @@ public class PlayerHealth : MonoBehaviour
                     {
                         if (combat.skills[i].type == PlayerCombat.SkillType.MeleeSlash)
                         {
-                            combat.skills[i].damage = config.damage;
-                            combat.skills[i].range = config.attackRange + 0.5f;
+                            combat.skills[i].damage = enemy.damage;
+                            combat.skills[i].range = enemy.attackRange + 0.5f;
                         }
                         else if (combat.skills[i].type == PlayerCombat.SkillType.Dash)
                         {
-                            combat.skills[i].damage = config.damage * 0.8f;
+                            combat.skills[i].damage = enemy.damage * 0.8f;
                             combat.skills[i].range = 4f;
                         }
                     }

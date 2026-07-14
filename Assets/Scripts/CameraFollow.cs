@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
@@ -6,7 +6,7 @@ public class CameraFollow : MonoBehaviour
     public Transform target;
     
     [Header("Offset")]
-    public Vector3 offset = new Vector3(0, 10, -10);
+    public Vector3 offset = new Vector3(0, 7, -12);
     
     [Header("Smooth")]
     public float smoothSpeed = 5f;
