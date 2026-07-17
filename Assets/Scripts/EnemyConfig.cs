@@ -9,14 +9,13 @@ public class EnemyConfig : ScriptableObject
     [Header("Stats")]
     public float maxHealth = 100f;
     public float maxTenacity = 100f;
-    public float damage = 10f;
     public float moveSpeed = 1.5f;
     
     [Header("Combat")]
-    public float attackRange = 0.8f;
-    public bool isRanged = false;
     public float detectionRadius = 8f;
-    public float collisionDamageMultiplier = 1f;
+    public float aiAttackRange = 3f;
+    public float collisionDamage = 10f;
+    public float attackSpeed = 1.0f;
     
     [Header("Visual")]
     public Color enemyColor = Color.red;

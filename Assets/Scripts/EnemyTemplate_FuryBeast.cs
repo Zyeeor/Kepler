@@ -22,8 +22,6 @@ public class EnemyTemplate_FuryBeast : MonoBehaviour
     [Header("Stats")]
     public float templateMaxHealth = 200f;
     public float templateMoveSpeed = 50f;
-    public float templateDamage = 30f;
-    public float templateAttackRange = 1.5f;
     public float templateDetectionRadius = 10f;
 
     [Header("Body")]
@@ -45,8 +43,8 @@ public class EnemyTemplate_FuryBeast : MonoBehaviour
         e.maxHealth = templateMaxHealth;
         e.maxTenacity = templateMaxHealth; // 1:1
         e.moveSpeed = templateMoveSpeed;
-        e.damage = templateDamage;
-        e.attackRange = templateAttackRange;
+        e.collisionDamage = 30f;
+        e.aiAttackRange = 3f;
         e.detectionRadius = templateDetectionRadius;
 
         e.bodyType = (Enemy.BodyType)templateBodyType;
@@ -72,7 +70,8 @@ public class EnemyTemplate_FuryBeast : MonoBehaviour
         // Auto-attach Ground Slam basic attack if not present
         var slam = GetComponent<EnemyAbility_GroundSlam>();
         if (slam == null) slam = gameObject.AddComponent<EnemyAbility_GroundSlam>();
-        slam.damage = templateDamage;
+        slam.damage = 30f;       // damage configured directly on ability
+        slam.radius = 4f;        // AoE radius configured directly on ability
         slam.cooldown = 1.5f;
 
         // Auto-attach Chain Pull skill if not present

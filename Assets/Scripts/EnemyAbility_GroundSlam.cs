@@ -25,6 +25,10 @@ public class EnemyAbility_GroundSlam : EnemyAbility
 
     public override bool CanTrigger()
     {
+        // When possessed, player manually triggers; no target required.
+        // When AI-controlled, need a detected player target.
+        if (owner.isPossessed)
+            return base.CanTrigger();
         return base.CanTrigger() && owner != null && owner.targetPlayer != null;
     }
 
@@ -48,13 +52,14 @@ public class EnemyAbility_GroundSlam : EnemyAbility
     void DoRadiusHit(float baseDmg, float multiplier)
     {
         Vector3 center = owner != null ? owner.transform.position : transform.position;
-        Collider[] hits = Physics.OverlapSphere(center, radius, targetMask, QueryTriggerInteraction.Collide);
+        // Use ~0 to detect all layers — ensures possessed enemy can hit other enemies
+        Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {
             var ph = h.GetComponentInParent<PlayerHealth>();
             if (ph != null) DealDamageToPlayer(ph, baseDmg * multiplier);
             var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner) DealDamageTo(enemy, baseDmg * multiplier);
+            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed) DealDamageTo(enemy, baseDmg * multiplier);
         }
     }
 

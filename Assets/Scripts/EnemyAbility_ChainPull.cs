@@ -29,6 +29,10 @@ public class EnemyAbility_ChainPull : EnemyAbility
 
     public override bool CanTrigger()
     {
+        // When possessed, player manually triggers; use fan detection (always possible).
+        // When AI-controlled, need a detected enemy target.
+        if (owner.isPossessed)
+            return base.CanTrigger();
         return base.CanTrigger() && owner != null && owner.targetEnemy != null;
     }
 

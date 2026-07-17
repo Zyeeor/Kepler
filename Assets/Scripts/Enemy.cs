@@ -2,10 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-/// <summary>
-/// Self-contained enemy. All stats and abilities are configured directly on the prefab
-/// (no more EnemyConfig ScriptableObject). Attach EnemyAbility components for behaviors.
-/// </summary>
 public class Enemy : MonoBehaviour
 {
     [Header("Identity")]
@@ -15,14 +11,19 @@ public class Enemy : MonoBehaviour
     public float maxHealth = 200f;
     public float maxTenacity = 200f;
     public float moveSpeed = 50f;
-    public float damage = 30f;
-    public float attackRange = 1.5f;
+    [Tooltip("Base collision damage when touching the player. Individual ability damage is configured on each EnemyAbility.")]
+    public float collisionDamage = 30f;
     public float detectionRadius = 8f;
+    [Tooltip("AI will attempt basic attacks when within this range of the player.")]
+    public float aiAttackRange = 3f;
+    [Tooltip("Attack speed multiplier. 1.0 = normal speed. Higher = faster attack cooldown.")]
+    public float attackSpeed = 1.0f;
 
     [Header("Visual")]
     public Color bodyColor = Color.red;
     public Color weakenedColor = new Color(1f, 0.5f, 0f);
     public Color downedColor = new Color(0.3f, 0.3f, 0.3f);
+    public Color possessedColor = new Color(0.8f, 0.2f, 1f);
     public Color flashColor = Color.red;
     public float flashDuration = 0.1f;
 
@@ -39,10 +40,13 @@ public class Enemy : MonoBehaviour
     public bool showHealthBar = true;
     public static bool ShowHealthBars = true;
 
-    [Header("Abilities (auto-discovered)")]
-    public List<EnemyAbility> abilities = new List<EnemyAbility>();
+    [Header("Abilities (auto-discovered from children)")]
+    [Tooltip("Basic abilities = left-click when possessing this enemy")]
     public List<EnemyAbility> basicAbilities = new List<EnemyAbility>();
+    [Tooltip("Skill abilities = right-click when possessing this enemy")]
     public List<EnemyAbility> skillAbilities = new List<EnemyAbility>();
+    [Tooltip("Passive effects (always active, e.g. lifesteal)")]
+    public List<EnemyAbility> passiveAbilities = new List<EnemyAbility>();
 
     public float currentHealth;
     public float currentTenacity;
@@ -63,6 +67,7 @@ public class Enemy : MonoBehaviour
     private Color originalColor;
     private float aiTimer;
     private float skillTimer;
+    private bool savedKinematic;
 
     void Awake()
     {
@@ -74,21 +79,21 @@ public class Enemy : MonoBehaviour
         if (meshRenderer != null) meshRenderer.material.color = originalColor;
 
         var found = GetComponentsInChildren<EnemyAbility>(true);
-        abilities.Clear(); basicAbilities.Clear(); skillAbilities.Clear();
+        passiveAbilities.Clear(); basicAbilities.Clear(); skillAbilities.Clear();
         foreach (var a in found)
         {
-            if (!abilities.Contains(a)) abilities.Add(a);
             if (a.type == EnemyAbility.AbilityType.BasicAttack && !basicAbilities.Contains(a)) basicAbilities.Add(a);
             else if (a.type == EnemyAbility.AbilityType.Skill && !skillAbilities.Contains(a)) skillAbilities.Add(a);
+            else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
         }
     }
 
     public void RegisterAbility(EnemyAbility a)
     {
         if (a == null) return;
-        if (!abilities.Contains(a)) abilities.Add(a);
         if (a.type == EnemyAbility.AbilityType.BasicAttack && !basicAbilities.Contains(a)) basicAbilities.Add(a);
         else if (a.type == EnemyAbility.AbilityType.Skill && !skillAbilities.Contains(a)) skillAbilities.Add(a);
+        else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
     }
 
     void Start()
@@ -109,7 +114,9 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
-        if (isDowned || isWeakened || isPossessed) return;
+        if (isPossessed) return;
+        if (isDowned || isWeakened) return;
+
         if (targetPlayer == null)
         {
             var p = GameObject.FindGameObjectWithTag("Player");
@@ -137,7 +144,7 @@ public class Enemy : MonoBehaviour
                     transform.position = newPos;
                 }
                 transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-                if (dist <= attackRange)
+                if (dist <= aiAttackRange)
                 {
                     aiTimer -= Time.deltaTime;
                     if (aiTimer <= 0f) { TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.BasicAttack); aiTimer = 0.5f; }
@@ -156,6 +163,16 @@ public class Enemy : MonoBehaviour
         return any;
     }
 
+    public void PlayerTriggerBasicAttack()
+    {
+        TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.BasicAttack);
+    }
+
+    public void PlayerTriggerSkill()
+    {
+        TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill);
+    }
+
     void LateUpdate()
     {
         if (healthCanvas != null)
@@ -167,19 +184,25 @@ public class Enemy : MonoBehaviour
         {
             var cam = Camera.main;
             healthCanvas.transform.rotation = Quaternion.LookRotation(cam.transform.position - healthCanvas.transform.position, Vector3.up);
-            Vector3 vp = cam.WorldToViewportPoint(transform.position + Vector3.up * 2f);
-            if (vp.z < 0f) { healthCanvas.gameObject.SetActive(false); return; }
-            float yClampMin = 0.05f, yClampMax = 0.95f;
-            float yOffset = 0f;
-            if (vp.y > yClampMax) yOffset = -(vp.y - yClampMax) * cam.orthographicSize * 2f;
-            else if (vp.y < yClampMin) yOffset = (yClampMin - vp.y) * cam.orthographicSize * 2f;
-            if (yOffset != 0f) { var p = healthCanvas.transform.position; healthCanvas.transform.position = new Vector3(p.x, p.y + yOffset, p.z); }
         }
     }
 
     public void TakeDamage(float amount)
     {
-        if (isDowned || isPossessed) return;
+        if (isDowned) return;
+        if (isPossessed)
+        {
+            currentHealth -= amount;
+            FlashDamage();
+            UpdateHealthUI();
+            if (currentHealth <= 0)
+            {
+                currentHealth = 0;
+                var ph = PlayerHealth.Instance;
+                if (ph != null && ph.possessedEnemy == this) ph.OnPossessedEnemyDied();
+            }
+            return;
+        }
         currentHealth -= amount;
         currentTenacity -= amount;
         FlashDamage();
@@ -190,7 +213,7 @@ public class Enemy : MonoBehaviour
 
     public void OnDealtDamage(float amount)
     {
-        foreach (var a in abilities) { if (a is EnemyAbility_Lifesteal ls) ls.OnOwnerDealtDamage(amount); }
+        foreach (var a in passiveAbilities) { if (a is EnemyAbility_Lifesteal ls) ls.OnOwnerDealtDamage(amount); }
     }
 
     public void ApplyOffensiveDamage(Enemy target, float amount)
@@ -210,25 +233,34 @@ public class Enemy : MonoBehaviour
     {
         isWeakened = true;
         if (meshRenderer != null) meshRenderer.material.color = weakenedColor;
-        Debug.Log(name + " is weakened!");
     }
 
     public void OnPossessed()
     {
         isPossessed = true;
         isDowned = false;
-        if (meshRenderer != null) meshRenderer.enabled = false;
-        foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = false;
-        foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
+        isWeakened = false;
+        gameObject.tag = "Player";
+        if (meshRenderer != null) { meshRenderer.enabled = true; meshRenderer.material.color = possessedColor; }
+        foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = true;
+        foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
+        if (rb != null) { savedKinematic = rb.isKinematic; rb.isKinematic = true; rb.velocity = Vector3.zero; rb.useGravity = false; rb.constraints = RigidbodyConstraints.FreezeRotation; }
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(false);
-        Debug.Log(name + " has been possessed!");
+        currentHealth = maxHealth;
+        currentTenacity = maxTenacity;
+        UpdateHealthUI();
+    }
+
+    public void OnUnpossessed()
+    {
+        isPossessed = false;
+        gameObject.tag = "Enemy";
     }
 
     public void Execute()
     {
         var ph = PlayerHealth.Instance;
         if (ph != null) ph.PossessEnemy(this);
-        else Debug.LogWarning("PlayerHealth.Instance is null");
     }
 
     void Die()
@@ -239,7 +271,6 @@ public class Enemy : MonoBehaviour
         transform.rotation = Quaternion.Euler(90, transform.rotation.eulerAngles.y, 0);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
-        Debug.Log(name + " is downed! Press R to possess.");
     }
 
     void FlashDamage()
@@ -255,16 +286,13 @@ public class Enemy : MonoBehaviour
         if (meshRenderer == null) yield break;
         if (isDowned) meshRenderer.material.color = downedColor;
         else if (isWeakened) meshRenderer.material.color = weakenedColor;
+        else if (isPossessed) meshRenderer.material.color = possessedColor;
         else meshRenderer.material.color = bodyColor;
     }
 
     public void UpdateHealthUI()
     {
-        if (healthSlider != null)
-        {
-            healthSlider.maxValue = maxHealth;
-            healthSlider.value = currentHealth;
-        }
+        if (healthSlider != null) { healthSlider.maxValue = maxHealth; healthSlider.value = currentHealth; }
     }
 
     void OnCollisionEnter(Collision collision)
@@ -273,8 +301,7 @@ public class Enemy : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             var ph = collision.gameObject.GetComponent<PlayerHealth>();
-            if (ph != null) ph.TakeDamage(damage);
-            Debug.Log("Enemy " + name + " hit player!");
+            if (ph != null) ph.TakeDamage(collisionDamage);
         }
     }
 

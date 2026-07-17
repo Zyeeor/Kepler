@@ -11,8 +11,12 @@ public class PlayerHealth : MonoBehaviour
     public float currentHealth;
 
     [Header("Health Decay")]
-    public float healthDecayPercent = 0.01f;    // 1% per second
+    public float healthDecayPercent = 0.01f;
     public float decayInterval = 1f;
+
+    [Header("Possession Decay")]
+    public float possessionDecayPercent = 0.05f;
+    private float possessionDecayTimer;
 
     [Header("Possession")]
     public Enemy possessedEnemy;
@@ -25,41 +29,37 @@ public class PlayerHealth : MonoBehaviour
     public Image sliderFillImage;
     public Gradient healthGradient;
 
+    [Header("Possession UI (Fallback)")]
+    public GameObject possessionHUDPanel;
+    public Slider possessionHealthSlider;
+    public Image possessionSliderFill;
+    public Text possessionEnemyNameText;
+    public Text possessionAbilityQText;
+    public Text possessionAbilityWText;
+    public Text possessionAbilityRText;
+
     private float maxHealth;
     private float decayTimer;
     private PlayerInputController input;
     private PlayerCombat combat;
-    private MeshRenderer meshRenderer;
     private Rigidbody rb;
-    private Color soulColor = new Color(0.2f, 0.5f, 1f);
-    private Color possessedColor = new Color(0.8f, 0.2f, 1f);
-    private Coroutine flyRoutine;
-
-    // Model swap data for possession
-    private Mesh savedSoulMesh;
-    private Material savedSoulMaterial;
-    private Vector3 savedSoulScale;
-    private MeshFilter playerMeshFilter;
-    private Transform playerModelTransform;  // The visual model child (Sphere)
+    private float savedDecayTimer;
+    private MonoBehaviour[] soulComponents;
+    private Renderer[] soulRenderers;
+    private Collider[] soulColliders;
+    private GameObject dynamicHUD; // dynamically created possession HUD
+    private CameraFollow cameraFollow;
 
     void Awake()
     {
         Instance = this;
         input = GetComponent<PlayerInputController>();
         combat = GetComponent<PlayerCombat>();
-        meshRenderer = GetComponent<MeshRenderer>();
         rb = GetComponent<Rigidbody>();
-
-        // Cache the visual model child (the Sphere with MeshFilter/Renderer)
-        playerMeshFilter = GetComponentInChildren<MeshFilter>();
-        if (playerMeshFilter != null)
-        {
-            playerModelTransform = playerMeshFilter.transform;
-            savedSoulMesh = playerMeshFilter.sharedMesh;
-            savedSoulScale = playerModelTransform.localScale;
-            var mr = playerMeshFilter.GetComponent<MeshRenderer>();
-            if (mr != null) savedSoulMaterial = mr.sharedMaterial;
-        }
+        soulComponents = GetComponents<MonoBehaviour>();
+        soulRenderers = GetComponentsInChildren<Renderer>(true);
+        soulColliders = GetComponentsInChildren<Collider>(true);
+        cameraFollow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
     }
 
     void Start()
@@ -68,12 +68,12 @@ public class PlayerHealth : MonoBehaviour
         maxHealth = soulMaxHealth;
         isPossessing = false;
         isFlyingToPossess = false;
+        HidePossessionHUD();
         UpdateHealthUI();
     }
 
     void Update()
     {
-        // Health decay only applies in soul form, not while possessing
         if (!isFlyingToPossess && !isPossessing)
         {
             decayTimer += Time.deltaTime;
@@ -84,24 +84,27 @@ public class PlayerHealth : MonoBehaviour
                 TakeDamage(decayAmount);
             }
         }
-
         if (isPossessing)
         {
-            if (possessedEnemy == null || possessedEnemy.currentHealth <= 0)
+            if (possessedEnemy == null) { Unpossess(); return; }
+            // Soul follows the possessed enemy
+            transform.position = possessedEnemy.transform.position + Vector3.up * 1.5f;
+            possessionDecayTimer += Time.deltaTime;
+            if (possessionDecayTimer >= decayInterval)
             {
-                Unpossess();
+                possessionDecayTimer -= decayInterval;
+                float decayAmount = possessedEnemy.maxHealth * possessionDecayPercent;
+                possessedEnemy.currentHealth -= decayAmount;
+                if (possessedEnemy.currentHealth <= 0)
+                {
+                    possessedEnemy.currentHealth = 0;
+                    OnPossessedEnemyDied();
+                }
             }
-            else
-            {
-                transform.position = possessedEnemy.transform.position;
-                transform.rotation = possessedEnemy.transform.rotation;
-            }
+            UpdatePossessionHUD();
         }
     }
 
-    /// <summary>
-    /// Fly to downed enemy at 3x speed, then possess
-    /// </summary>
     public void FlyAndPossess(Enemy enemy)
     {
         if (enemy == null || flyRoutine != null) return;
@@ -111,298 +114,234 @@ public class PlayerHealth : MonoBehaviour
     IEnumerator FlyAndPossessRoutine(Enemy enemy)
     {
         isFlyingToPossess = true;
-
-        // Disable input during flight
-        if (input != null) input.enabled = false;
-
         Vector3 targetPos = enemy.transform.position;
         targetPos.y = transform.position.y;
-
-        float flySpeed = moveSpeed * possessFlySpeedMultiplier;
-
-        // Fly towards the downed enemy
+        float flySpeed = SoulMoveSpeed * possessFlySpeedMultiplier;
         while (Vector3.Distance(transform.position, targetPos) > 0.3f)
         {
-            if (enemy == null)
-            {
-                isFlyingToPossess = false;
-                if (input != null) input.enabled = true;
-                flyRoutine = null;
-                yield break;
-            }
-
-            targetPos = enemy.transform.position;
-            targetPos.y = transform.position.y;
-
+            if (enemy == null) { isFlyingToPossess = false; flyRoutine = null; yield break; }
+            targetPos = enemy.transform.position; targetPos.y = transform.position.y;
             Vector3 dir = (targetPos - transform.position).normalized;
             transform.position = Vector3.MoveTowards(transform.position, targetPos, flySpeed * Time.deltaTime);
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-
             yield return null;
         }
-
-        // Arrived - now possess the enemy
         isFlyingToPossess = false;
         PossessEnemy(enemy);
         flyRoutine = null;
     }
 
-    // Saved player stats for restoring after unpossess
-    private float savedMoveSpeed;
-    private float savedSlashRange;
-    private float savedSlashDamage;
-    private float savedAutoAttackRange;
-    private float savedAutoAttackDamage;
-    private float savedAutoAttackInterval;
-    private bool savedSlashEnabled;
-    private bool savedAutoAttackEnabled;
-    private PlayerCombat.SkillData[] savedSkills;
-
-    /// <summary>
-    /// Possess a downed or weakened enemy. Works for both states.
-    /// </summary>
     public void PossessEnemy(Enemy enemy)
     {
         if (enemy == null) return;
         if (!enemy.isWeakened && !enemy.isDowned) return;
         if (isPossessing && possessedEnemy != null) Unpossess();
-        
         possessedEnemy = enemy;
         isPossessing = true;
-        maxHealth = enemy.maxHealth;
-        currentHealth = maxHealth; // Full heal on possess
-        
-        // Save player's original stats before applying enemy config
-        SavePlayerStats();
-        
-        // Apply enemy config to player - inherit enemy form and skills
-        ApplyEnemyConfigToPlayer(enemy);
-        
-        // Keep combat and input enabled
-        if (combat != null) combat.enabled = true;
-        if (input != null) input.enabled = true;
-        if (rb != null) rb.isKinematic = true;
-        
-        // Swap player model to look exactly like the enemy
-        SwapModelToEnemy(enemy);
-        
+        // Restore soul health to full when possessing
+        currentHealth = soulMaxHealth;
+        maxHealth = soulMaxHealth;
+        savedDecayTimer = decayTimer;
+        possessionDecayTimer = 0f;
+        SetSoulActive(false);
+        // Keep soul renderer visible so it follows the possessed enemy
+        foreach (var r in soulRenderers) if (r != null) r.enabled = true;
+        if (cameraFollow != null) cameraFollow.target = enemy.transform;
         enemy.OnPossessed();
-        
-        if (GameManager.Instance != null)
-            GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
-        Debug.Log("Possessed " + enemy.name + "! HP: " + currentHealth + 
-                  " | Speed: " + (input != null ? input.moveSpeed.ToString("F1") : "N/A") +
-                  " | Damage: " + (combat != null ? combat.autoAttackDamage.ToString("F0") : "N/A"));
-        UpdateHealthUI();
+        if (input != null) input.OnPossessionStarted(enemy);
+        if (combat != null) combat.OnPossessionStarted(enemy);
+        ShowPossessionHUD(enemy);
+        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
+        Debug.Log("[PlayerHealth] POSSESSED " + enemy.displayName);
     }
 
-    /// <summary>
-    /// Save player's original combat/movement stats so they can be restored after unpossess
-    /// </summary>
-    void SavePlayerStats()
+    public void OnPossessedEnemyDied()
     {
-        if (input != null) savedMoveSpeed = input.moveSpeed;
-        if (combat != null)
-        {
-            savedSlashRange = combat.skills != null && combat.skills.Length > 0 ? combat.skills[0].range : 3.5f;
-            savedSlashDamage = combat.skills != null && combat.skills.Length > 0 ? combat.skills[0].damage : 10f;
-            savedAutoAttackRange = combat.autoAttackRange;
-            savedAutoAttackDamage = combat.autoAttackDamage;
-            savedAutoAttackInterval = combat.autoAttackInterval;
-            savedSlashEnabled = combat.enableSlash;
-            savedAutoAttackEnabled = combat.enableAutoAttack;
-            if (combat.skills != null)
-            {
-                savedSkills = new PlayerCombat.SkillData[combat.skills.Length];
-                for (int i = 0; i < combat.skills.Length; i++)
-                {
-                    if (combat.skills[i] != null)
-                    {
-                        savedSkills[i] = new PlayerCombat.SkillData
-                        {
-                            skillName = combat.skills[i].skillName,
-                            cooldown = combat.skills[i].cooldown,
-                            damage = combat.skills[i].damage,
-                            range = combat.skills[i].range,
-                            type = combat.skills[i].type,
-                            currentCooldown = combat.skills[i].currentCooldown
-                        };
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Apply enemy config stats to the player - inherit all enemy form and skills
-    /// </summary>
-    void ApplyEnemyConfigToPlayer(Enemy enemy)
-    {
-        if (enemy == null) return;
-
-        // Apply enemy movement speed
-        if (input != null) input.moveSpeed = enemy.moveSpeed;
-
-        // Apply enemy combat stats
-        if (combat != null)
-        {
-            combat.autoAttackRange = enemy.attackRange;
-            combat.autoAttackDamage = enemy.damage;
-            combat.autoAttackInterval = 0.5f;
-            combat.enableAutoAttack = true;
-            combat.enableSlash = true;
-
-            // Update slash skills to match enemy stats
-            if (combat.skills != null)
-            {
-                for (int i = 0; i < combat.skills.Length; i++)
-                {
-                    if (combat.skills[i] != null)
-                    {
-                        if (combat.skills[i].type == PlayerCombat.SkillType.MeleeSlash)
-                        {
-                            combat.skills[i].damage = enemy.damage;
-                            combat.skills[i].range = enemy.attackRange + 0.5f;
-                        }
-                        else if (combat.skills[i].type == PlayerCombat.SkillType.Dash)
-                        {
-                            combat.skills[i].damage = enemy.damage * 0.8f;
-                            combat.skills[i].range = 4f;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Restore player's original soul-form stats after unpossess
-    /// </summary>
-    void RestorePlayerStats()
-    {
-        if (input != null) input.moveSpeed = savedMoveSpeed;
-        if (combat != null)
-        {
-            combat.autoAttackRange = savedAutoAttackRange;
-            combat.autoAttackDamage = savedAutoAttackDamage;
-            combat.autoAttackInterval = savedAutoAttackInterval;
-            combat.enableSlash = savedSlashEnabled;
-            combat.enableAutoAttack = savedAutoAttackEnabled;
-
-            if (combat.skills != null && savedSkills != null)
-            {
-                for (int i = 0; i < Mathf.Min(combat.skills.Length, savedSkills.Length); i++)
-                {
-                    if (combat.skills[i] != null && savedSkills[i] != null)
-                    {
-                        combat.skills[i].skillName = savedSkills[i].skillName;
-                        combat.skills[i].cooldown = savedSkills[i].cooldown;
-                        combat.skills[i].damage = savedSkills[i].damage;
-                        combat.skills[i].range = savedSkills[i].range;
-                        combat.skills[i].type = savedSkills[i].type;
-                        combat.skills[i].currentCooldown = savedSkills[i].currentCooldown;
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Replace the player's visual model with the enemy's mesh and material
-    /// </summary>
-    void SwapModelToEnemy(Enemy enemy)
-    {
-        if (playerMeshFilter == null) return;
-
-        var enemyMeshFilter = enemy.GetComponent<MeshFilter>();
-        var enemyMeshRenderer = enemy.GetComponent<MeshRenderer>();
-
-        if (enemyMeshFilter != null)
-        {
-            playerMeshFilter.sharedMesh = enemyMeshFilter.sharedMesh;
-        }
-
-        if (enemyMeshRenderer != null && playerMeshFilter != null)
-        {
-            var mr = playerMeshFilter.GetComponent<MeshRenderer>();
-            if (mr != null)
-            {
-                mr.sharedMaterial = enemyMeshRenderer.sharedMaterial;
-            }
-        }
-
-        if (playerModelTransform != null)
-        {
-            playerModelTransform.localScale = enemy.transform.localScale;
-        }
-
-        // Hide any collider on the player model (enemy has its own)
-        var modelCollider = playerMeshFilter.GetComponent<Collider>();
-        if (modelCollider != null) modelCollider.enabled = false;
-    }
-
-    /// <summary>
-    /// Restore the player's original soul model (sphere)
-    /// </summary>
-    void RestoreSoulModel()
-    {
-        if (playerMeshFilter != null && savedSoulMesh != null)
-        {
-            playerMeshFilter.sharedMesh = savedSoulMesh;
-        }
-
-        var mr = playerMeshFilter != null ? playerMeshFilter.GetComponent<MeshRenderer>() : null;
-        if (mr != null && savedSoulMaterial != null)
-        {
-            mr.sharedMaterial = savedSoulMaterial;
-            mr.material.color = soulColor;
-        }
-
-        if (playerModelTransform != null && savedSoulScale != Vector3.zero)
-        {
-            playerModelTransform.localScale = savedSoulScale;
-        }
-
-        // Re-enable collider
-        var modelCollider = playerMeshFilter != null ? playerMeshFilter.GetComponent<Collider>() : null;
-        if (modelCollider != null) modelCollider.enabled = true;
+        Debug.Log("[PlayerHealth] Possessed enemy died - returning to soul form");
+        Unpossess();
     }
 
     public void Unpossess()
     {
         if (!isPossessing) return;
-        if (possessedEnemy != null)
-        {
-            Object.Destroy(possessedEnemy.gameObject);
-            possessedEnemy = null;
-        }
+        Enemy oldEnemy = possessedEnemy;
+        if (input != null) input.OnPossessionEnded();
+        if (combat != null) combat.OnPossessionEnded();
+        if (oldEnemy != null) { oldEnemy.OnUnpossessed(); Destroy(oldEnemy.gameObject); possessedEnemy = null; }
         isPossessing = false;
+        if (cameraFollow != null) cameraFollow.target = transform;
+        SetSoulActive(true);
         maxHealth = soulMaxHealth;
-        currentHealth = soulMaxHealth;
-        if (input != null) input.enabled = true;
-        if (combat != null) combat.enabled = true;
-        if (rb != null) rb.isKinematic = false;
-
-        // Restore the player's original soul model
-        RestoreSoulModel();
-
-        // Restore player's original combat/movement stats
-        RestorePlayerStats();
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.SwitchState(GameManager.GameState.Soul);
-        Debug.Log("Unpossessed - returned to soul form");
+        decayTimer = savedDecayTimer;
+        HidePossessionHUD();
+        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
+        Debug.Log("[PlayerHealth] Unpossessed - soul form restored. HP: " + currentHealth);
         UpdateHealthUI();
+    }
+
+    void SetSoulActive(bool active)
+    {
+        foreach (var r in soulRenderers) if (r != null) r.enabled = active;
+        foreach (var c in soulColliders) if (c != null) c.enabled = active;
+        foreach (var comp in soulComponents)
+        {
+            if (comp == null || comp == this) continue;
+            // Keep PlayerInputController enabled while possessing so player can still drive the enemy
+            if (!active && comp is PlayerInputController) continue;
+            comp.enabled = active;
+        }
+        if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = false; } }
+    }
+
+    void ShowPossessionHUD(Enemy enemy)
+    {
+        if (PossessionHUD.Instance != null) { PossessionHUD.Instance.Show(enemy); return; }
+        if (possessionHUDPanel != null)
+        {
+            possessionHUDPanel.SetActive(true);
+            if (possessionEnemyNameText != null) possessionEnemyNameText.text = enemy.displayName;
+            string basicName = "普攻";
+            string skillName = "技能";
+            if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null) basicName = enemy.basicAbilities[0].abilityName;
+            if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null) skillName = enemy.skillAbilities[0].abilityName;
+            if (possessionAbilityQText != null) possessionAbilityQText.text = "左键 - " + basicName;
+            if (possessionAbilityWText != null) possessionAbilityWText.text = "右键 - " + skillName;
+            if (possessionAbilityRText != null) possessionAbilityRText.text = "R - 脱离附身";
+        }
+        if (possessionHealthSlider != null) { possessionHealthSlider.maxValue = enemy.maxHealth; possessionHealthSlider.value = enemy.currentHealth; }
+        // If no PossessionHUD and no fallback panel, create one dynamically
+        if (PossessionHUD.Instance == null && possessionHUDPanel == null && dynamicHUD == null)
+        {
+            CreateDynamicHUD(enemy);
+        }
+        UpdatePossessionHUD();
+    }
+
+    void UpdatePossessionHUD()
+    {
+        if (PossessionHUD.Instance != null) return;
+        Slider slider = possessionHealthSlider;
+        Image fill = possessionSliderFill;
+        if (slider == null && dynamicHUD != null)
+        {
+            slider = dynamicHUD.GetComponentInChildren<Slider>();
+        }
+        if (slider != null && possessedEnemy != null)
+        {
+            slider.value = possessedEnemy.currentHealth;
+            if (fill != null && healthGradient != null)
+            {
+                float ratio = possessedEnemy.maxHealth > 0 ? possessedEnemy.currentHealth / possessedEnemy.maxHealth : 0;
+                fill.color = healthGradient.Evaluate(ratio);
+            }
+        }
+    }
+
+    void HidePossessionHUD()
+    {
+        if (PossessionHUD.Instance != null) { PossessionHUD.Instance.Hide(); return; }
+        if (possessionHUDPanel != null) possessionHUDPanel.SetActive(false);
+        if (dynamicHUD != null) { Destroy(dynamicHUD); dynamicHUD = null; }
+    }
+
+    void CreateDynamicHUD(Enemy enemy)
+    {
+        // Find or create a Canvas
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null)
+        {
+            GameObject canvasObj = new GameObject("DynamicCanvas");
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObj.AddComponent<CanvasScaler>();
+            canvasObj.AddComponent<GraphicRaycaster>();
+        }
+
+        dynamicHUD = new GameObject("DynamicPossessionHUD");
+        dynamicHUD.transform.SetParent(canvas.transform, false);
+        var hudRect = dynamicHUD.AddComponent<RectTransform>();
+        hudRect.anchorMin = new Vector2(0.5f, 0f);
+        hudRect.anchorMax = new Vector2(0.5f, 0f);
+        hudRect.pivot = new Vector2(0.5f, 0f);
+        hudRect.anchoredPosition = new Vector2(0, 20);
+        hudRect.sizeDelta = new Vector2(400, 100);
+
+        // Background
+        var bg = dynamicHUD.AddComponent<Image>();
+        bg.color = new Color(0, 0, 0, 0.6f);
+
+        // Enemy name text
+        var nameGO = new GameObject("NameText");
+        nameGO.transform.SetParent(dynamicHUD.transform, false);
+        var nameRect = nameGO.AddComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0, 0.6f);
+        nameRect.anchorMax = new Vector2(1, 1);
+        nameRect.offsetMin = new Vector2(10, 0);
+        nameRect.offsetMax = new Vector2(-10, 0);
+        var nameText = nameGO.AddComponent<Text>();
+        nameText.text = enemy.displayName;
+        nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        nameText.fontSize = 20;
+        nameText.color = Color.white;
+        nameText.alignment = TextAnchor.MiddleCenter;
+
+        // Health bar background
+        var hpBarBg = new GameObject("HPBarBg");
+        hpBarBg.transform.SetParent(dynamicHUD.transform, false);
+        var hpBgRect = hpBarBg.AddComponent<RectTransform>();
+        hpBgRect.anchorMin = new Vector2(0.05f, 0.4f);
+        hpBgRect.anchorMax = new Vector2(0.95f, 0.55f);
+        hpBgRect.offsetMin = Vector2.zero;
+        hpBgRect.offsetMax = Vector2.zero;
+        var hpBgImg = hpBarBg.AddComponent<Image>();
+        hpBgImg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+
+        // Health bar fill
+        var hpFillGO = new GameObject("HPFill");
+        hpFillGO.transform.SetParent(hpBarBg.transform, false);
+        var hpFillRect = hpFillGO.AddComponent<RectTransform>();
+        hpFillRect.anchorMin = Vector2.zero;
+        hpFillRect.anchorMax = Vector2.one;
+        hpFillRect.offsetMin = Vector2.zero;
+        hpFillRect.offsetMax = Vector2.zero;
+        var hpFillImg = hpFillGO.AddComponent<Image>();
+        hpFillImg.color = Color.red;
+
+        // Slider component
+        var slider = hpBarBg.AddComponent<Slider>();
+        slider.minValue = 0;
+        slider.maxValue = enemy.maxHealth;
+        slider.value = enemy.currentHealth;
+        slider.interactable = false;
+        slider.transition = Selectable.Transition.None;
+        slider.fillRect = hpFillRect;
+        slider.targetGraphic = hpFillImg;
+
+        // Ability texts
+        string basicName = "普攻";
+        string skillName = "技能";
+        if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null) basicName = enemy.basicAbilities[0].abilityName;
+        if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null) skillName = enemy.skillAbilities[0].abilityName;
+
+        var abTextGO = new GameObject("AbilityText");
+        abTextGO.transform.SetParent(dynamicHUD.transform, false);
+        var abTextRect = abTextGO.AddComponent<RectTransform>();
+        abTextRect.anchorMin = new Vector2(0, 0);
+        abTextRect.anchorMax = new Vector2(1, 0.35f);
+        abTextRect.offsetMin = new Vector2(10, 0);
+        abTextRect.offsetMax = new Vector2(-10, 0);
+        var abText = abTextGO.AddComponent<Text>();
+        abText.text = "左键 - " + basicName + "  |  右键 - " + skillName + "  |  R - 脱离附身";
+        abText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        abText.fontSize = 14;
+        abText.color = new Color(0.8f, 0.8f, 0.8f);
+        abText.alignment = TextAnchor.MiddleCenter;
     }
 
     public void TakeDamage(float amount)
     {
         currentHealth -= amount;
-        if (currentHealth <= 0)
-        {
-            currentHealth = 0;
-            Die();
-        }
+        if (currentHealth <= 0) { currentHealth = 0; Die(); }
         UpdateHealthUI();
     }
 
@@ -415,17 +354,12 @@ public class PlayerHealth : MonoBehaviour
     void Die()
     {
         Debug.Log("Player died!");
-        if (GameManager.Instance != null)
-            GameManager.Instance.SwitchState(GameManager.GameState.GameOver);
+        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.GameOver);
     }
 
     void UpdateHealthUI()
     {
-        if (healthSlider != null)
-        {
-            healthSlider.maxValue = maxHealth;
-            healthSlider.value = currentHealth;
-        }
+        if (healthSlider != null) { healthSlider.maxValue = maxHealth; healthSlider.value = currentHealth; }
         if (sliderFillImage != null && healthGradient != null)
         {
             float ratio = maxHealth > 0 ? currentHealth / maxHealth : 0;
@@ -433,12 +367,10 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    private float moveSpeed
+    private float SoulMoveSpeed
     {
-        get
-        {
-            if (input != null) return input.moveSpeed;
-            return 5f;
-        }
+        get { if (input != null) return input.moveSpeed; return 5f; }
     }
+
+    private Coroutine flyRoutine;
 }

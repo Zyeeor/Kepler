@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerInputController : MonoBehaviour
 {
@@ -19,6 +19,9 @@ public class PlayerInputController : MonoBehaviour
     [HideInInspector] public bool skillRPressed;
     [HideInInspector] public bool interactPressed;
 
+    private bool isControllingEnemy = false;
+    private Enemy controlledEnemy;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -30,28 +33,31 @@ public class PlayerInputController : MonoBehaviour
     void Update()
     {
         if (health == null) return;
-
-        // Block all input during GameOver
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver) return;
-
-        // Don't process while flying to possess
         if (health.isFlyingToPossess) return;
-
-        // Process skill input always (even while possessing)
         HandleSkillInput();
         HandleInteractInput();
-
-        // Movement only in soul form (not possessing)
-        if (!health.isPossessing)
+        if (isControllingEnemy)
         {
-            HandleMouseMovement();
+            HandleEnemyMovement();
+            UpdateEnemyMouseAim();
         }
+        else if (!health.isPossessing) HandleMouseMovement();
     }
 
     void FixedUpdate()
     {
         if (health != null && health.isFlyingToPossess) return;
-        if (rb != null && moveDirection != Vector3.zero)
+        if (isControllingEnemy)
+        {
+            if (controlledEnemy != null && controlledEnemy.rb != null && moveDirection != Vector3.zero)
+            {
+                Vector3 targetPos = controlledEnemy.rb.position + moveDirection * controlledEnemy.moveSpeed * Time.fixedDeltaTime;
+                targetPos.y = controlledEnemy.rb.position.y;
+                controlledEnemy.rb.MovePosition(targetPos);
+            }
+        }
+        else if (rb != null && moveDirection != Vector3.zero && !health.isPossessing)
         {
             Vector3 targetPos = rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime;
             targetPos.y = rb.position.y;
@@ -59,92 +65,127 @@ public class PlayerInputController : MonoBehaviour
         }
     }
 
+    // WASD movement (shared by soul and possessed states)
+    Vector3 GetWASDDirection()
+    {
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+        Vector3 dir = new Vector3(h, 0, v);
+        if (dir.magnitude > 1f) dir.Normalize();
+        return dir;
+    }
+
+    void ApplyWASDMovement(Transform targetTransform)
+    {
+        Vector3 dir = GetWASDDirection();
+        if (dir.magnitude > 0.1f)
+        {
+            moveDirection = dir;
+            targetTransform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        }
+        else
+        {
+            moveDirection = Vector3.zero;
+        }
+    }
+
+    // Soul state: WASD movement
     void HandleMouseMovement()
     {
-        if (Input.GetMouseButton(0))
+        ApplyWASDMovement(transform);
+    }
+
+    // Possessed: WASD drives the enemy
+    void HandleEnemyMovement()
+    {
+        if (controlledEnemy == null) return;
+        Vector3 dir = GetWASDDirection();
+        if (dir.magnitude > 0.1f)
         {
-            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-
-            if (groundPlane.Raycast(ray, out float enter))
-            {
-                Vector3 hitPoint = ray.GetPoint(enter);
-                mouseWorldTarget = hitPoint;
-                Vector3 toTarget = hitPoint - transform.position;
-                toTarget.y = 0;
-
-                if (toTarget.magnitude > 0.1f)
-                {
-                    moveDirection = toTarget.normalized;
-                    transform.rotation = Quaternion.LookRotation(moveDirection, Vector3.up);
-                }
-                else moveDirection = Vector3.zero;
-            }
+            moveDirection = dir;
+            controlledEnemy.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
         }
-        else moveDirection = Vector3.zero;
+        else
+        {
+            moveDirection = Vector3.zero;
+        }
+    }
+
+    // Possessed: when not moving, enemy faces mouse cursor for skill direction
+    void UpdateEnemyMouseAim()
+    {
+        if (controlledEnemy == null) return;
+        if (moveDirection != Vector3.zero) return;
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        Vector3 targetPoint;
+        if (Physics.Raycast(ray, out hit, 100f, groundLayer))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            Plane plane = new Plane(Vector3.up, Vector3.zero);
+            float dist;
+            if (plane.Raycast(ray, out dist))
+                targetPoint = ray.GetPoint(dist);
+            else
+                return;
+        }
+        Vector3 dir = targetPoint - controlledEnemy.transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.01f)
+        {
+            controlledEnemy.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        }
     }
 
     void HandleSkillInput()
     {
-        // Q = Basic Attack (Slash)
         skillQPressed = Input.GetKeyDown(KeyCode.Q);
-        // W = Basic Attack (Slash)
         skillWPressed = Input.GetKeyDown(KeyCode.W);
-        // E = Basic Attack (Slash)
         skillEPressed = Input.GetKeyDown(KeyCode.E);
-        // R = Possess (click on downed enemy with mouse)
         skillRPressed = Input.GetKeyDown(KeyCode.R);
 
-        if (combat != null)
+        if (isControllingEnemy && controlledEnemy != null)
         {
-            if (skillQPressed) combat.SlashAttack();
-            if (skillWPressed) combat.CastSkill(1);   // W = Soul Bullet (Projectile)
-            if (skillEPressed) combat.SlashAttack();
+            if (Input.GetMouseButtonDown(0)) controlledEnemy.PlayerTriggerBasicAttack();
+            if (Input.GetMouseButtonDown(1)) controlledEnemy.PlayerTriggerSkill();
+            if (skillRPressed && health != null) health.Unpossess();
         }
-
-        if (skillRPressed)
+        else
         {
-            // R key: Mouse-click on a downed enemy to possess
-            // Works in both soul and possessed state
-            TryPossessDownedEnemy();
+            if (combat != null)
+            {
+                // Left-click: trigger basic attack
+                if (Input.GetMouseButtonDown(0)) combat.PlayerTriggerBasicAttack();
+                // Right-click: trigger first skill (index 0 = SoulBullet)
+                if (Input.GetMouseButtonDown(1)) combat.PlayerTriggerSkill(0);
+                // E: also basic attack
+                if (skillEPressed) combat.PlayerTriggerBasicAttack();
+                // Q: trigger second skill (index 1 = GhostDash, if available)
+                if (skillQPressed && combat.skillAbilities.Count > 1) combat.PlayerTriggerSkill(1);
+            }
+            if (skillRPressed) TryPossessDownedEnemy();
         }
     }
 
     void TryPossessDownedEnemy()
     {
         if (health == null) return;
-
-        // If currently possessing, unpossess first
-        if (health.isPossessing)
-        {
-            // Look for a new downed enemy to possess
-        }
-
-        // Raycast from mouse position to find a downed enemy
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-
         if (Physics.Raycast(ray, out hit, 100f))
         {
             var enemy = hit.collider.GetComponent<Enemy>();
             if (enemy != null && enemy.isDowned)
             {
-                // Start flying to the downed enemy at 3x speed, then possess
                 health.FlyAndPossess(enemy);
-                Debug.Log("Flying to downed enemy: " + enemy.name);
             }
             else if (enemy != null && !enemy.isDowned)
             {
                 Debug.Log("Enemy is not downed yet, keep attacking!");
             }
-            else
-            {
-                Debug.Log("No downed enemy at mouse position");
-            }
-        }
-        else
-        {
-            Debug.Log("No target at mouse position");
         }
     }
 
@@ -153,11 +194,22 @@ public class PlayerInputController : MonoBehaviour
         interactPressed = Input.GetKeyDown(KeyCode.F);
         if (interactPressed)
         {
-            // F key: unpossess or leap
-            if (health != null && health.isPossessing)
-                health.Unpossess();
-            else if (combat != null)
-                combat.OnInteract();
+            if (health != null && health.isPossessing) health.Unpossess();
+            else if (combat != null) combat.OnInteract();
         }
+    }
+
+    public void OnPossessionStarted(Enemy enemy)
+    {
+        isControllingEnemy = true;
+        controlledEnemy = enemy;
+        moveDirection = Vector3.zero;
+    }
+
+    public void OnPossessionEnded()
+    {
+        isControllingEnemy = false;
+        controlledEnemy = null;
+        moveDirection = Vector3.zero;
     }
 }
