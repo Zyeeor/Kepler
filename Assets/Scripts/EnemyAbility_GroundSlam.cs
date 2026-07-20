@@ -52,8 +52,8 @@ public class EnemyAbility_GroundSlam : EnemyAbility
     void DoRadiusHit(float baseDmg, float multiplier)
     {
         Vector3 center = owner != null ? owner.transform.position : transform.position;
-        // Use ~0 to detect all layers — ensures possessed enemy can hit other enemies
-        Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
+        int layerMask = owner.isPossessed ? ~0 : targetMask;
+        Collider[] hits = Physics.OverlapSphere(center, radius, layerMask, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {
             var ph = h.GetComponentInParent<PlayerHealth>();
