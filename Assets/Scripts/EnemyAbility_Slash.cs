@@ -57,14 +57,11 @@ public class EnemyAbility_Slash : EnemyAbility
         int layerMask = owner.isPossessed ? ~0 : targetMask;
 
         var hits = Physics.OverlapSphere(slashOrigin, slashRange, layerMask, QueryTriggerInteraction.Collide);
-        Debug.Log("[Slash] hits=" + hits.Length + " layerMask=" + layerMask + " origin=" + slashOrigin + " range=" + slashRange);
         HashSet<Enemy> hitEnemies = new HashSet<Enemy>();
         foreach (var hit in hits)
         {
-            Debug.Log("[Slash] hit=" + hit.name + " tag=" + hit.tag + " layer=" + hit.gameObject.layer + " isTrigger=" + hit.isTrigger);
             Vector3 toTarget = (hit.transform.position - owner.transform.position).normalized;
-            float dot = Vector3.Dot(forward, toTarget);
-            if (dot < 0f) { Debug.Log("[Slash] skip (behind, dot=" + dot + ")"); continue; }
+            if (Vector3.Dot(forward, toTarget) < 0f) continue;
 
             // Check player
             var ph = hit.GetComponentInParent<PlayerHealth>();
@@ -79,7 +76,8 @@ public class EnemyAbility_Slash : EnemyAbility
             var enemy = hit.GetComponentInParent<Enemy>();
             if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed && !hitEnemies.Contains(enemy))
             {
-                DealDamageTo(enemy, damage);
+                Debug.Log("[Slash] HITTING " + enemy.name + " for " + damage + " damage (possessed=" + owner.isPossessed + ")");
+                enemy.TakeDamage(damage);
                 SpawnHitEffect(enemy.transform.position);
                 hitEnemies.Add(enemy);
             }

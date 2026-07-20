@@ -219,7 +219,19 @@ public class Enemy : MonoBehaviour
 
     public void OnDealtDamage(float amount)
     {
+        // Enemy-specific lifesteal passive (e.g. from prefab)
         foreach (var a in passiveAbilities) { if (a is EnemyAbility_Lifesteal ls) ls.OnOwnerDealtDamage(amount); }
+
+        // Global player passive lifesteal (accumulated from possessed enemies)
+        if (isPossessed && PlayerPassiveManager.Instance != null)
+        {
+            float lifesteal = PlayerPassiveManager.Instance.GetLifestealMultiplier();
+            if (lifesteal > 0f)
+            {
+                float heal = amount * lifesteal;
+                Heal(heal);
+            }
+        }
     }
 
     public void ApplyOffensiveDamage(Enemy target, float amount)

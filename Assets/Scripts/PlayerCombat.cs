@@ -140,7 +140,16 @@ public class PlayerCombat : MonoBehaviour
     /// <summary>Called when player deals damage, for passive effects like lifesteal.</summary>
     public void OnDealtDamage(float amount)
     {
-        // Passive hooks go here
+        // Lifesteal from accumulated passive buffs
+        if (PlayerPassiveManager.Instance != null && PlayerHealth.Instance != null)
+        {
+            float lifesteal = PlayerPassiveManager.Instance.GetLifestealMultiplier();
+            if (lifesteal > 0f)
+            {
+                float heal = amount * lifesteal;
+                PlayerHealth.Instance.Heal(heal);
+            }
+        }
     }
 
     public void OnInteract()

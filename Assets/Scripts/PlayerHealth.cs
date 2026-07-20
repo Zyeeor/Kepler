@@ -151,6 +151,8 @@ public class PlayerHealth : MonoBehaviour
         enemy.OnPossessed();
         if (input != null) input.OnPossessionStarted(enemy);
         if (combat != null) combat.OnPossessionStarted(enemy);
+        // Accumulate permanent passive buffs from this enemy
+        if (PlayerPassiveManager.Instance != null) PlayerPassiveManager.Instance.OnEnemyPossessed(enemy);
         ShowPossessionHUD(enemy);
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
         Debug.Log("[PlayerHealth] POSSESSED " + enemy.displayName);

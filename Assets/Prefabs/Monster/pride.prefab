@@ -148,6 +148,7 @@ Transform:
   - {fileID: 8493335603819886841}
   - {fileID: 8638510660238878694}
   - {fileID: 5863641883169848468}
+  - {fileID: 4614700230780354149}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6595058862690626321
@@ -188,7 +189,8 @@ MonoBehaviour:
   - {fileID: 9186842864193554185}
   skillAbilities:
   - {fileID: 8934253368656914501}
-  passiveAbilities: []
+  passiveAbilities:
+  - {fileID: 6714252094246006184}
   currentHealth: 20
   currentTenacity: 0
   targetPlayer: {fileID: 0}
@@ -447,6 +449,61 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &4595478684106877814
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4614700230780354149}
+  - component: {fileID: 6714252094246006184}
+  m_Layer: 0
+  m_Name: pride_passive
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4614700230780354149
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595478684106877814}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5350570908317252675}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6714252094246006184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595478684106877814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d6a1343d1df9f9419cbde0f846f05a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: Mv speed
+  type: 0
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 0
+  cooldown: 0
+  moveSpeedBonusPercent: 5
+  lifestealBonusPercent: 0
 --- !u!1 &5298992296151665650
 GameObject:
   m_ObjectHideFlags: 0
