@@ -24,6 +24,12 @@ public class PlayerHealth : MonoBehaviour
     public bool isPossessing = false;
     public bool isFlyingToPossess = false;
     public float possessFlySpeedMultiplier = 3f;
+    [Tooltip("Cooldown in seconds after unpossessing before you can possess again.")]
+    public float possessCooldown = 3f;
+    public float possessCooldownTimer = 0f;
+    [Tooltip("Minimum time in seconds you must stay possessing an enemy before you can unpossess.")]
+    public float minPossessTime = 1f;
+    private float possessStartTime;
 
     [Header("UI")]
     public Slider healthSlider;
@@ -75,6 +81,10 @@ public class PlayerHealth : MonoBehaviour
 
     void Update()
     {
+        // Cooldown timer
+        if (possessCooldownTimer > 0f)
+            possessCooldownTimer -= Time.deltaTime;
+
         if (!isFlyingToPossess && !isPossessing)
         {
             decayTimer += Time.deltaTime;
@@ -148,6 +158,7 @@ public class PlayerHealth : MonoBehaviour
         // Keep soul renderer visible so it follows the possessed enemy
         foreach (var r in soulRenderers) if (r != null) r.enabled = true;
         if (cameraFollow != null) cameraFollow.target = enemy.transform;
+        possessStartTime = Time.time;
         enemy.OnPossessed();
         if (input != null) input.OnPossessionStarted(enemy);
         if (combat != null) combat.OnPossessionStarted(enemy);
@@ -167,11 +178,17 @@ public class PlayerHealth : MonoBehaviour
     public void Unpossess()
     {
         if (!isPossessing) return;
+        if (Time.time - possessStartTime < minPossessTime)
+        {
+            Debug.Log("[Possess] Cannot unpossess yet — " + (minPossessTime - (Time.time - possessStartTime)).ToString("F1") + "s remaining");
+            return;
+        }
         Enemy oldEnemy = possessedEnemy;
         if (input != null) input.OnPossessionEnded();
         if (combat != null) combat.OnPossessionEnded();
         if (oldEnemy != null) { oldEnemy.OnUnpossessed(); Destroy(oldEnemy.gameObject); possessedEnemy = null; }
         isPossessing = false;
+        possessCooldownTimer = possessCooldown;
         if (cameraFollow != null) cameraFollow.target = transform;
         SetSoulActive(true);
         maxHealth = soulMaxHealth;

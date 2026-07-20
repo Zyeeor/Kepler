@@ -3,9 +3,8 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Displays two fixed ability cooldown icons: one for basic attack (left-click) and one for skill (right-click).
+/// Displays cooldown icons: basic attack (left-click), skill (right-click), and possess/space.
 /// Each icon shows a grey overlay whose fill amount represents the remaining cooldown.
-/// Supports both soul state (player abilities) and possessed state (enemy abilities).
 /// </summary>
 public class AbilityCooldownUI : MonoBehaviour
 {
@@ -20,6 +19,12 @@ public class AbilityCooldownUI : MonoBehaviour
     public Image skillIconImage;
     public Image skillCooldownOverlay;
     public TMP_Text skillKeyHint;
+
+    [Header("Possess Icon")]
+    public RectTransform possessIconRoot;
+    public Image possessIconImage;
+    public Image possessCooldownOverlay;
+    public TMP_Text possessKeyHint;
 
     [Header("Style")]
     public Color readyColor = Color.white;
@@ -43,7 +48,6 @@ public class AbilityCooldownUI : MonoBehaviour
 
     void Start()
     {
-        // Auto-setup if not assigned
         SetupIcons();
         RefreshIcons();
     }
@@ -76,30 +80,27 @@ public class AbilityCooldownUI : MonoBehaviour
 
     void SetupIcons()
     {
-        // Set key hints
         if (basicKeyHint != null) basicKeyHint.text = "左键";
         if (skillKeyHint != null) skillKeyHint.text = "右键";
+        if (possessKeyHint != null) possessKeyHint.text = "Space";
 
         // Set overlay colors
-        if (basicCooldownOverlay != null)
-        {
-            basicCooldownOverlay.color = cooldownOverlayColor;
-            basicCooldownOverlay.type = Image.Type.Filled;
-            basicCooldownOverlay.fillMethod = Image.FillMethod.Vertical;
-            basicCooldownOverlay.fillOrigin = 0;
-        }
-        if (skillCooldownOverlay != null)
-        {
-            skillCooldownOverlay.color = cooldownOverlayColor;
-            skillCooldownOverlay.type = Image.Type.Filled;
-            skillCooldownOverlay.fillMethod = Image.FillMethod.Vertical;
-            skillCooldownOverlay.fillOrigin = 0;
-        }
+        SetupOverlay(basicCooldownOverlay);
+        SetupOverlay(skillCooldownOverlay);
+        SetupOverlay(possessCooldownOverlay);
+    }
+
+    void SetupOverlay(Image overlay)
+    {
+        if (overlay == null) return;
+        overlay.color = cooldownOverlayColor;
+        overlay.type = Image.Type.Filled;
+        overlay.fillMethod = Image.FillMethod.Vertical;
+        overlay.fillOrigin = 0;
     }
 
     void RefreshIcons()
     {
-        // Clear references first
         playerBasicAbility = null;
         playerSkillAbility = null;
         enemyBasicAbility = null;
@@ -107,88 +108,73 @@ public class AbilityCooldownUI : MonoBehaviour
 
         if (trackingPlayer && playerCombat != null)
         {
-            // Basic attack
             if (playerCombat.basicAbilities.Count > 0)
             {
                 playerBasicAbility = playerCombat.basicAbilities[0];
                 if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(true);
             }
-            else
-            {
-                if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false);
-            }
+            else { if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false); }
 
-            // Skill (first skill ability)
             if (playerCombat.skillAbilities.Count > 0)
             {
                 playerSkillAbility = playerCombat.skillAbilities[0];
                 if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
             }
-            else
-            {
-                if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
-            }
+            else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }
         }
         else if (!trackingPlayer && currentEnemy != null)
         {
-            // Basic attack
             if (currentEnemy.basicAbilities.Count > 0)
             {
                 enemyBasicAbility = currentEnemy.basicAbilities[0];
                 if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(true);
             }
-            else
-            {
-                if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false);
-            }
+            else { if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false); }
 
-            // Skill (first skill ability)
             if (currentEnemy.skillAbilities.Count > 0)
             {
                 enemySkillAbility = currentEnemy.skillAbilities[0];
                 if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
             }
-            else
-            {
-                if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
-            }
+            else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }
         }
         else
         {
-            // No valid source — hide both
             if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false);
             if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
         }
+
+        // Possess icon: always show in soul state, hide while possessing
+        bool showPossess = !trackingPlayer || (PlayerHealth.Instance != null && !PlayerHealth.Instance.isPossessing);
+        if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(showPossess);
     }
 
     void UpdateCooldowns()
     {
-        // Update basic cooldown overlay — read CurrentCooldown every frame
+        // Basic cooldown
         if (basicCooldownOverlay != null && basicIconRoot != null && basicIconRoot.gameObject.activeSelf)
         {
-            float total = 0f;
-            float remaining = 0f;
+            float total = 0f, remaining = 0f;
             if (playerBasicAbility != null) { total = playerBasicAbility.EffectiveCooldown; remaining = playerBasicAbility.CurrentCooldown; }
             else if (enemyBasicAbility != null) { total = enemyBasicAbility.EffectiveCooldown; remaining = enemyBasicAbility.CurrentCooldown; }
-
-            if (total > 0f)
-                basicCooldownOverlay.fillAmount = Mathf.Clamp01(remaining / total);
-            else
-                basicCooldownOverlay.fillAmount = 0f;
+            basicCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
         }
 
-        // Update skill cooldown overlay
+        // Skill cooldown
         if (skillCooldownOverlay != null && skillIconRoot != null && skillIconRoot.gameObject.activeSelf)
         {
-            float total = 0f;
-            float remaining = 0f;
+            float total = 0f, remaining = 0f;
             if (playerSkillAbility != null) { total = playerSkillAbility.EffectiveCooldown; remaining = playerSkillAbility.CurrentCooldown; }
             else if (enemySkillAbility != null) { total = enemySkillAbility.EffectiveCooldown; remaining = enemySkillAbility.CurrentCooldown; }
+            skillCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
+        }
 
-            if (total > 0f)
-                skillCooldownOverlay.fillAmount = Mathf.Clamp01(remaining / total);
-            else
-                skillCooldownOverlay.fillAmount = 0f;
+        // Possess cooldown
+        if (possessCooldownOverlay != null && possessIconRoot != null && possessIconRoot.gameObject.activeSelf)
+        {
+            float total = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessCooldown : 3f;
+            float remaining = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessCooldownTimer : 0f;
+            possessCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
         }
     }
 }

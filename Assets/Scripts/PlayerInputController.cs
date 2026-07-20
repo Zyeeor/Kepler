@@ -173,6 +173,14 @@ public class PlayerInputController : MonoBehaviour
     void TryPossessDownedEnemy()
     {
         if (health == null) return;
+
+        // Check possession cooldown
+        if (health.possessCooldownTimer > 0f)
+        {
+            Debug.Log("[Possess] Cooldown: " + health.possessCooldownTimer.ToString("F1") + "s remaining");
+            return;
+        }
+
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, 100f))
