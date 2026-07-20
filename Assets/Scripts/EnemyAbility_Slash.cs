@@ -56,12 +56,14 @@ public class EnemyAbility_Slash : EnemyAbility
         // Detect all valid targets in the arc
         int layerMask = owner.isPossessed ? ~0 : targetMask;
 
-        var hits = Physics.OverlapSphere(slashOrigin, slashRange, layerMask, QueryTriggerInteraction.Collide);
+        // Use OverlapSphere with no angle restriction for reliable detection
+        Collider[] hits = Physics.OverlapSphere(slashOrigin, slashRange, layerMask, QueryTriggerInteraction.Collide);
         HashSet<Enemy> hitEnemies = new HashSet<Enemy>();
+
         foreach (var hit in hits)
         {
-            Vector3 toTarget = (hit.transform.position - owner.transform.position).normalized;
-            if (Vector3.Dot(forward, toTarget) < 0f) continue;
+            // Skip self
+            if (hit.transform.IsChildOf(owner.transform)) continue;
 
             // Check player
             var ph = hit.GetComponentInParent<PlayerHealth>();

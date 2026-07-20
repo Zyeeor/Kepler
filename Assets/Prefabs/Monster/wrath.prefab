@@ -702,7 +702,7 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 5
+  damage: 20
   cooldown: 0
   slashRange: 5
   slashAngle: 360

@@ -166,7 +166,7 @@ MonoBehaviour:
   displayName: Pride
   maxHealth: 40
   maxTenacity: 150
-  moveSpeed: 20
+  moveSpeed: 12
   collisionDamage: 10
   detectionRadius: 8
   aiAttackRange: 3
@@ -615,13 +615,13 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 90, z: 0}
-  damage: 30
-  cooldown: 1
+  damage: 15
+  cooldown: 0.5
   maxRange: 20
   projectileSpeed: 30
   projectileWidth: 1.5
   projectileHeight: 2
-  blastRadius: 4
+  blastRadius: 2
   blastDamageMultiplier: 0.7
   targetMask:
     serializedVersion: 2
