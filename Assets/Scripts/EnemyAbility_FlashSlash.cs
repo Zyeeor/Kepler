@@ -151,9 +151,10 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         Vector3 halfExtents = new Vector3(slashWidth * 0.5f, slashHeight * 0.5f, length * 0.5f);
         Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
 
-        // Use ~0 to detect all layers — ensures possessed enemy can hit other enemies
-        // regardless of targetMask configuration
-        Collider[] hits = Physics.OverlapBox(mid, halfExtents, rotation, ~0, QueryTriggerInteraction.Collide);
+        // When possessed, hit all layers (to damage other enemies).
+        // When AI-controlled, only hit targetMask (to avoid friendly fire).
+        int layerMask = owner.isPossessed ? ~0 : targetMask;
+        Collider[] hits = Physics.OverlapBox(mid, halfExtents, rotation, layerMask, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {
             var ph = h.GetComponentInParent<PlayerHealth>();

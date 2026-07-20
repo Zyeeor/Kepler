@@ -76,7 +76,7 @@ public class PlayerAbility_Slash : PlayerAbility
         lineMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
         lineMat.SetInt("_ZWrite", 0);
         lineMat.SetInt("_Cull", 0);
-        lineMat.renderQueue = 3000;
+        lineMat.renderQueue = 3001;
         lineRenderer.material = lineMat;
         for (int i = 0; i < lineSegments; i++)
         {
@@ -109,29 +109,7 @@ public class PlayerAbility_Slash : PlayerAbility
             }
             else
             {
-                GameObject segment = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                segment.name = "SlashSeg";
-                segment.transform.SetParent(arcParent.transform);
-                segment.transform.localPosition = localPos;
-                segment.transform.localRotation = Quaternion.Euler(90, 0, angle);
-                segment.transform.localScale = new Vector3(0.3f, slashEffectHeight * 0.6f, 1f);
-                var renderer = segment.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    Material mat = new Material(lineShader);
-                    mat.color = new Color(slashColor.r, slashColor.g, slashColor.b, 0.6f);
-                    mat.SetInt("_Surface", 1);
-                    mat.SetInt("_Blend", 0);
-                    mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
-                    mat.SetInt("_ZWrite", 0);
-                    mat.SetInt("_Cull", 0);
-                    mat.renderQueue = 3000;
-                    renderer.material = mat;
-                }
-                Destroy(segment.GetComponent<Collider>());
-                float tt = Mathf.Abs((float)i / (slashEffectCount - 1) - 0.5f) * 2f;
-                Destroy(segment, slashEffectDuration + tt * 0.05f);
+                // No prefab — skip segment VFX entirely
             }
         }
         Destroy(arcParent, slashEffectDuration + 0.2f);

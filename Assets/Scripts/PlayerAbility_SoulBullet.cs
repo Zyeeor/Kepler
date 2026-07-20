@@ -38,7 +38,7 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         }
         else
         {
-            Debug.Log("[SoulBullet] No prefab assigned, creating default bullet.");
+            Debug.LogWarning("[SoulBullet] No prefab assigned — bullet will be invisible. Assign a Projectile Prefab in the Inspector.");
             bullet = CreateDefaultBullet(spawnPos, aimRot);
         }
 
@@ -56,32 +56,13 @@ public class PlayerAbility_SoulBullet : PlayerAbility
 
     GameObject CreateDefaultBullet(Vector3 position, Quaternion rotation)
     {
-        var bullet = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        bullet.name = "SoulBullet";
+        var bullet = new GameObject("SoulBullet");
         bullet.transform.position = position;
         bullet.transform.rotation = rotation;
-        bullet.transform.localScale = Vector3.one * 0.3f;
-        var renderer = bullet.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null) shader = Shader.Find("Standard");
-            Material mat = new Material(shader);
-            mat.color = new Color(0.3f, 0.7f, 1f, 1f);
-            mat.SetInt("_Surface", 1);
-            mat.SetInt("_Blend", 0);
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            mat.SetInt("_ZWrite", 0);
-            mat.renderQueue = 3000;
-            renderer.material = mat;
-        }
-        Destroy(bullet.GetComponent<SphereCollider>());
         var col = bullet.AddComponent<SphereCollider>();
         col.isTrigger = true;
         col.radius = 0.5f;
-        var rb = bullet.GetComponent<Rigidbody>();
-        if (rb == null) rb = bullet.AddComponent<Rigidbody>();
+        var rb = bullet.AddComponent<Rigidbody>();
         rb.isKinematic = true;
         rb.useGravity = false;
         return bullet;

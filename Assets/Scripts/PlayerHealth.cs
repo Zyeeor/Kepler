@@ -88,7 +88,7 @@ public class PlayerHealth : MonoBehaviour
         {
             if (possessedEnemy == null) { Unpossess(); return; }
             // Soul follows the possessed enemy
-            transform.position = possessedEnemy.transform.position + Vector3.up * 1.5f;
+            transform.position = possessedEnemy.transform.position;
             possessionDecayTimer += Time.deltaTime;
             if (possessionDecayTimer >= decayInterval)
             {
