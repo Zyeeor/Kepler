@@ -41,6 +41,7 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected Enemy owner;
     protected float currentCooldown;
+    public float CurrentCooldown { get { return currentCooldown; } }
     protected GameObject activeVfx;
 
     protected virtual void Awake()

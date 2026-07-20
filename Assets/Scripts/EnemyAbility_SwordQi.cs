@@ -48,7 +48,6 @@ public class EnemyAbility_SwordQi : EnemyAbility
     {
         type = AbilityType.Skill;
         abilityName = "剑气";
-        cooldown = cooldown <= 0f ? 8f : cooldown; // default 8s CD
     }
 
     public override bool CanTrigger()
@@ -153,6 +152,10 @@ public class EnemyAbility_SwordQi : EnemyAbility
             GameObject explosion = Instantiate(explosionVfxPrefab, expPos, expRot);
             PlayVfx(explosion);
             Destroy(explosion, explosionVfxDuration);
+        }
+        else
+        {
+            Debug.LogWarning("[SwordQi] explosionVfxPrefab is NULL — assign one in the Inspector");
         }
 
         // AoE damage — when possessed, hit all layers (to damage other enemies)

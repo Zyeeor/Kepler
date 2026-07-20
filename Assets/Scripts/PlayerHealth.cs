@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 
 public class PlayerHealth : MonoBehaviour
@@ -33,10 +34,10 @@ public class PlayerHealth : MonoBehaviour
     public GameObject possessionHUDPanel;
     public Slider possessionHealthSlider;
     public Image possessionSliderFill;
-    public Text possessionEnemyNameText;
-    public Text possessionAbilityQText;
-    public Text possessionAbilityWText;
-    public Text possessionAbilityRText;
+    public TMP_Text possessionEnemyNameText;
+    public TMP_Text possessionAbilityQText;
+    public TMP_Text possessionAbilityWText;
+    public TMP_Text possessionAbilityRText;
 
     private float maxHealth;
     private float decayTimer;
@@ -246,8 +247,17 @@ public class PlayerHealth : MonoBehaviour
 
     void CreateDynamicHUD(Enemy enemy)
     {
-        // Find or create a Canvas
-        Canvas canvas = FindObjectOfType<Canvas>();
+        // Find a Screen Space Overlay Canvas (ignore World Space canvases like enemy healthbars)
+        Canvas[] allCanvases = FindObjectsOfType<Canvas>();
+        Canvas canvas = null;
+        foreach (var c in allCanvases)
+        {
+            if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                canvas = c;
+                break;
+            }
+        }
         if (canvas == null)
         {
             GameObject canvasObj = new GameObject("DynamicCanvas");
@@ -278,12 +288,11 @@ public class PlayerHealth : MonoBehaviour
         nameRect.anchorMax = new Vector2(1, 1);
         nameRect.offsetMin = new Vector2(10, 0);
         nameRect.offsetMax = new Vector2(-10, 0);
-        var nameText = nameGO.AddComponent<Text>();
+        var nameText = nameGO.AddComponent<TextMeshProUGUI>();
         nameText.text = enemy.displayName;
-        nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         nameText.fontSize = 20;
         nameText.color = Color.white;
-        nameText.alignment = TextAnchor.MiddleCenter;
+        nameText.alignment = TextAlignmentOptions.Center;
 
         // Health bar background
         var hpBarBg = new GameObject("HPBarBg");
@@ -330,12 +339,11 @@ public class PlayerHealth : MonoBehaviour
         abTextRect.anchorMax = new Vector2(1, 0.35f);
         abTextRect.offsetMin = new Vector2(10, 0);
         abTextRect.offsetMax = new Vector2(-10, 0);
-        var abText = abTextGO.AddComponent<Text>();
+        var abText = abTextGO.AddComponent<TextMeshProUGUI>();
         abText.text = "左键 - " + basicName + "  |  右键 - " + skillName + "  |  R - 脱离附身";
-        abText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         abText.fontSize = 14;
         abText.color = new Color(0.8f, 0.8f, 0.8f);
-        abText.alignment = TextAnchor.MiddleCenter;
+        abText.alignment = TextAlignmentOptions.Center;
     }
 
     public void TakeDamage(float amount)

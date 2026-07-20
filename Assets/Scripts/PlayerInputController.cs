@@ -145,7 +145,7 @@ public class PlayerInputController : MonoBehaviour
         skillQPressed = Input.GetKeyDown(KeyCode.Q);
         skillWPressed = Input.GetKeyDown(KeyCode.W);
         skillEPressed = Input.GetKeyDown(KeyCode.E);
-        skillRPressed = Input.GetKeyDown(KeyCode.R);
+        skillRPressed = Input.GetKeyDown(KeyCode.Space);
 
         if (isControllingEnemy && controlledEnemy != null)
         {

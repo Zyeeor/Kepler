@@ -38,6 +38,7 @@ public abstract class PlayerAbility : MonoBehaviour
 
     protected PlayerCombat owner;
     protected float currentCooldown;
+    public float CurrentCooldown { get { return currentCooldown; } }
     protected GameObject activeVfx;
 
     protected virtual void Awake()

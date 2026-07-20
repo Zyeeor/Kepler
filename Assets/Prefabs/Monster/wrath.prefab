@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.2, b: 0.2, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -142,9 +142,11 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
+  - {fileID: 6740639488008973630}
+  - {fileID: 1017125195208305634}
   - {fileID: 8493335603819886841}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -160,16 +162,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayName: Enemy
-  maxHealth: 150
+  displayName: Wrath
+  maxHealth: 100
   maxTenacity: 150
   moveSpeed: 5
-  damage: 30
-  attackRange: 1.5
-  detectionRadius: 8
+  collisionDamage: 30
+  detectionRadius: 10
+  aiAttackRange: 3
+  aiMinRange: 2
+  attackSpeed: 1
   bodyColor: {r: 1, g: 0, b: 0, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  possessedColor: {r: 0.8, g: 0.2, b: 1, a: 1}
   flashColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.1
   isWeakened: 0
@@ -178,11 +183,12 @@ MonoBehaviour:
   playerDetected: 0
   healthSlider: {fileID: 6258926636717018531}
   healthCanvas: {fileID: 6933788589787540818}
-  showHealthBar: 0
-  abilities:
-  - {fileID: 0}
-  basicAbilities: []
-  skillAbilities: []
+  showHealthBar: 1
+  basicAbilities:
+  - {fileID: 5217949833417078358}
+  skillAbilities:
+  - {fileID: 8078005650960718982}
+  passiveAbilities: []
   currentHealth: 20
   currentTenacity: 0
   targetPlayer: {fileID: 0}
@@ -234,7 +240,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -427,6 +433,77 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &6081495425352874911
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1017125195208305634}
+  - component: {fileID: 8078005650960718982}
+  m_Layer: 0
+  m_Name: wrathhook
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1017125195208305634
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6081495425352874911}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5350570908317252675}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8078005650960718982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6081495425352874911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d611fd8f5c1b0d4ab565b7fedee6f42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: Ability
+  type: 2
+  vfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
+    type: 3}
+  vfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 10
+  cooldown: 1
+  hookPrefab: {fileID: 6882116249847192011, guid: 4de7fd93eb409ef4794ce6f391c2b958,
+    type: 3}
+  hookSpeed: 25
+  hookMaxRange: 15
+  hitVfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
+    type: 3}
+  hitVfxDuration: 0.5
+  returnVfxPrefab: {fileID: 6882116249847192011, guid: 4de7fd93eb409ef4794ce6f391c2b958,
+    type: 3}
+  returnVfxDuration: 2
+  pullSpeed: 15
+  pullStopDistance: 1.5
+  damageMultiplier: 1.5
+  targetMask:
+    serializedVersion: 2
+    m_Bits: 512
+  animTrigger: SweepPull
 --- !u!1 &6319710727253618195
 GameObject:
   m_ObjectHideFlags: 0
@@ -463,7 +540,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 30}
+  m_SizeDelta: {x: 100, y: 10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &6258926636717018531
 MonoBehaviour:
@@ -516,3 +593,72 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &6769472975046640299
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6740639488008973630}
+  - component: {fileID: 5217949833417078358}
+  m_Layer: 9
+  m_Name: wrathslash
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6740639488008973630
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6769472975046640299}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.6666667, y: 0.6666667, z: 0.6666667}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5350570908317252675}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5217949833417078358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6769472975046640299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76eec1e91138b8944828b24fd1fd4518, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: Ability
+  type: 1
+  vfxPrefab: {fileID: 8518130513052967595, guid: 0b565c0039992974787456076b773e7f,
+    type: 3}
+  vfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 5
+  cooldown: 0
+  slashRange: 5
+  slashAngle: 360
+  slashEffectPrefab: {fileID: 0}
+  slashEffectDuration: 0
+  slashEffectCount: 7
+  slashEffectRadius: 5
+  slashEffectHeight: 1
+  slashColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  slashEmissionColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  hitEffectPrefab: {fileID: 1035977224672214417, guid: e55aa9262c1373141b0da11cdf17985c,
+    type: 3}
+  hitEffectDuration: 0.5
+  targetMask:
+    serializedVersion: 2
+    m_Bits: 512

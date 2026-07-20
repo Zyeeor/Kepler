@@ -16,6 +16,8 @@ public class Enemy : MonoBehaviour
     public float detectionRadius = 8f;
     [Tooltip("AI will attempt basic attacks when within this range of the player.")]
     public float aiAttackRange = 3f;
+    [Tooltip("AI will stop moving closer when within this distance of the player.")]
+    public float aiMinRange = 0f;
     [Tooltip("Attack speed multiplier. 1.0 = normal speed. Higher = faster attack cooldown.")]
     public float attackSpeed = 1.0f;
 
@@ -130,21 +132,25 @@ public class Enemy : MonoBehaviour
             playerDetected = dist <= detectionRadius;
             if (playerDetected && dist > 0.01f)
             {
-                dir.Normalize();
-                if (rb != null)
+                // Stop moving if within minimum range
+                if (dist > aiMinRange)
                 {
-                    Vector3 targetPos = rb.position + dir * moveSpeed * Time.deltaTime;
-                    targetPos.y = rb.position.y;
-                    rb.MovePosition(targetPos);
+                    dir.Normalize();
+                    if (rb != null)
+                    {
+                        Vector3 targetPos = rb.position + dir * moveSpeed * Time.deltaTime;
+                        targetPos.y = rb.position.y;
+                        rb.MovePosition(targetPos);
+                    }
+                    else
+                    {
+                        Vector3 newPos = transform.position + dir * moveSpeed * Time.deltaTime;
+                        newPos.y = transform.position.y;
+                        transform.position = newPos;
+                    }
+                    transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
                 }
-                else
-                {
-                    Vector3 newPos = transform.position + dir * moveSpeed * Time.deltaTime;
-                    newPos.y = transform.position.y;
-                    transform.position = newPos;
-                }
-                transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-                if (dist <= aiAttackRange)
+                // Attack if within attack range
                 {
                     aiTimer -= Time.deltaTime;
                     if (aiTimer <= 0f) { TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.BasicAttack); aiTimer = 0.5f; }
@@ -180,10 +186,10 @@ public class Enemy : MonoBehaviour
             bool shouldShow = showHealthBar && ShowHealthBars && !isPossessed;
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
         }
-        if (healthCanvas != null && healthCanvas.gameObject.activeSelf && Camera.main != null)
+        if (healthCanvas != null && healthCanvas.gameObject.activeSelf)
         {
-            var cam = Camera.main;
-            healthCanvas.transform.rotation = Quaternion.LookRotation(cam.transform.position - healthCanvas.transform.position, Vector3.up);
+            // Keep healthbar rotation fixed in world space (XZ-plane only, always upright)
+            healthCanvas.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
         }
     }
 
