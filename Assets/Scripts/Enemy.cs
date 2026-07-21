@@ -104,35 +104,10 @@ public class Enemy : MonoBehaviour
         gameObject.layer = 8;
         gameObject.tag = "Enemy";
 
-        // ── 碰撞器策略 ──
-        // Prefab 自带 CapsuleCollider(中心 y=0.75, 半径 0.4, 高 1.5) → 占据 y:[0, 1.5], 中心 y=0.75
-        // **不要** AddComponent<BoxCollider>():默认 size=1×1×1 center=(0,0,0) 会和胶囊冲突,
-        //   且占据 y:[-0.5, 0.5] 会让敌人"埋半截在地里"。
-        // 物理上,Kinematic Rigidbody + 静态碰撞器碰撞有效,但 Kinematic 之间互不碰撞(Unity 限制)
-        //   → Layer 8 之间不互相物理碰撞,实际通过 Spawner 最小间距避免重叠
-        CapsuleCollider col = GetComponent<CapsuleCollider>();
-        if (col == null) col = GetComponentInChildren<CapsuleCollider>();
-        if (col == null)
-        {
-            col = gameObject.AddComponent<CapsuleCollider>();
-            col.center = new Vector3(0, 0.75f, 0);
-            col.radius = 0.4f;
-            col.height = 1.5f;
-            col.direction = 1;
-        }
-        col.isTrigger = false;
-        col.enabled = true;
-
         if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
-        rb.isKinematic = true;
-        rb.useGravity = false;
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative; // 配合手动 spherecast
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
-        // Layer 8 (Enemy) 之间不互相物理碰撞 — 避免触发 OnCollisionEnter 干扰
-        // (Unity 硬性限制:两个 Kinematic Rigidbody 本来就不互相阻挡)
         Physics.IgnoreLayerCollision(8, 8, true);
-        // 敌人 vs 玩家也不互相碰撞,避免多个敌人把玩家挤卡住
         Physics.IgnoreLayerCollision(8, 9, true);
 
         var p = GameObject.FindGameObjectWithTag("Player");
@@ -334,7 +309,7 @@ public class Enemy : MonoBehaviour
         if (meshRenderer != null) { meshRenderer.enabled = true; meshRenderer.material.color = possessedColor; }
         foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = true;
         foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
-        if (rb != null) { savedKinematic = rb.isKinematic; rb.isKinematic = true; rb.velocity = Vector3.zero; rb.useGravity = false; rb.constraints = RigidbodyConstraints.FreezeRotation; }
+        if (rb != null) { savedKinematic = rb.isKinematic; rb.velocity = Vector3.zero; }
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(false);
         currentHealth = maxHealth;
         currentTenacity = maxTenacity;
@@ -357,7 +332,7 @@ public class Enemy : MonoBehaviour
     {
         isDowned = true;
         if (meshRenderer != null) meshRenderer.material.color = downedColor;
-        if (rb != null) { rb.velocity = Vector3.zero; rb.isKinematic = true; }
+        if (rb != null) { rb.velocity = Vector3.zero; }
         transform.rotation = Quaternion.Euler(90, transform.rotation.eulerAngles.y, 0);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();

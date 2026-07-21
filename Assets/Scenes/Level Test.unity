@@ -3536,9 +3536,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameOverPanel: {fileID: 775946369}
-  gameOverText: {fileID: 422235295}
+  gameOverText: {fileID: 0}
   restartButton: {fileID: 1840654049}
   restartButtonText: {fileID: 0}
+  homeButton: {fileID: 0}
+  homeButtonText: {fileID: 0}
+  homeSceneName: MainMenu
   pauseButton: {fileID: 1960255774}
   pauseButtonText: {fileID: 0}
   healthBarToggleButton: {fileID: 0}
@@ -3909,6 +3912,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1124232026830190194, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: m_Constraints
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1124232026830190194, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: m_IsKinematic
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1124232026830190194, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: m_CollisionDetection
@@ -5426,9 +5439,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefabs:
-  - {fileID: 3300776158171480629, guid: 7580fcc34739ee3438665f3a72e47ffd, type: 3}
-  - {fileID: 3300776158171480629, guid: 3c5ce0b5e1c29a84b9a940ead95ef7ef, type: 3}
-  spawnRadius: 5
+  - prefab: {fileID: 3300776158171480629, guid: 3c5ce0b5e1c29a84b9a940ead95ef7ef,
+      type: 3}
+    maxCount: 2
+    currentCount: 0
+  - prefab: {fileID: 735683934570674725, guid: 766824ab5a8e5314b81844456acbe943, type: 3}
+    maxCount: 2
+    currentCount: 0
+  - prefab: {fileID: 3300776158171480629, guid: 7580fcc34739ee3438665f3a72e47ffd,
+      type: 3}
+    maxCount: 2
+    currentCount: 0
+  spawnRadius: 10
   spawnInterval: 2
   maxEnemies: 5
   enemiesPerWave: 2
@@ -6373,7 +6395,7 @@ Transform:
   m_GameObject: {fileID: 2136076962}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -1.22, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

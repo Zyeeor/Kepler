@@ -1,31 +1,14 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    [Header("Target")]
     public Transform target;
-    
-    [Header("Offset")]
-    public Vector3 offset = new Vector3(0, 7, -12);
-    
-    [Header("Smooth")]
-    public float smoothSpeed = 5f;
-    
-    private void Start()
-    {
-        if (target == null)
-        {
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-                target = player.transform;
-        }
-    }
-    
-    private void LateUpdate()
+    public Vector3 offset = new Vector3(0, 10, -10);
+
+    void LateUpdate()
     {
         if (target == null) return;
-        
-        Vector3 desiredPosition = target.position + offset;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
+        Vector3 desiredPos = target.position + offset;
+        transform.position = Vector3.Lerp(transform.position, desiredPos, Time.deltaTime * 5f);
     }
 }

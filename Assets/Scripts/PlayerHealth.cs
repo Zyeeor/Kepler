@@ -23,7 +23,7 @@ public class PlayerHealth : MonoBehaviour
     public Enemy possessedEnemy;
     public bool isPossessing = false;
     public bool isFlyingToPossess = false;
-    public float possessFlySpeedMultiplier = 3f;
+    public float possessFlySpeedMultiplier = 5f;
     [Tooltip("Cooldown in seconds after unpossessing before you can possess again.")]
     public float possessCooldown = 3f;
     public float possessCooldownTimer = 0f;
@@ -68,7 +68,6 @@ public class PlayerHealth : MonoBehaviour
         soulRenderers = GetComponentsInChildren<Renderer>(true);
         soulColliders = GetComponentsInChildren<Collider>(true);
         cameraFollow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
-        // 新相机系统：通过 CameraTarget 切换跟随对象（附身时跟随宿体）
         cameraTarget = FindObjectOfType<CameraTarget>();
     }
 
@@ -136,7 +135,7 @@ public class PlayerHealth : MonoBehaviour
             if (enemy == null) { isFlyingToPossess = false; flyRoutine = null; yield break; }
             targetPos = enemy.transform.position; targetPos.y = transform.position.y;
             Vector3 dir = (targetPos - transform.position).normalized;
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, flySpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, flySpeed * Time.unscaledDeltaTime);
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
             yield return null;
         }

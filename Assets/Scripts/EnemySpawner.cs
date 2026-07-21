@@ -29,10 +29,8 @@ public class EnemySpawner : MonoBehaviour
     public float spawnInterval = 2f;
     public int maxEnemies = 20;
     public int enemiesPerWave = 3;
-    [Tooltip("两个敌人之间最小间距。两个 Kinematic Rigidbody 之间 Unity 不互相物理阻挡(引擎硬性限制),所以靠 spawn 时强制避开来避免出生重叠。")]
-    public float minSeparation = 2.5f;
-    [Tooltip("生成避障:出生点周围这个半径内不能有任何静态碰撞器,避免敌人卡在墙/柱/掩体里。")]
-    public float spawnClearRadius = 0.6f;
+    [Tooltip("生成点周围这个半径内不能有任何已存在的敌人。")]
+    public float spawnClearRadius = 2.5f;
     [Tooltip("避障/spawn 重试次数。")]
     public int spawnMaxAttempts = 12;
 
@@ -103,13 +101,12 @@ public class EnemySpawner : MonoBehaviour
         }
         if (available.Count == 0) return null;
 
-        var prefab = valid[Random.Range(0, valid.Count)];
+        var chosen = available[UnityEngine.Random.Range(0, available.Count)];
 
         // 找一个不重叠且不卡在静态碰撞器内部的生成点
-        // 即使所有尝试失败，仍然使用 spawner 位置（有 Debug.LogWarning 提示）
         TryFindSpawnPoint(out Vector3 spawnPos);
 
-        var go = Instantiate(prefab, spawnPos, Quaternion.identity);
+        var go = Instantiate(chosen.prefab, spawnPos, Quaternion.identity);
         go.tag = "Enemy";
         var enemy = go.GetComponent<Enemy>();
         if (enemy != null && scaleHealthWithDifficulty)
@@ -124,33 +121,23 @@ public class EnemySpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 在 spawnRadius 范围内找一个合适的生成点:
-    /// 1) 距离已生成敌人 ≥ minSeparation
-    /// 2) spawnClearRadius 范围内无静态碰撞器(墙/柱/掩体)
+    /// 在 spawnRadius 范围内找一个生成点，spawnClearRadius 内不能有已存在的敌人。
     /// </summary>
     bool TryFindSpawnPoint(out Vector3 result)
     {
-        // 障碍 mask:不包括敌人自身(Layer 8)、玩家(Layer 9),只关心环境(Default)
-        int obstacleMask = ~((1 << 8) | (1 << 9));
         for (int attempt = 0; attempt < spawnMaxAttempts; attempt++)
         {
-            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float r = Random.Range(0.3f, 1f) * spawnRadius; // 偏内圈,避免贴边
+            float angle = UnityEngine.Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float r = UnityEngine.Random.Range(spawnClearRadius, spawnRadius);
             Vector3 candidate = transform.position + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
 
-            // 1) 避障:出生点周围不能有静态碰撞器
-            if (Physics.CheckSphere(candidate, spawnClearRadius, obstacleMask, QueryTriggerInteraction.Ignore))
-            {
-                continue; // 卡在墙里/柱子边/掩体里,跳过
-            }
-
-            // 2) 距离其他敌人 ≥ minSeparation
+            // 检查 spawnClearRadius 内是否有已存在的敌人
             bool tooClose = false;
             for (int i = activeEnemies.Count - 1; i >= 0; i--)
             {
                 var e = activeEnemies[i];
                 if (e == null) { activeEnemies.RemoveAt(i); continue; }
-                if (Vector3.Distance(e.transform.position, candidate) < minSeparation)
+                if (Vector3.Distance(e.transform.position, candidate) < spawnClearRadius)
                 {
                     tooClose = true;
                     break;
@@ -158,18 +145,40 @@ public class EnemySpawner : MonoBehaviour
             }
             if (tooClose) continue;
 
-            // 找到合法位置
             result = candidate;
             return true;
         }
-        Debug.LogWarning($"[EnemySpawner] TryFindSpawnPoint: all {spawnMaxAttempts} attempts failed (obstacle avoidance + separation). Falling back to spawner position.");
-        result = transform.position;
+        // Fallback: pick the candidate that was farthest from any enemy
+        float bestDist = -1f;
+        Vector3 bestPos = transform.position + Vector3.right * spawnRadius;
+        for (int fb = 0; fb < spawnMaxAttempts * 2; fb++)
+        {
+            float fa = UnityEngine.Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float fr = UnityEngine.Random.Range(spawnClearRadius, spawnRadius);
+            Vector3 fc = transform.position + new Vector3(Mathf.Cos(fa) * fr, 0f, Mathf.Sin(fa) * fr);
+            float minDistToEnemy = float.MaxValue;
+            for (int i = activeEnemies.Count - 1; i >= 0; i--)
+            {
+                var e = activeEnemies[i];
+                if (e == null) { activeEnemies.RemoveAt(i); continue; }
+                float d = Vector3.Distance(e.transform.position, fc);
+                if (d < minDistToEnemy) minDistToEnemy = d;
+            }
+            if (minDistToEnemy > bestDist) { bestDist = minDistToEnemy; bestPos = fc; }
+        }
+        result = bestPos;
+        Debug.LogWarning($"[EnemySpawner] TryFindSpawnPoint: all attempts failed. Best distance to enemy: {bestDist:F1}");
         return false;
     }
 
     void OnDrawGizmosSelected()
     {
+        // Spawn radius
         Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
         Gizmos.DrawWireSphere(transform.position, spawnRadius);
+
+        // Spawn clear radius (per enemy)
+        Gizmos.color = new Color(0f, 1f, 0f, 0.2f);
+        Gizmos.DrawWireSphere(transform.position, spawnClearRadius);
     }
 }

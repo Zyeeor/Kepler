@@ -10289,7 +10289,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6192869199144556178}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -10597,8 +10597,8 @@ GameObject:
   - component: {fileID: 920952039045924966}
   - component: {fileID: 1124232026830190194}
   - component: {fileID: 1025113241247231900}
-  - component: {fileID: 3653010385348192029}
   - component: {fileID: 6900587697003508178}
+  - component: {fileID: 2575371082769056}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -10642,7 +10642,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83a4a32d4ddc2dd489f49d5b134342e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
+  moveSpeed: 11
   groundLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -10697,10 +10697,10 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 4
+  m_Constraints: 0
   m_CollisionDetection: 2
 --- !u!114 &1025113241247231900
 MonoBehaviour:
@@ -10718,12 +10718,12 @@ MonoBehaviour:
   currentHealth: 1000
   healthDecayPercent: 0.02
   decayInterval: 1
-  possessionDecayPercent: 0.05
+  possessionDecayPercent: 0.04
   possessedEnemy: {fileID: 0}
   isPossessing: 0
   isFlyingToPossess: 0
   possessFlySpeedMultiplier: 3
-  possessCooldown: 1
+  possessCooldown: 0
   possessCooldownTimer: 0
   minPossessTime: 1
   healthSlider: {fileID: 0}
@@ -10765,27 +10765,6 @@ MonoBehaviour:
   possessionAbilityQText: {fileID: 0}
   possessionAbilityWText: {fileID: 0}
   possessionAbilityRText: {fileID: 0}
---- !u!135 &3653010385348192029
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6619887426231394227}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &6900587697003508178
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10800,13 +10779,38 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   totalMoveSpeedBonus: 0
   totalLifestealBonus: 0
+  totalBurnBonus: 0
   baseMoveSpeed: 0
-  baseLifestealPercent: 0
   passiveIconParent: {fileID: 0}
   prideIconPrefab: {fileID: 4563893726970356341, guid: d40d824d40ac8b54388a82f429499e75,
     type: 3}
   wrathIconPrefab: {fileID: 1436145994517207048, guid: ef08ff269a4ee164d9a53186851f4366,
     type: 3}
+  envyIconPrefab: {fileID: 321671442723373413, guid: dd4d4cba123b9b4428f292d46d2c011d,
+    type: 3}
+--- !u!136 &2575371082769056
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6619887426231394227}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6785086658669047551
 GameObject:
   m_ObjectHideFlags: 0
