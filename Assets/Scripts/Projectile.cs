@@ -30,8 +30,26 @@ public class Projectile : MonoBehaviour
 
     void Update()
     {
+        // 用射线扫描整段位移 — 子弹目前用 transform.position 直接移动(没用 Rigidbody),
+        // 所以物理引擎不会阻挡它穿墙。这里用 Raycast 模拟 swept collision,撞到墙就销毁。
+        float stepDist = speed * Time.deltaTime;
+        // 障碍 mask:不包括 Layer 8(Enemy)、Layer 9(Player),只关心环境
+        int obstacleMask = ~((1 << 8) | (1 << 9));
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit wallHit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
+        {
+            // 撞墙 — 子弹卡在墙表面,触发 OnHit(只播放特效,不造成伤害,因为不是敌人)
+            transform.position = wallHit.point;
+            if (hitEffectPrefab != null)
+            {
+                var effect = Instantiate(hitEffectPrefab, wallHit.point, Quaternion.LookRotation(wallHit.normal));
+                Destroy(effect, hitEffectDuration);
+            }
+            Destroy(gameObject);
+            return;
+        }
+
         // Fly forward
-        transform.position += transform.forward * speed * Time.deltaTime;
+        transform.position += transform.forward * stepDist;
 
         // Manual distance-based hit detection (works regardless of collider trigger settings)
         hitCheckTimer -= Time.deltaTime;

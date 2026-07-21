@@ -56,6 +56,7 @@ public class PlayerHealth : MonoBehaviour
     private Collider[] soulColliders;
     private GameObject dynamicHUD; // dynamically created possession HUD
     private CameraFollow cameraFollow;
+    private CameraTarget cameraTarget;
 
     void Awake()
     {
@@ -67,6 +68,8 @@ public class PlayerHealth : MonoBehaviour
         soulRenderers = GetComponentsInChildren<Renderer>(true);
         soulColliders = GetComponentsInChildren<Collider>(true);
         cameraFollow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
+        // 新相机系统：通过 CameraTarget 切换跟随对象（附身时跟随宿体）
+        cameraTarget = FindObjectOfType<CameraTarget>();
     }
 
     void Start()
@@ -158,6 +161,7 @@ public class PlayerHealth : MonoBehaviour
         // Keep soul renderer visible so it follows the possessed enemy
         foreach (var r in soulRenderers) if (r != null) r.enabled = true;
         if (cameraFollow != null) cameraFollow.target = enemy.transform;
+        if (cameraTarget != null) cameraTarget.player = enemy.transform;
         possessStartTime = Time.time;
         enemy.OnPossessed();
         if (input != null) input.OnPossessionStarted(enemy);
@@ -190,6 +194,7 @@ public class PlayerHealth : MonoBehaviour
         isPossessing = false;
         possessCooldownTimer = possessCooldown;
         if (cameraFollow != null) cameraFollow.target = transform;
+        if (cameraTarget != null) cameraTarget.player = transform;
         SetSoulActive(true);
         maxHealth = soulMaxHealth;
         decayTimer = savedDecayTimer;
@@ -210,7 +215,7 @@ public class PlayerHealth : MonoBehaviour
             if (!active && comp is PlayerInputController) continue;
             comp.enabled = active;
         }
-        if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = false; } }
+        if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = true; } }
     }
 
     void ShowPossessionHUD(Enemy enemy)
