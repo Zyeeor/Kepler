@@ -52,17 +52,36 @@ public class PlayerInputController : MonoBehaviour
         {
             if (controlledEnemy != null && controlledEnemy.rb != null && moveDirection != Vector3.zero)
             {
-                Vector3 targetPos = controlledEnemy.rb.position + moveDirection * controlledEnemy.moveSpeed * Time.fixedDeltaTime;
+                float stepDist = controlledEnemy.moveSpeed * Time.fixedDeltaTime;
+                Vector3 targetPos = ApplySpherecast(controlledEnemy.rb.position, moveDirection, stepDist, 0.75f, 0.4f);
                 targetPos.y = controlledEnemy.rb.position.y;
                 controlledEnemy.rb.MovePosition(targetPos);
             }
         }
         else if (rb != null && moveDirection != Vector3.zero && !health.isPossessing)
         {
-            Vector3 targetPos = rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime;
+            float stepDist = moveSpeed * Time.fixedDeltaTime;
+            // 玩家 capsule center y=0.9(在 PlayerInputController 自己的 root 上,所以用 0.9 而不是 0.75)
+            Vector3 targetPos = ApplySpherecast(rb.position, moveDirection, stepDist, 0.9f, 0.4f);
             targetPos.y = rb.position.y;
             rb.MovePosition(targetPos);
         }
+    }
+
+    /// <summary>
+    /// 手动 spherecast 预检测 — 替代 Kinematic Rigidbody + MovePosition 缺失的 CCD sweep。
+    /// 避免玩家穿墙/穿柱/穿掩体。
+    /// </summary>
+    Vector3 ApplySpherecast(Vector3 origin, Vector3 dir, float stepDist, float castHeightOffset, float castRadius)
+    {
+        // 不和 Layer 8(Enemy)、Layer 9(Player) 自身检测,只关心环境
+        int obstacleMask = ~((1 << 8) | (1 << 9));
+        Vector3 castOrigin = origin + Vector3.up * castHeightOffset;
+        if (Physics.SphereCast(castOrigin, castRadius, dir, out RaycastHit hit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
+        {
+            stepDist = Mathf.Max(0f, hit.distance - 0.05f);
+        }
+        return origin + dir * stepDist;
     }
 
     // WASD movement (shared by soul and possessed states)

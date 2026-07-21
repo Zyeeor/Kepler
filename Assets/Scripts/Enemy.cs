@@ -10,7 +10,8 @@ public class Enemy : MonoBehaviour
     [Header("Stats (configured on prefab)")]
     public float maxHealth = 200f;
     public float maxTenacity = 200f;
-    public float moveSpeed = 50f;
+    [Tooltip("⚠️ 重要:不要改这个值。Kinematic Rigidbody + 高速 + 静态碰撞器 = 必然穿模(Unity 物理引擎硬性限制)。已通过手动 spherecast 预检测替代 CCD。")]
+    public float moveSpeed = 8f;
     [Tooltip("Base collision damage when touching the player. Individual ability damage is configured on each EnemyAbility.")]
     public float collisionDamage = 30f;
     public float detectionRadius = 8f;
@@ -102,12 +103,38 @@ public class Enemy : MonoBehaviour
     {
         gameObject.layer = 8;
         gameObject.tag = "Enemy";
-        BoxCollider col = GetComponent<BoxCollider>();
-        if (col == null) col = gameObject.AddComponent<BoxCollider>();
-        col.isTrigger = false; col.enabled = true;
+
+        // ── 碰撞器策略 ──
+        // Prefab 自带 CapsuleCollider(中心 y=0.75, 半径 0.4, 高 1.5) → 占据 y:[0, 1.5], 中心 y=0.75
+        // **不要** AddComponent<BoxCollider>():默认 size=1×1×1 center=(0,0,0) 会和胶囊冲突,
+        //   且占据 y:[-0.5, 0.5] 会让敌人"埋半截在地里"。
+        // 物理上,Kinematic Rigidbody + 静态碰撞器碰撞有效,但 Kinematic 之间互不碰撞(Unity 限制)
+        //   → Layer 8 之间不互相物理碰撞,实际通过 Spawner 最小间距避免重叠
+        CapsuleCollider col = GetComponent<CapsuleCollider>();
+        if (col == null) col = GetComponentInChildren<CapsuleCollider>();
+        if (col == null)
+        {
+            col = gameObject.AddComponent<CapsuleCollider>();
+            col.center = new Vector3(0, 0.75f, 0);
+            col.radius = 0.4f;
+            col.height = 1.5f;
+            col.direction = 1;
+        }
+        col.isTrigger = false;
+        col.enabled = true;
+
         if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
-        rb.isKinematic = false; rb.useGravity = true;
+        rb.isKinematic = true;
+        rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative; // 配合手动 spherecast
+
+        // Layer 8 (Enemy) 之间不互相物理碰撞 — 避免触发 OnCollisionEnter 干扰
+        // (Unity 硬性限制:两个 Kinematic Rigidbody 本来就不互相阻挡)
+        Physics.IgnoreLayerCollision(8, 8, true);
+        // 敌人 vs 玩家也不互相碰撞,避免多个敌人把玩家挤卡住
+        Physics.IgnoreLayerCollision(8, 9, true);
+
         var p = GameObject.FindGameObjectWithTag("Player");
         targetPlayer = p != null ? p.transform : null;
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(ShowHealthBars);
@@ -138,13 +165,33 @@ public class Enemy : MonoBehaviour
                     dir.Normalize();
                     if (rb != null)
                     {
-                        Vector3 targetPos = rb.position + dir * moveSpeed * Time.deltaTime;
+                        // 手动 spherecast 预检测:Kinematic Rigidbody + MovePosition 在 Unity 中
+                        // 不做 CCD sweep,直接 MovePosition 会穿过薄静态碰撞器。
+                        // 这里模拟 sweep,撞到墙/柱/掩体时把步长缩短到 hit.distance - radius - skin
+                        float stepDist = moveSpeed * Time.deltaTime;
+                        Vector3 capsuleCenter = rb.position + Vector3.up * 0.75f; // capsule center y=0.75
+                        float capsuleRadius = 0.4f;
+                        // 不和 Layer 8(Enemy)、Layer 9(Player) 自身检测,只检测环境(Layer 0=Default)
+                        int obstacleMask = ~((1 << 8) | (1 << 9));
+                        if (Physics.SphereCast(capsuleCenter, capsuleRadius, dir, out RaycastHit hit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
+                        {
+                            stepDist = Mathf.Max(0f, hit.distance - 0.05f);
+                        }
+                        Vector3 targetPos = rb.position + dir * stepDist;
                         targetPos.y = rb.position.y;
                         rb.MovePosition(targetPos);
                     }
                     else
                     {
-                        Vector3 newPos = transform.position + dir * moveSpeed * Time.deltaTime;
+                        float stepDist = moveSpeed * Time.deltaTime;
+                        Vector3 capsuleCenter = transform.position + Vector3.up * 0.75f;
+                        float capsuleRadius = 0.4f;
+                        int obstacleMask = ~((1 << 8) | (1 << 9));
+                        if (Physics.SphereCast(capsuleCenter, capsuleRadius, dir, out RaycastHit hit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
+                        {
+                            stepDist = Mathf.Max(0f, hit.distance - 0.05f);
+                        }
+                        Vector3 newPos = transform.position + dir * stepDist;
                         newPos.y = transform.position.y;
                         transform.position = newPos;
                     }
