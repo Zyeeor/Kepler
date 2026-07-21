@@ -54,6 +54,11 @@ public class GameManager : MonoBehaviour
         soulTime = 15f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;
+
+        // Ensure only one AudioListener exists
+        var listeners = FindObjectsOfType<AudioListener>();
+        for (int i = 1; i < listeners.Length; i++)
+            listeners[i].enabled = false;
     }
     
     void Update()
@@ -112,6 +117,10 @@ public class GameManager : MonoBehaviour
             gameOverPanel.SetActive(true);
             Time.timeScale = 0f;
             Debug.Log("GameOver panel displayed");
+
+            // Show and unlock cursor so the player can click UI buttons
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
         }
         else
         {

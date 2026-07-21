@@ -10342,7 +10342,7 @@ MeshCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &6398123974690398149
@@ -10723,13 +10723,16 @@ MonoBehaviour:
   isPossessing: 0
   isFlyingToPossess: 0
   possessFlySpeedMultiplier: 3
+  possessCooldown: 1
+  possessCooldownTimer: 0
+  minPossessTime: 1
   healthSlider: {fileID: 0}
   sliderFillImage: {fileID: 0}
   healthGradient:
     serializedVersion: 2
-    key0: {r: 1, g: 0, b: 0, a: 1}
-    key1: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-    key2: {r: 0, g: 1, b: 0, a: 0}
+    key0: {r: 0.7924528, g: 0.3563545, b: 0.3563545, a: 1}
+    key1: {r: 1, g: 0.9566514, b: 0.45597476, a: 1}
+    key2: {r: 0.76415086, g: 1, b: 0.76415086, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
@@ -11150,22 +11153,22 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.54
+      value: -0.6616708
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.38704622
+      value: -0.29453093
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.97442144
+      value: 0.9895699
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.22472845
+      value: 0.14405346
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
@@ -11180,7 +11183,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 25.974
+      value: 16.565
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}

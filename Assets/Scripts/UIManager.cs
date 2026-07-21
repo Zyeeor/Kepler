@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
@@ -8,18 +9,22 @@ public class UIManager : MonoBehaviour
 
     [Header("GameOver UI")]
     public GameObject gameOverPanel;
-    public Text gameOverText;
+    public TMP_Text gameOverText;
     public Button restartButton;
-    public Text restartButtonText;
+    public TMP_Text restartButtonText;
+    public Button homeButton;
+    public TMP_Text homeButtonText;
+    [Tooltip("Scene name to load when HOME is clicked.")]
+    public string homeSceneName = "MainMenu";
 
     [Header("Pause")]
     public Button pauseButton;
-    public Text pauseButtonText;
+    public TMP_Text pauseButtonText;
     private bool isPaused = false;
 
     [Header("Health Bars")]
     public Button healthBarToggleButton;
-    public Text healthBarToggleText;
+    public TMP_Text healthBarToggleText;
 
     void Awake()
     {
@@ -42,6 +47,9 @@ public class UIManager : MonoBehaviour
         if (restartButton != null)
             restartButton.onClick.AddListener(OnRestartClicked);
 
+        if (homeButton != null)
+            homeButton.onClick.AddListener(OnHomeClicked);
+
         if (pauseButton != null)
             pauseButton.onClick.AddListener(OnPauseClicked);
 
@@ -63,6 +71,10 @@ public class UIManager : MonoBehaviour
         if (gameOverText != null)
             gameOverText.text = "GAME OVER";
 
+        // Show and unlock cursor so the player can click UI buttons
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         Time.timeScale = 0f;
     }
 
@@ -78,6 +90,13 @@ public class UIManager : MonoBehaviour
         Debug.Log("UIManager: Restart clicked - reloading scene");
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void OnHomeClicked()
+    {
+        Debug.Log("UIManager: Home clicked - loading scene: " + homeSceneName);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(homeSceneName);
     }
 
     public void OnPauseClicked()

@@ -1,16 +1,28 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Spawns enemies from a prefab list. Each prefab is self-contained (stats + abilities configured on the prefab).
+/// Spawns enemies from a prefab list with per-prefab count control.
 /// </summary>
+[Serializable]
+public class EnemyPrefabEntry
+{
+    [Tooltip("Enemy prefab to spawn")]
+    public GameObject prefab;
+    [Tooltip("How many of this prefab can exist at once (0 = unlimited)")]
+    public int maxCount;
+    [Tooltip("Current alive count (read-only)")]
+    [HideInInspector] public int currentCount;
+}
+
 public class EnemySpawner : MonoBehaviour
 {
     public static EnemySpawner Instance { get; private set; }
 
-    [Header("Enemy Prefabs (drag enemy prefabs here)")]
-    [Tooltip("List of enemy prefabs the spawner can pick from. Each prefab has its own stats/abilities configured in the Inspector.")]
-    public List<GameObject> enemyPrefabs = new List<GameObject>();
+    [Header("Enemy Prefabs")]
+    [Tooltip("Each entry defines a prefab and how many can be alive at once.")]
+    public List<EnemyPrefabEntry> enemyPrefabs = new List<EnemyPrefabEntry>();
 
     [Header("Spawn Settings")]
     public float spawnRadius = 8f;
@@ -48,6 +60,13 @@ public class EnemySpawner : MonoBehaviour
         }
         currentDifficulty = 1f + Time.time * difficultyRampRate;
         activeEnemies.RemoveAll(e => e == null);
+
+        // Update per-prefab counts
+        foreach (var entry in enemyPrefabs)
+        {
+            if (entry.prefab == null) continue;
+            entry.currentCount = activeEnemies.FindAll(e => e != null && e.name.StartsWith(entry.prefab.name)).Count;
+        }
     }
 
     void SpawnWave()
@@ -58,19 +77,20 @@ public class EnemySpawner : MonoBehaviour
 
     public GameObject SpawnEnemy()
     {
-        if (enemyPrefabs == null || enemyPrefabs.Count == 0)
+        // Collect valid entries that haven't reached their max count
+        var available = new List<EnemyPrefabEntry>();
+        foreach (var entry in enemyPrefabs)
         {
-            Debug.LogWarning("EnemySpawner: no enemy prefabs in list!");
-            return null;
+            if (entry.prefab == null) continue;
+            if (entry.maxCount > 0 && entry.currentCount >= entry.maxCount) continue;
+            available.Add(entry);
         }
-        // Filter null entries
-        var valid = enemyPrefabs.FindAll(p => p != null);
-        if (valid.Count == 0) return null;
+        if (available.Count == 0) return null;
 
-        var prefab = valid[Random.Range(0, valid.Count)];
-        float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+        var chosen = available[UnityEngine.Random.Range(0, available.Count)];
+        float angle = UnityEngine.Random.Range(0f, 360f) * Mathf.Deg2Rad;
         Vector3 spawnPos = transform.position + new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * spawnRadius;
-        var go = Instantiate(prefab, spawnPos, Quaternion.identity);
+        var go = Instantiate(chosen.prefab, spawnPos, Quaternion.identity);
         go.tag = "Enemy";
         var enemy = go.GetComponent<Enemy>();
         if (enemy != null && scaleHealthWithDifficulty)
@@ -80,6 +100,7 @@ public class EnemySpawner : MonoBehaviour
             enemy.UpdateHealthUI();
         }
         activeEnemies.Add(go);
+        chosen.currentCount++;
         return go;
     }
 

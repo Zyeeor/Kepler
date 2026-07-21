@@ -239,6 +239,31 @@ public class Enemy : MonoBehaviour
         if (target == null || amount <= 0f) return;
         target.TakeDamage(amount);
         OnDealtDamage(amount);
+
+        float totalBurnPercent = 0f;
+        GameObject burnVfx = null;
+
+        if (isPossessed && PlayerPassiveManager.Instance != null)
+        {
+            totalBurnPercent = PlayerPassiveManager.Instance.GetBurnPercent();
+            foreach (var a in passiveAbilities)
+            {
+                if (a is EnemyPassiveBuff b && b.burnVfxPrefab != null) { burnVfx = b.burnVfxPrefab; break; }
+            }
+            if (totalBurnPercent > 0f && target.GetComponent<BurnEffect>() == null)
+            {
+                var burn = target.gameObject.AddComponent<BurnEffect>();
+                burn.Init(target, totalBurnPercent, 3f, 0.5f, burnVfx);
+            }
+        }
+        else
+        {
+            foreach (var a in passiveAbilities)
+            {
+                if (a is EnemyPassiveBuff buff)
+                    buff.OnOwnerDealtDamage(target, amount, buff.burnBonusPercent / 100f);
+            }
+        }
     }
 
     public void Heal(float amount)

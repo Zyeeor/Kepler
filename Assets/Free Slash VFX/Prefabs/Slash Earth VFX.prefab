@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1664297956
 Transform:
   m_ObjectHideFlags: 0
@@ -19827,12 +19827,12 @@ PrefabInstance:
     - target: {fileID: 6738265595721992703, guid: 057aa477789506a44bd206e9c5acad19,
         type: 3}
       propertyPath: InitialModule.startColor.maxColor.b
-      value: 0.514151
+      value: 0.9402515
       objectReference: {fileID: 0}
     - target: {fileID: 6738265595721992703, guid: 057aa477789506a44bd206e9c5acad19,
         type: 3}
       propertyPath: InitialModule.startColor.maxColor.g
-      value: 0.66807365
+      value: 0.9590434
       objectReference: {fileID: 0}
     - target: {fileID: 6738265595721992703, guid: 057aa477789506a44bd206e9c5acad19,
         type: 3}

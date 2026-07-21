@@ -203,7 +203,6 @@ public class PlayerInputController : MonoBehaviour
         if (interactPressed)
         {
             if (health != null && health.isPossessing) health.Unpossess();
-            else if (combat != null) combat.OnInteract();
         }
     }
 
