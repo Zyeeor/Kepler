@@ -52,7 +52,7 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0.5
   vfxRotationOffset: {x: 0, y: 90, z: 0}
-  damage: 15
+  damage: 10
   cooldown: 0.5
   maxRange: 20
   projectileSpeed: 40
@@ -67,7 +67,7 @@ MonoBehaviour:
   animTrigger: SwordQi
   projectileVfxPrefab: {fileID: 6111486948785554852, guid: f7967f33aeac15f48a3732e3fd3ac36c,
     type: 3}
-  projectileVfxScale: 0.6
+  projectileVfxScale: 0.5
   projectileVfxPositionOffset: {x: 0, y: 0, z: 1}
   projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
   explosionVfxPrefab: {fileID: 1035977224672214417, guid: 5a4d3bae36010574d8ca01fbeedee3ec,
@@ -129,7 +129,7 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 90, z: 0}
   damage: 20
   cooldown: 1
-  dashDistance: 6
+  dashDistance: 3
   dashDuration: 0.15
   slashWidth: 2
   slashHeight: 2
