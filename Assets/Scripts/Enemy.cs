@@ -21,6 +21,10 @@ public class Enemy : MonoBehaviour
     public float aiMinRange = 0f;
     [Tooltip("Attack speed multiplier. 1.0 = normal speed. Higher = faster attack cooldown.")]
     public float attackSpeed = 1.0f;
+    [Tooltip("AI cast time: seconds between basic attack attempts (before cooldown).")]
+    public float basicCastTime = 0.5f;
+    [Tooltip("AI cast time: seconds between skill attempts (before cooldown).")]
+    public float skillCastTime = 10f;
 
     [Header("Visual")]
     public Color bodyColor = Color.red;
@@ -71,6 +75,7 @@ public class Enemy : MonoBehaviour
     private float aiTimer;
     private float skillTimer;
     private bool savedKinematic;
+    private Vector3 lastFramePosition;
 
     void Awake()
     {
@@ -175,12 +180,22 @@ public class Enemy : MonoBehaviour
                 // Attack if within attack range
                 {
                     aiTimer -= Time.deltaTime;
-                    if (aiTimer <= 0f) { TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.BasicAttack); aiTimer = 0.5f; }
+                    if (aiTimer <= 0f) { TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.BasicAttack); aiTimer = basicCastTime / attackSpeed; }
                 }
                 skillTimer -= Time.deltaTime;
-                if (skillTimer <= 0f) { if (TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill)) skillTimer = 10f; }
+                if (skillTimer <= 0f) { if (TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill)) skillTimer = skillCastTime / attackSpeed; }
             }
         }
+        UpdateAnimatorSpeed();
+    }
+
+    void UpdateAnimatorSpeed()
+    {
+        var anim = GetComponent<Animator>();
+        if (anim == null) return;
+        float speed = Vector3.Distance(transform.position, lastFramePosition) / Mathf.Max(Time.deltaTime, 0.0001f);
+        lastFramePosition = transform.position;
+        anim.SetFloat("Speed", speed);
     }
 
     bool TryTriggerAbilitiesOfType(EnemyAbility.AbilityType t)

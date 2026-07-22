@@ -50,12 +50,18 @@ public class PlayerInputController : MonoBehaviour
         if (health != null && health.isFlyingToPossess) return;
         if (isControllingEnemy)
         {
-            if (controlledEnemy != null && controlledEnemy.rb != null && moveDirection != Vector3.zero)
+            if (controlledEnemy != null && controlledEnemy.rb != null)
             {
-                float stepDist = controlledEnemy.moveSpeed * Time.fixedDeltaTime;
-                Vector3 targetPos = ApplySpherecast(controlledEnemy.rb.position, moveDirection, stepDist, 0.75f, 0.4f);
-                targetPos.y = controlledEnemy.rb.position.y;
-                controlledEnemy.rb.MovePosition(targetPos);
+                if (moveDirection != Vector3.zero)
+                {
+                    float stepDist = controlledEnemy.moveSpeed * Time.fixedDeltaTime;
+                    Vector3 targetPos = ApplySpherecast(controlledEnemy.rb.position, moveDirection, stepDist, 0.75f, 0.4f);
+                    targetPos.y = controlledEnemy.rb.position.y;
+                    controlledEnemy.rb.MovePosition(targetPos);
+                }
+                // Update animator speed for possessed enemy
+                var anim = controlledEnemy.GetComponent<Animator>();
+                if (anim != null) anim.SetFloat("Speed", moveDirection.magnitude * controlledEnemy.moveSpeed);
             }
         }
         else if (rb != null && moveDirection != Vector3.zero && !health.isPossessing)

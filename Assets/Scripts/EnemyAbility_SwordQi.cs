@@ -13,6 +13,8 @@ public class EnemyAbility_SwordQi : EnemyAbility
     public float maxRange = 12f;
     [Tooltip("How fast the projectile moves (m/s)")]
     public float projectileSpeed = 15f;
+    [Tooltip("Delay in seconds before the projectile spawns and starts moving.")]
+    public float projectileDelay = 0.3f;
     [Tooltip("Width of the projectile hitbox (radius)")]
     public float projectileWidth = 1.5f;
     [Tooltip("Height of the projectile hitbox")]
@@ -60,11 +62,17 @@ public class EnemyAbility_SwordQi : EnemyAbility
     protected override void OnTrigger()
     {
         if (owner == null) return;
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetTrigger("Skill");
         StartCoroutine(SwordQiRoutine());
     }
 
     IEnumerator SwordQiRoutine()
     {
+        // Delay before projectile spawns (sync with animation wind-up)
+        if (projectileDelay > 0f)
+            yield return new WaitForSeconds(projectileDelay);
+
         Vector3 origin = owner.transform.position;
         Vector3 forward = owner.transform.forward;
         Vector3 currentPos = origin + forward * 1f; // start slightly in front of owner
