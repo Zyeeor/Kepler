@@ -35,6 +35,8 @@ public class EnemyAbility_GroundSlam : EnemyAbility
     protected override void OnTrigger()
     {
         if (owner == null) return;
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetTrigger("Basic");
         StartCoroutine(SlamRoutine());
     }
 

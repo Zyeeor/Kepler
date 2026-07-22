@@ -63,9 +63,8 @@ public class EnemyAbility_FlashSlash : EnemyAbility
             Debug.LogWarning("[FlashSlash] OnTrigger: owner is null, aborting");
             return;
         }
-        Debug.Log("[FlashSlash] OnTrigger called, dashTrailPrefab=" + (dashTrailPrefab != null ? dashTrailPrefab.name : "NULL") +
-                  " hitImpactPrefab=" + (hitImpactPrefab != null ? hitImpactPrefab.name : "NULL") +
-                  " vfxPrefab(base)=" + (vfxPrefab != null ? vfxPrefab.name : "NULL"));
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetTrigger("Basic");
         StartCoroutine(FlashSlashRoutine());
     }
 

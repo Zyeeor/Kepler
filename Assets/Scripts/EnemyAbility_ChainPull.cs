@@ -39,6 +39,8 @@ public class EnemyAbility_ChainPull : EnemyAbility
     protected override void OnTrigger()
     {
         if (owner == null) return;
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetTrigger("Skill");
         StartCoroutine(ChainRoutine());
     }
 

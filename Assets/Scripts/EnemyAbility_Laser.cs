@@ -51,6 +51,10 @@ public class EnemyAbility_Laser : EnemyAbility
         }
         else if (isFiring)
             StopLaser();
+
+        // Animator
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetBool("IsFiring", isFiring);
     }
 
     void UpdateLaser()
