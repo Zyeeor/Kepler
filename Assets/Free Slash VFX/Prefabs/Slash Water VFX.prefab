@@ -19690,6 +19690,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Impact
       objectReference: {fileID: 0}
+    - target: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1418760837371908204, guid: 057aa477789506a44bd206e9c5acad19,
         type: 3}
       propertyPath: looping

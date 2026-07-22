@@ -49,9 +49,9 @@ MonoBehaviour:
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
-  vfxPositionOffset: {x: 0, y: 0, z: 0}
-  vfxDelay: 0.5
-  vfxRotationOffset: {x: 0, y: 90, z: 0}
+  vfxPositionOffset: {x: 0, y: 0.9, z: 0}
+  vfxDelay: 0.2
+  vfxRotationOffset: {x: -170, y: 90, z: 0}
   damage: 10
   cooldown: 0.5
   maxRange: 20
@@ -140,9 +140,9 @@ MonoBehaviour:
   dashTrailPrefab: {fileID: 5434144139528540934, guid: 4299d5c66d4d613479536f298412d2e9,
     type: 3}
   dashTrailDuration: 0.5
-  dashTrailPositionOffset: {x: 0, y: 0, z: -5}
+  dashTrailPositionOffset: {x: 0, y: 1, z: -3}
   dashTrailDelay: 0
-  dashTrailRotationOffset: {x: 0, y: -90, z: 0}
+  dashTrailRotationOffset: {x: -20, y: -90, z: 0}
   hitImpactPrefab: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19,
     type: 3}
   hitImpactDuration: 0.3
@@ -1695,9 +1695,9 @@ MonoBehaviour:
   displayName: Pride
   maxHealth: 40
   maxTenacity: 150
-  moveSpeed: 10
+  moveSpeed: 6
   collisionDamage: 0
-  detectionRadius: 8
+  detectionRadius: 5
   aiAttackRange: 4
   aiMinRange: 3
   attackSpeed: 1

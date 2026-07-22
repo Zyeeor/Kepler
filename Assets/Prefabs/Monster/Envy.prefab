@@ -116,12 +116,14 @@ MonoBehaviour:
   displayName: Envy
   maxHealth: 50
   maxTenacity: 150
-  moveSpeed: 10
+  moveSpeed: 4
   collisionDamage: 0
   detectionRadius: 8
   aiAttackRange: 4
   aiMinRange: 3
   attackSpeed: 0.25
+  basicCastTime: 0.5
+  skillCastTime: 10
   bodyColor: {r: 0.5344591, g: 0, b: 1, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}

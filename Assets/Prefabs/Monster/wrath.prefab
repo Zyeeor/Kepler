@@ -166,12 +166,14 @@ MonoBehaviour:
   displayName: Wrath
   maxHealth: 100
   maxTenacity: 150
-  moveSpeed: 5
+  moveSpeed: 1
   collisionDamage: 30
   detectionRadius: 10
   aiAttackRange: 3
   aiMinRange: 2
   attackSpeed: 1
+  basicCastTime: 0.5
+  skillCastTime: 10
   bodyColor: {r: 1, g: 0, b: 0, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
