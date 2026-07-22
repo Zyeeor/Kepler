@@ -848,11 +848,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 209799701}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 232c065f80885e44c97de7194fb3fed3, type: 3}
+  m_Script: {fileID: 11500000, guid: a528e72a682592d4d85f49c319ba0bdd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 23155295}
-  offset: {x: 0, y: 100, z: 0}
+  height: 100
+  zoom: 62.7
+  followSmooth: 0
+  rotationMode: 0
 --- !u!1 &276622470
 GameObject:
   m_ObjectHideFlags: 0
@@ -1778,11 +1781,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 733021778}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 232c065f80885e44c97de7194fb3fed3, type: 3}
+  m_Script: {fileID: 11500000, guid: ee0a0bcbe2a325349883c76f92e88960, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 23155295}
-  offset: {x: 0, y: 10, z: -10}
+  followDistance: 18
+  pitchAngle: 45
+  yawAngle: 0
+  followDamping: 1
+  hitStopTimeScale: 0
+  virtualCamera: {fileID: 0}
 --- !u!1 &752920543
 GameObject:
   m_ObjectHideFlags: 0
@@ -4757,6 +4765,21 @@ PrefabInstance:
       propertyPath: possessionEnemyNameText
       value: 
       objectReference: {fileID: 2037825380}
+    - target: {fileID: 1440973064119128767, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: shakeForce
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 1440973064119128767, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: shakeOnHit
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1440973064119128767, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: hitStopOnHit
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1762125751731552690, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: m_LocalScale.x

@@ -114,10 +114,38 @@ public class PlayerInputController : MonoBehaviour
         }
     }
 
-    // Soul state: WASD movement
+    // Soul state: WASD movement, but always face the mouse cursor (even while moving)
     void HandleMouseMovement()
     {
-        ApplyWASDMovement(transform);
+        Vector3 dir = GetWASDDirection();
+        moveDirection = dir.magnitude > 0.1f ? dir : Vector3.zero;
+        FaceMouse(transform);
+    }
+
+    // Rotate the given transform to face the mouse cursor on the ground plane.
+    void FaceMouse(Transform targetTransform)
+    {
+        if (mainCamera == null) return;
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        Vector3 targetPoint;
+        if (Physics.Raycast(ray, out hit, 100f, groundLayer))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            Plane plane = new Plane(Vector3.up, Vector3.zero);
+            float dist;
+            if (plane.Raycast(ray, out dist))
+                targetPoint = ray.GetPoint(dist);
+            else
+                return;
+        }
+        Vector3 dir = targetPoint - targetTransform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.01f)
+            targetTransform.rotation = Quaternion.LookRotation(dir, Vector3.up);
     }
 
     // Possessed: WASD drives the enemy

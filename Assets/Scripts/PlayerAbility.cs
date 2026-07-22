@@ -25,6 +25,18 @@ public abstract class PlayerAbility : MonoBehaviour
     /// <summary>Cooldown in seconds. 0 = no cooldown.</summary>
     public float cooldown = 0f;
 
+    [Header("Screen Shake")]
+    [Tooltip("Trigger a camera shake when this attack deals damage.")]
+    public bool shakeOnHit = false;
+    [Tooltip("Shake strength passed to the CameraDirector when this attack lands. 1 = default.")]
+    public float shakeForce = 1f;
+
+    [Header("Hit Stop (顿帧)")]
+    [Tooltip("Briefly freeze time when this attack deals damage, for impact feel.")]
+    public bool hitStopOnHit = false;
+    [Tooltip("Hit-stop duration in unscaled seconds passed to the CameraDirector.")]
+    public float hitStopDuration = 0.07f;
+
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
     public float EffectiveCooldown
     {
@@ -40,6 +52,9 @@ public abstract class PlayerAbility : MonoBehaviour
     protected float currentCooldown;
     public float CurrentCooldown { get { return currentCooldown; } }
     protected GameObject activeVfx;
+
+    /// <summary>Ensures screen shake / hit-stop fire at most once per attack, even for multi-hit attacks.</summary>
+    private bool _hitFeedbackFiredThisAttack;
 
     protected virtual void Awake()
     {
@@ -63,6 +78,7 @@ public abstract class PlayerAbility : MonoBehaviour
     public virtual void Trigger()
     {
         currentCooldown = EffectiveCooldown;
+        _hitFeedbackFiredThisAttack = false;
         if (vfxDelay <= 0f)
             SpawnVfx();
         else
@@ -98,6 +114,12 @@ public abstract class PlayerAbility : MonoBehaviour
     {
         if (target == null) return;
         target.TakeDamage(amount);
+        if (!_hitFeedbackFiredThisAttack && CameraDirector.Instance != null)
+        {
+            if (shakeOnHit) CameraDirector.Instance.Shake(shakeForce);
+            if (hitStopOnHit) CameraDirector.Instance.HitStop(hitStopDuration);
+            _hitFeedbackFiredThisAttack = true;
+        }
         if (owner != null) owner.OnDealtDamage(amount);
     }
 
