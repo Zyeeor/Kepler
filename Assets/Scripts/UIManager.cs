@@ -22,9 +22,28 @@ public class UIManager : MonoBehaviour
     public TMP_Text pauseButtonText;
     private bool isPaused = false;
 
+    [Header("Pause Menu Panel")]
+    public GameObject pauseMenuPanel;
+    public Button resumeButton;
+    public TMP_Text resumeButtonText;
+    public Button settingsButtonOnPause;
+    public TMP_Text settingsButtonOnPauseText;
+    public Button returnToMenuButton;
+    public TMP_Text returnToMenuButtonText;
+
+    [Header("GameOver Extended")]
+    public Button settingsButtonOnGameOver;
+    public TMP_Text settingsButtonOnGameOverText;
+    public Button quitButtonOnGameOver;
+    public TMP_Text quitButtonOnGameOverText;
+
     [Header("Health Bars")]
     public Button healthBarToggleButton;
     public TMP_Text healthBarToggleText;
+
+    [Header("Settings & Confirm")]
+    public SettingsPanel settingsPanel;
+    public ConfirmDialog confirmDialog;
 
     void Awake()
     {
@@ -41,6 +60,10 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        // Initialize sub-panels
+        if (settingsPanel != null) settingsPanel.Init();
+        if (confirmDialog != null) confirmDialog.Init();
+
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
 
@@ -56,8 +79,53 @@ public class UIManager : MonoBehaviour
         if (healthBarToggleButton != null)
             healthBarToggleButton.onClick.AddListener(OnHealthBarToggleClicked);
 
+        if (pauseMenuPanel != null)
+            pauseMenuPanel.SetActive(false);
+
+        if (resumeButton != null)
+            resumeButton.onClick.AddListener(OnResumeClicked);
+
+        if (settingsButtonOnPause != null)
+            settingsButtonOnPause.onClick.AddListener(OnSettingsFromPause);
+
+        if (returnToMenuButton != null)
+            returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
+
+        if (settingsButtonOnGameOver != null)
+            settingsButtonOnGameOver.onClick.AddListener(OnSettingsFromGameOver);
+
+        if (quitButtonOnGameOver != null)
+            quitButtonOnGameOver.onClick.AddListener(OnQuitFromGameOver);
+
         UpdatePauseButtonText();
         UpdateHealthBarToggleText();
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            // 如果确认弹窗开着，关掉它
+            if (confirmDialog != null && confirmDialog.IsVisible())
+            {
+                confirmDialog.Hide();
+                return;
+            }
+
+            // 如果设置面板开着，关掉它
+            if (settingsPanel != null && settingsPanel.IsVisible())
+            {
+                settingsPanel.Hide();
+                return;
+            }
+
+            // GameOver 状态下不响应 ESC（由 GameOver 面板上的按钮处理）
+            if (gameOverPanel != null && gameOverPanel.activeSelf)
+                return;
+
+            // 切换暂停状态
+            TogglePause();
+        }
     }
 
     public void ShowGameOver()
@@ -134,6 +202,118 @@ public class UIManager : MonoBehaviour
     {
         if (healthBarToggleText != null)
             healthBarToggleText.text = Enemy.ShowHealthBars ? "HP: ON" : "HP: OFF";
+    }
+
+    void TogglePause()
+    {
+        isPaused = !isPaused;
+
+        if (isPaused)
+            ShowPauseMenu();
+        else
+            HidePauseMenu();
+
+        UpdatePauseButtonText();
+    }
+
+    void ShowPauseMenu()
+    {
+        Time.timeScale = 0f;
+        if (pauseMenuPanel != null)
+            pauseMenuPanel.SetActive(true);
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        Debug.Log("UIManager: Pause menu shown");
+    }
+
+    void HidePauseMenu()
+    {
+        Time.timeScale = 1f;
+        if (pauseMenuPanel != null)
+            pauseMenuPanel.SetActive(false);
+
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
+        Debug.Log("UIManager: Pause menu hidden");
+    }
+
+    public void OnResumeClicked()
+    {
+        isPaused = false;
+        HidePauseMenu();
+        UpdatePauseButtonText();
+        Debug.Log("UIManager: Resume clicked");
+    }
+
+    public void OnSettingsFromPause()
+    {
+        Debug.Log("UIManager: OnSettingsFromPause CALLED. settingsPanel null? " + (settingsPanel == null));
+        if (settingsPanel != null)
+        {
+            // Hide pause menu underneath so settings sits clean on top
+            if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+            settingsPanel.Show();
+            openedFromPause = true;
+            Debug.Log("UIManager: Settings.Show() called. IsVisible=" + settingsPanel.IsVisible());
+        }
+    }
+
+    private bool openedFromPause = false;
+    private bool confirmOpenedFromPause = false;
+
+    void LateUpdate()
+    {
+        // Reopen pause menu when settings/confirm closes and we came from pause
+        if (openedFromPause && settingsPanel != null && !settingsPanel.IsVisible())
+        {
+            openedFromPause = false;
+            if (isPaused && pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
+        }
+        if (confirmOpenedFromPause && confirmDialog != null && !confirmDialog.IsVisible())
+        {
+            confirmOpenedFromPause = false;
+            if (isPaused && pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
+        }
+    }
+
+    public void OnReturnToMenuClicked()
+    {
+        Debug.Log("UIManager: OnReturnToMenuClicked CALLED. confirmDialog null? " + (confirmDialog == null));
+        if (confirmDialog != null)
+        {
+            if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+            confirmOpenedFromPause = true;
+            confirmDialog.Show("Return to Menu", "Are you sure? Current progress will be lost.", OnReturnToMenuConfirmed, null);
+            Debug.Log("UIManager: ConfirmDialog.Show called. IsVisible=" + confirmDialog.IsVisible());
+        }
+        else
+        {
+            OnReturnToMenuConfirmed();
+        }
+    }
+
+    private void OnReturnToMenuConfirmed()
+    {
+        Debug.Log("UIManager: Return to menu CONFIRMED - loading: " + homeSceneName);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(homeSceneName);
+    }
+
+    public void OnSettingsFromGameOver()
+    {
+        if (settingsPanel != null)
+            settingsPanel.Show();
+        Debug.Log("UIManager: Settings (from game over) opened");
+    }
+
+    public void OnQuitFromGameOver()
+    {
+        Debug.Log("UIManager: Quit from game over - loading: " + homeSceneName);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(homeSceneName);
     }
 
     void OnDestroy()
