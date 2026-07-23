@@ -54,6 +54,24 @@ public class ExitEntry
     public Vector3 rotation;
 }
 
+[Serializable]
+public class CoreEntry
+{
+    [Tooltip("Core prefab to spawn.")]
+    public GameObject prefab;
+    [Tooltip("Optional transform override for spawn location. If set, uses this transform's position/rotation instead of the vector fields below.")]
+    public Transform locationTransform;
+    [Tooltip("World position where the core appears (ignored if locationTransform is set).")]
+    public Vector3 position;
+    [Tooltip("Rotation of the core (ignored if locationTransform is set).")]
+    public Vector3 rotation;
+    [Tooltip("Distance at which the interaction UI pops up.")]
+    public float interactRadius = 3f;
+
+    public Vector3 GetPosition(Transform roomRoot) => locationTransform != null ? roomRoot.position + locationTransform.localPosition : roomRoot.position + position;
+    public Quaternion GetRotation() => locationTransform != null ? locationTransform.rotation : Quaternion.Euler(rotation);
+}
+
 // ============================================================
 // RoomTemplate — 挂在场景 GameObject 上直接编辑
 // ============================================================
@@ -85,6 +103,10 @@ public class RoomTemplate : MonoBehaviour
     [Header("Exits")]
     public List<ExitEntry> exits = new List<ExitEntry>();
 
+    [Header("Core")]
+    [Tooltip("Core prefab and placement. Interactable object that triggers a choice UI.")]
+    public CoreEntry core;
+
     void OnDrawGizmosSelected()
     {
         // Spawn radius
@@ -106,6 +128,14 @@ public class RoomTemplate : MonoBehaviour
         {
             if (obj.amount == 1)
                 Gizmos.DrawWireCube(transform.position + obj.position, Vector3.one * 0.5f);
+        }
+
+        // Core position
+        if (core.prefab != null)
+        {
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(transform.position + core.position, core.interactRadius);
+            Gizmos.DrawWireCube(transform.position + core.position, Vector3.one * 0.8f);
         }
     }
 }

@@ -72,6 +72,15 @@ public class RoomLoader : MonoBehaviour
         CurrentRoom.context = CurrentContext;
         CurrentRoom.Initialize(template, CurrentContext);
 
+        // Spawn Core if defined (world position, not parented so it doesn't get offset)
+        if (template.core.prefab != null)
+        {
+            var coreGo = Instantiate(template.core.prefab, template.core.GetPosition(template.transform), template.core.GetRotation());
+            var coreComp = coreGo.GetComponent<RoomCore>();
+            if (coreComp == null) coreComp = coreGo.AddComponent<RoomCore>();
+            coreComp.interactRadius = template.core.interactRadius;
+        }
+
         OnRoomLoaded?.Invoke(CurrentRoom);
         Debug.Log($"[RoomLoader] Loaded room: {template.roomName}");
         return CurrentRoom;
