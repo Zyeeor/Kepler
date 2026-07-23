@@ -40,7 +40,7 @@ public class RoomLoader : MonoBehaviour
             TotalWaves = template.waves.Count
         };
 
-        var go = Instantiate(template.roomPrefab, Vector3.zero, Quaternion.identity);
+        var go = Instantiate(template.roomPrefab, template.roomPrefab.transform.position, template.roomPrefab.transform.rotation);
         go.name = $"Room_{template.roomName}_{CurrentContext.RoomInstanceId}";
 
         CurrentRoom = go.GetComponent<RoomInstance>();
@@ -67,15 +67,6 @@ public class RoomLoader : MonoBehaviour
                 placed.transform.localRotation = Quaternion.Euler(obj.rotation);
                 // Use prefab's own scale, don't override
             }
-        }
-
-        // 放置出口
-        foreach (var exit in template.exits)
-        {
-            if (exit.prefab == null) continue;
-            var placed = Instantiate(exit.prefab, go.transform);
-            placed.transform.localPosition = exit.position;
-            placed.transform.localRotation = Quaternion.Euler(exit.rotation);
         }
 
         CurrentRoom.context = CurrentContext;

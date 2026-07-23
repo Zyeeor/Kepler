@@ -50,6 +50,7 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         projectile.isPlayerProjectile = true;
         projectile.hitEffectPrefab = hitEffectPrefab;
         projectile.hitEffectDuration = hitEffectDuration;
+        projectile.ownerEnemy = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessedEnemy : null;
 
         Debug.Log("[SoulBullet] Bullet created: " + bullet.name + " at " + bullet.transform.position + " rot=" + bullet.transform.rotation.eulerAngles);
     }

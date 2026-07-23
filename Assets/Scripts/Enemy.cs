@@ -186,7 +186,6 @@ public class Enemy : MonoBehaviour
                 if (skillTimer <= 0f) { if (TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill)) skillTimer = skillCastTime / attackSpeed; }
             }
         }
-        UpdateAnimatorSpeed();
     }
 
     void UpdateAnimatorSpeed()
@@ -218,15 +217,17 @@ public class Enemy : MonoBehaviour
 
     void LateUpdate()
     {
+        // Animator speed always updates (even when downed/possessed)
+        UpdateAnimatorSpeed();
+
         if (healthCanvas != null)
         {
             bool shouldShow = showHealthBar && ShowHealthBars && !isPossessed;
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
         }
-        if (healthCanvas != null && healthCanvas.gameObject.activeSelf)
+        if (healthCanvas != null && healthCanvas.gameObject.activeSelf && Camera.main != null)
         {
-            // Keep healthbar rotation fixed in world space (XZ-plane only, always upright)
-            healthCanvas.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+            healthCanvas.transform.rotation = Camera.main.transform.rotation;
         }
     }
 
@@ -287,6 +288,11 @@ public class Enemy : MonoBehaviour
             {
                 if (a is EnemyPassiveBuff b && b.burnVfxPrefab != null) { burnVfx = b.burnVfxPrefab; break; }
             }
+            // Fallback: if possessed enemy doesn't have burn VFX, use player's
+            if (burnVfx == null && PlayerPassiveManager.Instance.GetBurnVfxPrefab() != null)
+                burnVfx = PlayerPassiveManager.Instance.GetBurnVfxPrefab();
+
+            Debug.Log($"[Burn] Possessed attack: burnPct={totalBurnPercent}, vfx={burnVfx != null}, target={target.name}");
             if (totalBurnPercent > 0f && target.GetComponent<BurnEffect>() == null)
             {
                 var burn = target.gameObject.AddComponent<BurnEffect>();
@@ -329,6 +335,10 @@ public class Enemy : MonoBehaviour
         currentHealth = maxHealth;
         currentTenacity = maxTenacity;
         UpdateHealthUI();
+
+        // Reset animator from downed state
+        var anim = GetComponent<Animator>();
+        if (anim != null) anim.SetBool("IsDowned", false);
     }
 
     public void OnUnpossessed()
@@ -351,6 +361,10 @@ public class Enemy : MonoBehaviour
         transform.rotation = Quaternion.Euler(90, transform.rotation.eulerAngles.y, 0);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
+
+        // Trigger downed animation immediately
+        var anim = GetComponent<Animator>();
+        if (anim != null) anim.SetBool("IsDowned", true);
     }
 
     void FlashDamage()
@@ -372,7 +386,21 @@ public class Enemy : MonoBehaviour
 
     public void UpdateHealthUI()
     {
-        if (healthSlider != null) { healthSlider.maxValue = maxHealth; healthSlider.value = currentHealth; }
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = currentHealth;
+        }
+        else
+        {
+            // Auto-find if not assigned
+            healthSlider = GetComponentInChildren<Slider>();
+            if (healthSlider != null)
+            {
+                healthSlider.maxValue = maxHealth;
+                healthSlider.value = currentHealth;
+            }
+        }
     }
 
     void OnCollisionEnter(Collision collision)

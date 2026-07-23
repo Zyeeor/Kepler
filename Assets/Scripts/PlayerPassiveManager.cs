@@ -11,9 +11,11 @@ public class PlayerPassiveManager : MonoBehaviour
     public static PlayerPassiveManager Instance { get; private set; }
 
     [Header("Accumulated Buffs (read-only)")]
-    public float totalMoveSpeedBonus = 0f;     // e.g. 0.05 = +5%
-    public float totalLifestealBonus = 0f;     // e.g. 0.01 = +1%
-    public float totalBurnBonus = 0f;          // e.g. 0.02 = +2% max HP burn per second
+    public float totalMoveSpeedBonus = 0f;
+    public float totalLifestealBonus = 0f;
+    public float totalBurnBonus = 0f;
+    [Tooltip("Burn VFX prefab to use when applying burn from any player attack.")]
+    public GameObject burnVfxPrefab;
 
     [Header("Base Stats")]
     public float baseMoveSpeed = 5f;
@@ -124,4 +126,5 @@ public class PlayerPassiveManager : MonoBehaviour
 
     public float GetLifestealMultiplier() { return totalLifestealBonus; }
     public float GetBurnPercent() { return totalBurnBonus; }
+    public GameObject GetBurnVfxPrefab() { return burnVfxPrefab; }
 }

@@ -109,11 +109,18 @@ public abstract class PlayerAbility : MonoBehaviour
             ps.Play(true);
     }
 
-    /// <summary>Helper: deal damage to an enemy.</summary>
+    /// <summary>Helper: deal damage to an enemy (triggers burn passive).</summary>
     protected void DealDamageToEnemy(Enemy target, float amount)
     {
         if (target == null) return;
-        target.TakeDamage(amount);
+
+        // If possessing an enemy, route through its ApplyOffensiveDamage to trigger passives
+        var possessed = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessedEnemy : null;
+        if (possessed != null)
+            possessed.ApplyOffensiveDamage(target, amount);
+        else
+            ApplySoulBurn(target, amount);
+
         if (!_hitFeedbackFiredThisAttack && CameraDirector.Instance != null)
         {
             if (shakeOnHit) CameraDirector.Instance.Shake(shakeForce);
@@ -121,6 +128,21 @@ public abstract class PlayerAbility : MonoBehaviour
             _hitFeedbackFiredThisAttack = true;
         }
         if (owner != null) owner.OnDealtDamage(amount);
+    }
+
+    /// <summary>Apply burn from soul form (no possessed enemy to route through).</summary>
+    void ApplySoulBurn(Enemy target, float amount)
+    {
+        target.TakeDamage(amount);
+        if (PlayerPassiveManager.Instance != null)
+        {
+            float burnPct = PlayerPassiveManager.Instance.GetBurnPercent();
+            if (burnPct > 0f && target.GetComponent<BurnEffect>() == null)
+            {
+                var burn = target.gameObject.AddComponent<BurnEffect>();
+                burn.Init(target, burnPct, 3f, 0.5f, PlayerPassiveManager.Instance.GetBurnVfxPrefab());
+            }
+        }
     }
 
     /// <summary>Get the aim direction from player to mouse cursor on ground plane.</summary>

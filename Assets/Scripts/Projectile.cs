@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// A projectile that flies forward, deals damage to the first enemy it hits, and destroys itself.
-/// Uses both OnTriggerEnter AND manual distance check for reliable hit detection.
-/// </summary>
 public class Projectile : MonoBehaviour
 {
     [Header("Movement")]
@@ -13,6 +9,8 @@ public class Projectile : MonoBehaviour
     [Header("Damage")]
     public float damage = 5f;
     public bool isPlayerProjectile = true;
+    [Tooltip("Who fired this projectile (used for burn/lifesteal passives).")]
+    public Enemy ownerEnemy;
 
     [Header("Visual")]
     public GameObject hitEffectPrefab;
@@ -30,14 +28,10 @@ public class Projectile : MonoBehaviour
 
     void Update()
     {
-        // 用射线扫描整段位移 — 子弹目前用 transform.position 直接移动(没用 Rigidbody),
-        // 所以物理引擎不会阻挡它穿墙。这里用 Raycast 模拟 swept collision,撞到墙就销毁。
         float stepDist = speed * Time.deltaTime;
-        // 障碍 mask:不包括 Layer 8(Enemy)、Layer 9(Player),只关心环境
         int obstacleMask = ~((1 << 8) | (1 << 9));
         if (Physics.Raycast(transform.position, transform.forward, out RaycastHit wallHit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
         {
-            // 撞墙 — 子弹卡在墙表面,触发 OnHit(只播放特效,不造成伤害,因为不是敌人)
             transform.position = wallHit.point;
             if (hitEffectPrefab != null)
             {
@@ -48,10 +42,8 @@ public class Projectile : MonoBehaviour
             return;
         }
 
-        // Fly forward
         transform.position += transform.forward * stepDist;
 
-        // Manual distance-based hit detection (works regardless of collider trigger settings)
         hitCheckTimer -= Time.deltaTime;
         if (hitCheckTimer <= 0)
         {
@@ -59,22 +51,14 @@ public class Projectile : MonoBehaviour
             CheckHit();
         }
 
-        // Lifetime timeout
         lifetime -= Time.deltaTime;
-        if (lifetime <= 0)
-        {
-            Destroy(gameObject);
-        }
+        if (lifetime <= 0) Destroy(gameObject);
     }
 
-    /// <summary>
-    /// Manual distance check against all enemies — reliable regardless of collider config
-    /// </summary>
     void CheckHit()
     {
         float checkRadius = 0.8f;
         var hits = Physics.OverlapSphere(transform.position, checkRadius);
-
         foreach (var hit in hits)
         {
             if (isPlayerProjectile && hit.CompareTag("Enemy"))
@@ -82,20 +66,17 @@ public class Projectile : MonoBehaviour
                 var enemy = hit.GetComponent<Enemy>();
                 if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
                 {
-                    enemy.TakeDamage(damage);
-                    Debug.Log("[Projectile] Hit enemy " + enemy.name + " for " + damage);
+                    DealDamage(enemy);
                     OnHit();
                     return;
                 }
             }
-
             if (!isPlayerProjectile && hit.CompareTag("Player"))
             {
                 var playerHealth = hit.GetComponent<PlayerHealth>();
                 if (playerHealth != null)
                 {
                     playerHealth.TakeDamage(damage);
-                    Debug.Log("[Projectile] Hit player for " + damage);
                     OnHit();
                     return;
                 }
@@ -105,15 +86,34 @@ public class Projectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // Backup trigger detection
         if (isPlayerProjectile && other.CompareTag("Enemy"))
         {
             var enemy = other.GetComponent<Enemy>();
             if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
             {
-                enemy.TakeDamage(damage);
-                Debug.Log("[Projectile] Hit enemy " + enemy.name + " for " + damage);
+                DealDamage(enemy);
                 OnHit();
+            }
+        }
+    }
+
+    void DealDamage(Enemy enemy)
+    {
+        if (ownerEnemy != null)
+        {
+            ownerEnemy.ApplyOffensiveDamage(enemy, damage);
+        }
+        else
+        {
+            enemy.TakeDamage(damage);
+            if (PlayerPassiveManager.Instance != null)
+            {
+                float burnPct = PlayerPassiveManager.Instance.GetBurnPercent();
+                if (burnPct > 0f && enemy.GetComponent<BurnEffect>() == null)
+                {
+                    var burn = enemy.gameObject.AddComponent<BurnEffect>();
+                    burn.Init(enemy, burnPct, 3f, 0.5f, PlayerPassiveManager.Instance.GetBurnVfxPrefab());
+                }
             }
         }
     }
@@ -125,10 +125,6 @@ public class Projectile : MonoBehaviour
             var effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
             Destroy(effect, hitEffectDuration);
         }
-        // No hit effect prefab — skip fallback VFX
-
         Destroy(gameObject);
     }
-
-
 }

@@ -214,7 +214,7 @@ public class PlayerHealth : MonoBehaviour
             if (!active && comp is PlayerInputController) continue;
             comp.enabled = active;
         }
-        if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = true; } }
+        if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = false; } }
     }
 
     void ShowPossessionHUD(Enemy enemy)
