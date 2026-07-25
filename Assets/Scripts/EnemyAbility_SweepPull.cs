@@ -56,6 +56,9 @@ public class EnemyAbility_SweepPull : EnemyAbility
     protected override void OnTrigger()
     {
         if (owner == null) return;
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetTrigger("Skill");
+
         hookHit = false;
         pullTarget = null;
         isPullingPlayer = false;
@@ -127,11 +130,13 @@ public class EnemyAbility_SweepPull : EnemyAbility
                 if (enemy != null) DealDamageTo(enemy, damage * damageMultiplier);
             }
 
-            // Return trail VFX (follows target)
+            // Return trail VFX (spawns on target, oriented toward owner)
             GameObject returnVfx = null;
             if (returnVfxPrefab != null)
             {
-                returnVfx = Instantiate(returnVfxPrefab, pullTarget.position, Quaternion.identity);
+                Vector3 toOwner = (owner.transform.position - pullTarget.position).normalized;
+                Quaternion rot = toOwner.sqrMagnitude > 0.01f ? Quaternion.LookRotation(toOwner, Vector3.up) : Quaternion.identity;
+                returnVfx = Instantiate(returnVfxPrefab, pullTarget.position, rot, pullTarget);
                 PlayVfx(returnVfx);
             }
 

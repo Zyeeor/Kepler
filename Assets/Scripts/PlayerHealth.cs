@@ -24,6 +24,8 @@ public class PlayerHealth : MonoBehaviour
     public bool isPossessing = false;
     public bool isFlyingToPossess = false;
     public float possessFlySpeedMultiplier = 5f;
+    [Tooltip("Y-axis offset added to player position when possessing an enemy.")]
+    public float possessYOffset = 0.5f;
     [Tooltip("Cooldown in seconds after unpossessing before you can possess again.")]
     public float possessCooldown = 3f;
     public float possessCooldownTimer = 0f;
@@ -100,8 +102,10 @@ public class PlayerHealth : MonoBehaviour
         if (isPossessing)
         {
             if (possessedEnemy == null) { Unpossess(); return; }
-            // Soul follows the possessed enemy
-            transform.position = possessedEnemy.transform.position;
+            // Soul follows the possessed enemy with Y offset
+            Vector3 targetPos = possessedEnemy.transform.position;
+            targetPos.y += possessYOffset;
+            transform.position = targetPos;
             possessionDecayTimer += Time.deltaTime;
             if (possessionDecayTimer >= decayInterval)
             {

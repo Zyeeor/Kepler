@@ -4,6 +4,10 @@ public class PlayerInputController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 5f;
+    [Tooltip("How fast the character accelerates to max speed.")]
+    public float acceleration = 30f;
+    [Tooltip("How fast the character decelerates when input is released.")]
+    public float deceleration = 25f;
     public LayerMask groundLayer = -1;
 
     private Rigidbody rb;
@@ -21,6 +25,10 @@ public class PlayerInputController : MonoBehaviour
 
     private bool isControllingEnemy = false;
     private Enemy controlledEnemy;
+
+    // Acceleration-based velocity
+    private Vector3 currentVelocity;
+    private Vector3 targetVelocity;
 
     void Awake()
     {
@@ -48,30 +56,46 @@ public class PlayerInputController : MonoBehaviour
     void FixedUpdate()
     {
         if (health != null && health.isFlyingToPossess) return;
+
+        float dt = Time.fixedDeltaTime;
+
         if (isControllingEnemy)
         {
             if (controlledEnemy != null && controlledEnemy.rb != null)
             {
-                if (moveDirection != Vector3.zero)
+                float speed = controlledEnemy.moveSpeed;
+                UpdateVelocity(ref currentVelocity, moveDirection, speed, dt);
+
+                if (currentVelocity.sqrMagnitude > 0.01f)
                 {
-                    float stepDist = controlledEnemy.moveSpeed * Time.fixedDeltaTime;
-                    Vector3 targetPos = ApplySpherecast(controlledEnemy.rb.position, moveDirection, stepDist, 0.75f, 0.4f);
+                    Vector3 targetPos = ApplySpherecast(controlledEnemy.rb.position, currentVelocity.normalized, currentVelocity.magnitude * dt, 0.75f, 0.4f);
                     targetPos.y = controlledEnemy.rb.position.y;
                     controlledEnemy.rb.MovePosition(targetPos);
                 }
+
                 // Update animator speed for possessed enemy
                 var anim = controlledEnemy.GetComponent<Animator>();
-                if (anim != null) anim.SetFloat("Speed", moveDirection.magnitude * controlledEnemy.moveSpeed);
+                if (anim != null) anim.SetFloat("Speed", currentVelocity.magnitude);
             }
         }
-        else if (rb != null && moveDirection != Vector3.zero && !health.isPossessing)
+        else if (rb != null && !health.isPossessing)
         {
-            float stepDist = moveSpeed * Time.fixedDeltaTime;
-            // 玩家 capsule center y=0.9(在 PlayerInputController 自己的 root 上,所以用 0.9 而不是 0.75)
-            Vector3 targetPos = ApplySpherecast(rb.position, moveDirection, stepDist, 0.9f, 0.4f);
-            targetPos.y = rb.position.y;
-            rb.MovePosition(targetPos);
+            UpdateVelocity(ref currentVelocity, moveDirection, moveSpeed, dt);
+
+            if (currentVelocity.sqrMagnitude > 0.01f)
+            {
+                Vector3 targetPos = ApplySpherecast(rb.position, currentVelocity.normalized, currentVelocity.magnitude * dt, 0.9f, 0.4f);
+                targetPos.y = rb.position.y;
+                rb.MovePosition(targetPos);
+            }
         }
+    }
+
+    void UpdateVelocity(ref Vector3 vel, Vector3 inputDir, float maxSpeed, float dt)
+    {
+        Vector3 desired = inputDir * maxSpeed;
+        float accel = inputDir.sqrMagnitude > 0.01f ? acceleration : deceleration;
+        vel = Vector3.MoveTowards(vel, desired, accel * dt);
     }
 
     /// <summary>
@@ -114,12 +138,23 @@ public class PlayerInputController : MonoBehaviour
         }
     }
 
-    // Soul state: WASD movement, but always face the mouse cursor (even while moving)
+    // Soul state: WASD movement, smooth rotation toward movement dir, face mouse when idle
     void HandleMouseMovement()
     {
         Vector3 dir = GetWASDDirection();
         moveDirection = dir.magnitude > 0.1f ? dir : Vector3.zero;
-        FaceMouse(transform);
+
+        if (moveDirection.sqrMagnitude > 0.01f)
+        {
+            // Smooth rotation toward movement direction
+            Quaternion targetRot = Quaternion.LookRotation(moveDirection, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 12f);
+        }
+        else
+        {
+            // Idle: face mouse
+            FaceMouse(transform);
+        }
     }
 
     // Rotate the given transform to face the mouse cursor on the ground plane.
@@ -148,20 +183,19 @@ public class PlayerInputController : MonoBehaviour
             targetTransform.rotation = Quaternion.LookRotation(dir, Vector3.up);
     }
 
-    // Possessed: WASD drives the enemy
+    // Possessed: WASD drives the enemy, smooth rotation toward movement
     void HandleEnemyMovement()
     {
         if (controlledEnemy == null) return;
         Vector3 dir = GetWASDDirection();
-        if (dir.magnitude > 0.1f)
+        moveDirection = dir.magnitude > 0.1f ? dir : Vector3.zero;
+
+        if (moveDirection.sqrMagnitude > 0.01f)
         {
-            moveDirection = dir;
-            controlledEnemy.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            Quaternion targetRot = Quaternion.LookRotation(moveDirection, Vector3.up);
+            controlledEnemy.transform.rotation = Quaternion.Slerp(controlledEnemy.transform.rotation, targetRot, Time.deltaTime * 12f);
         }
-        else
-        {
-            moveDirection = Vector3.zero;
-        }
+        // When idle, keep last rotation (aimed by UpdateEnemyMouseAim)
     }
 
     // Possessed: when not moving, enemy faces mouse cursor for skill direction

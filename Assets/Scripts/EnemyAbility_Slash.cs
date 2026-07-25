@@ -49,6 +49,9 @@ public class EnemyAbility_Slash : EnemyAbility
 
     protected override void OnTrigger()
     {
+        var anim = owner.GetComponent<Animator>();
+        if (anim != null) anim.SetTrigger("Basic");
+
         Vector3 forward = owner.transform.forward;
         Vector3 slashOrigin = owner.transform.position + forward * 0.5f;
         CreateSlashArc(slashOrigin, forward, slashRange);

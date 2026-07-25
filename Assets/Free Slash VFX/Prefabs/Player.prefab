@@ -5194,21 +5194,21 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.6373166
-        inSlope: 9.503202
-        outSlope: 9.503202
+        value: 0.47350585
+        inSlope: 2.2233713
+        outSlope: 2.2233713
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
-        outWeight: 0.40621483
+        outWeight: 0.37141585
       - serializedVersion: 3
-        time: 0.08037434
-        value: 1
-        inSlope: 0
-        outSlope: 0
+        time: 0.17103174
+        value: 0.6059234
+        inSlope: -0.20359884
+        outSlope: -0.20359884
         tangentMode: 0
         weightedMode: 0
-        inWeight: 0.33333334
+        inWeight: 0.55021733
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
@@ -10646,7 +10646,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83a4a32d4ddc2dd489f49d5b134342e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 8
+  moveSpeed: 10
   groundLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -10718,7 +10718,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d567da4d75b6c92408ecc3cb790ed48f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soulMaxHealth: 200
+  soulMaxHealth: 300
   currentHealth: 200
   healthDecayPercent: 0.02
   decayInterval: 1
@@ -10727,6 +10727,7 @@ MonoBehaviour:
   isPossessing: 0
   isFlyingToPossess: 0
   possessFlySpeedMultiplier: 3
+  possessYOffset: 2
   possessCooldown: 0
   possessCooldownTimer: 0
   minPossessTime: 1
@@ -10813,7 +10814,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
+  m_Radius: 0.23
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}

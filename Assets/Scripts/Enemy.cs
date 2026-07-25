@@ -224,10 +224,10 @@ public class Enemy : MonoBehaviour
         {
             bool shouldShow = showHealthBar && ShowHealthBars && !isPossessed;
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
-        }
-        if (healthCanvas != null && healthCanvas.gameObject.activeSelf && Camera.main != null)
-        {
-            healthCanvas.transform.rotation = Camera.main.transform.rotation;
+
+            // Always face the camera (billboard)
+            if (healthCanvas.gameObject.activeSelf && Camera.main != null)
+                healthCanvas.transform.LookAt(healthCanvas.transform.position + Camera.main.transform.forward, Camera.main.transform.up);
         }
     }
 
