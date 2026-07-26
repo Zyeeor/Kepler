@@ -172,7 +172,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
             if (hitSomething)
             {
-                DoBlast(hitPos, radius, scale);
+                DoBlast(hitPos, radius, scale, dmgMult);
                 Destroy(projectileGo);
                 yield break;
             }
@@ -182,12 +182,12 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
         if (projectileGo != null)
         {
-            DoBlast(projectileGo.transform.position, radius, scale);
+            DoBlast(projectileGo.transform.position, radius, scale, dmgMult);
             Destroy(projectileGo);
         }
     }
 
-    void DoBlast(Vector3 pos, float radius, float scale)
+    void DoBlast(Vector3 pos, float radius, float scale, float dmgMult)
     {
         if (blastVfxPrefab != null)
         {
@@ -196,7 +196,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             Destroy(blast, blastVfxDuration);
         }
 
-        DamageEnemiesInSphere(pos, radius, damage * damageMultiplier, null);
+        DamageEnemiesInSphere(pos, radius, damage * damageMultiplier * dmgMult, null);
     }
 
     void StopCharging()
