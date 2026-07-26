@@ -46,15 +46,19 @@ public class EnemyAbility_Laser : EnemyAbility
 
         if (wantFire && CanTrigger())
         {
-            if (!isFiring) { isFiring = true; damageTimer = 0f; currentCooldown = 0f; }
+            if (!isFiring) { isFiring = true; damageTimer = 0f; currentCooldown = 0f; owner.PayAbilityHpCost(this); }
             UpdateLaser();
         }
         else if (isFiring)
             StopLaser();
 
-        // Animator
+        // Animator (only if parameter exists)
         var anim = owner.GetComponent<Animator>();
-        if (anim != null) anim.SetBool("IsFiring", isFiring);
+        if (anim != null)
+        {
+            foreach (var p in anim.parameters)
+                if (p.name == "IsFiring") { anim.SetBool("IsFiring", isFiring); break; }
+        }
     }
 
     void UpdateLaser()

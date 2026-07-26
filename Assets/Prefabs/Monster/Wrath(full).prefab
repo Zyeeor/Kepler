@@ -2329,9 +2329,11 @@ MonoBehaviour:
   healthCanvas: {fileID: 6935736334371690934}
   showHealthBar: 1
   basicAbilities:
-  - {fileID: 4458424409059008162}
+  - ability: {fileID: 4458424409059008162}
+    hpCost: 5
   skillAbilities:
-  - {fileID: 8551900017215022505}
+  - ability: {fileID: 8551900017215022505}
+    hpCost: 10
   passiveAbilities:
   - {fileID: 8309506379845380036}
   currentHealth: 20

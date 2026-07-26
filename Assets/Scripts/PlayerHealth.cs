@@ -230,8 +230,8 @@ public class PlayerHealth : MonoBehaviour
             if (possessionEnemyNameText != null) possessionEnemyNameText.text = enemy.displayName;
             string basicName = "普攻";
             string skillName = "技能";
-            if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null) basicName = enemy.basicAbilities[0].abilityName;
-            if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null) skillName = enemy.skillAbilities[0].abilityName;
+            if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null && enemy.basicAbilities[0].ability != null) basicName = enemy.basicAbilities[0].ability.abilityName;
+            if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null && enemy.skillAbilities[0].ability != null) skillName = enemy.skillAbilities[0].ability.abilityName;
             if (possessionAbilityQText != null) possessionAbilityQText.text = "左键 - " + basicName;
             if (possessionAbilityWText != null) possessionAbilityWText.text = "右键 - " + skillName;
             if (possessionAbilityRText != null) possessionAbilityRText.text = "R - 脱离附身";
@@ -356,8 +356,8 @@ public class PlayerHealth : MonoBehaviour
         // Ability texts
         string basicName = "普攻";
         string skillName = "技能";
-        if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null) basicName = enemy.basicAbilities[0].abilityName;
-        if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null) skillName = enemy.skillAbilities[0].abilityName;
+        if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null && enemy.basicAbilities[0].ability != null) basicName = enemy.basicAbilities[0].ability.abilityName;
+        if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null && enemy.skillAbilities[0].ability != null) skillName = enemy.skillAbilities[0].ability.abilityName;
 
         var abTextGO = new GameObject("AbilityText");
         abTextGO.transform.SetParent(dynamicHUD.transform, false);

@@ -109,10 +109,14 @@ public abstract class PlayerAbility : MonoBehaviour
             ps.Play(true);
     }
 
-    /// <summary>Helper: deal damage to an enemy (triggers burn passive).</summary>
+    /// <summary>Helper: deal damage to an enemy (triggers burn passive + damage amp).</summary>
     protected void DealDamageToEnemy(Enemy target, float amount)
     {
         if (target == null) return;
+
+        // Apply damage amplification from player passives
+        if (PlayerPassiveManager.Instance != null)
+            amount *= (1f + PlayerPassiveManager.Instance.GetDamageAmp());
 
         // If possessing an enemy, route through its ApplyOffensiveDamage to trigger passives
         var possessed = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessedEnemy : null;

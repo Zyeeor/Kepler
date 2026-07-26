@@ -46,8 +46,8 @@ public class PossessionHUD : MonoBehaviour
         if (healthSlider != null) { healthSlider.maxValue = enemy.maxHealth; healthSlider.value = enemy.currentHealth; }
         string basicName = "普攻";
         string skillName = "技能";
-        if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null) basicName = enemy.basicAbilities[0].abilityName;
-        if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null) skillName = enemy.skillAbilities[0].abilityName;
+        if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null && enemy.basicAbilities[0].ability != null) basicName = enemy.basicAbilities[0].ability.abilityName;
+        if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null && enemy.skillAbilities[0].ability != null) skillName = enemy.skillAbilities[0].ability.abilityName;
         if (abilityQText != null) abilityQText.text = "左键 - " + basicName;
         if (abilityWText != null) abilityWText.text = "右键 - " + skillName;
         if (abilityRText != null) abilityRText.text = "R - 脱离附身";

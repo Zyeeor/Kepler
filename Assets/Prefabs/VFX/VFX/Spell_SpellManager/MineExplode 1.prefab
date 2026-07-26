@@ -4998,9 +4998,8 @@ GameObject:
   - component: {fileID: 2659450483435022983}
   - component: {fileID: 9122925084800778374}
   - component: {fileID: 7359836324541648117}
-  - component: {fileID: 9003180239038726011}
   m_Layer: 0
-  m_Name: MineExplode
+  m_Name: MineExplode 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9977,29 +9976,6 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
---- !u!114 &9003180239038726011
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7032838786907163409}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15446f0969390ae4092519fd4eb08dc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lifetime: 10
-  triggerRadius: 1.5
-  blastRadius: 3
-  damage: 20
-  blastVfxPrefab: {fileID: 7032838786907163409, guid: 6dbc85348567b394f8ba447d11c54602,
-    type: 3}
-  blastVfxDuration: 1
-  placer: {fileID: 0}
-  onExplodeEvent:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1001 &4143274944354367100
 PrefabInstance:
   m_ObjectHideFlags: 0

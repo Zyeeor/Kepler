@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Passive component on an enemy prefab. Defines permanent stat bonuses + combat effects.
-/// Supports: moveSpeed, lifesteal, burn
+/// Supports: moveSpeed, lifesteal, burn, damageAmp
 /// </summary>
 public class EnemyPassiveBuff : EnemyAbility
 {
@@ -13,6 +13,8 @@ public class EnemyPassiveBuff : EnemyAbility
     public float lifestealBonusPercent = 0f;
     [Tooltip("Burn bonus (additive). 1 = +1% max HP burn per second (0.01).")]
     public float burnBonusPercent = 0f;
+    [Tooltip("Damage amplification bonus (additive). 5 = +5% extra damage on all player attacks.")]
+    public float damageAmpPercent = 0f;
 
     [Header("Burn VFX (shared)")]
     [Tooltip("Burn VFX prefab spawned on the burning target.")]

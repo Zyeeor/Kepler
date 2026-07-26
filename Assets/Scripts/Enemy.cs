@@ -1,9 +1,36 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System;
 
 public class Enemy : MonoBehaviour
 {
+    [Serializable]
+    public class AbilityHpCost
+    {
+        [Tooltip("The ability to apply HP cost to.")]
+        public EnemyAbility ability;
+        [Tooltip("HP cost paid by the possessed enemy when the player triggers this ability.")]
+        public float hpCost;
+    }
+
+    [Serializable]
+    public class BasicAbilityEntry
+    {
+        public EnemyAbility ability;
+        [Tooltip("HP cost paid by the possessed enemy when the player triggers this ability. 0 = free.")]
+        public float hpCost;
+    }
+
+    [Serializable]
+    public class SkillAbilityEntry
+    {
+        public EnemyAbility ability;
+        [Tooltip("HP cost paid by the possessed enemy when the player triggers this ability. 0 = free.")]
+        public float hpCost;
+    }
+
+
     [Header("Identity")]
     public string displayName = "Enemy";
 
@@ -25,6 +52,9 @@ public class Enemy : MonoBehaviour
     public float basicCastTime = 0.5f;
     [Tooltip("AI cast time: seconds between skill attempts (before cooldown).")]
     public float skillCastTime = 10f;
+
+    [Header("Ability HP Costs (consumed when possessed player uses)")]
+    // HP cost is now set directly on each Basic/Skill ability entry below.
 
     [Header("Visual")]
     public Color bodyColor = Color.red;
@@ -49,9 +79,9 @@ public class Enemy : MonoBehaviour
 
     [Header("Abilities (auto-discovered from children)")]
     [Tooltip("Basic abilities = left-click when possessing this enemy")]
-    public List<EnemyAbility> basicAbilities = new List<EnemyAbility>();
+    public List<BasicAbilityEntry> basicAbilities = new List<BasicAbilityEntry>();
     [Tooltip("Skill abilities = right-click when possessing this enemy")]
-    public List<EnemyAbility> skillAbilities = new List<EnemyAbility>();
+    public List<SkillAbilityEntry> skillAbilities = new List<SkillAbilityEntry>();
     [Tooltip("Passive effects (always active, e.g. lifesteal)")]
     public List<EnemyAbility> passiveAbilities = new List<EnemyAbility>();
 
@@ -87,20 +117,31 @@ public class Enemy : MonoBehaviour
         if (meshRenderer != null) meshRenderer.material.color = originalColor;
 
         var found = GetComponentsInChildren<EnemyAbility>(true);
-        passiveAbilities.Clear(); basicAbilities.Clear(); skillAbilities.Clear();
+        passiveAbilities.Clear();
+        // Keep existing basic/skill entries (preserves hpCost from Inspector), only add new ones
+        for (int i = basicAbilities.Count - 1; i >= 0; i--)
+            if (basicAbilities[i] == null || System.Array.IndexOf(found, basicAbilities[i].ability) < 0) basicAbilities.RemoveAt(i);
+        for (int i = skillAbilities.Count - 1; i >= 0; i--)
+            if (skillAbilities[i] == null || System.Array.IndexOf(found, skillAbilities[i].ability) < 0) skillAbilities.RemoveAt(i);
+
         foreach (var a in found)
         {
-            if (a.type == EnemyAbility.AbilityType.BasicAttack && !basicAbilities.Contains(a)) basicAbilities.Add(a);
-            else if (a.type == EnemyAbility.AbilityType.Skill && !skillAbilities.Contains(a)) skillAbilities.Add(a);
-            else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
+            if (a.type == EnemyAbility.AbilityType.BasicAttack && !BasicListContains(a))
+                basicAbilities.Add(new BasicAbilityEntry { ability = a });
+            else if (a.type == EnemyAbility.AbilityType.Skill && !SkillListContains(a))
+                skillAbilities.Add(new SkillAbilityEntry { ability = a });
+            else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a))
+                passiveAbilities.Add(a);
         }
     }
 
     public void RegisterAbility(EnemyAbility a)
     {
         if (a == null) return;
-        if (a.type == EnemyAbility.AbilityType.BasicAttack && !basicAbilities.Contains(a)) basicAbilities.Add(a);
-        else if (a.type == EnemyAbility.AbilityType.Skill && !skillAbilities.Contains(a)) skillAbilities.Add(a);
+        if (a.type == EnemyAbility.AbilityType.BasicAttack && !BasicListContains(a))
+            basicAbilities.Add(new BasicAbilityEntry { ability = a });
+        else if (a.type == EnemyAbility.AbilityType.Skill && !SkillListContains(a))
+            skillAbilities.Add(new SkillAbilityEntry { ability = a });
         else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
     }
 
@@ -119,6 +160,18 @@ public class Enemy : MonoBehaviour
         targetPlayer = p != null ? p.transform : null;
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(ShowHealthBars);
         UpdateHealthUI();
+    }
+
+    bool BasicListContains(EnemyAbility a)
+    {
+        foreach (var e in basicAbilities) if (e != null && e.ability == a) return true;
+        return false;
+    }
+
+    bool SkillListContains(EnemyAbility a)
+    {
+        foreach (var e in skillAbilities) if (e != null && e.ability == a) return true;
+        return false;
     }
 
     void Update()
@@ -200,8 +253,38 @@ public class Enemy : MonoBehaviour
     bool TryTriggerAbilitiesOfType(EnemyAbility.AbilityType t)
     {
         bool any = false;
-        var list = t == EnemyAbility.AbilityType.BasicAttack ? basicAbilities : skillAbilities;
-        foreach (var a in list) { if (a != null && a.CanTrigger()) { a.Trigger(); any = true; } }
+        if (t == EnemyAbility.AbilityType.BasicAttack)
+        {
+            foreach (var entry in basicAbilities)
+            {
+                if (entry != null && entry.ability != null && entry.ability.CanTrigger())
+                {
+                    entry.ability.Trigger();
+                    if (isPossessed && entry.hpCost > 0f)
+                    {
+                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
+                        TakeDamage(entry.hpCost);
+                    }
+                    any = true;
+                }
+            }
+        }
+        else if (t == EnemyAbility.AbilityType.Skill)
+        {
+            foreach (var entry in skillAbilities)
+            {
+                if (entry != null && entry.ability != null && entry.ability.CanTrigger())
+                {
+                    entry.ability.Trigger();
+                    if (isPossessed && entry.hpCost > 0f)
+                    {
+                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
+                        TakeDamage(entry.hpCost);
+                    }
+                    any = true;
+                }
+            }
+        }
         return any;
     }
 
@@ -213,6 +296,32 @@ public class Enemy : MonoBehaviour
     public void PlayerTriggerSkill()
     {
         TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill);
+    }
+
+    /// <summary>
+    /// Pay HP cost for a specific ability. Called by continuous abilities (Laser, ChargeShot)
+    /// that bypass TryTriggerAbilitiesOfType. Only pays once per ability per frame if isPossessed.
+    /// </summary>
+    public void PayAbilityHpCost(EnemyAbility a)
+    {
+        if (!isPossessed || a == null) return;
+        float cost = 0f;
+        foreach (var entry in basicAbilities)
+        {
+            if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
+        }
+        if (cost <= 0f)
+        {
+            foreach (var entry in skillAbilities)
+            {
+                if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
+            }
+        }
+        if (cost > 0f)
+        {
+            Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
+            TakeDamage(cost);
+        }
     }
 
     void LateUpdate()

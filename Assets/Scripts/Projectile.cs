@@ -99,13 +99,17 @@ public class Projectile : MonoBehaviour
 
     void DealDamage(Enemy enemy)
     {
+        float dmg = damage;
+        if (PlayerPassiveManager.Instance != null)
+            dmg *= (1f + PlayerPassiveManager.Instance.GetDamageAmp());
+
         if (ownerEnemy != null)
         {
-            ownerEnemy.ApplyOffensiveDamage(enemy, damage);
+            ownerEnemy.ApplyOffensiveDamage(enemy, dmg);
         }
         else
         {
-            enemy.TakeDamage(damage);
+            enemy.TakeDamage(dmg);
             if (PlayerPassiveManager.Instance != null)
             {
                 float burnPct = PlayerPassiveManager.Instance.GetBurnPercent();

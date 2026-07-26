@@ -39,6 +39,8 @@ public class PlayerCombat : MonoBehaviour
         }
 
         Debug.Log("[PlayerCombat] Awake: basic=" + basicAbilities.Count + " skill=" + skillAbilities.Count + " passive=" + passiveAbilities.Count);
+        foreach (var a in found)
+            Debug.Log($"[PlayerCombat] Found: name={a.abilityName}, type={a.type}, gameObject={a.gameObject.name}");
         for (int i = 0; i < skillAbilities.Count; i++)
             Debug.Log("[PlayerCombat] skillAbilities[" + i + "] = " + (skillAbilities[i] != null ? skillAbilities[i].abilityName : "NULL"));
     }

@@ -10647,6 +10647,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
+  acceleration: 60
+  deceleration: 100
   groundLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -10785,6 +10787,7 @@ MonoBehaviour:
   totalMoveSpeedBonus: 0
   totalLifestealBonus: 0
   totalBurnBonus: 0
+  totalDamageAmp: 0
   burnVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
     type: 3}
   baseMoveSpeed: 0
@@ -10794,6 +10797,8 @@ MonoBehaviour:
   wrathIconPrefab: {fileID: 1436145994517207048, guid: ef08ff269a4ee164d9a53186851f4366,
     type: 3}
   envyIconPrefab: {fileID: 321671442723373413, guid: dd4d4cba123b9b4428f292d46d2c011d,
+    type: 3}
+  slothIconPrefab: {fileID: 362203994288593129, guid: 3450c55c6b0919547b35a9fa55e10839,
     type: 3}
 --- !u!136 &2575371082769056
 CapsuleCollider:
@@ -10814,7 +10819,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.23
+  m_Radius: 0.25
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}

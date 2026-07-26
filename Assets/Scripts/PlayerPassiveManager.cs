@@ -14,6 +14,7 @@ public class PlayerPassiveManager : MonoBehaviour
     public float totalMoveSpeedBonus = 0f;
     public float totalLifestealBonus = 0f;
     public float totalBurnBonus = 0f;
+    public float totalDamageAmp = 0f;
     [Tooltip("Burn VFX prefab to use when applying burn from any player attack.")]
     public GameObject burnVfxPrefab;
 
@@ -25,6 +26,7 @@ public class PlayerPassiveManager : MonoBehaviour
     public GameObject prideIconPrefab;
     public GameObject wrathIconPrefab;
     public GameObject envyIconPrefab;
+    public GameObject slothIconPrefab;
 
     private HashSet<string> obtainedPassives = new HashSet<string>();
     private Dictionary<string, PassiveIconUI> activeIcons = new Dictionary<string, PassiveIconUI>();
@@ -64,6 +66,8 @@ public class PlayerPassiveManager : MonoBehaviour
                 icon.stackText.text = Mathf.RoundToInt(totalLifestealBonus * 100f).ToString();
             else if (kvp.Key == "Envy")
                 icon.stackText.text = Mathf.RoundToInt(totalBurnBonus * 100f).ToString();
+            else if (kvp.Key == "Sloth")
+                icon.stackText.text = Mathf.RoundToInt(totalDamageAmp * 100f).ToString();
         }
     }
 
@@ -79,6 +83,7 @@ public class PlayerPassiveManager : MonoBehaviour
             totalMoveSpeedBonus += p.moveSpeedBonusPercent / 100f;
             totalLifestealBonus += p.lifestealBonusPercent / 100f;
             totalBurnBonus += p.burnBonusPercent / 100f;
+            totalDamageAmp += p.damageAmpPercent / 100f;
 
             string passiveKey = null;
             GameObject prefab = null;
@@ -86,6 +91,7 @@ public class PlayerPassiveManager : MonoBehaviour
             if (p.moveSpeedBonusPercent > 0f) { passiveKey = "Pride"; prefab = prideIconPrefab; }
             if (p.lifestealBonusPercent > 0f) { passiveKey = "Wrath"; prefab = wrathIconPrefab; }
             if (p.burnBonusPercent > 0f) { passiveKey = "Envy"; prefab = envyIconPrefab; }
+            if (p.damageAmpPercent > 0f) { passiveKey = "Sloth"; prefab = slothIconPrefab; }
 
             if (passiveKey != null && !obtainedPassives.Contains(passiveKey))
             {
@@ -127,4 +133,5 @@ public class PlayerPassiveManager : MonoBehaviour
     public float GetLifestealMultiplier() { return totalLifestealBonus; }
     public float GetBurnPercent() { return totalBurnBonus; }
     public GameObject GetBurnVfxPrefab() { return burnVfxPrefab; }
+    public float GetDamageAmp() { return totalDamageAmp; }
 }

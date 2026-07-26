@@ -225,12 +225,13 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5540909699514647857}
   - {fileID: 6740639488008973630}
   - {fileID: 4809863048111537298}
+  - {fileID: 2510810179629470359}
   - {fileID: 8493335603819886841}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -271,9 +272,11 @@ MonoBehaviour:
   healthCanvas: {fileID: 6933788589787540818}
   showHealthBar: 1
   basicAbilities:
-  - {fileID: 2317199913013889290}
+  - ability: {fileID: 2317199913013889290}
+    hpCost: 2
   skillAbilities:
-  - {fileID: 0}
+  - ability: {fileID: 2093131933869908032}
+    hpCost: 5
   passiveAbilities:
   - {fileID: 0}
   currentHealth: 20
@@ -460,6 +463,65 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &5009909872900805136
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2510810179629470359}
+  - component: {fileID: 4934053113859810471}
+  m_Layer: 0
+  m_Name: SlothPassive
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2510810179629470359
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5009909872900805136}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -8.881784e-16, w: 1}
+  m_LocalPosition: {x: 15.571425, y: -1.2857141, z: 13.571424}
+  m_LocalScale: {x: 1.1428573, y: 1.1428573, z: 1.1428573}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5350570908317252675}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4934053113859810471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5009909872900805136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d6a1343d1df9f9419cbde0f846f05a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: amp
+  type: 0
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 0
+  cooldown: 0
+  moveSpeedBonusPercent: 0
+  lifestealBonusPercent: 0
+  burnBonusPercent: 0
+  damageAmpPercent: 1
+  burnVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
+    type: 3}
 --- !u!1 &5041997941432950747
 GameObject:
   m_ObjectHideFlags: 0
@@ -854,7 +916,8 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 20
   cooldown: 2
-  minePrefab: {fileID: 0}
+  minePrefab: {fileID: 1455237202425575238, guid: 2de265022472a3e4b96294cae884560c,
+    type: 3}
   mineDuration: 10
   maxMines: 3
   blastRadius: 3

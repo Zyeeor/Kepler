@@ -126,14 +126,14 @@ public class AbilityCooldownUI : MonoBehaviour
         {
             if (currentEnemy.basicAbilities.Count > 0)
             {
-                enemyBasicAbility = currentEnemy.basicAbilities[0];
+                enemyBasicAbility = currentEnemy.basicAbilities[0].ability;
                 if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(true);
             }
             else { if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false); }
 
             if (currentEnemy.skillAbilities.Count > 0)
             {
-                enemySkillAbility = currentEnemy.skillAbilities[0];
+                enemySkillAbility = currentEnemy.skillAbilities[0].ability;
                 if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
             }
             else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }

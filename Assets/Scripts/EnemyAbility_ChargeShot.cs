@@ -83,6 +83,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
                 isCharging = true;
                 chargeTimer = 0f;
                 currentCooldown = 0f;
+                owner.PayAbilityHpCost(this);
 
                 if (chargeVfxPrefab != null)
                 {
