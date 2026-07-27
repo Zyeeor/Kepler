@@ -8,7 +8,6 @@ using System.Collections.Generic;
 /// </summary>
 public class WaveManager : MonoBehaviour
 {
-    public static WaveManager Instance { get; private set; }
 
     /// <summary>当前正在运行的波次索引。</summary>
     public int CurrentWaveIndex { get; private set; } = -1;
@@ -34,10 +33,7 @@ public class WaveManager : MonoBehaviour
     private readonly List<Enemy> spawnedEnemies = new List<Enemy>();
     private bool isRunning;
 
-    void Awake()
-    {
-        Instance = this;
-    }
+    void Awake() { }
 
     /// <summary>初始化波次管理器。</summary>
     public void Initialize(RoomTemplate template, RoomInstance room)
@@ -126,7 +122,26 @@ public class WaveManager : MonoBehaviour
             if (entry.enemyPrefab == null) continue;
             for (int j = 0; j < entry.count; j++)
             {
-                StartCoroutine(SpawnEnemyDelayed(entry.enemyPrefab, entry.delay + j * 0.3f, spawnPoints));
+                // Spawn immediately, delay is handled by Enemy's own setup
+                Vector3 pos;
+                if (spawnPoints != null && spawnPoints.Count > 0)
+                    pos = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Count)];
+                else
+                    pos = GetRandomSpawnPos();
+                if (currentTemplate != null)
+                    pos += currentTemplate.roomPosition;
+
+                var go = Instantiate(entry.enemyPrefab, pos, Quaternion.identity);
+                go.tag = "Enemy";
+                // Apply all unlocked upgrades to this new enemy
+                if (CardManager.Instance != null)
+                    CardManager.Instance.ApplyAllUnlocksTo(go);
+                var enemy = go.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    spawnedEnemies.Add(enemy);
+                    EnemiesAlive++;
+                }
             }
         }
     }
@@ -140,6 +155,10 @@ public class WaveManager : MonoBehaviour
             pos = points[UnityEngine.Random.Range(0, points.Count)];
         else
             pos = GetRandomSpawnPos();
+
+        // Apply room position offset
+        if (currentTemplate != null)
+            pos += currentTemplate.roomPosition;
 
         var go = Instantiate(prefab, pos, Quaternion.identity);
         go.tag = "Enemy";

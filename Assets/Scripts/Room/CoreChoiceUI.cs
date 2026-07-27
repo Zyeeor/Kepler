@@ -148,6 +148,9 @@ public class CoreChoiceUI : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
         Time.timeScale = 1f;
 
+        // Unlock next room
+        RoomManager.Instance?.OnCoreConfirmed();
+
         if (currentCore != null)
         {
             currentCore.OnChoicesConfirmed();

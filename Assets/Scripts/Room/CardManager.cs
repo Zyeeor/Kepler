@@ -83,6 +83,32 @@ public class CardManager : MonoBehaviour
     /// <summary>How many selects remain this session.</summary>
     public int SelectsRemaining => Mathf.Max(0, maxSelects - selectsUsed);
 
+    /// <summary>Apply all previously unlocked effects to a newly spawned GameObject.</summary>
+    public void ApplyAllUnlocksTo(GameObject go)
+    {
+        if (go == null || unlockedEffects.Count == 0) return;
+        var abilities = go.GetComponentsInChildren<EnemyAbility>(true);
+        int applied = 0;
+        foreach (var a in abilities)
+        {
+            if (a == null) continue;
+            foreach (var effectId in unlockedEffects)
+            {
+                CardData data = null;
+                foreach (var card in allCards)
+                    if (card != null && card.effectId == effectId) { data = card; break; }
+                if (data == null || data.abilityPrefab == null) continue;
+                if (a.abilityName == data.abilityPrefab.abilityName)
+                {
+                    UnlockOnAbility(a, effectId);
+                    applied++;
+                }
+            }
+        }
+        if (applied > 0)
+            Debug.Log($"[CardManager] ApplyAllUnlocksTo {go.name}: applied {applied} unlocks, unlockedEffects={unlockedEffects.Count}");
+    }
+
     /// <summary>Select a card by index (0-2). Unlocks its effect permanently this run.</summary>
     public void SelectCard(int index)
     {
@@ -107,10 +133,7 @@ public class CardManager : MonoBehaviour
             if (card != null && card.effectId == effectId) { data = card; break; }
         if (data == null || data.abilityPrefab == null) return;
 
-        // 1) Unlock on the prefab
-        UnlockOnAbility(data.abilityPrefab, effectId);
-
-        // 2) Unlock on all existing instances with matching abilityName
+        // Unlock on all existing instances NOW
         var allAbilities = FindObjectsOfType<EnemyAbility>(true);
         int count = 0;
         foreach (var a in allAbilities)
@@ -121,22 +144,23 @@ public class CardManager : MonoBehaviour
                 count++;
             }
         }
-        Debug.Log($"[CardManager] Unlock '{effectId}': prefab + {count} existing instances");
+        Debug.Log($"[CardManager] Unlock '{effectId}': {count} existing instances");
     }
 
     void UnlockOnAbility(EnemyAbility a, string effectId)
     {
-        if (a == null || a.upgrades == null) { a.upgrades = new List<EnemyAbility.UpgradeSlot>(); }
-        // Find existing slot or add new one
+        if (a.upgrades == null) a.upgrades = new List<EnemyAbility.UpgradeSlot>();
         foreach (var slot in a.upgrades)
         {
             if (slot != null && !string.IsNullOrEmpty(slot.effectId) && slot.effectId.Equals(effectId, System.StringComparison.OrdinalIgnoreCase))
             {
                 slot.unlocked = true;
+                Debug.Log($"[CardManager] UnlockOnAbility: set existing slot '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
                 return;
             }
         }
         a.upgrades.Add(new EnemyAbility.UpgradeSlot { effectId = effectId, unlocked = true });
+        Debug.Log($"[CardManager] UnlockOnAbility: added new slot '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
     }
 
     /// <summary>Check if an effect has been unlocked.</summary>

@@ -24,9 +24,6 @@ public class RoomLoader : MonoBehaviour
             return null;
         }
 
-        if (CurrentRoom != null)
-            UnloadCurrentRoom();
-
         if (template.roomPrefab == null)
         {
             Debug.LogError($"[RoomLoader] Room prefab is null for: {template.roomName}");
@@ -43,9 +40,13 @@ public class RoomLoader : MonoBehaviour
         var go = Instantiate(template.roomPrefab, template.roomPrefab.transform.position, template.roomPrefab.transform.rotation);
         go.name = $"Room_{template.roomName}_{CurrentContext.RoomInstanceId}";
 
-        CurrentRoom = go.GetComponent<RoomInstance>();
-        if (CurrentRoom == null)
-            CurrentRoom = go.AddComponent<RoomInstance>();
+        var room = go.GetComponent<RoomInstance>();
+        if (room == null)
+            room = go.AddComponent<RoomInstance>();
+
+        // Apply room offset
+        go.transform.position = template.roomPosition;
+        go.transform.rotation = Quaternion.Euler(template.roomRotation);
 
         // 放置物件（在 spawnRadius 内随机散布，避开 spawnClearRadius）
         Debug.Log($"[RoomLoader] Placing {template.placedObjects.Count} object entries");
@@ -65,25 +66,29 @@ public class RoomLoader : MonoBehaviour
                 var placed = Instantiate(obj.prefab, go.transform);
                 placed.transform.localPosition = pos;
                 placed.transform.localRotation = Quaternion.Euler(obj.rotation);
-                // Use prefab's own scale, don't override
             }
         }
 
-        CurrentRoom.context = CurrentContext;
-        CurrentRoom.Initialize(template, CurrentContext);
-
-        // Spawn Core if defined (world position, not parented so it doesn't get offset)
-        if (template.core.prefab != null)
+        CurrentContext = null; // reset for next room
+        room.context = new RoomRuntimeContext
         {
-            var coreGo = Instantiate(template.core.prefab, template.core.GetPosition(template.transform), template.core.GetRotation());
-            var coreComp = coreGo.GetComponent<RoomCore>();
-            if (coreComp == null) coreComp = coreGo.AddComponent<RoomCore>();
-            coreComp.interactRadius = template.core.interactRadius;
-        }
+            RoomInstanceId = Guid.NewGuid().ToString(),
+            State = RoomState.Loading,
+            TotalWaves = template.waves.Count
+        };
+        room.Initialize(template, room.context);
 
-        OnRoomLoaded?.Invoke(CurrentRoom);
+        // Add per-room flow controller + wave manager
+        var flow = go.GetComponent<RoomFlowController>();
+        if (flow == null) flow = go.AddComponent<RoomFlowController>();
+        flow.Initialize(template, room);
+        flow.StartRoom();
+
+        // Core spawn is deferred until all waves are cleared (see RoomFlowController)
+
+        OnRoomLoaded?.Invoke(room);
         Debug.Log($"[RoomLoader] Loaded room: {template.roomName}");
-        return CurrentRoom;
+        return room;
     }
 
     public void UnloadCurrentRoom()

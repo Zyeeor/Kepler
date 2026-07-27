@@ -1,10 +1,11 @@
 using UnityEngine;
 using System;
 
+/// <summary>
+/// Per-room flow controller. One instance per room (not a singleton).
+/// </summary>
 public class RoomFlowController : MonoBehaviour
 {
-    public static RoomFlowController Instance { get; private set; }
-
     public RoomState CurrentState { get; private set; } = RoomState.Loading;
 
     public event Action<RoomState, RoomState> OnRoomStateChanged;
@@ -13,10 +14,12 @@ public class RoomFlowController : MonoBehaviour
 
     private RoomTemplate currentTemplate;
     private RoomInstance currentRoom;
+    private WaveManager waveManager;
 
     void Awake()
     {
-        Instance = this;
+        waveManager = GetComponent<WaveManager>();
+        if (waveManager == null) waveManager = gameObject.AddComponent<WaveManager>();
     }
 
     public void Initialize(RoomTemplate template, RoomInstance room)
@@ -31,12 +34,9 @@ public class RoomFlowController : MonoBehaviour
         if (currentTemplate == null) return;
         ChangeState(RoomState.Combat);
 
-        if (WaveManager.Instance != null)
-        {
-            WaveManager.Instance.Initialize(currentTemplate, currentRoom);
-            WaveManager.Instance.OnAllWavesComplete += OnAllWavesCompleteHandler;
-            WaveManager.Instance.StartWaves();
-        }
+        waveManager.Initialize(currentTemplate, currentRoom);
+        waveManager.OnAllWavesComplete += OnAllWavesCompleteHandler;
+        waveManager.StartWaves();
     }
 
     public void CompleteRoom()
@@ -55,6 +55,19 @@ public class RoomFlowController : MonoBehaviour
     void OnAllWavesCompleteHandler()
     {
         ChangeState(RoomState.Cleared);
+        Debug.Log($"[RoomFlow] OnAllWavesComplete for room '{currentTemplate?.roomName}', spawning core? {currentTemplate?.core.prefab != null}");
+
+        if (currentTemplate != null && currentTemplate.core.prefab != null)
+        {
+            Vector3 coreWorldPos = currentTemplate.roomPosition + currentTemplate.core.GetPosition(currentTemplate.transform);
+            Quaternion coreWorldRot = Quaternion.Euler(currentTemplate.roomRotation) * currentTemplate.core.GetRotation();
+            var coreGo = Instantiate(currentTemplate.core.prefab, coreWorldPos, coreWorldRot);
+            var coreComp = coreGo.GetComponent<RoomCore>();
+            if (coreComp == null) coreComp = coreGo.AddComponent<RoomCore>();
+            coreComp.interactRadius = currentTemplate.core.interactRadius;
+            Debug.Log("[RoomFlow] Core spawned after all waves cleared");
+        }
+
         OnRoomCleared?.Invoke();
         StartExitPhase();
     }
@@ -71,7 +84,7 @@ public class RoomFlowController : MonoBehaviour
 
     void OnDestroy()
     {
-        if (WaveManager.Instance != null)
-            WaveManager.Instance.OnAllWavesComplete -= OnAllWavesCompleteHandler;
+        if (waveManager != null)
+            waveManager.OnAllWavesComplete -= OnAllWavesCompleteHandler;
     }
 }

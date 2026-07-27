@@ -52,6 +52,8 @@ public class ExitEntry
     public Vector3 position;
     [Tooltip("Rotation of the exit.")]
     public Vector3 rotation;
+    [Tooltip("Index of the RoomTemplate in RoomManager.roomTemplates to load when player passes through. -1 = no linked room.")]
+    public int leadsToRoomIndex = -1;
 }
 
 [Serializable]
@@ -81,6 +83,12 @@ public class RoomTemplate : MonoBehaviour
     [Header("Identity")]
     public string roomName = "New Room";
     public RoomType roomType = RoomType.Combat;
+
+    [Header("Room Position")]
+    [Tooltip("Overall room world position offset. All content (objects, spawns, core, exits) is shifted by this.")]
+    public Vector3 roomPosition;
+    [Tooltip("Overall room rotation offset.")]
+    public Vector3 roomRotation;
 
     [Header("Room Prefab")]
     [Tooltip("房间 Prefab（必须挂有 RoomInstance 组件）。")]
