@@ -46,6 +46,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 2
+  upgrades:
+  - effectId: Pride01
+    unlocked: 0
+  - effectId: Pride02
+    unlocked: 0
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -54,7 +59,7 @@ MonoBehaviour:
   vfxRotationOffset: {x: -170, y: 90, z: 0}
   damage: 10
   cooldown: 0.5
-  maxRange: 20
+  maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
   projectileWidth: 1.5
@@ -68,13 +73,15 @@ MonoBehaviour:
   projectileVfxPrefab: {fileID: 6111486948785554852, guid: f7967f33aeac15f48a3732e3fd3ac36c,
     type: 3}
   projectileVfxScale: 0.5
-  projectileVfxPositionOffset: {x: 0, y: 1, z: 1}
+  projectileVfxPositionOffset: {x: 0, y: 1.2, z: 1}
   projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
   explosionVfxPrefab: {fileID: 1035977224672214417, guid: 5a4d3bae36010574d8ca01fbeedee3ec,
     type: 3}
   explosionVfxDuration: 0.5
   explosionVfxPositionOffset: {x: 0, y: 0, z: 0}
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
+  pride01MaxRange: 20
+  pride02SpreadAngle: 20
 --- !u!1 &199426485261981135
 GameObject:
   m_ObjectHideFlags: 0
@@ -196,6 +203,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: slashdash
   type: 1
+  upgrades: []
   vfxPrefab: {fileID: 5761796857240755751, guid: 731c61ddc266e1647ae532c05e40e3bb,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -211,7 +219,7 @@ MonoBehaviour:
   targetMask:
     serializedVersion: 2
     m_Bits: 512
-  animTrigger: FlashSlash
+  animTrigger: Basic
   dashTrailPrefab: {fileID: 5434144139528540934, guid: 4299d5c66d4d613479536f298412d2e9,
     type: 3}
   dashTrailDuration: 0.5
@@ -270,6 +278,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Mv speed
   type: 0
+  upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
@@ -280,6 +289,7 @@ MonoBehaviour:
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0
+  damageAmpPercent: 0
   burnVfxPrefab: {fileID: 0}
 --- !u!1 &2165804896355096499
 GameObject:

@@ -1,0 +1,156 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+/// <summary>
+/// Manages upgrade cards. Stores a list of all possible cards, picks 3 random ones
+/// when CoreChoiceUI triggers, and permanently unlocks the chosen effect.
+/// </summary>
+public class CardManager : MonoBehaviour
+{
+    public static CardManager Instance { get; private set; }
+
+    [Header("Card Pool")]
+    [Tooltip("All possible upgrade cards. N are randomly picked each time.")]
+    public List<CardData> allCards = new List<CardData>();
+
+    [Header("Reroll Limit")]
+    [Tooltip("Maximum total rerolls allowed across all cards per CoreChoiceUI session.")]
+    public int maxRerolls = 3;
+
+    [Header("Select Limit")]
+    [Tooltip("Maximum cards that can be selected (confirmed) per CoreChoiceUI session.")]
+    public int maxSelects = 1;
+
+    [Header("Current Picks (read-only)")]
+    public CardData[] currentPicks = new CardData[3];
+
+    // Track which effects have been permanently unlocked this run
+    private HashSet<string> unlockedEffects = new HashSet<string>();
+    private int rerollsUsed;
+    private int selectsUsed;
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    /// <summary>Pick N random cards from the pool (no duplicates, excluding already-unlocked effects).</summary>
+    public void DrawCards(int count = 3)
+    {
+        rerollsUsed = 0;
+        selectsUsed = 0;
+        var available = new List<CardData>();
+        foreach (var card in allCards)
+        {
+            if (card != null && !string.IsNullOrEmpty(card.effectId) && !unlockedEffects.Contains(card.effectId))
+                available.Add(card);
+        }
+
+        Shuffle(available);
+        currentPicks = new CardData[count];
+        for (int i = 0; i < count; i++)
+        {
+            if (i < available.Count)
+                currentPicks[i] = available[i];
+            else
+                currentPicks[i] = null;
+        }
+    }
+
+    /// <summary>Draw one random card from the remaining pool (excludes current picks and unlocked effects). Returns null if no rerolls left or no cards available.</summary>
+    public CardData DrawOneReroll()
+    {
+        if (rerollsUsed >= maxRerolls) return null;
+        rerollsUsed++;
+
+        var available = new List<CardData>();
+        foreach (var card in allCards)
+        {
+            if (card == null || string.IsNullOrEmpty(card.effectId)) continue;
+            if (unlockedEffects.Contains(card.effectId)) continue;
+            bool alreadyShown = false;
+            if (currentPicks != null)
+                foreach (var p in currentPicks)
+                    if (p != null && p.effectId == card.effectId) { alreadyShown = true; break; }
+            if (!alreadyShown) available.Add(card);
+        }
+        if (available.Count == 0) return null;
+        return available[UnityEngine.Random.Range(0, available.Count)];
+    }
+
+    /// <summary>How many rerolls remain this session.</summary>
+    public int RerollsRemaining => Mathf.Max(0, maxRerolls - rerollsUsed);
+    /// <summary>How many selects remain this session.</summary>
+    public int SelectsRemaining => Mathf.Max(0, maxSelects - selectsUsed);
+
+    /// <summary>Select a card by index (0-2). Unlocks its effect permanently this run.</summary>
+    public void SelectCard(int index)
+    {
+        if (selectsUsed >= maxSelects) return;
+        if (index < 0 || index >= currentPicks.Length) return;
+        var card = currentPicks[index];
+        if (card == null) return;
+
+        selectsUsed++;
+
+        Debug.Log($"[CardManager] Selected: {card.cardName} (effectId={card.effectId})");
+        UnlockEffect(card.effectId);
+    }
+
+    void UnlockEffect(string effectId)
+    {
+        if (string.IsNullOrEmpty(effectId) || unlockedEffects.Contains(effectId)) return;
+        unlockedEffects.Add(effectId);
+
+        CardData data = null;
+        foreach (var card in allCards)
+            if (card != null && card.effectId == effectId) { data = card; break; }
+        if (data == null || data.abilityPrefab == null) return;
+
+        // 1) Unlock on the prefab
+        UnlockOnAbility(data.abilityPrefab, effectId);
+
+        // 2) Unlock on all existing instances with matching abilityName
+        var allAbilities = FindObjectsOfType<EnemyAbility>(true);
+        int count = 0;
+        foreach (var a in allAbilities)
+        {
+            if (a != null && a.abilityName == data.abilityPrefab.abilityName)
+            {
+                UnlockOnAbility(a, effectId);
+                count++;
+            }
+        }
+        Debug.Log($"[CardManager] Unlock '{effectId}': prefab + {count} existing instances");
+    }
+
+    void UnlockOnAbility(EnemyAbility a, string effectId)
+    {
+        if (a == null || a.upgrades == null) { a.upgrades = new List<EnemyAbility.UpgradeSlot>(); }
+        // Find existing slot or add new one
+        foreach (var slot in a.upgrades)
+        {
+            if (slot != null && !string.IsNullOrEmpty(slot.effectId) && slot.effectId.Equals(effectId, System.StringComparison.OrdinalIgnoreCase))
+            {
+                slot.unlocked = true;
+                return;
+            }
+        }
+        a.upgrades.Add(new EnemyAbility.UpgradeSlot { effectId = effectId, unlocked = true });
+    }
+
+    /// <summary>Check if an effect has been unlocked.</summary>
+    public bool IsEffectUnlocked(string effectId)
+    {
+        return !string.IsNullOrEmpty(effectId) && unlockedEffects.Contains(effectId);
+    }
+
+    void Shuffle<T>(List<T> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+        }
+    }
+}

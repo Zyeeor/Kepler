@@ -22,7 +22,12 @@ public class RoomCore : MonoBehaviour
 
     void Update()
     {
-        if (uiShown || playerTransform == null) return;
+        if (uiShown) return;
+        if (playerTransform == null)
+        {
+            playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+            if (playerTransform == null) return;
+        }
 
         float dist = Vector3.Distance(transform.position, playerTransform.position);
         if (dist <= interactRadius)
@@ -35,6 +40,7 @@ public class RoomCore : MonoBehaviour
     {
         uiShown = true;
         var ui = CoreChoiceUI.Instance;
+        Debug.Log($"[RoomCore] ShowChoiceUI: CoreChoiceUI.Instance={(ui != null ? "found" : "NULL")}, player dist={Vector3.Distance(transform.position, playerTransform.position)}");
         if (ui != null)
         {
             ui.Show(this);

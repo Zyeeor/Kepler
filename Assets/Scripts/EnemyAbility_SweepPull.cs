@@ -1,14 +1,16 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
-/// Skill: 横扫链勾 - Sweep Pull. Fires a hook projectile forward. On hit, spawns hit VFX,
-/// then pulls the target back to the owner with a return trail VFX.
+/// Skill: 横扫链勾 - Sweep Pull. Fires a hook projectile forward.
+/// Upgrade Wrath01: dash toward hook direction on release.
+/// Upgrade Wrath02: hook hits all enemies in range, VFX scales up.
 /// </summary>
 public class EnemyAbility_SweepPull : EnemyAbility
 {
     [Header("Hook Projectile")]
-    public GameObject hookPrefab;           // prefab with HookProjectile component + VFX + Collider
+    public GameObject hookPrefab;
     public float hookSpeed = 25f;
     public float hookMaxRange = 8f;
 
@@ -17,7 +19,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
     public float hitVfxDuration = 0.5f;
 
     [Header("Return VFX")]
-    public GameObject returnVfxPrefab;      // VFX that follows the target back during pull (chain trail)
+    public GameObject returnVfxPrefab;
     public float returnVfxDuration = 2f;
 
     [Header("Pull")]
@@ -28,16 +30,26 @@ public class EnemyAbility_SweepPull : EnemyAbility
     public float damageMultiplier = 1.5f;
 
     [Header("Targeting")]
-    [Tooltip("Who gets hit when AI-controlled. When possessed, always hits everything.")]
     public LayerMask targetMask = -1;
 
     [Header("Animation")]
     public string animTrigger = "SweepPull";
 
-    // Set by HookProjectile callback
+    [Header("Upgrade - Wrath01")]
+    [Tooltip("Wrath01: dash toward hook direction after firing.")]
+    public float wrath01DashSpeed = 30f;
+    [Tooltip("Wrath01: max dash distance.")]
+    public float wrath01DashMaxDist = 8f;
+
+    [Header("Upgrade - Wrath02")]
+    [Tooltip("Wrath02: hook hits all enemies in range instead of just one.")]
+    public float wrath02HookScale = 2f;
+
+    // State
     private Transform pullTarget;
     private bool isPullingPlayer;
     private bool hookHit;
+    private List<Transform> multiTargets = new List<Transform>();
 
     private void OnEnable()
     {
@@ -48,8 +60,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
 
     public override bool CanTrigger()
     {
-        if (owner.isPossessed)
-            return base.CanTrigger();
+        if (owner.isPossessed) return base.CanTrigger();
         return base.CanTrigger() && owner != null && owner.targetPlayer != null;
     }
 
@@ -62,21 +73,28 @@ public class EnemyAbility_SweepPull : EnemyAbility
         hookHit = false;
         pullTarget = null;
         isPullingPlayer = false;
+        multiTargets.Clear();
         StartCoroutine(SweepPullRoutine());
     }
 
     IEnumerator SweepPullRoutine()
     {
-        // 1) Fire hook projectile forward
         Vector3 origin = owner.transform.position;
         Vector3 forward = owner.transform.forward;
 
+        // Wrath01: dash toward hook direction
+        if (IsUpgradeUnlocked("Wrath01"))
+            StartCoroutine(DashForward(forward));
+
+        // Fire hook
+        bool wrath02 = IsUpgradeUnlocked("Wrath02");
         GameObject hookObj = null;
         HookProjectile hookProj = null;
 
         if (hookPrefab != null)
         {
             hookObj = Instantiate(hookPrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
+            if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
             hookProj = hookObj.GetComponent<HookProjectile>();
             if (hookProj != null)
             {
@@ -92,10 +110,10 @@ public class EnemyAbility_SweepPull : EnemyAbility
         }
         else
         {
-            // No prefab — create a simple invisible projectile
             hookObj = new GameObject("HookProj");
             hookObj.transform.position = origin;
             hookObj.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+            if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
             hookProj = hookObj.AddComponent<HookProjectile>();
             hookProj.speed = hookSpeed;
             hookProj.maxLifetime = hookMaxRange / hookSpeed;
@@ -106,7 +124,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
             hookProj.hitMask = owner.isPossessed ? ~0 : targetMask;
         }
 
-        // 2) Wait for hook to hit or miss
+        // Wait for hook to hit or miss
         float timeout = hookMaxRange / hookSpeed + 0.5f;
         float elapsed = 0f;
         while (!hookHit && elapsed < timeout)
@@ -115,45 +133,76 @@ public class EnemyAbility_SweepPull : EnemyAbility
             yield return null;
         }
 
-        // 3) If hook hit something, pull it
-        if (hookHit && pullTarget != null)
+        // Pull logic
+        if (hookHit)
         {
-            // Damage target
-            if (isPullingPlayer)
+            if (wrath02 && multiTargets.Count > 0)
             {
-                var ph = pullTarget.GetComponent<PlayerHealth>();
-                if (ph != null) DealDamageToPlayer(ph, damage);
+                // Pull all hit targets
+                foreach (var t in multiTargets)
+                {
+                    if (t == null) continue;
+                    DamageTarget(t);
+                    SpawnReturnVfx(t);
+                    StartCoroutine(PullTarget(t));
+                }
             }
-            else
+            else if (pullTarget != null)
             {
-                var enemy = pullTarget.GetComponent<Enemy>();
-                if (enemy != null) DealDamageTo(enemy, damage * damageMultiplier);
+                DamageTarget(pullTarget);
+                SpawnReturnVfx(pullTarget);
+                yield return StartCoroutine(PullTarget(pullTarget));
             }
-
-            // Return trail VFX (spawns on target, oriented toward owner)
-            GameObject returnVfx = null;
-            if (returnVfxPrefab != null)
-            {
-                Vector3 toOwner = (owner.transform.position - pullTarget.position).normalized;
-                Quaternion rot = toOwner.sqrMagnitude > 0.01f ? Quaternion.LookRotation(toOwner, Vector3.up) : Quaternion.identity;
-                returnVfx = Instantiate(returnVfxPrefab, pullTarget.position, rot, pullTarget);
-                PlayVfx(returnVfx);
-            }
-
-            // Pull target
-            yield return StartCoroutine(PullTarget(pullTarget));
-
-            if (returnVfx != null)
-                Destroy(returnVfx, returnVfxDuration);
         }
 
-        // 4) Reset state for next use
         hookHit = false;
         pullTarget = null;
         isPullingPlayer = false;
+        multiTargets.Clear();
     }
 
-    /// <summary>Called by HookProjectile when it hits a valid target.</summary>
+    void DamageTarget(Transform target)
+    {
+        if (target == null) return;
+        if (isPullingPlayer || target.CompareTag("Player"))
+        {
+            var ph = target.GetComponent<PlayerHealth>();
+            if (ph != null) DealDamageToPlayer(ph, damage);
+        }
+        else
+        {
+            var enemy = target.GetComponent<Enemy>();
+            if (enemy != null) DealDamageTo(enemy, damage * damageMultiplier);
+        }
+    }
+
+    void SpawnReturnVfx(Transform target)
+    {
+        if (returnVfxPrefab == null || target == null || owner == null) return;
+        Vector3 toOwner = (owner.transform.position - target.position).normalized;
+        Quaternion rot = toOwner.sqrMagnitude > 0.01f ? Quaternion.LookRotation(toOwner, Vector3.up) : Quaternion.identity;
+        var vfx = Instantiate(returnVfxPrefab, target.position, rot, target);
+        PlayVfx(vfx);
+        Destroy(vfx, returnVfxDuration);
+    }
+
+    IEnumerator DashForward(Vector3 forward)
+    {
+        if (owner == null) yield break;
+        var rb = owner.GetComponent<Rigidbody>();
+        float dist = 0f;
+        while (dist < wrath01DashMaxDist && owner != null)
+        {
+            float step = wrath01DashSpeed * Time.deltaTime;
+            dist += step;
+            Vector3 targetPos = owner.transform.position + forward * step;
+            targetPos.y = owner.transform.position.y;
+            if (rb != null) rb.MovePosition(targetPos);
+            else owner.transform.position = targetPos;
+            yield return null;
+        }
+    }
+
     public void OnHookHitTarget(Transform target, bool isPlayer)
     {
         hookHit = true;
@@ -161,7 +210,16 @@ public class EnemyAbility_SweepPull : EnemyAbility
         isPullingPlayer = isPlayer;
     }
 
-    /// <summary>Called by HookProjectile when it times out without hitting anything.</summary>
+    /// <summary>Called by HookProjectile when hitting a target (Wrath02: multiple).</summary>
+    public void OnHookHitMultiTarget(Transform target, bool isPlayer)
+    {
+        hookHit = true;
+        if (target != null && !multiTargets.Contains(target))
+            multiTargets.Add(target);
+        if (pullTarget == null) pullTarget = target;
+        isPullingPlayer = isPlayer || target.CompareTag("Player");
+    }
+
     public void OnHookMissed()
     {
         hookHit = false;
@@ -181,7 +239,6 @@ public class EnemyAbility_SweepPull : EnemyAbility
             Vector3 ownerPos = owner.transform.position;
             float dist = Vector3.Distance(target.position, ownerPos);
             if (dist <= pullStopDistance) break;
-
             target.position = Vector3.MoveTowards(target.position, ownerPos, pullSpeed * Time.deltaTime);
             yield return null;
         }

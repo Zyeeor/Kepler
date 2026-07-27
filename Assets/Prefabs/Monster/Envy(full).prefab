@@ -502,6 +502,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 2
+  upgrades: []
   vfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -722,6 +723,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 1
+  upgrades:
+  - effectId: Envy01
+    unlocked: 0
+  - effectId: Envy02
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 1568167200115282398}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
@@ -732,6 +738,10 @@ MonoBehaviour:
   maxRange: 7
   damagePerTick: 0.5
   tickInterval: 0.05
+  envy01DamageRampPerSec: 0
+  envy01DamageRampMax: 10
+  envy01MaxChargeTime: 10
+  envy02SecondBeamDamageMult: 0.6
   beamPrefab: {fileID: 2540417558773106788, guid: 3fdd30d0b52b3864e92fe3606bf66eff,
     type: 3}
   beamMaterial: {fileID: 0}
@@ -1260,6 +1270,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: burn
   type: 0
+  upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
@@ -1270,6 +1281,7 @@ MonoBehaviour:
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 0
   burnBonusPercent: 1
+  damageAmpPercent: 0
   burnVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
     type: 3}
 --- !u!1 &7459993465612101140

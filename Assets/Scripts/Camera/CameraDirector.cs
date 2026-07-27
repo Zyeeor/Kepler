@@ -32,6 +32,18 @@ public class CameraDirector : MonoBehaviour
     [Tooltip("How smoothly the camera tracks the target. Larger = heavier/slower.")]
     [SerializeField] private float followDamping = 1f;
 
+    [Header("Start Animation")]
+    [Tooltip("Enable a zoom-in then zoom-out animation on game start.")]
+    [SerializeField] private bool playStartAnimation = true;
+    [Tooltip("Starting distance multiplier (zoomed in).")]
+    [SerializeField] private float startZoomInMult = 0.3f;
+    [Tooltip("Peak distance multiplier (zoomed out after zoom in).")]
+    [SerializeField] private float startZoomOutMult = 1.2f;
+    [Tooltip("Duration of the entire start animation.")]
+    [SerializeField] private float startAnimDuration = 2f;
+    [Tooltip("Animation curve: 0=start, 1=end. X axis is normalized time.")]
+    [SerializeField] private AnimationCurve startAnimCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     [Header("Hit Stop (顿帧)")]
     [Tooltip("Time scale used during a hit-stop. 0 = full freeze.")]
     [Range(0f, 1f)]
@@ -72,6 +84,33 @@ public class CameraDirector : MonoBehaviour
         }
         ApplyFraming();
         ApplyTarget();
+
+        if (playStartAnimation)
+            StartCoroutine(StartAnimationRoutine());
+    }
+
+    IEnumerator StartAnimationRoutine()
+    {
+        float baseDistance = followDistance;
+        float elapsed = 0f;
+
+        while (elapsed < startAnimDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / startAnimDuration);
+            float curveVal = startAnimCurve.Evaluate(t);
+
+            // Zoom in at start (low distance), then zoom out (higher distance)
+            float distMult = Mathf.Lerp(startZoomInMult, startZoomOutMult, curveVal);
+            followDistance = baseDistance * distMult;
+            ApplyFraming();
+
+            yield return null;
+        }
+
+        // Restore original distance
+        followDistance = baseDistance;
+        ApplyFraming();
     }
 
     void OnValidate()

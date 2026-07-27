@@ -4,8 +4,8 @@ using TMPro;
 
 /// <summary>
 /// Horizontal 3-option choice UI for Room Core interaction.
-/// Each option has a "Confirm" button and a "Reroll" (refresh) button.
-/// Player can reroll each option once. Confirm all to close and resume.
+/// Uses a single card prefab instantiated 3 times into a HorizontalLayoutGroup parent.
+/// Each card has confirm / reroll buttons, text, image, and status marks.
 /// </summary>
 public class CoreChoiceUI : MonoBehaviour
 {
@@ -14,31 +14,15 @@ public class CoreChoiceUI : MonoBehaviour
     [Header("UI Root")]
     public GameObject panelRoot;
 
-    [Header("Choice Cards (root GameObjects with ChoiceCard component)")]
-    public ChoiceCard card1;
-    public ChoiceCard card2;
-    public ChoiceCard card3;
+    [Header("Card Template")]
+    [Tooltip("A prefab with ChoiceCard + Text + Image + Confirm/Reroll buttons + marks. Instantiated N times.")]
+    public GameObject cardPrefab;
+    [Tooltip("How many cards to show each time.")]
+    public int cardCount = 3;
 
-    [Header("Option 1")]
-    public TextMeshProUGUI option1Text;
-    public Button option1Confirm;
-    public Button option1Reroll;
-    public GameObject option1ConfirmedMark;
-    public GameObject option1RerolledMark;
-
-    [Header("Option 2")]
-    public TextMeshProUGUI option2Text;
-    public Button option2Confirm;
-    public Button option2Reroll;
-    public GameObject option2ConfirmedMark;
-    public GameObject option2RerolledMark;
-
-    [Header("Option 3")]
-    public TextMeshProUGUI option3Text;
-    public Button option3Confirm;
-    public Button option3Reroll;
-    public GameObject option3ConfirmedMark;
-    public GameObject option3RerolledMark;
+    [Header("Card Parent")]
+    [Tooltip("Parent transform with HorizontalLayoutGroup where cards are spawned.")]
+    public RectTransform cardParent;
 
     [Header("Global")]
     public Button confirmAllButton;
@@ -46,114 +30,120 @@ public class CoreChoiceUI : MonoBehaviour
 
     // State
     private RoomCore currentCore;
-    private bool[] confirmed = new bool[3];
-    private bool[] rerolled = new bool[3];
-    private string[] currentOptions = new string[3] { "Option A", "Option B", "Option C" };
+    private CoreChoiceCard[] cards;
 
     void Awake()
     {
         Instance = this;
         if (panelRoot != null) panelRoot.SetActive(false);
-
-        // Option 1
-        option1Confirm?.onClick.AddListener(() => ConfirmOption(0));
-        option1Reroll?.onClick.AddListener(() => RerollOption(0));
-
-        // Option 2
-        option2Confirm?.onClick.AddListener(() => ConfirmOption(1));
-        option2Reroll?.onClick.AddListener(() => RerollOption(1));
-
-        // Option 3
-        option3Confirm?.onClick.AddListener(() => ConfirmOption(2));
-        option3Reroll?.onClick.AddListener(() => RerollOption(2));
-
-        // Confirm all
         confirmAllButton?.onClick.AddListener(OnConfirmAll);
-        if (confirmAllButton != null) confirmAllButton.interactable = false;
+        if (confirmAllButton != null) confirmAllButton.interactable = true;
     }
 
     public void Show(RoomCore core)
     {
         currentCore = core;
-        for (int i = 0; i < 3; i++) { confirmed[i] = false; rerolled[i] = false; }
 
-        // TODO: Replace with real option generation logic
-        currentOptions[0] = "Option A";
-        currentOptions[1] = "Option B";
-        currentOptions[2] = "Option C";
+        // Clear old cards
+        if (cardParent != null)
+        {
+            for (int i = cardParent.childCount - 1; i >= 0; i--)
+                Destroy(cardParent.GetChild(i).gameObject);
+        }
 
-        RefreshUI();
+        // Draw random cards from CardManager
+        cards = new CoreChoiceCard[cardCount];
+        string[] cardNames = new string[cardCount];
+        string[] cardDescriptions = new string[cardCount];
+        Sprite[] cardSprites = new Sprite[cardCount];
+        for (int i = 0; i < cardCount; i++) cardNames[i] = "Option " + (char)('A' + i);
+
+        if (CardManager.Instance != null)
+        {
+            CardManager.Instance.DrawCards(cardCount);
+            var picks = CardManager.Instance.currentPicks;
+            for (int i = 0; i < cardCount; i++)
+            {
+                if (i < picks.Length && picks[i] != null)
+                {
+                    cardNames[i] = picks[i].cardName;
+                    cardDescriptions[i] = picks[i].description ?? "";
+                    cardSprites[i] = picks[i].image;
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[CoreChoiceUI] CardManager.Instance is null — no cards will be shown. Add CardManager to the scene.");
+        }
+
+        // Instantiate cards
+        for (int i = 0; i < cardCount; i++)
+        {
+            var go = cardPrefab != null ? Instantiate(cardPrefab, cardParent) : null;
+            if (go == null) continue;
+
+            var card = go.GetComponent<CoreChoiceCard>();
+            if (card == null) card = go.AddComponent<CoreChoiceCard>();
+            card.Init(i, cardNames[i], cardSprites[i], cardDescriptions[i], OnCardConfirm, OnCardReroll);
+            cards[i] = card;
+        }
+
+        Debug.Log($"[CoreChoiceUI] Show called: panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
         if (panelRoot != null) panelRoot.SetActive(true);
-        // Re-bind in case Inspector OnClick overrides code binding
+        else Debug.LogError("[CoreChoiceUI] panelRoot is NULL — drag the UI Panel into this field!");
+
+        // Re-bind confirm all
         if (confirmAllButton != null)
         {
             confirmAllButton.onClick.RemoveAllListeners();
             confirmAllButton.onClick.AddListener(OnConfirmAll);
+            confirmAllButton.interactable = true;
         }
 
-        // Pause game while choosing
         Time.timeScale = 0f;
     }
 
-    void RefreshUI()
+    private int selectedIndex = -1; // currently selected card, -1 = none
+
+    void OnCardConfirm(int index)
     {
-        if (option1Text != null) option1Text.text = currentOptions[0];
-        if (option2Text != null) option2Text.text = currentOptions[1];
-        if (option3Text != null) option3Text.text = currentOptions[2];
+        if (cards == null || index < 0 || index >= cards.Length) return;
+        if (cards[index] == null) return;
 
-        UpdateOptionButtons(0, option1Confirm, option1Reroll, option1ConfirmedMark, option1RerolledMark);
-        UpdateOptionButtons(1, option2Confirm, option2Reroll, option2ConfirmedMark, option2RerolledMark);
-        UpdateOptionButtons(2, option3Confirm, option3Reroll, option3ConfirmedMark, option3RerolledMark);
-
-        // Confirm all is always interactable (skip confirm/reroll check)
-        if (confirmAllButton != null) confirmAllButton.interactable = true;
+        // Deselect previous, select new
+        if (selectedIndex >= 0 && selectedIndex < cards.Length && cards[selectedIndex] != null)
+            cards[selectedIndex].SetSelected(false);
+        cards[index].SetSelected(true);
+        selectedIndex = index;
     }
 
-    void UpdateOptionButtons(int idx, Button confirmBtn, Button rerollBtn, GameObject confirmMark, GameObject rerollMark)
+    void OnCardReroll(int index)
     {
-        if (confirmed[idx])
-        {
-            if (confirmBtn != null) confirmBtn.interactable = false;
-            if (rerollBtn != null) rerollBtn.interactable = false;
-            if (confirmMark != null) confirmMark.SetActive(true);
-            if (rerollMark != null) rerollMark.SetActive(false);
-        }
-        else if (rerolled[idx])
-        {
-            if (confirmBtn != null) confirmBtn.interactable = false;
-            if (rerollBtn != null) rerollBtn.interactable = false;
-            if (confirmMark != null) confirmMark.SetActive(false);
-            if (rerollMark != null) rerollMark.SetActive(true);
-        }
-        else
-        {
-            if (confirmBtn != null) confirmBtn.interactable = true;
-            if (rerollBtn != null) rerollBtn.interactable = !rerolled[idx];
-            if (confirmMark != null) confirmMark.SetActive(false);
-            if (rerollMark != null) rerollMark.SetActive(false);
-        }
-    }
+        if (CardManager.Instance == null || cards == null || index < 0 || index >= cards.Length) return;
+        if (cards[index] == null) return;
 
-    void ConfirmOption(int idx)
-    {
-        if (confirmed[idx] || rerolled[idx]) return;
-        confirmed[idx] = true;
-        RefreshUI();
-    }
-
-    void RerollOption(int idx)
-    {
-        if (confirmed[idx] || rerolled[idx]) return;
-        rerolled[idx] = true;
-        // TODO: Generate a new random option for this slot
-        currentOptions[idx] = "Rerolled " + (char)('A' + idx);
-        RefreshUI();
+        var newCard = CardManager.Instance.DrawOneReroll();
+        if (newCard != null)
+        {
+            Sprite sprite = null;
+            if (newCard.image != null) sprite = newCard.image;
+            cards[index].Replace(newCard.cardName, sprite, newCard.description ?? "");
+            CardManager.Instance.currentPicks[index] = newCard;
+            // If rerolled the selected card, deselect
+            if (selectedIndex == index) selectedIndex = -1;
+        }
     }
 
     void OnConfirmAll()
     {
-        Debug.Log("[CoreChoiceUI] Confirm All clicked");
-        // TODO: Apply chosen effects based on confirmed options
+        Debug.Log("[CoreChoiceUI] Continue clicked");
+
+        // Unlock the selected card (if any)
+        if (CardManager.Instance != null && selectedIndex >= 0 && selectedIndex < (cards?.Length ?? 0))
+        {
+            CardManager.Instance.SelectCard(selectedIndex);
+        }
 
         if (panelRoot != null) panelRoot.SetActive(false);
         Time.timeScale = 1f;

@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections.Generic;
+using System;
 
 /// <summary>
 /// Base class for all enemy abilities (passive / basic attack / skill).
@@ -8,9 +10,32 @@ public abstract class EnemyAbility : MonoBehaviour
 {
     public enum AbilityType { Passive, BasicAttack, Skill }
 
+    [Serializable]
+    public class UpgradeSlot
+    {
+        [Tooltip("Unique effect ID matching a CardData.effectId.")]
+        public string effectId;
+        [Tooltip("Is this upgrade permanently unlocked for the current run? Set by CardManager.")]
+        public bool unlocked;
+    }
+
     [Header("Identity")]
     public string abilityName = "Ability";
     public AbilityType type = AbilityType.Passive;
+
+    [Header("Upgrades")]
+    [Tooltip("Each upgrade slot: effectId + unlocked checkbox. Set by CardManager.")]
+    public List<UpgradeSlot> upgrades = new List<UpgradeSlot>();
+
+    /// <summary>Check if a specific upgrade is unlocked (case-insensitive).</summary>
+    public bool IsUpgradeUnlocked(string id)
+    {
+        if (string.IsNullOrEmpty(id) || upgrades == null) return false;
+        foreach (var u in upgrades)
+            if (u != null && !string.IsNullOrEmpty(u.effectId) && u.effectId.Equals(id, StringComparison.OrdinalIgnoreCase) && u.unlocked)
+                return true;
+        return false;
+    }
 
     [Header("VFX")]
     public GameObject vfxPrefab;       // VFX prefab spawned when the ability triggers

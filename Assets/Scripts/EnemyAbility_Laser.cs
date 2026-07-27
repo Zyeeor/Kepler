@@ -11,6 +11,18 @@ public class EnemyAbility_Laser : EnemyAbility
     public float damagePerTick = 10f;
     public float tickInterval = 0.25f;
 
+    [Header("Upgrade - Envy01")]
+    [Tooltip("Envy01: extra damage added per tick per second of continuous fire.")]
+    public float envy01DamageRampPerSec = 5f;
+    [Tooltip("Envy01: max extra damage from ramp.")]
+    public float envy01DamageRampMax = 50f;
+    [Tooltip("Envy01: time (seconds) to reach max ramp damage.")]
+    public float envy01MaxChargeTime = 10f;
+
+    [Header("Upgrade - Envy02")]
+    [Tooltip("Envy02: fire a second laser at the second-nearest enemy.")]
+    public float envy02SecondBeamDamageMult = 0.6f;
+
     [Header("Beam VFX")]
     [Tooltip("VFX prefab spawned each tick, oriented from owner to target.")]
     public GameObject beamPrefab;
@@ -25,6 +37,7 @@ public class EnemyAbility_Laser : EnemyAbility
     private bool isFiring;
     private Enemy currentTarget;
     private float damageTimer;
+    private float fireDuration; // how long laser has been continuously firing
     private GameObject hitVfx;
 
     private void OnEnable()
@@ -46,7 +59,7 @@ public class EnemyAbility_Laser : EnemyAbility
 
         if (wantFire && CanTrigger())
         {
-            if (!isFiring) { isFiring = true; damageTimer = 0f; currentCooldown = 0f; owner.PayAbilityHpCost(this); }
+            if (!isFiring) { isFiring = true; damageTimer = 0f; fireDuration = 0f; currentCooldown = 0f; owner.PayAbilityHpCost(this); }
             UpdateLaser();
         }
         else if (isFiring)
@@ -64,67 +77,112 @@ public class EnemyAbility_Laser : EnemyAbility
     void UpdateLaser()
     {
         Vector3 origin = owner.transform.position + Vector3.up * 1f;
-        Vector3 targetPos;
 
         if (owner.isPossessed)
         {
-            currentTarget = FindNearestEnemy(origin);
-            if (currentTarget == null || currentTarget.isDowned) { StopLaser(); return; }
-            targetPos = currentTarget.transform.position + Vector3.up * 1f;
+            // Primary target = nearest enemy
+            var primary = FindNearestEnemy(origin);
+            if (primary == null || primary.isDowned) { StopLaser(); return; }
+
+            damageTimer += Time.deltaTime;
+            fireDuration += Time.deltaTime;
+            if (damageTimer >= tickInterval)
+            {
+                float tickDamage = GetTickDamage();
+                FireBeamAt(origin, primary.transform.position + Vector3.up * 1f, tickDamage, primary);
+
+                // Envy02: second beam at second-nearest enemy
+                if (IsUpgradeUnlocked("Envy02"))
+                {
+                    var second = FindSecondNearestEnemy(origin, primary);
+                    if (second != null && !second.isDowned)
+                        FireBeamAt(origin, second.transform.position + Vector3.up * 1f, tickDamage * envy02SecondBeamDamageMult, second);
+                }
+
+                damageTimer -= tickInterval;
+            }
         }
         else
         {
             if (owner.targetPlayer == null || Vector3.Distance(origin, owner.targetPlayer.position) > maxRange)
             { StopLaser(); return; }
-            currentTarget = null;
-            targetPos = owner.targetPlayer.position + Vector3.up * 1f;
+
+            Vector3 targetPos = owner.targetPlayer.position + Vector3.up * 1f;
+            damageTimer += Time.deltaTime;
+            fireDuration += Time.deltaTime;
+            if (damageTimer >= tickInterval)
+            {
+                float tickDamage = GetTickDamage();
+                FireBeamAt(origin, targetPos, tickDamage, null);
+                damageTimer -= tickInterval;
+            }
         }
 
-        damageTimer += Time.deltaTime;
-        if (damageTimer >= tickInterval)
+        // Hit VFX follows primary target
+        if (hitImpactPrefab != null)
         {
-            // Spawn beam VFX from origin to target
-            Vector3 dir = targetPos - origin;
-            Vector3 pos = origin + beamPositionOffset;
-            Quaternion rot = (dir.sqrMagnitude > 0.01f
-                ? Quaternion.LookRotation(dir.normalized, Vector3.up)
-                : Quaternion.identity) * Quaternion.Euler(beamRotationOffset);
+            Vector3 hitPos = currentTarget != null ? currentTarget.transform.position + Vector3.up * 1f : (owner.targetPlayer != null ? owner.targetPlayer.position + Vector3.up * 1f : origin);
+            if (hitVfx == null) { hitVfx = Instantiate(hitImpactPrefab, hitPos, Quaternion.identity); PlayVfx(hitVfx); }
+            else hitVfx.transform.position = hitPos;
+        }
+    }
 
-            float distance = dir.magnitude;
-            GameObject vfx = Instantiate(beamPrefab, pos, rot);
-            // Scale Z by distance so the beam VFX reaches the target
-            Vector3 scale = vfx.transform.localScale;
-            scale.z *= distance;
-            vfx.transform.localScale = scale;
+    float GetTickDamage()
+    {
+        float rampBonus = 0f;
+        if (IsUpgradeUnlocked("Envy01"))
+        {
+            float t = Mathf.Clamp01(fireDuration / envy01MaxChargeTime);
+            rampBonus = Mathf.Lerp(0f, envy01DamageRampMax, t);
+        }
+        return damagePerTick + rampBonus;
+    }
 
-            if (beamMaterial != null)
+    void FireBeamAt(Vector3 origin, Vector3 targetPos, float damage, Enemy target)
+    {
+        Vector3 dir = targetPos - origin;
+        Vector3 pos = origin + beamPositionOffset;
+        Quaternion rot = (dir.sqrMagnitude > 0.01f
+            ? Quaternion.LookRotation(dir.normalized, Vector3.up)
+            : Quaternion.identity) * Quaternion.Euler(beamRotationOffset);
+
+        float distance = dir.magnitude;
+        GameObject vfx = Instantiate(beamPrefab, pos, rot);
+        Vector3 scale = vfx.transform.localScale;
+        scale.z *= distance;
+        vfx.transform.localScale = scale;
+
+        if (beamMaterial != null)
+        {
+            foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
             {
-                foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
-                {
-                    var renderer = ps.GetComponent<ParticleSystemRenderer>();
-                    if (renderer != null) renderer.material = beamMaterial;
-                }
-            }
-            PlayVfx(vfx);
-            Destroy(vfx, tickInterval);
-
-            // Damage
-            if (owner.isPossessed)
-                DealDamageTo(currentTarget, damagePerTick);
-            else
-            {
-                var ph = owner.targetPlayer.GetComponent<PlayerHealth>();
-                if (ph != null) DealDamageToPlayer(ph, damagePerTick);
-            }
-            damageTimer -= tickInterval;
-
-            // Hit VFX
-            if (hitImpactPrefab != null)
-            {
-                if (hitVfx == null) { hitVfx = Instantiate(hitImpactPrefab, targetPos, Quaternion.identity); PlayVfx(hitVfx); }
-                else hitVfx.transform.position = targetPos;
+                var renderer = ps.GetComponent<ParticleSystemRenderer>();
+                if (renderer != null) renderer.material = beamMaterial;
             }
         }
+        PlayVfx(vfx);
+        Destroy(vfx, tickInterval);
+
+        if (owner.isPossessed && target != null)
+            DealDamageTo(target, damage);
+        else if (!owner.isPossessed)
+        {
+            var ph = owner.targetPlayer.GetComponent<PlayerHealth>();
+            if (ph != null) DealDamageToPlayer(ph, damage);
+        }
+    }
+
+    Enemy FindSecondNearestEnemy(Vector3 origin, Enemy exclude)
+    {
+        Enemy best = null;
+        float bestDist = float.MaxValue;
+        foreach (var e in FindObjectsOfType<Enemy>())
+        {
+            if (e == exclude || e == owner || e.isDowned || e.isPossessed) continue;
+            float d = Vector3.Distance(origin, e.transform.position);
+            if (d <= maxRange && d < bestDist) { bestDist = d; best = e; }
+        }
+        return best;
     }
 
     Enemy FindNearestEnemy(Vector3 origin)

@@ -46,6 +46,14 @@ public class EnemyAbility_SwordQi : EnemyAbility
     [Tooltip("Rotation offset for the explosion VFX.")]
     public Vector3 explosionVfxRotationOffset = Vector3.zero;
 
+    [Header("Upgrade - Pride01")]
+    [Tooltip("Pride01: max range when this upgrade is unlocked.")]
+    public float pride01MaxRange = 20f;
+
+    [Header("Upgrade - Pride02")]
+    [Tooltip("Pride02: fire 3 projectiles in a spread. Angle between each shot.")]
+    public float pride02SpreadAngle = 15f;
+
     private void OnEnable()
     {
         type = AbilityType.Skill;
@@ -69,13 +77,36 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
     IEnumerator SwordQiRoutine()
     {
-        // Delay before projectile spawns (sync with animation wind-up)
         if (projectileDelay > 0f)
             yield return new WaitForSeconds(projectileDelay);
 
+        // Check upgrades
+        float effectiveMaxRange = maxRange;
+        if (IsUpgradeUnlocked("Pride01"))
+            effectiveMaxRange = pride01MaxRange;
+
+        bool pride02 = IsUpgradeUnlocked("Pride02");
+
+        if (pride02)
+        {
+            // Fire 3 projectiles in a spread
+            Vector3 baseForward = owner.transform.forward;
+            StartCoroutine(LaunchProjectile(baseForward, effectiveMaxRange));
+            Vector3 left = Quaternion.Euler(0, -pride02SpreadAngle, 0) * baseForward;
+            StartCoroutine(LaunchProjectile(left, effectiveMaxRange));
+            Vector3 right = Quaternion.Euler(0, pride02SpreadAngle, 0) * baseForward;
+            StartCoroutine(LaunchProjectile(right, effectiveMaxRange));
+        }
+        else
+        {
+            StartCoroutine(LaunchProjectile(owner.transform.forward, effectiveMaxRange));
+        }
+    }
+
+    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange)
+    {
         Vector3 origin = owner.transform.position;
-        Vector3 forward = owner.transform.forward;
-        Vector3 currentPos = origin + forward * 1f; // start slightly in front of owner
+        Vector3 currentPos = origin + forward * 1f;
         float traveled = 0f;
 
         // Spawn projectile VFX
@@ -90,20 +121,18 @@ public class EnemyAbility_SwordQi : EnemyAbility
         }
 
         // --- Travel loop ---
-        while (traveled < maxRange)
+        while (traveled < effectiveMaxRange)
         {
             float step = projectileSpeed * Time.deltaTime;
             traveled += step;
-            currentPos = origin + forward * Mathf.Min(traveled, maxRange);
+            currentPos = origin + forward * Mathf.Min(traveled, effectiveMaxRange);
 
-            // Move VFX
             if (projVfx != null)
             {
                 projVfx.transform.position = currentPos;
                 projVfx.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
             }
 
-            // Check for hits along the way
             Vector3 halfExtents = new Vector3(projectileWidth * 0.5f, projectileHeight * 0.5f, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
@@ -118,7 +147,6 @@ public class EnemyAbility_SwordQi : EnemyAbility
                 var enemy = h.GetComponentInParent<Enemy>();
                 if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
                 {
-                    // Direct hit: full damage
                     DealDamageTo(enemy, damage);
                     hitSomething = true;
                     hitPos = enemy.transform.position;
@@ -142,7 +170,6 @@ public class EnemyAbility_SwordQi : EnemyAbility
             yield return null;
         }
 
-        // Reached max range without hitting anything — explode at final position
         if (projVfx != null) Destroy(projVfx);
         DoExplosion(currentPos);
     }
