@@ -38,6 +38,14 @@ public class PlayerHealth : MonoBehaviour
     public Image sliderFillImage;
     public Gradient healthGradient;
 
+    [Header("Danger UI")]
+    [Tooltip("Panel shown when health is low. Alpha driven by health ratio.")]
+    public GameObject dangerPanel;
+    [Tooltip("CanvasGroup on the danger panel for alpha control.")]
+    public CanvasGroup dangerPanelGroup;
+    [Tooltip("Health ratio below which danger panel starts appearing.")]
+    [Range(0f, 1f)] public float dangerThreshold = 0.35f;
+
     [Header("Possession UI (Fallback)")]
     public GameObject possessionHUDPanel;
     public Slider possessionHealthSlider;
@@ -394,11 +402,22 @@ public class PlayerHealth : MonoBehaviour
 
     void UpdateHealthUI()
     {
+        float ratio = maxHealth > 0 ? currentHealth / maxHealth : 0;
+
         if (healthSlider != null) { healthSlider.maxValue = maxHealth; healthSlider.value = currentHealth; }
         if (sliderFillImage != null && healthGradient != null)
-        {
-            float ratio = maxHealth > 0 ? currentHealth / maxHealth : 0;
             sliderFillImage.color = healthGradient.Evaluate(ratio);
+
+        // Danger panel alpha based on health ratio
+        if (dangerPanel != null)
+        {
+            bool show = ratio <= dangerThreshold;
+            dangerPanel.SetActive(show);
+            if (show && dangerPanelGroup != null)
+            {
+                float alpha = 1f - (ratio / dangerThreshold);
+                dangerPanelGroup.alpha = alpha;
+            }
         }
     }
 
