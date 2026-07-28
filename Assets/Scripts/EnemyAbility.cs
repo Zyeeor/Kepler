@@ -180,9 +180,11 @@ public abstract class EnemyAbility : MonoBehaviour
 
     /// <summary>
     /// Damage all valid enemy targets within an OverlapSphere, ignoring targetMask.
+    /// Returns the set of enemies that were hit.
     /// </summary>
-    protected void DamageEnemiesInSphere(Vector3 center, float radius, float amount, System.Action<Enemy, Vector3> onHit = null)
+    protected HashSet<Enemy> DamageEnemiesInSphere(Vector3 center, float radius, float amount, System.Action<Enemy, Vector3> onHit = null)
     {
+        var hitEnemies = new HashSet<Enemy>();
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {
@@ -190,8 +192,10 @@ public abstract class EnemyAbility : MonoBehaviour
             if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
             {
                 DealDamageTo(enemy, amount);
+                hitEnemies.Add(enemy);
                 onHit?.Invoke(enemy, enemy.transform.position);
             }
         }
+        return hitEnemies;
     }
 }

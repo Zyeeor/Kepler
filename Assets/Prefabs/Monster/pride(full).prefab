@@ -203,7 +203,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: slashdash
   type: 1
-  upgrades: []
+  upgrades:
+  - effectId: 
+    unlocked: 0
   vfxPrefab: {fileID: 5761796857240755751, guid: 731c61ddc266e1647ae532c05e40e3bb,
     type: 3}
   vfxSpawnPoint: {fileID: 0}

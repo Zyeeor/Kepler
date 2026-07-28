@@ -1,18 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-533942615462146392
-MonoBehaviour:
-  m_ObjectHideFlags: 11
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 7
 --- !u!21 &2100000
 Material:
   serializedVersion: 8
@@ -20,9 +7,9 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: AoMang-1 2
+  m_Name: AoMang-1 2 Variant
   m_Shader: {fileID: 4800000, guid: 2520bb9092e0eaf459e731120f8f11cb, type: 3}
-  m_Parent: {fileID: 2100000, guid: ccaa736b595c20340b2e6c5ef9abba4f, type: 2}
+  m_Parent: {fileID: 2100000, guid: de3979b2618ea284a82bd51e23b5910b, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -46,5 +33,5 @@ Material:
     m_Colors:
     - _Highlight_Color: {r: 1, g: 1, b: 1, a: 1}
     - _MainColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Outline_color: {r: 2.2043655, g: 6.9021945, b: 6.3845925, a: 1}
+    - _Outline_color: {r: 3.8320959, g: 6.7228713, b: 1.6278645, a: 1}
   m_BuildTextureStacks: []

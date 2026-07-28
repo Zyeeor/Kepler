@@ -138,6 +138,11 @@ public class PlayerHealth : MonoBehaviour
 
     IEnumerator FlyAndPossessRoutine(Enemy enemy)
     {
+        // Restore soul health BEFORE flying
+        currentHealth = soulMaxHealth;
+        maxHealth = soulMaxHealth;
+        UpdateHealthUI();
+
         isFlyingToPossess = true;
         Vector3 targetPos = enemy.transform.position;
         targetPos.y = transform.position.y;
@@ -163,9 +168,6 @@ public class PlayerHealth : MonoBehaviour
         if (isPossessing && possessedEnemy != null) Unpossess();
         possessedEnemy = enemy;
         isPossessing = true;
-        // Restore soul health to full when possessing
-        currentHealth = soulMaxHealth;
-        maxHealth = soulMaxHealth;
         savedDecayTimer = decayTimer;
         possessionDecayTimer = 0f;
         SetSoulActive(false);
