@@ -129,6 +129,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 2
+  upgrades:
+  - effectId: Wrath01
+    unlocked: 0
+  - effectId: Wrath02
+    unlocked: 0
   vfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -153,6 +158,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   animTrigger: Skill
+  wrath01DashSpeed: 30
+  wrath01DashMaxDist: 8
+  wrath02HookScale: 2
 --- !u!1 &1824996997776038176
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,6 +207,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 1
+  upgrades: []
   vfxPrefab: {fileID: 1472619153967987273, guid: 9087dfa702d5f2f4e93ad38be639ebbe,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -273,7 +282,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1942324244154291201
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1459,6 +1468,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Mv speed
   type: 0
+  upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
@@ -1469,6 +1479,7 @@ MonoBehaviour:
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 1
   burnBonusPercent: 0
+  damageAmpPercent: 0
   burnVfxPrefab: {fileID: 0}
 --- !u!1 &7338259342855432017
 GameObject:
@@ -1503,7 +1514,7 @@ RectTransform:
   m_Father: {fileID: 1824683098222443308}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}

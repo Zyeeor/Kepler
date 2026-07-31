@@ -32,6 +32,12 @@ public class CameraDirector : MonoBehaviour
     [Tooltip("How smoothly the camera tracks the target. Larger = heavier/slower.")]
     [SerializeField] private float followDamping = 1f;
 
+    [Header("Zoom Mode")]
+    [Tooltip("Use orthographic size instead of followDistance for zoom control.")]
+    [SerializeField] private bool useOrthographicZoom = false;
+    [Tooltip("Base orthographic size (when useOrthographicZoom is true).")]
+    [SerializeField] private float baseOrthoSize = 10f;
+
     [Header("Start Animation")]
     [Tooltip("Enable a zoom-in then zoom-out animation on game start.")]
     [SerializeField] private bool playStartAnimation = true;
@@ -91,7 +97,7 @@ public class CameraDirector : MonoBehaviour
 
     IEnumerator StartAnimationRoutine()
     {
-        float baseDistance = followDistance;
+        float baseVal = useOrthographicZoom ? baseOrthoSize : followDistance;
         float elapsed = 0f;
 
         while (elapsed < startAnimDuration)
@@ -99,18 +105,26 @@ public class CameraDirector : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / startAnimDuration);
             float curveVal = startAnimCurve.Evaluate(t);
-
-            // Zoom in at start (low distance), then zoom out (higher distance)
             float distMult = Mathf.Lerp(startZoomInMult, startZoomOutMult, curveVal);
-            followDistance = baseDistance * distMult;
-            ApplyFraming();
+
+            if (useOrthographicZoom)
+                SetOrthoSize(baseVal * distMult);
+            else
+            {
+                followDistance = baseVal * distMult;
+                ApplyFraming();
+            }
 
             yield return null;
         }
 
-        // Restore original distance
-        followDistance = baseDistance;
-        ApplyFraming();
+        if (useOrthographicZoom)
+            SetOrthoSize(baseVal);
+        else
+        {
+            followDistance = baseVal;
+            ApplyFraming();
+        }
     }
 
     void OnValidate()
@@ -226,5 +240,20 @@ public class CameraDirector : MonoBehaviour
     {
         if (virtualCamera != null)
             virtualCamera.Follow = target;
+    }
+
+    /// <summary>Set orthographic size on the virtual camera lens.</summary>
+    public void SetOrthoSize(float size)
+    {
+        if (virtualCamera != null)
+        {
+            virtualCamera.Lens.OrthographicSize = size;
+        }
+    }
+
+    /// <summary>Current orthographic size.</summary>
+    public float OrthoSize
+    {
+        get => virtualCamera != null ? virtualCamera.Lens.OrthographicSize : 0f;
     }
 }
