@@ -121,6 +121,19 @@ public abstract class EnemyAbility : MonoBehaviour
             ps.Play(true);
     }
 
+    /// <summary>Spawn a VFX that auto-destroys when the owner dies.</summary>
+    protected GameObject SpawnVfxTracked(GameObject prefab, Vector3 pos, Quaternion rot, float autoDestroyTime = -1f)
+    {
+        if (prefab == null || owner == null) return null;
+        var go = Instantiate(prefab, pos, rot);
+        PlayVfx(go);
+        // Track owner death
+        var tracker = go.AddComponent<DestroyOnOwnerDeath>();
+        tracker.owner = owner.gameObject;
+        if (autoDestroyTime > 0f) Destroy(go, autoDestroyTime);
+        return go;
+    }
+
     /// <summary>Helper: deal damage to a target via Enemy.ApplyDamageTo so it respects lifesteal etc.</summary>
     protected void DealDamageTo(Enemy target, float amount)
     {
@@ -131,10 +144,10 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected void DealDamageToPlayer(PlayerHealth player, float amount)
     {
-        if (player == null) return;
+        if (player == null || owner == null) return;
         player.TakeDamage(amount);
-        // Trigger lifesteal etc.
-        if (owner != null) owner.OnDealtDamage(amount);
+        // Also trigger lifesteal for the owner enemy
+        owner.OnDealtDamage(amount);
     }
 
     /// <summary>

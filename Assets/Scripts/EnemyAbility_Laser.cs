@@ -122,7 +122,7 @@ public class EnemyAbility_Laser : EnemyAbility
         if (hitImpactPrefab != null)
         {
             Vector3 hitPos = currentTarget != null ? currentTarget.transform.position + Vector3.up * 1f : (owner.targetPlayer != null ? owner.targetPlayer.position + Vector3.up * 1f : origin);
-            if (hitVfx == null) { hitVfx = Instantiate(hitImpactPrefab, hitPos, Quaternion.identity); PlayVfx(hitVfx); }
+            if (hitVfx == null) { hitVfx = SpawnVfxTracked(hitImpactPrefab, hitPos, Quaternion.identity); }
             else hitVfx.transform.position = hitPos;
         }
     }
@@ -147,7 +147,7 @@ public class EnemyAbility_Laser : EnemyAbility
             : Quaternion.identity) * Quaternion.Euler(beamRotationOffset);
 
         float distance = dir.magnitude;
-        GameObject vfx = Instantiate(beamPrefab, pos, rot);
+        GameObject vfx = SpawnVfxTracked(beamPrefab, pos, rot, tickInterval);
         Vector3 scale = vfx.transform.localScale;
         scale.z *= distance;
         vfx.transform.localScale = scale;
@@ -160,8 +160,6 @@ public class EnemyAbility_Laser : EnemyAbility
                 if (renderer != null) renderer.material = beamMaterial;
             }
         }
-        PlayVfx(vfx);
-        Destroy(vfx, tickInterval);
 
         if (owner.isPossessed && target != null)
             DealDamageTo(target, damage);

@@ -83,8 +83,8 @@ public class EnemyAbility_FlashSlash : EnemyAbility
                 yield return new WaitForSeconds(dashTrailDelay);
             Vector3 trailPos = owner.transform.position + owner.transform.TransformDirection(dashTrailPositionOffset);
             Quaternion trailRot = owner.transform.rotation * Quaternion.Euler(dashTrailRotationOffset);
-            trail = Instantiate(dashTrailPrefab, trailPos, trailRot, owner.transform);
-            PlayVfx(trail);
+            trail = SpawnVfxTracked(dashTrailPrefab, trailPos, trailRot);
+            if (trail != null) trail.transform.SetParent(owner.transform, true);
             Debug.Log("[FlashSlash] Dash trail spawned: " + dashTrailPrefab.name + " at " + trailPos);
         }
         else
@@ -176,9 +176,7 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         if (hitImpactPrefab == null) return;
         Vector3 impactPos = position + hitImpactPositionOffset;
         Quaternion impactRot = Quaternion.Euler(hitImpactRotationOffset);
-        GameObject impact = Instantiate(hitImpactPrefab, impactPos, impactRot);
-        PlayVfx(impact);
-        Destroy(impact, hitImpactDuration);
+        SpawnVfxTracked(hitImpactPrefab, impactPos, impactRot, hitImpactDuration);
     }
 
     void OnDrawGizmosSelected()

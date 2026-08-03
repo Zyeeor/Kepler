@@ -147,8 +147,6 @@ public class EnemyAbility_ChainLightning : EnemyAbility
     void SpawnHitEffect(Vector3 position)
     {
         if (hitEffectPrefab == null) return;
-        GameObject effect = Instantiate(hitEffectPrefab, position, Quaternion.identity);
-        PlayVfx(effect);
-        Destroy(effect, hitEffectDuration);
+        SpawnVfxTracked(hitEffectPrefab, position, Quaternion.identity, hitEffectDuration);
     }
 }

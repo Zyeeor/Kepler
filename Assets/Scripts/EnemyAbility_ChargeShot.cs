@@ -103,8 +103,8 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
                 if (chargeVfxPrefab != null)
                 {
-                    chargeVfxInstance = Instantiate(chargeVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
-                    PlayVfx(chargeVfxInstance);
+                    chargeVfxInstance = SpawnVfxTracked(chargeVfxPrefab, owner.transform.position, Quaternion.identity);
+                    if (chargeVfxInstance != null) chargeVfxInstance.transform.SetParent(owner.transform, true);
                 }
             }
 
@@ -136,9 +136,8 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         Vector3 forward = owner.transform.forward;
         Vector3 origin = owner.transform.position + forward * 1f + Vector3.up * 1f;
 
-        var go = Instantiate(projectilePrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
+        var go = SpawnVfxTracked(projectilePrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
         go.transform.localScale = Vector3.one * scale;
-        PlayVfx(go);
 
         StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, dmgMult));
 
@@ -235,9 +234,8 @@ public class EnemyAbility_ChargeShot : EnemyAbility
                 Vector3 randomDir = Random.onUnitSphere;
                 randomDir.y = Mathf.Abs(randomDir.y);
                 randomDir.Normalize();
-                var bullet = Instantiate(projectilePrefab, bulletSpawnPos, Quaternion.LookRotation(randomDir, Vector3.up));
+                var bullet = SpawnVfxTracked(projectilePrefab, bulletSpawnPos, Quaternion.LookRotation(randomDir, Vector3.up));
                 bullet.transform.localScale = Vector3.one * sloth02BulletScale;
-                PlayVfx(bullet);
                 StartCoroutine(ScatterBulletTravel(bullet, bulletSpawnPos, randomDir, sloth02BulletRange, sloth02BulletScale, dmgMult, hitEnemies));
             }
         }

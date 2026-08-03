@@ -143,12 +143,11 @@ public class EnemyAbility_Slash : EnemyAbility
             Vector3 localPos = new Vector3(Mathf.Sin(rad) * slashEffectRadius, slashEffectHeight * 0.5f, Mathf.Cos(rad) * slashEffectRadius);
             if (slashEffectPrefab != null)
             {
-                GameObject obj = Instantiate(slashEffectPrefab, arcParent.transform);
+                GameObject obj = SpawnVfxTracked(slashEffectPrefab, arcParent.transform.position, arcParent.transform.rotation, slashEffectDuration);
+                obj.transform.SetParent(arcParent.transform, true);
                 obj.transform.localPosition = localPos;
                 obj.transform.localRotation = Quaternion.Euler(0, angle, 90);
                 obj.transform.localScale = Vector3.one;
-                PlayVfx(obj);
-                Destroy(obj, slashEffectDuration);
             }
             else
             {
@@ -161,8 +160,6 @@ public class EnemyAbility_Slash : EnemyAbility
     void SpawnHitEffect(Vector3 position)
     {
         if (hitEffectPrefab == null) return;
-        GameObject effect = Instantiate(hitEffectPrefab, position, Quaternion.identity);
-        PlayVfx(effect);
-        Destroy(effect, hitEffectDuration);
+        SpawnVfxTracked(hitEffectPrefab, position, Quaternion.identity, hitEffectDuration);
     }
 }

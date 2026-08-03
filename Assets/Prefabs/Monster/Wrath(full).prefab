@@ -218,8 +218,7 @@ MonoBehaviour:
   cooldown: 1
   slashRange: 4
   slashAngle: 360
-  slashEffectPrefab: {fileID: 1472619153967987273, guid: 9087dfa702d5f2f4e93ad38be639ebbe,
-    type: 3}
+  slashEffectPrefab: {fileID: 0}
   slashEffectDuration: 0
   slashEffectCount: 7
   slashEffectRadius: 5

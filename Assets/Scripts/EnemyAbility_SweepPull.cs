@@ -93,7 +93,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
 
         if (hookPrefab != null)
         {
-            hookObj = Instantiate(hookPrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
+            hookObj = SpawnVfxTracked(hookPrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
             if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
             hookProj = hookObj.GetComponent<HookProjectile>();
             if (hookProj != null)
@@ -106,7 +106,6 @@ public class EnemyAbility_SweepPull : EnemyAbility
                 hookProj.ownerTransform = owner.transform;
                 hookProj.hitMask = owner.isPossessed ? ~0 : targetMask;
             }
-            PlayVfx(hookObj);
         }
         else
         {
@@ -181,9 +180,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
         if (returnVfxPrefab == null || target == null || owner == null) return;
         Vector3 toOwner = (owner.transform.position - target.position).normalized;
         Quaternion rot = toOwner.sqrMagnitude > 0.01f ? Quaternion.LookRotation(toOwner, Vector3.up) : Quaternion.identity;
-        var vfx = Instantiate(returnVfxPrefab, target.position, rot, target);
-        PlayVfx(vfx);
-        Destroy(vfx, returnVfxDuration);
+        SpawnVfxTracked(returnVfxPrefab, target.position, rot, returnVfxDuration);
     }
 
     IEnumerator DashForward(Vector3 forward)

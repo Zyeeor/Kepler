@@ -115,8 +115,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         {
             Vector3 spawnPos = currentPos + owner.transform.TransformDirection(projectileVfxPositionOffset);
             Quaternion projRot = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(projectileVfxRotationOffset);
-            projVfx = Instantiate(projectileVfxPrefab, spawnPos, projRot);
-            PlayVfx(projVfx);
+            projVfx = SpawnVfxTracked(projectileVfxPrefab, spawnPos, projRot);
             projVfx.transform.localScale *= projectileVfxScale;
         }
 
@@ -184,9 +183,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         {
             Vector3 expPos = center + explosionVfxPositionOffset;
             Quaternion expRot = Quaternion.Euler(explosionVfxRotationOffset);
-            GameObject explosion = Instantiate(explosionVfxPrefab, expPos, expRot);
-            PlayVfx(explosion);
-            Destroy(explosion, explosionVfxDuration);
+            SpawnVfxTracked(explosionVfxPrefab, expPos, expRot, explosionVfxDuration);
         }
         else
         {
