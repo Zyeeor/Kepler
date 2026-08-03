@@ -8,7 +8,6 @@ using System.Collections.Generic;
 /// </summary>
 public class WaveManager : MonoBehaviour
 {
-
     /// <summary>当前正在运行的波次索引。</summary>
     public int CurrentWaveIndex { get; private set; } = -1;
     /// <summary>当前存活的敌人数量。</summary>
@@ -45,12 +44,18 @@ public class WaveManager : MonoBehaviour
         AllWavesComplete = false;
         isRunning = true;
         spawnedEnemies.Clear();
+        Debug.Log($"[WaveManager] Initialize: room='{template.roomName}', waves={template.waves.Count}");
     }
 
     /// <summary>开始波次流程。</summary>
     public void StartWaves()
     {
-        if (!isRunning || currentTemplate == null) return;
+        if (!isRunning || currentTemplate == null)
+        {
+            Debug.LogWarning($"[WaveManager] StartWaves SKIPPED: isRunning={isRunning}, template={currentTemplate != null}");
+            return;
+        }
+        Debug.Log($"[WaveManager] StartWaves: room='{currentTemplate.roomName}', waves={currentTemplate.waves.Count}");
         waveRoutine = StartCoroutine(WaveRoutine());
     }
 
@@ -64,6 +69,8 @@ public class WaveManager : MonoBehaviour
 
     IEnumerator WaveRoutine()
     {
+        Debug.Log($"[WaveManager] WaveRoutine START: room='{currentTemplate.roomName}', waves={currentTemplate.waves.Count}, grace={currentTemplate.gracePeriod}");
+
         // Grace period
         if (currentTemplate.gracePeriod > 0f)
             yield return new WaitForSeconds(currentTemplate.gracePeriod);
@@ -85,7 +92,9 @@ public class WaveManager : MonoBehaviour
             OnWaveStarted?.Invoke(i, wave);
 
             // 生成该波次的所有敌人
+            Debug.Log($"[WaveManager] Wave {i}: spawning {wave.enemies.Count} enemy entries");
             SpawnWaveEnemies(wave);
+            Debug.Log($"[WaveManager] Wave {i}: EnemiesAlive={EnemiesAlive}");
 
             // 等待该波次所有敌人被消灭（轮询 isDowned）
             while (EnemiesAlive > 0 && isRunning)
@@ -105,20 +114,24 @@ public class WaveManager : MonoBehaviour
 
             IsWaveActive = false;
             OnWaveCompleted?.Invoke(i);
+            Debug.Log($"[WaveManager] Wave {i} completed");
         }
 
         AllWavesComplete = true;
         if (currentRoom != null && currentRoom.context != null)
             currentRoom.context.State = RoomState.Cleared;
+        Debug.Log($"[WaveManager] ALL WAVES COMPLETE for '{currentTemplate.roomName}'");
         OnAllWavesComplete?.Invoke();
     }
 
     void SpawnWaveEnemies(WaveConfig wave)
     {
         var spawnPoints = GetSpawnPoints(wave.spawnPointGroup);
+        Debug.Log($"[WaveManager] SpawnWaveEnemies: enemyEntries={wave.enemies.Count}, spawnPoints={spawnPoints?.Count ?? 0}");
 
         foreach (var entry in wave.enemies)
         {
+            Debug.Log($"[WaveManager] SpawnEntry: prefab={(entry.enemyPrefab != null ? entry.enemyPrefab.name : "NULL")}, count={entry.count}");
             if (entry.enemyPrefab == null) continue;
             for (int j = 0; j < entry.count; j++)
             {
@@ -136,37 +149,18 @@ public class WaveManager : MonoBehaviour
                 // Apply all unlocked upgrades to this new enemy
                 if (CardManager.Instance != null)
                     CardManager.Instance.ApplyAllUnlocksTo(go);
-                var enemy = go.GetComponent<Enemy>();
+                var enemy = go.GetComponentInChildren<Enemy>(true);
+                Debug.LogError($"[WaveManager] Spawned GO: {go.name}, Enemy={(enemy != null ? "FOUND" : "NULL")}, activeInHierarchy={go.activeInHierarchy}");
                 if (enemy != null)
                 {
                     spawnedEnemies.Add(enemy);
                     EnemiesAlive++;
                 }
+                else
+                {
+                    Debug.LogError($"[WaveManager] Spawned GO '{go.name}' has NO Enemy component!");
+                }
             }
-        }
-    }
-
-    IEnumerator SpawnEnemyDelayed(GameObject prefab, float delay, List<Vector3> points)
-    {
-        if (delay > 0f) yield return new WaitForSeconds(delay);
-
-        Vector3 pos;
-        if (points != null && points.Count > 0)
-            pos = points[UnityEngine.Random.Range(0, points.Count)];
-        else
-            pos = GetRandomSpawnPos();
-
-        // Apply room position offset
-        if (currentTemplate != null)
-            pos += currentTemplate.roomPosition;
-
-        var go = Instantiate(prefab, pos, Quaternion.identity);
-        go.tag = "Enemy";
-        var enemy = go.GetComponent<Enemy>();
-        if (enemy != null)
-        {
-            spawnedEnemies.Add(enemy);
-            EnemiesAlive++;
         }
     }
 
@@ -212,9 +206,7 @@ public class WaveManager : MonoBehaviour
     void CleanupEnemies()
     {
         foreach (var e in spawnedEnemies)
-        {
-            if (e != null) Destroy(e.gameObject);
-        }
+            if (e != null && !e.isDowned) e.TakeDamage(9999f); // force die
         spawnedEnemies.Clear();
         EnemiesAlive = 0;
     }

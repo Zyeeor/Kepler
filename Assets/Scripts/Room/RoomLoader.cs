@@ -84,7 +84,17 @@ public class RoomLoader : MonoBehaviour
         flow.Initialize(template, room);
         flow.StartRoom();
 
-        // Core spawn is deferred until all waves are cleared (see RoomFlowController)
+        // Spawn core immediately if spawnAfterWavesCleared is disabled
+        if (!template.core.spawnAfterWavesCleared && template.core.prefab != null)
+        {
+            Vector3 coreWorldPos = template.roomPosition + template.core.GetPosition(template.transform);
+            Quaternion coreWorldRot = Quaternion.Euler(template.roomRotation) * template.core.GetRotation();
+            var coreGo = Instantiate(template.core.prefab, coreWorldPos, coreWorldRot);
+            var coreComp = coreGo.GetComponent<RoomCore>();
+            if (coreComp == null) coreComp = coreGo.AddComponent<RoomCore>();
+            coreComp.interactRadius = template.core.interactRadius;
+            Debug.Log("[RoomLoader] Core spawned immediately (spawnAfterWavesCleared=false)");
+        }
 
         OnRoomLoaded?.Invoke(room);
         Debug.Log($"[RoomLoader] Loaded room: {template.roomName}");

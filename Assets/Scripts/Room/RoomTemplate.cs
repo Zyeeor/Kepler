@@ -69,6 +69,8 @@ public class CoreEntry
     public Vector3 rotation;
     [Tooltip("Distance at which the interaction UI pops up.")]
     public float interactRadius = 3f;
+    [Tooltip("If true, core only spawns after all waves are cleared.")]
+    public bool spawnAfterWavesCleared = true;
 
     public Vector3 GetPosition(Transform roomRoot) => locationTransform != null ? roomRoot.position + locationTransform.localPosition : roomRoot.position + position;
     public Quaternion GetRotation() => locationTransform != null ? locationTransform.rotation : Quaternion.Euler(rotation);

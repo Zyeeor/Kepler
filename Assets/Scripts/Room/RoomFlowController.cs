@@ -55,21 +55,27 @@ public class RoomFlowController : MonoBehaviour
     void OnAllWavesCompleteHandler()
     {
         ChangeState(RoomState.Cleared);
-        Debug.Log($"[RoomFlow] OnAllWavesComplete for room '{currentTemplate?.roomName}', spawning core? {currentTemplate?.core.prefab != null}");
+        Debug.Log($"[RoomFlow] OnAllWavesComplete for room '{currentTemplate?.roomName}', spawnAfterWavesCleared={currentTemplate?.core.spawnAfterWavesCleared}, corePrefab={currentTemplate?.core.prefab != null}");
 
-        if (currentTemplate != null && currentTemplate.core.prefab != null)
+        // Spawn core if enabled
+        if (currentTemplate != null && currentTemplate.core.spawnAfterWavesCleared && currentTemplate.core.prefab != null)
         {
-            Vector3 coreWorldPos = currentTemplate.roomPosition + currentTemplate.core.GetPosition(currentTemplate.transform);
-            Quaternion coreWorldRot = Quaternion.Euler(currentTemplate.roomRotation) * currentTemplate.core.GetRotation();
-            var coreGo = Instantiate(currentTemplate.core.prefab, coreWorldPos, coreWorldRot);
-            var coreComp = coreGo.GetComponent<RoomCore>();
-            if (coreComp == null) coreComp = coreGo.AddComponent<RoomCore>();
-            coreComp.interactRadius = currentTemplate.core.interactRadius;
-            Debug.Log("[RoomFlow] Core spawned after all waves cleared");
+            SpawnCore();
         }
 
         OnRoomCleared?.Invoke();
         StartExitPhase();
+    }
+
+    void SpawnCore()
+    {
+        Vector3 coreWorldPos = currentTemplate.roomPosition + currentTemplate.core.GetPosition(currentTemplate.transform);
+        Quaternion coreWorldRot = Quaternion.Euler(currentTemplate.roomRotation) * currentTemplate.core.GetRotation();
+        var coreGo = Instantiate(currentTemplate.core.prefab, coreWorldPos, coreWorldRot);
+        var coreComp = coreGo.GetComponent<RoomCore>();
+        if (coreComp == null) coreComp = coreGo.AddComponent<RoomCore>();
+        coreComp.interactRadius = currentTemplate.core.interactRadius;
+        Debug.Log("[RoomFlow] Core spawned after all waves cleared");
     }
 
     void ChangeState(RoomState newState)
