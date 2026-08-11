@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
@@ -15,24 +15,6 @@ public class PlayerHealth : MonoBehaviour
     public float healthDecayPercent = 0.01f;
     public float decayInterval = 1f;
 
-    [Header("Possession Decay")]
-    public float possessionDecayPercent = 0.05f;
-    private float possessionDecayTimer;
-
-    [Header("Possession")]
-    public Enemy possessedEnemy;
-    public bool isPossessing = false;
-    public bool isFlyingToPossess = false;
-    public float possessFlySpeedMultiplier = 5f;
-    [Tooltip("Y-axis offset added to player position when possessing an enemy.")]
-    public float possessYOffset = 0.5f;
-    [Tooltip("Cooldown in seconds after unpossessing before you can possess again.")]
-    public float possessCooldown = 3f;
-    public float possessCooldownTimer = 0f;
-    [Tooltip("Minimum time in seconds you must stay possessing an enemy before you can unpossess.")]
-    public float minPossessTime = 1f;
-    private float possessStartTime;
-
     [Header("UI")]
     public Slider healthSlider;
     public Image sliderFillImage;
@@ -46,32 +28,19 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("Health ratio below which danger panel starts appearing.")]
     [Range(0f, 1f)] public float dangerThreshold = 0.35f;
 
-    [Header("Possession UI (Fallback)")]
-    public GameObject possessionHUDPanel;
-    public Slider possessionHealthSlider;
-    public Image possessionSliderFill;
-    public TMP_Text possessionEnemyNameText;
-    public TMP_Text possessionAbilityQText;
-    public TMP_Text possessionAbilityWText;
-    public TMP_Text possessionAbilityRText;
-
-    private float maxHealth;
+    public float maxHealth; // 灵魂当前上限（附身切换时由 PossessionManager 同步）
     private float decayTimer;
-    private PlayerInputController input;
     private PlayerCombat combat;
     private Rigidbody rb;
-    private float savedDecayTimer;
     private MonoBehaviour[] soulComponents;
     private Renderer[] soulRenderers;
     private Collider[] soulColliders;
-    private GameObject dynamicHUD; // dynamically created possession HUD
     private CameraFollow cameraFollow;
     private CameraTarget cameraTarget;
 
     void Awake()
     {
         Instance = this;
-        input = GetComponent<PlayerInputController>();
         combat = GetComponent<PlayerCombat>();
         rb = GetComponent<Rigidbody>();
         soulComponents = GetComponents<MonoBehaviour>();
@@ -85,303 +54,40 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth = soulMaxHealth;
         maxHealth = soulMaxHealth;
-        isPossessing = false;
-        isFlyingToPossess = false;
-        HidePossessionHUD();
         UpdateHealthUI();
     }
 
     void Update()
     {
-        // Cooldown timer
-        if (possessCooldownTimer > 0f)
-            possessCooldownTimer -= Time.deltaTime;
-
-        if (!isFlyingToPossess && !isPossessing)
+        // 灵魂自然衰减；附身/飞行期间暂停（PossessionManager 状态非 Idle 时不衰减，
+        // 避免附身中灵魂被误判死亡）
+        var pm = PossessionManager.Instance;
+        if (pm != null && pm.State != PossessionManager.SwitchState.Idle) return;
+        decayTimer += Time.deltaTime;
+        if (decayTimer >= decayInterval)
         {
-            decayTimer += Time.deltaTime;
-            if (decayTimer >= decayInterval)
-            {
-                decayTimer -= decayInterval;
-                float decayAmount = soulMaxHealth * healthDecayPercent;
-                TakeDamage(decayAmount);
-            }
-        }
-        if (isPossessing)
-        {
-            if (possessedEnemy == null) { Unpossess(); return; }
-            // Soul follows the possessed enemy with Y offset
-            Vector3 targetPos = possessedEnemy.transform.position;
-            targetPos.y += possessYOffset;
-            transform.position = targetPos;
-            possessionDecayTimer += Time.deltaTime;
-            if (possessionDecayTimer >= decayInterval)
-            {
-                possessionDecayTimer -= decayInterval;
-                float decayAmount = possessedEnemy.maxHealth * possessionDecayPercent;
-                possessedEnemy.currentHealth -= decayAmount;
-                if (possessedEnemy.currentHealth <= 0)
-                {
-                    possessedEnemy.currentHealth = 0;
-                    OnPossessedEnemyDied();
-                }
-            }
-            UpdatePossessionHUD();
+            decayTimer -= decayInterval;
+            float decayAmount = soulMaxHealth * healthDecayPercent;
+            TakeDamage(decayAmount);
         }
     }
 
-    public void FlyAndPossess(Enemy enemy)
-    {
-        if (enemy == null || flyRoutine != null) return;
-        flyRoutine = StartCoroutine(FlyAndPossessRoutine(enemy));
-    }
-
-    IEnumerator FlyAndPossessRoutine(Enemy enemy)
-    {
-        // Restore soul health BEFORE flying
-        currentHealth = soulMaxHealth;
-        maxHealth = soulMaxHealth;
-        UpdateHealthUI();
-
-        isFlyingToPossess = true;
-        Vector3 targetPos = enemy.transform.position;
-        targetPos.y = transform.position.y;
-        float flySpeed = SoulMoveSpeed * possessFlySpeedMultiplier;
-        while (Vector3.Distance(transform.position, targetPos) > 0.3f)
-        {
-            if (enemy == null) { isFlyingToPossess = false; flyRoutine = null; yield break; }
-            targetPos = enemy.transform.position; targetPos.y = transform.position.y;
-            Vector3 dir = (targetPos - transform.position).normalized;
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, flySpeed * Time.unscaledDeltaTime);
-            transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-            yield return null;
-        }
-        isFlyingToPossess = false;
-        PossessEnemy(enemy);
-        flyRoutine = null;
-    }
-
-    public void PossessEnemy(Enemy enemy)
-    {
-        if (enemy == null) return;
-        if (!enemy.isWeakened && !enemy.isDowned) return;
-        if (isPossessing && possessedEnemy != null) Unpossess();
-        possessedEnemy = enemy;
-        isPossessing = true;
-        savedDecayTimer = decayTimer;
-        possessionDecayTimer = 0f;
-        SetSoulActive(false);
-        // Keep soul renderer visible so it follows the possessed enemy
-        foreach (var r in soulRenderers) if (r != null) r.enabled = true;
-        if (cameraFollow != null) cameraFollow.target = enemy.transform;
-        if (cameraTarget != null) cameraTarget.player = enemy.transform;
-        possessStartTime = Time.time;
-        enemy.OnPossessed();
-        if (input != null) input.OnPossessionStarted(enemy);
-        if (combat != null) combat.OnPossessionStarted(enemy);
-        // Accumulate permanent passive buffs from this enemy
-        if (PlayerPassiveManager.Instance != null) PlayerPassiveManager.Instance.OnEnemyPossessed(enemy);
-        ShowPossessionHUD(enemy);
-        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
-        Debug.Log("[PlayerHealth] POSSESSED " + enemy.displayName);
-    }
-
-    public void OnPossessedEnemyDied()
-    {
-        Debug.Log("[PlayerHealth] Possessed enemy died - returning to soul form");
-        Unpossess();
-    }
-
-    public void Unpossess()
-    {
-        if (!isPossessing) return;
-        if (Time.time - possessStartTime < minPossessTime)
-        {
-            Debug.Log("[Possess] Cannot unpossess yet — " + (minPossessTime - (Time.time - possessStartTime)).ToString("F1") + "s remaining");
-            return;
-        }
-        Enemy oldEnemy = possessedEnemy;
-        if (input != null) input.OnPossessionEnded();
-        if (combat != null) combat.OnPossessionEnded();
-        if (oldEnemy != null) { oldEnemy.OnUnpossessed(); Destroy(oldEnemy.gameObject); possessedEnemy = null; }
-        isPossessing = false;
-        possessCooldownTimer = possessCooldown;
-        if (cameraFollow != null) cameraFollow.target = transform;
-        if (cameraTarget != null) cameraTarget.player = transform;
-        SetSoulActive(true);
-        maxHealth = soulMaxHealth;
-        decayTimer = savedDecayTimer;
-        HidePossessionHUD();
-        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
-        Debug.Log("[PlayerHealth] Unpossessed - soul form restored. HP: " + currentHealth);
-        UpdateHealthUI();
-    }
-
-    void SetSoulActive(bool active)
+    /// <summary>
+    /// 灵魂组件启停（PossessionManager 无 SoulActor 时的兜底路径）。
+    /// </summary>
+    public void SetSoulActive(bool active)
     {
         foreach (var r in soulRenderers) if (r != null) r.enabled = active;
         foreach (var c in soulColliders) if (c != null) c.enabled = active;
         foreach (var comp in soulComponents)
         {
             if (comp == null || comp == this) continue;
-            // Keep PlayerInputController enabled while possessing so player can still drive the enemy
-            if (!active && comp is PlayerInputController) continue;
             comp.enabled = active;
         }
         if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = false; } }
     }
 
-    void ShowPossessionHUD(Enemy enemy)
-    {
-        if (PossessionHUD.Instance != null) { PossessionHUD.Instance.Show(enemy); return; }
-        if (possessionHUDPanel != null)
-        {
-            possessionHUDPanel.SetActive(true);
-            if (possessionEnemyNameText != null) possessionEnemyNameText.text = enemy.displayName;
-            string basicName = "普攻";
-            string skillName = "技能";
-            if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null && enemy.basicAbilities[0].ability != null) basicName = enemy.basicAbilities[0].ability.abilityName;
-            if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null && enemy.skillAbilities[0].ability != null) skillName = enemy.skillAbilities[0].ability.abilityName;
-            if (possessionAbilityQText != null) possessionAbilityQText.text = "左键 - " + basicName;
-            if (possessionAbilityWText != null) possessionAbilityWText.text = "右键 - " + skillName;
-            if (possessionAbilityRText != null) possessionAbilityRText.text = "R - 脱离附身";
-        }
-        if (possessionHealthSlider != null) { possessionHealthSlider.maxValue = enemy.maxHealth; possessionHealthSlider.value = enemy.currentHealth; }
-        // If no PossessionHUD and no fallback panel, create one dynamically
-        if (PossessionHUD.Instance == null && possessionHUDPanel == null && dynamicHUD == null)
-        {
-            CreateDynamicHUD(enemy);
-        }
-        UpdatePossessionHUD();
-    }
-
-    void UpdatePossessionHUD()
-    {
-        if (PossessionHUD.Instance != null) return;
-        Slider slider = possessionHealthSlider;
-        Image fill = possessionSliderFill;
-        if (slider == null && dynamicHUD != null)
-        {
-            slider = dynamicHUD.GetComponentInChildren<Slider>();
-        }
-        if (slider != null && possessedEnemy != null)
-        {
-            slider.value = possessedEnemy.currentHealth;
-            if (fill != null && healthGradient != null)
-            {
-                float ratio = possessedEnemy.maxHealth > 0 ? possessedEnemy.currentHealth / possessedEnemy.maxHealth : 0;
-                fill.color = healthGradient.Evaluate(ratio);
-            }
-        }
-    }
-
-    void HidePossessionHUD()
-    {
-        if (PossessionHUD.Instance != null) { PossessionHUD.Instance.Hide(); return; }
-        if (possessionHUDPanel != null) possessionHUDPanel.SetActive(false);
-        if (dynamicHUD != null) { Destroy(dynamicHUD); dynamicHUD = null; }
-    }
-
-    void CreateDynamicHUD(Enemy enemy)
-    {
-        // Find a Screen Space Overlay Canvas (ignore World Space canvases like enemy healthbars)
-        Canvas[] allCanvases = FindObjectsOfType<Canvas>();
-        Canvas canvas = null;
-        foreach (var c in allCanvases)
-        {
-            if (c.renderMode == RenderMode.ScreenSpaceOverlay)
-            {
-                canvas = c;
-                break;
-            }
-        }
-        if (canvas == null)
-        {
-            GameObject canvasObj = new GameObject("DynamicCanvas");
-            canvas = canvasObj.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObj.AddComponent<CanvasScaler>();
-            canvasObj.AddComponent<GraphicRaycaster>();
-        }
-
-        dynamicHUD = new GameObject("DynamicPossessionHUD");
-        dynamicHUD.transform.SetParent(canvas.transform, false);
-        var hudRect = dynamicHUD.AddComponent<RectTransform>();
-        hudRect.anchorMin = new Vector2(0.5f, 0f);
-        hudRect.anchorMax = new Vector2(0.5f, 0f);
-        hudRect.pivot = new Vector2(0.5f, 0f);
-        hudRect.anchoredPosition = new Vector2(0, 20);
-        hudRect.sizeDelta = new Vector2(400, 100);
-
-        // Background
-        var bg = dynamicHUD.AddComponent<Image>();
-        bg.color = new Color(0, 0, 0, 0.6f);
-
-        // Enemy name text
-        var nameGO = new GameObject("NameText");
-        nameGO.transform.SetParent(dynamicHUD.transform, false);
-        var nameRect = nameGO.AddComponent<RectTransform>();
-        nameRect.anchorMin = new Vector2(0, 0.6f);
-        nameRect.anchorMax = new Vector2(1, 1);
-        nameRect.offsetMin = new Vector2(10, 0);
-        nameRect.offsetMax = new Vector2(-10, 0);
-        var nameText = nameGO.AddComponent<TextMeshProUGUI>();
-        nameText.text = enemy.displayName;
-        nameText.fontSize = 20;
-        nameText.color = Color.white;
-        nameText.alignment = TextAlignmentOptions.Center;
-
-        // Health bar background
-        var hpBarBg = new GameObject("HPBarBg");
-        hpBarBg.transform.SetParent(dynamicHUD.transform, false);
-        var hpBgRect = hpBarBg.AddComponent<RectTransform>();
-        hpBgRect.anchorMin = new Vector2(0.05f, 0.4f);
-        hpBgRect.anchorMax = new Vector2(0.95f, 0.55f);
-        hpBgRect.offsetMin = Vector2.zero;
-        hpBgRect.offsetMax = Vector2.zero;
-        var hpBgImg = hpBarBg.AddComponent<Image>();
-        hpBgImg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
-
-        // Health bar fill
-        var hpFillGO = new GameObject("HPFill");
-        hpFillGO.transform.SetParent(hpBarBg.transform, false);
-        var hpFillRect = hpFillGO.AddComponent<RectTransform>();
-        hpFillRect.anchorMin = Vector2.zero;
-        hpFillRect.anchorMax = Vector2.one;
-        hpFillRect.offsetMin = Vector2.zero;
-        hpFillRect.offsetMax = Vector2.zero;
-        var hpFillImg = hpFillGO.AddComponent<Image>();
-        hpFillImg.color = Color.red;
-
-        // Slider component
-        var slider = hpBarBg.AddComponent<Slider>();
-        slider.minValue = 0;
-        slider.maxValue = enemy.maxHealth;
-        slider.value = enemy.currentHealth;
-        slider.interactable = false;
-        slider.transition = Selectable.Transition.None;
-        slider.fillRect = hpFillRect;
-        slider.targetGraphic = hpFillImg;
-
-        // Ability texts
-        string basicName = "普攻";
-        string skillName = "技能";
-        if (enemy.basicAbilities.Count > 0 && enemy.basicAbilities[0] != null && enemy.basicAbilities[0].ability != null) basicName = enemy.basicAbilities[0].ability.abilityName;
-        if (enemy.skillAbilities.Count > 0 && enemy.skillAbilities[0] != null && enemy.skillAbilities[0].ability != null) skillName = enemy.skillAbilities[0].ability.abilityName;
-
-        var abTextGO = new GameObject("AbilityText");
-        abTextGO.transform.SetParent(dynamicHUD.transform, false);
-        var abTextRect = abTextGO.AddComponent<RectTransform>();
-        abTextRect.anchorMin = new Vector2(0, 0);
-        abTextRect.anchorMax = new Vector2(1, 0.35f);
-        abTextRect.offsetMin = new Vector2(10, 0);
-        abTextRect.offsetMax = new Vector2(-10, 0);
-        var abText = abTextGO.AddComponent<TextMeshProUGUI>();
-        abText.text = "左键 - " + basicName + "  |  右键 - " + skillName + "  |  R - 脱离附身";
-        abText.fontSize = 14;
-        abText.color = new Color(0.8f, 0.8f, 0.8f);
-        abText.alignment = TextAlignmentOptions.Center;
-    }
+    // ── 附身 HUD 已迁至 PossessionManager（Show/Hide 统一走 PossessionHUD.Instance） ──
 
     public void TakeDamage(float amount)
     {
@@ -402,7 +108,8 @@ public class PlayerHealth : MonoBehaviour
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.GameOver);
     }
 
-    void UpdateHealthUI()
+    /// <summary>刷新玩家血条/危险UI（PossessionManager 附身切换时也调用）。</summary>
+    public void UpdateHealthUI()
     {
         float ratio = maxHealth > 0 ? currentHealth / maxHealth : 0;
 
@@ -425,8 +132,13 @@ public class PlayerHealth : MonoBehaviour
 
     private float SoulMoveSpeed
     {
-        get { if (input != null) return input.moveSpeed; return 5f; }
+        // 移速数据源为 PlayerPassiveManager（含被动加成）
+        get { return PlayerPassiveManager.Instance != null ? PlayerPassiveManager.Instance.CurrentMoveSpeed : 5f; }
     }
 
-    private Coroutine flyRoutine;
+    /// <summary>飞行速度基准（PossessionManager 读取，语义同 SoulMoveSpeed）。</summary>
+    public float SoulMoveSpeedForFly
+    {
+        get { return SoulMoveSpeed; }
+    }
 }

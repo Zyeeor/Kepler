@@ -10597,7 +10597,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7418821618017662042}
-  - component: {fileID: 6240829295487731978}
   - component: {fileID: 920952039045924966}
   - component: {fileID: 1124232026830190194}
   - component: {fileID: 1025113241247231900}
@@ -10634,31 +10633,6 @@ Transform:
   - {fileID: 8116952821687073489}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6240829295487731978
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6619887426231394227}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83a4a32d4ddc2dd489f49d5b134342e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 10
-  acceleration: 60
-  deceleration: 100
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  moveDirection: {x: 0, y: 0, z: 0}
-  mouseWorldTarget: {x: 0, y: 0, z: 0}
-  skillQPressed: 0
-  skillWPressed: 0
-  skillEPressed: 0
-  skillRPressed: 0
-  interactPressed: 0
 --- !u!114 &920952039045924966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10724,15 +10698,11 @@ MonoBehaviour:
   currentHealth: 200
   healthDecayPercent: 0.02
   decayInterval: 1
-  possessionDecayPercent: 0.04
-  possessedEnemy: {fileID: 0}
-  isPossessing: 0
-  isFlyingToPossess: 0
   possessFlySpeedMultiplier: 3
   possessYOffset: 2
   possessCooldown: 0
-  possessCooldownTimer: 0
   minPossessTime: 1
+  possessionDecayPercent: 0.04
   healthSlider: {fileID: 0}
   sliderFillImage: {fileID: 0}
   healthGradient:
@@ -10765,13 +10735,10 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 3
     m_NumAlphaKeys: 2
-  possessionHUDPanel: {fileID: 0}
-  possessionHealthSlider: {fileID: 0}
-  possessionSliderFill: {fileID: 0}
-  possessionEnemyNameText: {fileID: 0}
-  possessionAbilityQText: {fileID: 0}
-  possessionAbilityWText: {fileID: 0}
-  possessionAbilityRText: {fileID: 0}
+  dangerPanel: {fileID: 0}
+  dangerPanelGroup: {fileID: 0}
+  dangerThreshold: 0.35
+  maxHealth: 0
 --- !u!114 &6900587697003508178
 MonoBehaviour:
   m_ObjectHideFlags: 0

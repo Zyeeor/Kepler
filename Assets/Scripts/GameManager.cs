@@ -104,6 +104,8 @@ public class GameManager : MonoBehaviour
                 Time.timeScale = 0.2f;   // 子弹时间
                 break;
             case GameState.GameOver:
+                // 附身编排防御：GameOver 时显式终止飞行协程/附身态，防止协程用 unscaledDeltaTime 继续推进覆盖 GameOver
+                if (PossessionManager.Instance != null) PossessionManager.Instance.OnGameOver();
                 ShowGameOverUI();
                 break;
         }

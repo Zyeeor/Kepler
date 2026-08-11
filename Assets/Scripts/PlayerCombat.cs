@@ -19,8 +19,6 @@ public class PlayerCombat : MonoBehaviour
     private float autoAttackTimer;
     private Transform nearestEnemy;
     private PlayerHealth health;
-    private bool isControllingEnemy = false;
-    private Enemy controlledEnemy;
     private Camera mainCamera;
 
     void Awake()
@@ -55,7 +53,10 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        if (!isControllingEnemy && (health == null || !health.isPossessing)) AutoAttack();
+        // 附身态不自动普攻（PossessionManager 状态判定）
+        var pm = PossessionManager.Instance;
+        bool possessing = pm != null && pm.State == PossessionManager.SwitchState.Possessing;
+        if (!possessing) AutoAttack();
     }
 
     void AutoAttack()
@@ -83,7 +84,9 @@ public class PlayerCombat : MonoBehaviour
         nearestEnemy = null;
         foreach (var enemy in enemies)
         {
-            if (health != null && health.possessedEnemy != null && enemy == health.possessedEnemy.gameObject) continue;
+            // 排除当前附身身体
+            var pm = PossessionManager.Instance;
+            if (pm != null && pm.CurrentBody != null && enemy == pm.CurrentBody.gameObject) continue;
             float dist = Vector3.Distance(transform.position, enemy.transform.position);
             if (dist < minDist) { minDist = dist; nearestEnemy = enemy.transform; }
         }
@@ -159,15 +162,4 @@ public class PlayerCombat : MonoBehaviour
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.BulletTime);
     }
 
-    public void OnPossessionStarted(Enemy enemy)
-    {
-        isControllingEnemy = true;
-        controlledEnemy = enemy;
-    }
-
-    public void OnPossessionEnded()
-    {
-        isControllingEnemy = false;
-        controlledEnemy = null;
-    }
 }

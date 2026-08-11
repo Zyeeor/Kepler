@@ -32,7 +32,7 @@ public class AbilityCooldownUI : MonoBehaviour
 
     // Runtime data
     private PlayerCombat playerCombat;
-    private Enemy currentEnemy;
+    private MonsterActor currentEnemy;
     private bool trackingPlayer = true;
 
     // Stored ability references for per-frame cooldown reading
@@ -54,12 +54,14 @@ public class AbilityCooldownUI : MonoBehaviour
 
     void Update()
     {
-        // Track possession state changes
-        if (PlayerHealth.Instance != null && PlayerHealth.Instance.isPossessing && PlayerHealth.Instance.possessedEnemy != null)
+        // Track possession state changes（读 PossessionManager）
+        var pm = PossessionManager.Instance;
+        bool possessing = pm != null && pm.State == PossessionManager.SwitchState.Possessing;
+        if (possessing && pm.CurrentBody != null)
         {
-            if (currentEnemy != PlayerHealth.Instance.possessedEnemy)
+            if (currentEnemy != pm.CurrentBody)
             {
-                currentEnemy = PlayerHealth.Instance.possessedEnemy;
+                currentEnemy = pm.CurrentBody;
                 trackingPlayer = false;
                 RefreshIcons();
             }
@@ -145,7 +147,9 @@ public class AbilityCooldownUI : MonoBehaviour
         }
 
         // Possess icon: always show in soul state, hide while possessing
-        bool showPossess = !trackingPlayer || (PlayerHealth.Instance != null && !PlayerHealth.Instance.isPossessing);
+        var pm2 = PossessionManager.Instance;
+        bool possessing2 = pm2 != null && pm2.State == PossessionManager.SwitchState.Possessing;
+        bool showPossess = !trackingPlayer || !possessing2;
         if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(showPossess);
     }
 
@@ -169,11 +173,12 @@ public class AbilityCooldownUI : MonoBehaviour
             skillCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
         }
 
-        // Possess cooldown
+        // Possess cooldown（读 PM 的 CooldownRemaining）
         if (possessCooldownOverlay != null && possessIconRoot != null && possessIconRoot.gameObject.activeSelf)
         {
-            float total = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessCooldown : 3f;
-            float remaining = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessCooldownTimer : 0f;
+            var pm3 = PossessionManager.Instance;
+            float total = pm3 != null ? pm3.possessCooldown : 3f;
+            float remaining = pm3 != null ? pm3.CooldownRemaining : 0f;
             possessCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
         }
     }

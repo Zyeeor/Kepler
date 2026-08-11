@@ -30,7 +30,6 @@ public class PlayerPassiveManager : MonoBehaviour
 
     private HashSet<string> obtainedPassives = new HashSet<string>();
     private Dictionary<string, PassiveIconUI> activeIcons = new Dictionary<string, PassiveIconUI>();
-    private PlayerInputController input;
 
     class PassiveIconUI
     {
@@ -42,19 +41,18 @@ public class PlayerPassiveManager : MonoBehaviour
     {
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
+        // 移速默认值兜底（Inspector 未配置时）
+        if (baseMoveSpeed <= 0f) baseMoveSpeed = 5f;
     }
 
-    void Start()
+    /// <summary>当前有效移速（基础值 × 被动加成），灵魂移动/附身飞行/状态面板统一读取。</summary>
+    public float CurrentMoveSpeed
     {
-        input = GetComponent<PlayerInputController>();
-        if (input != null) baseMoveSpeed = input.moveSpeed;
+        get { return baseMoveSpeed * (1f + totalMoveSpeedBonus); }
     }
 
     void Update()
     {
-        if (input != null)
-            input.moveSpeed = baseMoveSpeed * (1f + totalMoveSpeedBonus);
-
         foreach (var kvp in activeIcons)
         {
             var icon = kvp.Value;
