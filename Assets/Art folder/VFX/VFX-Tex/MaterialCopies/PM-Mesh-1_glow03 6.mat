@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: PM-Mesh-1_glow03 4
+  m_Name: PM-Mesh-1_glow03 6
   m_Shader: {fileID: 4800000, guid: 65ba99a025f80f2458da7209d789d260, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -21,6 +21,7 @@ Material:
   - _CUSTOM13_CUSTOM2X
   - _CUSTOM1_CUSTOM1X
   - _CUSTOM2_CUSTOM1X
+  - _CUSTOM2_CUSTOM1Y
   - _CUSTOM3_CUSTOM1X
   - _CUSTOM4_CUSTOM1X
   - _CUSTOM5_CUSTOM1X
@@ -73,16 +74,16 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _dissolvetex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: f65820465a6c5e548a978069b75c623d, type: 3}
+        m_Scale: {x: 2, y: 0.5}
         m_Offset: {x: 0, y: 0}
     - _flowmap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _maintex:
-        m_Texture: {fileID: 2800000, guid: dc11604809595884c854144bc9c53ce6, type: 3}
-        m_Scale: {x: 3, y: 0.12}
+        m_Texture: {fileID: 2800000, guid: 620294ccf2b979842957ad8166ce9810, type: 3}
+        m_Scale: {x: 3, y: 0.5}
         m_Offset: {x: 0, y: 0}
     - _matcap:
         m_Texture: {fileID: 0}
@@ -139,7 +140,7 @@ Material:
     - _Custom11: 4
     - _Custom12: 4
     - _Custom13: 4
-    - _Custom2: 0
+    - _Custom2: 1
     - _Custom3: 0
     - _Custom4: 0
     - _Custom5: 0
@@ -160,9 +161,9 @@ Material:
     - _FlipbookBlending: 0
     - _FlipbookMode: 0
     - _Float0: 0
-    - _Float1: 1
-    - _Float10: 0
-    - _Float11: 0
+    - _Float1: 10
+    - _Float10: 1
+    - _Float11: 1
     - _Float12: 0
     - _Float129: 0
     - _Float130: 0
@@ -205,7 +206,7 @@ Material:
     - _Float31: 0
     - _Float32: 0
     - _Float33: 0
-    - _Float34: 1
+    - _Float34: 1.5
     - _Float35: 0
     - _Float36: 1
     - _Float37: 1
@@ -300,7 +301,7 @@ Material:
     - _BaseColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
     - _CameraFadeParams: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color0: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0: {r: 207.93658, g: 207.93658, b: 207.93658, a: 1}
     - _Color1: {r: 1, g: 1, b: 1, a: 1}
     - _Color2: {r: 1, g: 1, b: 1, a: 1}
     - _Color3: {r: 1, g: 1, b: 1, a: 1}
@@ -310,7 +311,7 @@ Material:
     - _Color7: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
-    - _Vector0: {r: 0, g: -0.43, b: 0, a: 0}
+    - _Vector0: {r: 0, g: 0, b: 0, a: 0}
     - _Vector10: {r: 0, g: 0, b: 0, a: 0}
     - _Vector11: {r: 0, g: 0, b: 0, a: 0}
     - _Vector13: {r: 0, g: 0, b: 0, a: 0}

@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: PM-Mesh-1_glow03 4
+  m_Name: PM-Glow-B_glow03 2
   m_Shader: {fileID: 4800000, guid: 65ba99a025f80f2458da7209d789d260, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -53,7 +53,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Mask:
-        m_Texture: {fileID: 2800000, guid: 357bf7cd9eb60264cb4a193e906ffc48, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Mask1:
@@ -81,8 +81,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _maintex:
-        m_Texture: {fileID: 2800000, guid: dc11604809595884c854144bc9c53ce6, type: 3}
-        m_Scale: {x: 3, y: 0.12}
+        m_Texture: {fileID: 2800000, guid: 40eb196287f43ff47b46a6d9f2b5cfb8, type: 3}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _matcap:
         m_Texture: {fileID: 0}
@@ -160,7 +160,7 @@ Material:
     - _FlipbookBlending: 0
     - _FlipbookMode: 0
     - _Float0: 0
-    - _Float1: 1
+    - _Float1: 10
     - _Float10: 0
     - _Float11: 0
     - _Float12: 0
@@ -289,9 +289,9 @@ Material:
     - _Ztestmode: 4
     - _Ztestmode1: 0
     - _Ztestmode2: 0
-    - _maintex_alpha: 1
+    - _maintex_alpha: 0
     - _maintex_alpha1: 1
-    - _mask01_alpha: 1
+    - _mask01_alpha: 0
     - _mask02_alpha: 0
     - _power3: 1
     - _refplane: 1
@@ -310,7 +310,7 @@ Material:
     - _Color7: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
-    - _Vector0: {r: 0, g: -0.43, b: 0, a: 0}
+    - _Vector0: {r: 0, g: 0, b: 0, a: 0}
     - _Vector10: {r: 0, g: 0, b: 0, a: 0}
     - _Vector11: {r: 0, g: 0, b: 0, a: 0}
     - _Vector13: {r: 0, g: 0, b: 0, a: 0}
