@@ -432,10 +432,6 @@ public class PossessionManager : MonoBehaviour
 
     private static void SetCameraTarget(Transform target)
     {
-        CameraFollow follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
-        if (follow != null) follow.target = target;
-        CameraTarget cameraTarget = FindObjectOfType<CameraTarget>();
-        if (cameraTarget != null) cameraTarget.player = target;
         if (CameraDirector.Instance != null) CameraDirector.Instance.Target = target;
     }
 
