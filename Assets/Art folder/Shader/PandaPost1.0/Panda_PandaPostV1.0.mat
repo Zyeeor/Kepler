@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Panda_PandaPostV1.0
+  m_Shader: {fileID: 4800000, guid: 5b739e600ec1b0449b3375ab46404917, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _COLORSTYLE_NORMAL
+  m_InvalidKeywords:
+  - _IFMAINALPHA_ON
+  - _LOGOAR_ON
+  - _TEXAR_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Logo:
+        m_Texture: {fileID: 2800000, guid: 952e6cda434200247b8852b4b5d1a444, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex:
+        m_Texture: {fileID: 2800000, guid: e26cf22f8c9746d40b85289d87d0f184, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _texcoord:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BlurFactor: 0
+    - _BlurFactorK: 0
+    - _ColorStyle: 0
+    - _IfBlurFactor: 0
+    - _IfLineUVScale: 0
+    - _IfMainAlpha: 1
+    - _IfRedBlueFactor: 0
+    - _IfStepFactor: 0
+    - _IfVignettePower: 0
+    - _IfVignetteScale: 0
+    - _Ifzhenfu: 0
+    - _Ifzhenpin: 0
+    - _LineColorScale: 1
+    - _LineOffset: 0.22
+    - _LineTilingU: 1
+    - _LineTilingV: 1
+    - _LineUVScale: 1
+    - _LineUVScaleK: 1
+    - _LogoAR: 1
+    - _LogoAlpha: 0
+    - _MainAlpha: 0
+    - _MainAlphaK: 1
+    - _RedBlueFactor: -0.342
+    - _RedBlueFactorK: 0
+    - _Soft: 1
+    - _StepFactor: 0
+    - _StepFactorK: 0
+    - _TexAR: 1
+    - _TexAlpha: 0
+    - _TexRotator: 0.5
+    - _VignettePower: 0.41
+    - _VignettePowerK: 1
+    - _VignetteScale: 0
+    - _VignetteScaleK: 1
+    - _centerU: 0.748
+    - _centerV: 0.486
+    - _zhenfu: 0
+    - _zhenfuK: 0
+    - _zhenpin: 0
+    - _zhenpinK: 0
+    m_Colors:
+    - _Color1: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []
