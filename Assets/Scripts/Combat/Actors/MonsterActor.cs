@@ -78,14 +78,6 @@ public class MonsterActor : Actor
     [Header("Ability HP Costs (consumed when possessed player uses)")]
     // HP cost is now set directly on each Basic/Skill ability entry below.
 
-    [Header("Visual")]
-    public Color bodyColor = Color.red;
-    public Color weakenedColor = new Color(1f, 0.5f, 0f);
-    public Color downedColor = new Color(0.3f, 0.3f, 0.3f);
-    public Color possessedColor = new Color(0.8f, 0.2f, 1f);
-    public Color flashColor = Color.red;
-    public float flashDuration = 0.1f;
-
     [Header("State")]
     public bool isWeakened = false;
     public bool isDowned = false;
@@ -120,9 +112,7 @@ public class MonsterActor : Actor
 
     public enum BodyType { Slim, Medium, Large, HugeMuscular, Boss }
 
-    public Renderer meshRenderer;
     public Rigidbody rb;
-    private Color originalColor;
     private bool savedKinematic;
     private Vector3 lastFramePosition;
     private Vector3 possessVelocity; // 附身玩家态加速度平滑
@@ -143,12 +133,9 @@ public class MonsterActor : Actor
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
-        meshRenderer = GetComponent<Renderer>();
         rb = GetComponent<Rigidbody>();
         currentHealth = maxHealth;
         currentTenacity = maxTenacity;
-        originalColor = bodyColor;
-        if (meshRenderer != null) meshRenderer.material.color = originalColor;
 
         var found = GetComponentsInChildren<EnemyAbility>(true);
         passiveAbilities.Clear();
@@ -417,7 +404,6 @@ public class MonsterActor : Actor
         if (isPossessed)
         {
             currentHealth -= amount;
-            FlashDamage();
             UpdateHealthUI();
             if (currentHealth <= 0)
             {
@@ -430,7 +416,6 @@ public class MonsterActor : Actor
         }
         currentHealth -= amount;
         currentTenacity -= amount;
-        FlashDamage();
         UpdateHealthUI();
         if (currentTenacity <= 0) { currentTenacity = 0; BecomeWeakened(); }
         if (currentHealth <= 0) { currentHealth = 0; Die(); }
@@ -506,7 +491,6 @@ public class MonsterActor : Actor
     void BecomeWeakened()
     {
         isWeakened = true;
-        if (meshRenderer != null) meshRenderer.material.color = weakenedColor;
     }
 
     public void OnPossessed()
@@ -515,7 +499,6 @@ public class MonsterActor : Actor
         isDowned = false;
         isWeakened = false;
         gameObject.tag = "Player";
-        if (meshRenderer != null) { meshRenderer.enabled = true; meshRenderer.material.color = possessedColor; }
         foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = true;
         foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
         if (rb != null) { savedKinematic = rb.isKinematic; rb.velocity = Vector3.zero; }
@@ -538,7 +521,6 @@ public class MonsterActor : Actor
     void Die()
     {
         isDowned = true;
-        if (meshRenderer != null) meshRenderer.material.color = downedColor;
         if (rb != null) { rb.velocity = Vector3.zero; }
         transform.rotation = Quaternion.Euler(90, transform.rotation.eulerAngles.y, 0);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
@@ -547,23 +529,6 @@ public class MonsterActor : Actor
         // Trigger downed animation immediately
         var anim = GetComponent<Animator>();
         if (anim != null) anim.SetBool("IsDowned", true);
-    }
-
-    void FlashDamage()
-    {
-        if (meshRenderer != null) StartCoroutine(FlashRoutine());
-    }
-
-    System.Collections.IEnumerator FlashRoutine()
-    {
-        Color orig = meshRenderer.material.color;
-        meshRenderer.material.color = flashColor;
-        yield return new WaitForSeconds(flashDuration);
-        if (meshRenderer == null) yield break;
-        if (isDowned) meshRenderer.material.color = downedColor;
-        else if (isWeakened) meshRenderer.material.color = weakenedColor;
-        else if (isPossessed) meshRenderer.material.color = possessedColor;
-        else meshRenderer.material.color = bodyColor;
     }
 
     public void UpdateHealthUI()

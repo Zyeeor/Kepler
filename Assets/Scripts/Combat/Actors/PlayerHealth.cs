@@ -35,8 +35,6 @@ public class PlayerHealth : MonoBehaviour
     private MonoBehaviour[] soulComponents;
     private Renderer[] soulRenderers;
     private Collider[] soulColliders;
-    private CameraFollow cameraFollow;
-    private CameraTarget cameraTarget;
 
     void Awake()
     {
@@ -46,8 +44,6 @@ public class PlayerHealth : MonoBehaviour
         soulComponents = GetComponents<MonoBehaviour>();
         soulRenderers = GetComponentsInChildren<Renderer>(true);
         soulColliders = GetComponentsInChildren<Collider>(true);
-        cameraFollow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
-        cameraTarget = FindObjectOfType<CameraTarget>();
     }
 
     void Start()

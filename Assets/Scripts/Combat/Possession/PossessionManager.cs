@@ -186,11 +186,8 @@ public class PossessionManager : MonoBehaviour
         // ③ 附身的架构本质：Controller 切换（AI → 玩家输入）
         target.SetController(PlayerController.Instance);
 
-        // ④ 相机切换到身体
-        CameraFollow cf = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
-        if (cf != null) cf.target = target.transform;
-        CameraTarget ct = FindObjectOfType<CameraTarget>();
-        if (ct != null) ct.player = target.transform;
+        // ④ 相机切换到身体（CameraDirector 为正式相机系统，Cinemachine 跟随）
+        if (CameraDirector.Instance != null) CameraDirector.Instance.Target = target.transform;
 
         // ⑤ 被动积累：MonsterActor 经 Enemy 壳类路由到 PlayerPassiveManager
         if (PlayerPassiveManager.Instance != null && target is Enemy)
@@ -224,12 +221,9 @@ public class PossessionManager : MonoBehaviour
         if (soul != null) soul.SetSuppressed(false);
         else if (PlayerHealth.Instance != null) PlayerHealth.Instance.SetSoulActive(true);
 
-        // ③ 相机切回灵魂
-        CameraFollow cf = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
+        // ③ 相机切回灵魂（CameraDirector 为正式相机系统，Cinemachine 跟随）
         Transform restore = soul != null ? soul.transform : (PlayerHealth.Instance != null ? PlayerHealth.Instance.transform : null);
-        if (cf != null && restore != null) cf.target = restore;
-        CameraTarget ct = FindObjectOfType<CameraTarget>();
-        if (ct != null && restore != null) ct.player = restore;
+        if (CameraDirector.Instance != null && restore != null) CameraDirector.Instance.Target = restore;
 
         // ④ 销毁身体（对象池唯一钩子点，后续可在此换回池实现）
         if (destroyBody && oldBody != null)
