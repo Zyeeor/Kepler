@@ -1,0 +1,25 @@
+# <TASK-ID> — <Title>
+
+- Task ID:
+- Title:
+- Parent Feature:
+- Goal:
+- Professional Owner:
+- Executor:
+- Status:
+- Priority:
+- Rule Basis:
+- Dependencies:
+- Definition of Ready:
+- Inputs:
+- Outputs:
+- Scope:
+- Out of Scope:
+- Modification Boundary:
+- Files / Module:
+- Acceptance Criteria:
+- Automated Test:
+- Human Acceptance:
+- Definition of Done:
+- Known Risks:
+- Open Decisions Check:

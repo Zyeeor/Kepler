@@ -87,3 +87,72 @@ Agent 在被调用时，**如果具备文件写入能力**，必须执行：
 - [ ] 若派发 Subagent，已注入规则？
 
 全部满足后，方可开始执行用户任务。
+
+---
+
+# Possession Minimum Agent Pipeline Addendum
+
+This section extends the rules above for the Possession project (repository codename: Kepler). The existing `.vibe/rules.md` remains the highest-priority operational rule file and must never be edited by an Agent without explicit Owner instruction.
+
+## Project context
+
+- Project: Possession
+- Engine: Unity
+- Remote provider: GitHub
+- Team default Agent: WorkBuddy
+- Owner additional Agent: Codex
+
+The repository is the shared source of truth. The workflow must remain Agent-agnostic: any Agent that can read the repository rules and approved context may execute a Task.
+
+## Authority and design truth
+
+Humans retain final authority over design rules, architecture, art quality, feel, high-risk deletion, merge, and acceptance. Agents assist with retrieval, planning, implementation, tests, checks, organization, and recommendations.
+
+For formal design decisions, use this precedence after satisfying `.vibe/rules.md`:
+
+```text
+Approved Canonical
+> Open Decisions
+> Current Task
+> Existing implementation
+> Agent inference
+```
+
+Never silently convert an Open Decision or Agent inference into Canonical. Existing protected documents under `.vibe/doc/` are source inputs; report conflicts and wait for Owner review before promoting changes into Canonical.
+
+## Task start protocol
+
+Before changing files, read:
+
+1. `AGENTS.md`
+2. `.vibe/rules.md`
+3. The current Task
+4. Its Parent Feature
+5. Related Canonical
+6. Open Decisions
+7. The current implementation
+
+Report Goal, Scope, Out of Scope, files to modify, implementation plan, test plan, risks, requirement conflicts, and Shared Original impact before execution. Stop on unclear rules, unresolved Open Decisions, or high-risk modifications.
+
+## Scope and ownership
+
+- Each Task records a Professional Owner and an Executor; they may be different.
+- Cross-role support is allowed, but the Professional Owner remains responsible for professional review.
+- Change only files required by the Task. Do not perform unrelated cleanup.
+- `main` should remain runnable or close to runnable. Production work uses `work/<TASK-ID>-description`; experiments use `exp/<TASK-ID>-description`.
+
+## Shared Original protection
+
+Before changing a shared Prefab, Material, ScriptableObject, or other shared asset, determine:
+
+1. Whether it is a Shared Original.
+2. Which files or scenes reference it.
+3. Whether the requirement is global or local.
+4. Whether a Variant or independent copy is safer.
+5. Whether ownership or locking is needed.
+
+High-risk shared changes require human confirmation. Never resolve Unity YAML conflicts with automatic `ours` or `theirs` selection.
+
+## Completion protocol
+
+Run available checks, inspect `git diff`, verify scope, record known issues, and identify human review points. Agents may prepare commits and pushes only when explicitly authorized; humans perform the final merge to `main`.
