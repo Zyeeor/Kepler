@@ -82,7 +82,7 @@ public class EnemyAbility_Slash : EnemyAbility
             if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed && !hitEnemies.Contains(enemy))
             {
                 Debug.Log("[Slash] HITTING " + enemy.name + " for " + damage + " damage (possessed=" + owner.isPossessed + ")");
-                enemy.TakeDamage(damage);
+                DealDamageTo(enemy, damage);
                 SpawnHitEffect(enemy.transform.position);
                 hitEnemies.Add(enemy);
             }

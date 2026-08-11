@@ -24,8 +24,20 @@ public class CombatAbilityComponent : MonoBehaviour
         "State.Action.Movement.Blocked"
     };
 
+    [Header("Effect Immunity")]
+    [Tooltip("Reject an incoming Effect when this actor owns a rule's required target tags and the Effect matches one of its blocked Effect tags.")]
+    public List<GameplayEffectBlockRule> effectApplicationBlockRules = new List<GameplayEffectBlockRule>
+    {
+        new GameplayEffectBlockRule
+        {
+            requiredTargetTags = new List<string> { "State.Defense.SuperArmor" },
+            blockedEffectTags = new List<string> { "Effect.Control" }
+        }
+    };
+
     public event Action<string> OnAbilityRejected;
     public event Action<GameplayEffectDefinition, int> OnEffectApplied;
+    public event Action<GameplayEffectDefinition, string> OnEffectRejected;
     public event Action<GameplayEffectDefinition> OnEffectExpired;
 
     private readonly GameplayTagContainer tags = new GameplayTagContainer();
@@ -125,9 +137,30 @@ public class CombatAbilityComponent : MonoBehaviour
         activeAbilities.Remove(entry);
     }
 
-    public void ApplyEffect(GameplayEffectDefinition definition)
+    public bool ApplyEffect(GameplayEffectDefinition definition)
     {
-        if (definition == null) return;
+        string ignoredReason;
+        return ApplyEffect(definition, null, null, out ignoredReason);
+    }
+
+    public bool ApplyEffectByTag(string effectTag, GameplayTagCatalog catalog, CombatAbilityComponent source, IEnumerable<string> sourceTags, out string reason)
+    {
+        if (catalog == null || !catalog.TryGetEffect(effectTag, out GameplayEffectDefinition definition))
+        {
+            reason = "Gameplay Effect Tag is not registered in the supplied catalog";
+            return false;
+        }
+
+        return ApplyEffect(definition, source, sourceTags, out reason);
+    }
+
+    public bool ApplyEffect(GameplayEffectDefinition definition, CombatAbilityComponent source, IEnumerable<string> sourceTags, out string reason)
+    {
+        if (!CanApplyEffect(definition, source, sourceTags, out reason))
+        {
+            if (definition != null) OnEffectRejected?.Invoke(definition, reason);
+            return false;
+        }
 
         ActiveEffect active = FindActiveEffect(definition);
         if (active == null)
@@ -140,7 +173,7 @@ public class CombatAbilityComponent : MonoBehaviour
                 vfxInstance = SpawnEffectVfx(definition)
             };
             activeEffects.Add(active);
-            tags.AddTags(active, definition.grantedTags);
+            AddEffectTags(active, definition);
         }
         else
         {
@@ -157,7 +190,7 @@ public class CombatAbilityComponent : MonoBehaviour
                     vfxInstance = SpawnEffectVfx(definition)
                 };
                 activeEffects.Add(active);
-                tags.AddTags(active, definition.grantedTags);
+                AddEffectTags(active, definition);
             }
             else
             {
@@ -169,6 +202,50 @@ public class CombatAbilityComponent : MonoBehaviour
         }
 
         OnEffectApplied?.Invoke(definition, active.stacks);
+        reason = string.Empty;
+        return true;
+    }
+
+    public bool CanApplyEffect(GameplayEffectDefinition definition, CombatAbilityComponent source, IEnumerable<string> sourceTags, out string reason)
+    {
+        reason = string.Empty;
+        if (definition == null)
+        {
+            reason = "Missing Gameplay Effect Definition";
+            return false;
+        }
+
+        if (!tags.HasAll(definition.requiredTargetTags))
+        {
+            reason = "Target is missing required Gameplay Tag";
+            return false;
+        }
+
+        if (tags.HasAny(definition.blockedTargetTags))
+        {
+            reason = "Target Gameplay Tag blocks this Effect";
+            return false;
+        }
+
+        if (IsEffectBlockedByTargetRule(definition))
+        {
+            reason = "Target immunity Gameplay Tag blocks this Effect";
+            return false;
+        }
+
+        if (!HasAllSourceTags(source, sourceTags, definition.requiredSourceTags))
+        {
+            reason = "Source is missing required Gameplay Tag";
+            return false;
+        }
+
+        if (HasAnySourceTags(source, sourceTags, definition.blockedSourceTags))
+        {
+            reason = "Source Gameplay Tag blocks this Effect";
+            return false;
+        }
+
+        return true;
     }
 
     public void RemoveEffect(GameplayEffectDefinition definition)
@@ -215,6 +292,52 @@ public class CombatAbilityComponent : MonoBehaviour
     {
         yield return new WaitForSeconds(duration);
         if (entry != null && entry.source != null) EndAbility(entry.source);
+    }
+
+    private void AddEffectTags(ActiveEffect active, GameplayEffectDefinition definition)
+    {
+        if (active == null || definition == null) return;
+        if (!string.IsNullOrEmpty(definition.effectTag)) tags.AddTags(active, new[] { definition.effectTag });
+        tags.AddTags(active, definition.grantedTags);
+    }
+
+    private bool IsEffectBlockedByTargetRule(GameplayEffectDefinition definition)
+    {
+        if (definition == null || string.IsNullOrEmpty(definition.effectTag)) return false;
+
+        foreach (GameplayEffectBlockRule rule in effectApplicationBlockRules)
+        {
+            if (rule == null || !tags.HasAll(rule.requiredTargetTags)) continue;
+            if (GameplayTagUtility.HasAny(new[] { definition.effectTag }, rule.blockedEffectTags)) return true;
+        }
+        return false;
+    }
+
+    private static bool HasAllSourceTags(CombatAbilityComponent source, IEnumerable<string> sourceTags, IEnumerable<string> requiredTags)
+    {
+        if (requiredTags == null) return true;
+        foreach (string requiredTag in requiredTags)
+        {
+            if (string.IsNullOrWhiteSpace(requiredTag)) continue;
+            if (!SourceHasTag(source, sourceTags, requiredTag)) return false;
+        }
+        return true;
+    }
+
+    private static bool HasAnySourceTags(CombatAbilityComponent source, IEnumerable<string> sourceTags, IEnumerable<string> queryTags)
+    {
+        if (queryTags == null) return false;
+        foreach (string queryTag in queryTags)
+        {
+            if (SourceHasTag(source, sourceTags, queryTag)) return true;
+        }
+        return false;
+    }
+
+    private static bool SourceHasTag(CombatAbilityComponent source, IEnumerable<string> sourceTags, string queryTag)
+    {
+        if (source != null && source.Tags.HasTag(queryTag)) return true;
+        return GameplayTagUtility.HasAny(sourceTags, new[] { queryTag });
     }
 
     private GameObject SpawnEffectVfx(GameplayEffectDefinition definition)

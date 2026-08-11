@@ -12,6 +12,22 @@ public abstract class PlayerAbility : MonoBehaviour
     public string abilityName = "Ability";
     public AbilityType type = AbilityType.Passive;
 
+    public bool HasAllAbilityTags(System.Collections.Generic.IEnumerable<string> queryTags)
+    {
+        return GameplayTagUtility.HasAll(abilityTags, queryTags);
+    }
+
+    public void AddAppliedEffectTags(System.Collections.Generic.IEnumerable<string> effectTags)
+    {
+        if (effectTags == null) return;
+        foreach (string rawTag in effectTags)
+        {
+            string effectTag = GameplayTagUtility.Normalize(rawTag);
+            if (string.IsNullOrEmpty(effectTag) || appliedEffectTags.Exists(value => string.Equals(value, effectTag, System.StringComparison.OrdinalIgnoreCase))) continue;
+            appliedEffectTags.Add(effectTag);
+        }
+    }
+
     [Header("VFX")]
     public GameObject vfxPrefab;
     public Transform vfxSpawnPoint;
@@ -24,6 +40,12 @@ public abstract class PlayerAbility : MonoBehaviour
 
     /// <summary>Cooldown in seconds. 0 = no cooldown.</summary>
     public float cooldown = 0f;
+
+    [Header("Attack Behavior Tags")]
+    [Tooltip("Stable identity tags for this attack behavior. Use them to bind run-time Effects without relying on the ability display name.")]
+    public System.Collections.Generic.List<string> abilityTags = new System.Collections.Generic.List<string>();
+    [Tooltip("Effect Tags applied to targets hit through this ability's shared damage helper.")]
+    public System.Collections.Generic.List<string> appliedEffectTags = new System.Collections.Generic.List<string>();
 
     [Header("Gameplay Tags")]
     [Tooltip("All listed tags must be active on the player to activate this ability. Empty means no requirement.")]
@@ -147,7 +169,24 @@ public abstract class PlayerAbility : MonoBehaviour
             if (hitStopOnHit) CameraDirector.Instance.HitStop(hitStopDuration);
             _hitFeedbackFiredThisAttack = true;
         }
+        ApplyConfiguredEffectsTo(target.Combat);
         if (owner != null) owner.OnDealtDamage(amount);
+    }
+
+    protected void ApplyConfiguredEffectsTo(CombatAbilityComponent target)
+    {
+        if (target == null || appliedEffectTags == null || appliedEffectTags.Count == 0) return;
+        CardManager manager = CardManager.Instance;
+        if (manager == null) return;
+
+        foreach (string effectTag in appliedEffectTags)
+        {
+            GameplayEffectDefinition definition;
+            if (!manager.TryGetGameplayEffect(effectTag, out definition)) continue;
+
+            string ignoredReason;
+            target.ApplyEffect(definition, owner != null ? owner.GetComponent<CombatAbilityComponent>() : null, abilityTags, out ignoredReason);
+        }
     }
 
     /// <summary>Apply burn from soul form (no possessed enemy to route through).</summary>

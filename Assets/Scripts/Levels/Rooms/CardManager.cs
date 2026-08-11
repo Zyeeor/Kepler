@@ -12,6 +12,8 @@ public class CardManager : MonoBehaviour
     [Header("Card Pool")]
     [Tooltip("All possible upgrade cards. N are randomly picked each time.")]
     public List<CardData> allCards = new List<CardData>();
+    [Tooltip("Effect Tag directory used to resolve CardData.grantedEffectTags at runtime.")]
+    public GameplayTagCatalog gameplayTagCatalog;
 
     [Header("Reroll Limit")]
     [Tooltip("Maximum total rerolls allowed across all cards per CoreChoiceUI session.")]
@@ -32,6 +34,13 @@ public class CardManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+    }
+
+    public bool TryGetGameplayEffect(string effectTag, out GameplayEffectDefinition definition)
+    {
+        if (gameplayTagCatalog != null && gameplayTagCatalog.TryGetEffect(effectTag, out definition)) return true;
+        definition = null;
+        return false;
     }
 
     /// <summary>Pick N random cards from the pool (no duplicates, excluding already-unlocked effects).</summary>
@@ -97,12 +106,11 @@ public class CardManager : MonoBehaviour
                 CardData data = null;
                 foreach (var card in allCards)
                     if (card != null && card.effectId == effectId) { data = card; break; }
-                if (data == null || data.abilityPrefab == null) continue;
-                if (a.abilityName == data.abilityPrefab.abilityName)
-                {
-                    UnlockOnAbility(a, effectId);
-                    applied++;
-                }
+                if (!DoesCardTargetAbility(data, a)) continue;
+
+                UnlockOnAbility(a, effectId);
+                ApplyCardEffectTags(a, data);
+                applied++;
             }
         }
         if (applied > 0)
@@ -131,20 +139,35 @@ public class CardManager : MonoBehaviour
         CardData data = null;
         foreach (var card in allCards)
             if (card != null && card.effectId == effectId) { data = card; break; }
-        if (data == null || data.abilityPrefab == null) return;
+        if (data == null) return;
 
         // Unlock on all existing instances NOW
         var allAbilities = FindObjectsOfType<EnemyAbility>(true);
         int count = 0;
         foreach (var a in allAbilities)
         {
-            if (a != null && a.abilityName == data.abilityPrefab.abilityName)
-            {
-                UnlockOnAbility(a, effectId);
-                count++;
-            }
+            if (!DoesCardTargetAbility(data, a)) continue;
+
+            UnlockOnAbility(a, effectId);
+            ApplyCardEffectTags(a, data);
+            count++;
         }
         Debug.Log($"[CardManager] Unlock '{effectId}': {count} existing instances");
+    }
+
+    private static bool DoesCardTargetAbility(CardData data, EnemyAbility ability)
+    {
+        if (data == null || ability == null) return false;
+        if (data.targetAbilityTags != null && data.targetAbilityTags.Count > 0)
+            return ability.HasAllAbilityTags(data.targetAbilityTags);
+
+        return data.abilityPrefab != null && ability.abilityName == data.abilityPrefab.abilityName;
+    }
+
+    private void ApplyCardEffectTags(EnemyAbility ability, CardData data)
+    {
+        if (ability == null || data == null) return;
+        ability.AddAppliedEffectTags(data.grantedEffectTags);
     }
 
     void UnlockOnAbility(EnemyAbility a, string effectId)

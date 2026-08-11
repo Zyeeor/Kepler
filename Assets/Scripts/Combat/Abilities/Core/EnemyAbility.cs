@@ -37,6 +37,22 @@ public abstract class EnemyAbility : MonoBehaviour
         return false;
     }
 
+    public bool HasAllAbilityTags(IEnumerable<string> queryTags)
+    {
+        return GameplayTagUtility.HasAll(abilityTags, queryTags);
+    }
+
+    public void AddAppliedEffectTags(IEnumerable<string> effectTags)
+    {
+        if (effectTags == null) return;
+        foreach (string rawTag in effectTags)
+        {
+            string effectTag = GameplayTagUtility.Normalize(rawTag);
+            if (string.IsNullOrEmpty(effectTag) || appliedEffectTags.Exists(value => string.Equals(value, effectTag, StringComparison.OrdinalIgnoreCase))) continue;
+            appliedEffectTags.Add(effectTag);
+        }
+    }
+
     [Header("VFX")]
     public GameObject vfxPrefab;       // VFX prefab spawned when the ability triggers
     public Transform vfxSpawnPoint;    // optional spawn anchor (defaults to enemy root)
@@ -52,6 +68,12 @@ public abstract class EnemyAbility : MonoBehaviour
 
     /// <summary>Cooldown in seconds. 0 = no cooldown. Only meaningful for BasicAttack / Skill.</summary>
     public float cooldown = 0f;
+
+    [Header("Attack Behavior Tags")]
+    [Tooltip("Stable identity tags for this attack behavior. Cards use these tags to target an ability without depending on its display name.")]
+    public List<string> abilityTags = new List<string>();
+    [Tooltip("Effect Tags applied to targets hit through this ability's shared damage helpers. Cards may add to this list at runtime.")]
+    public List<string> appliedEffectTags = new List<string>();
 
     [Header("Gameplay Tags")]
     [Tooltip("All listed tags must be active on the owner to activate this ability. Empty means no requirement.")]
@@ -169,14 +191,32 @@ public abstract class EnemyAbility : MonoBehaviour
         if (target == null || owner == null) return;
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
         owner.ApplyOffensiveDamage(target, amount);
+        ApplyConfiguredEffectsTo(target.Combat);
     }
 
     protected void DealDamageToPlayer(PlayerHealth player, float amount)
     {
         if (player == null || owner == null) return;
         player.TakeDamage(amount);
+        ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
         // Also trigger lifesteal for the owner enemy
         owner.OnDealtDamage(amount);
+    }
+
+    protected void ApplyConfiguredEffectsTo(CombatAbilityComponent target)
+    {
+        if (target == null || appliedEffectTags == null || appliedEffectTags.Count == 0) return;
+        CardManager manager = CardManager.Instance;
+        if (manager == null) return;
+
+        foreach (string effectTag in appliedEffectTags)
+        {
+            GameplayEffectDefinition definition;
+            if (!manager.TryGetGameplayEffect(effectTag, out definition)) continue;
+
+            string ignoredReason;
+            target.ApplyEffect(definition, owner != null ? owner.Combat : null, abilityTags, out ignoredReason);
+        }
     }
 
     /// <summary>
