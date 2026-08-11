@@ -137,18 +137,18 @@ Material:
     - _LineTilingU: 1.5
     - _LineTilingV: 8
     - _LineUVScale: 0
-    - _LineUVScaleK: 2.51
+    - _LineUVScaleK: 2.24
     - _LogoAR: 0
     - _LogoAlpha: 0
     - _MainAlpha: 1
-    - _MainAlphaK: 0
+    - _MainAlphaK: 0.24385196
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RedBlueFactor: 0
-    - _RedBlueFactorK: 0
+    - _RedBlueFactorK: 0.18
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _Soft: 0.5
