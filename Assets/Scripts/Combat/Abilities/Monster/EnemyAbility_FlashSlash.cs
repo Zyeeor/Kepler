@@ -80,7 +80,7 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         if (dashTrailPrefab != null)
         {
             if (dashTrailDelay > 0f)
-                yield return new WaitForSeconds(dashTrailDelay);
+                yield return AbilityWait(dashTrailDelay);
             Vector3 trailPos = owner.transform.position + owner.transform.TransformDirection(dashTrailPositionOffset);
             Quaternion trailRot = owner.transform.rotation * Quaternion.Euler(dashTrailRotationOffset);
             trail = SpawnVfxTracked(dashTrailPrefab, trailPos, trailRot);
@@ -96,7 +96,7 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         float t = 0f;
         while (t < halfDash)
         {
-            t += Time.deltaTime;
+            t += AbilityDeltaTime;
             float k = t / halfDash;
             // Ease-out: fast start, slow into position
             k = 1f - (1f - k) * (1f - k);
@@ -112,7 +112,7 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         t = 0f;
         while (t < halfDash)
         {
-            t += Time.deltaTime;
+            t += AbilityDeltaTime;
             float k = t / halfDash;
             // Ease-in: slow out of strike
             k = k * k;
@@ -163,7 +163,7 @@ public class EnemyAbility_FlashSlash : EnemyAbility
                 SpawnHitImpact(h.transform.position);
             }
             var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
+            if (owner.CanDamage(enemy))
             {
                 DealDamageTo(enemy, damage);
                 SpawnHitImpact(enemy.transform.position);

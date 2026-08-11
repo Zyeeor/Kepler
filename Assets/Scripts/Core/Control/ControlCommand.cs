@@ -3,15 +3,16 @@ using UnityEngine;
 
 /// <summary>
 /// Bit-mask of command buttons held/pressed this frame.
-/// Values mirror the current PlayerInputController key bindings:
-///   LeftClick = Basic, RightClick = Skill1, Q = Skill2, W = Skill3,
-///   E = Interact, Space/F = Possess / Release.
+/// Values mirror the current player bindings:
+///   LeftClick = Basic, RightClick = corpse possession/body switch,
+///   Q = possessed-monster skill, Space = mobility, E = bullet time, F = release.
+/// Interact and Possess are legacy reserved bits and are not emitted by PlayerController.
 /// </summary>
 [Flags]
 public enum CommandButtons : ushort
 {
     None = 0, Basic = 1, Skill1 = 2, Skill2 = 4, Skill3 = 8,
-    Interact = 16, Possess = 32, Release = 64
+    Interact = 16, Possess = 32, Release = 64, Mobility = 128
 }
 
 /// <summary>

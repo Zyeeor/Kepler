@@ -60,7 +60,7 @@ public class EnemySpawner : MonoBehaviour
     {
         TryFindSpawnPoint(out Vector3 spawnPos);
 
-        var go = Instantiate(prefab, spawnPos, Quaternion.identity);
+        var go = MonsterPool.Instance.Spawn(prefab, spawnPos, Quaternion.identity);
         go.tag = "Enemy";
         activeEnemies.Add(go);
         return go;

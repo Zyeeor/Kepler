@@ -43,11 +43,11 @@ public class EnemyAbility_GroundSlam : EnemyAbility
     IEnumerator SlamRoutine()
     {
         // First impact (immediate radius hit)
-        yield return new WaitForSeconds(firstHitDelay);
+        yield return AbilityWait(firstHitDelay);
         DoRadiusHit(damage, 1f);
 
         // Aftershock (delayed)
-        yield return new WaitForSeconds(secondHitDelay - firstHitDelay);
+        yield return AbilityWait(secondHitDelay - firstHitDelay);
         DoRadiusHit(damage, secondHitMultiplier);
     }
 
@@ -61,7 +61,7 @@ public class EnemyAbility_GroundSlam : EnemyAbility
             var ph = h.GetComponentInParent<PlayerHealth>();
             if (ph != null) DealDamageToPlayer(ph, baseDmg * multiplier);
             var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed) DealDamageTo(enemy, baseDmg * multiplier);
+            if (owner.CanDamage(enemy)) DealDamageTo(enemy, baseDmg * multiplier);
         }
     }
 

@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Displays cooldown icons: basic attack (left-click), skill (right-click), and possess/space.
+/// Displays cooldown icons: basic attack (left-click), possessed skill (Q), and possession (right-click).
 /// Each icon shows a grey overlay whose fill amount represents the remaining cooldown.
 /// </summary>
 public class AbilityCooldownUI : MonoBehaviour
@@ -83,8 +83,8 @@ public class AbilityCooldownUI : MonoBehaviour
     void SetupIcons()
     {
         if (basicKeyHint != null) basicKeyHint.text = "左键";
-        if (skillKeyHint != null) skillKeyHint.text = "右键";
-        if (possessKeyHint != null) possessKeyHint.text = "Space";
+        if (skillKeyHint != null) skillKeyHint.text = "Q";
+        if (possessKeyHint != null) possessKeyHint.text = "右键";
 
         // Set overlay colors
         SetupOverlay(basicCooldownOverlay);
@@ -117,12 +117,7 @@ public class AbilityCooldownUI : MonoBehaviour
             }
             else { if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false); }
 
-            if (playerCombat.skillAbilities.Count > 0)
-            {
-                playerSkillAbility = playerCombat.skillAbilities[0];
-                if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
-            }
-            else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }
+            if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
         }
         else if (!trackingPlayer && currentEnemy != null)
         {

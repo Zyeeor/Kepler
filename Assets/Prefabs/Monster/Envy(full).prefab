@@ -511,6 +511,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 10
   cooldown: 2
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   chainCount: 3
   chainRange: 10
   chainDamage: 15
@@ -735,6 +743,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0.5
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   maxRange: 7
   damagePerTick: 0.5
   tickInterval: 0.05
@@ -1278,6 +1294,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 0
   burnBonusPercent: 1
@@ -1668,10 +1692,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 291080705173219686}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 077dd4c98a4745a4eafd7dde682d6dc8,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 487724727535915305}
   m_SourcePrefab: {fileID: 100100000, guid: 077dd4c98a4745a4eafd7dde682d6dc8, type: 3}
 --- !u!4 &1397446445020503279 stripped
 Transform:
@@ -1736,10 +1756,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayName: Envy
-  maxHealth: 50
-  maxTenacity: 150
   moveSpeed: 6
+  acceleration: 0
+  deceleration: 0
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  maxHealth: 50
+  currentHealth: 20
+  displayName: Envy
+  maxTenacity: 150
   collisionDamage: 0
   detectionRadius: 5
   aiAttackRange: 4
@@ -1757,6 +1783,9 @@ MonoBehaviour:
   isDowned: 0
   isPossessed: 0
   playerDetected: 0
+  corpsePossessionWindow: 5
+  corpseFadeDuration: 3
+  hitStateDuration: 0.12
   healthSlider: {fileID: 932312241612645825}
   healthCanvas: {fileID: 1715658123244333537}
   showHealthBar: 1
@@ -1768,7 +1797,6 @@ MonoBehaviour:
     hpCost: 5
   passiveAbilities:
   - {fileID: 8851219735217803028}
-  currentHealth: 20
   currentTenacity: 0
   targetPlayer: {fileID: 0}
   targetEnemy: {fileID: 0}
@@ -1797,36 +1825,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.2
-  m_Height: 0.1
+  m_Height: 0.40000004
   m_Direction: 1
-  m_Center: {x: 0, y: 0.2, z: 0}
---- !u!54 &487724727535915305
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4607806177636592810}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 80
-  m_CollisionDetection: 2
+  m_Center: {x: 0, y: 0.20000002, z: 0}
 --- !u!4 &6583672633381112487 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -1698215504171738276, guid: 077dd4c98a4745a4eafd7dde682d6dc8,

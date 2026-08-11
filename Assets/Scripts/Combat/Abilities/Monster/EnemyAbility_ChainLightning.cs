@@ -55,7 +55,7 @@ public class EnemyAbility_ChainLightning : EnemyAbility
             foreach (var obj in GameObject.FindGameObjectsWithTag("Enemy"))
             {
                 var e = obj.GetComponent<Enemy>();
-                if (e != null && e != owner && !e.isDowned && !e.isPossessed)
+                if (owner.CanDamage(e))
                     allEnemies.Add(e);
             }
 
@@ -97,7 +97,7 @@ public class EnemyAbility_ChainLightning : EnemyAbility
                 if (currentTarget != null)
                 {
                     Debug.Log($"[ChainLightning] Next chain to: {currentTarget.name} at distance {minDist}");
-                    yield return new WaitForSeconds(chainDelay);
+                    yield return AbilityWait(chainDelay);
                 }
                 else
                 {

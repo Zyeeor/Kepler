@@ -54,8 +54,8 @@ public class PossessionHUD : MonoBehaviour
         string basicName = abilitySlots.Count > 0 ? abilitySlots[0].Name : "普攻";
         string skillName = abilitySlots.Count > 1 ? abilitySlots[1].Name : "技能";
         if (abilityQText != null) abilityQText.text = "左键 - " + basicName;
-        if (abilityWText != null) abilityWText.text = "右键 - " + skillName;
-        if (abilityRText != null) abilityRText.text = "Space/F - 脱离附身";
+        if (abilityWText != null) abilityWText.text = "Q - " + skillName;
+        if (abilityRText != null) abilityRText.text = "E - 子弹时间 / F - 脱离";
     }
 
     public void Hide()

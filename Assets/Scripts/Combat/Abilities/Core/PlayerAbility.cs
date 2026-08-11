@@ -52,9 +52,10 @@ public abstract class PlayerAbility : MonoBehaviour
     public System.Collections.Generic.List<string> requiredTags = new System.Collections.Generic.List<string>();
     [Tooltip("This ability cannot start while the player has any matching tag. Parent tags match child tags.")]
     public System.Collections.Generic.List<string> blockedTags = new System.Collections.Generic.List<string> { "State.Action.Fight" };
-    [Tooltip("Tags granted during the active window. Example: State.Action.Fight.")]
+    [Tooltip("Tags owned by this ability for its full lifecycle. They are removed only when this ability ends.")]
     public System.Collections.Generic.List<string> grantedTags = new System.Collections.Generic.List<string> { "State.Action.Fight" };
-    [Min(0f)] public float activeTagDuration = 0.15f;
+    [Tooltip("Effect applied to this ability owner when activation starts. Configure its independent Tags and duration on the Effect asset.")]
+    public GameplayEffectDefinition activationEffect;
 
     [Header("Screen Shake")]
     [Tooltip("Trigger a camera shake when this attack deals damage.")]
@@ -99,6 +100,11 @@ public abstract class PlayerAbility : MonoBehaviour
         if (currentCooldown > 0f) currentCooldown -= Time.deltaTime;
     }
 
+    protected virtual void OnDisable()
+    {
+        EndAbilityEffect();
+    }
+
     /// <summary>Returns true if this ability can be triggered right now.</summary>
     public virtual bool CanTrigger()
     {
@@ -112,8 +118,7 @@ public abstract class PlayerAbility : MonoBehaviour
     /// <summary>Trigger the ability. Called by PlayerCombat when player presses the corresponding key.</summary>
     public virtual void Trigger()
     {
-        CombatAbilityComponent combat = owner != null ? owner.GetComponent<CombatAbilityComponent>() : null;
-        if (combat != null && !combat.TryBeginAbility(this, requiredTags, blockedTags, grantedTags, activeTagDuration)) return;
+        if (!TryBeginAbilityEffect()) return;
 
         currentCooldown = EffectiveCooldown;
         _hitFeedbackFiredThisAttack = false;
@@ -122,6 +127,20 @@ public abstract class PlayerAbility : MonoBehaviour
         else
             Invoke(nameof(SpawnVfx), vfxDelay);
         OnTrigger();
+    }
+
+    /// <summary>Begins this ability's configured Activation Effect. Effect duration controls the state lifetime.</summary>
+    protected bool TryBeginAbilityEffect()
+    {
+        CombatAbilityComponent combat = owner != null ? owner.GetComponent<CombatAbilityComponent>() : null;
+        return combat == null || combat.TryBeginAbility(this, requiredTags, blockedTags, grantedTags, activationEffect, abilityTags);
+    }
+
+    /// <summary>Ends this ability and removes only the Activation Effect instance it created.</summary>
+    protected void EndAbilityEffect()
+    {
+        CombatAbilityComponent combat = owner != null ? owner.GetComponent<CombatAbilityComponent>() : null;
+        if (combat != null) combat.EndAbility(this);
     }
 
     /// <summary>Override to implement ability behavior.</summary>

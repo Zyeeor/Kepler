@@ -63,9 +63,6 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         var col = bullet.AddComponent<SphereCollider>();
         col.isTrigger = true;
         col.radius = 0.5f;
-        var rb = bullet.AddComponent<Rigidbody>();
-        rb.isKinematic = true;
-        rb.useGravity = false;
         return bullet;
     }
 }

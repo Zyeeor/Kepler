@@ -8,7 +8,7 @@ using System;
 /// </summary>
 public abstract class EnemyAbility : MonoBehaviour
 {
-    public enum AbilityType { Passive, BasicAttack, Skill }
+    public enum AbilityType { Passive, BasicAttack, Skill, Mobility }
 
     [Serializable]
     public class UpgradeSlot
@@ -66,7 +66,7 @@ public abstract class EnemyAbility : MonoBehaviour
     [Header("Damage (if applicable)")]
     public float damage = 0f;
 
-    /// <summary>Cooldown in seconds. 0 = no cooldown. Only meaningful for BasicAttack / Skill.</summary>
+    /// <summary>Cooldown in seconds. 0 = no cooldown. Only meaningful for BasicAttack / Skill / Mobility.</summary>
     public float cooldown = 0f;
 
     [Header("Attack Behavior Tags")]
@@ -80,10 +80,10 @@ public abstract class EnemyAbility : MonoBehaviour
     public List<string> requiredTags = new List<string>();
     [Tooltip("This ability cannot start while the owner has any matching tag. Parent tags match child tags.")]
     public List<string> blockedTags = new List<string> { "State.Action.Fight" };
-    [Tooltip("Tags granted during the active window. Example: State.Action.Fight. Other abilities can block or require these tags.")]
+    [Tooltip("Tags owned by this ability for its full lifecycle. They are removed only when this ability ends.")]
     public List<string> grantedTags = new List<string> { "State.Action.Fight" };
-    [Tooltip("Seconds to retain granted tags after activation. Set 0 for instant abilities; long channel abilities should end explicitly.")]
-    [Min(0f)] public float activeTagDuration = 0.15f;
+    [Tooltip("Effect applied to this ability owner when activation starts. Configure its independent Tags and duration on the Effect asset.")]
+    public GameplayEffectDefinition activationEffect;
 
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
     public float EffectiveCooldown
@@ -108,9 +108,30 @@ public abstract class EnemyAbility : MonoBehaviour
         if (owner != null) owner.RegisterAbility(this);
     }
 
+    public bool IsOwnedByPlayer => owner != null && owner.IsPlayerControlled;
+    protected float AbilityDeltaTime => IsOwnedByPlayer ? Time.unscaledDeltaTime : Time.deltaTime;
+    protected float AbilityTime => IsOwnedByPlayer ? Time.unscaledTime : Time.time;
+    protected object AbilityWait(float seconds) => owner != null && owner.IsPlayerControlled
+        ? (object)new WaitForSecondsRealtime(seconds)
+        : new WaitForSeconds(seconds);
+
     protected virtual void Update()
     {
-        if (currentCooldown > 0f) currentCooldown -= Time.deltaTime;
+        if (currentCooldown > 0f) currentCooldown -= AbilityDeltaTime;
+    }
+
+    protected virtual void OnDisable()
+    {
+        EndActivationEffect();
+        CancelInvoke();
+    }
+
+    public virtual void ResetForOwnerReuse()
+    {
+        EndActivationEffect();
+        CancelInvoke();
+        currentCooldown = 0f;
+        activeVfx = null;
     }
 
     /// <summary>Returns true if this ability can be triggered right now.</summary>
@@ -126,7 +147,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Trigger the ability. Called by Enemy AI / Player when possessing.</summary>
     public virtual void Trigger()
     {
-        if (!TryBeginAbilityTags(activeTagDuration)) return;
+        if (!TryBeginActivationEffect()) return;
 
         currentCooldown = EffectiveCooldown;
         if (vfxDelay <= 0f)
@@ -136,15 +157,15 @@ public abstract class EnemyAbility : MonoBehaviour
         OnTrigger();
     }
 
-    /// <summary>Begins the configured ability Tag window. Pass a negative duration for a channel ended explicitly.</summary>
-    protected bool TryBeginAbilityTags(float duration)
+    /// <summary>Begins this ability's configured Activation Effect. Effect duration controls the state lifetime.</summary>
+    protected bool TryBeginActivationEffect()
     {
         CombatAbilityComponent combat = owner != null ? owner.Combat : null;
-        return combat == null || combat.TryBeginAbility(this, requiredTags, blockedTags, grantedTags, duration);
+        return combat == null || combat.TryBeginAbility(this, requiredTags, blockedTags, grantedTags, activationEffect, abilityTags);
     }
 
-    /// <summary>Ends an explicit ability Tag window, used by channel and charge abilities.</summary>
-    protected void EndAbilityTags()
+    /// <summary>Ends this ability and removes only the Activation Effect instance it created.</summary>
+    protected void EndActivationEffect()
     {
         if (owner != null && owner.Combat != null) owner.Combat.EndAbility(this);
     }
@@ -196,7 +217,7 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected void DealDamageToPlayer(PlayerHealth player, float amount)
     {
-        if (player == null || owner == null) return;
+        if (player == null || owner == null || !owner.CanDamageSoul()) return;
         player.TakeDamage(amount);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
         // Also trigger lifesteal for the owner enemy
@@ -252,7 +273,7 @@ public abstract class EnemyAbility : MonoBehaviour
         foreach (var h in hits)
         {
             var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
+            if (owner != null && owner.CanDamage(enemy))
             {
                 DealDamageTo(enemy, amount);
                 onHit?.Invoke(enemy, enemy.transform.position);
@@ -271,7 +292,7 @@ public abstract class EnemyAbility : MonoBehaviour
         foreach (var h in hits)
         {
             var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
+            if (owner != null && owner.CanDamage(enemy))
             {
                 DealDamageTo(enemy, amount);
                 hitEnemies.Add(enemy);

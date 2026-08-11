@@ -54,6 +54,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 10
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   daggerPrefab: {fileID: 8044316912354738735, guid: 06fd062bc6d8bf746ac0a5d44d3cd5e3,
     type: 3}
   maxDaggers: 5
@@ -199,6 +207,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 5
   cooldown: 1
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   bladePrefab: {fileID: 8044316912354738735, guid: 806b81d0ef6dbf44e8fcf5810e55f8e9,
     type: 3}
   bladeCount: 3
@@ -474,6 +490,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0
@@ -1592,10 +1616,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 845426414484120874}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1110057771355198035}
   m_SourcePrefab: {fileID: 100100000, guid: 7280f001c5bd96f49b2f9cb7d2ef841c, type: 3}
 --- !u!4 &540367488077252346 stripped
@@ -1651,36 +1671,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.2
-  m_Height: 0.2
+  m_Height: 0.4
   m_Direction: 1
-  m_Center: {x: 0, y: 0.25, z: 0}
---- !u!54 &845426414484120874
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4639911848492006612}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 84
-  m_CollisionDetection: 1
+  m_Center: {x: 0, y: 0.25000057, z: 0}
 --- !u!114 &1110057771355198035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1693,10 +1686,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayName: Lust
-  maxHealth: 50
-  maxTenacity: 150
   moveSpeed: 3
+  acceleration: 0
+  deceleration: 0
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  maxHealth: 50
+  currentHealth: 20
+  displayName: Lust
+  maxTenacity: 150
   collisionDamage: 10
   detectionRadius: 6
   aiAttackRange: 5
@@ -1714,6 +1713,9 @@ MonoBehaviour:
   isDowned: 0
   isPossessed: 0
   playerDetected: 0
+  corpsePossessionWindow: 5
+  corpseFadeDuration: 3
+  hitStateDuration: 0.12
   healthSlider: {fileID: 9015894102159341057}
   healthCanvas: {fileID: 5679323062078869185}
   showHealthBar: 1
@@ -1725,7 +1727,6 @@ MonoBehaviour:
     hpCost: 5
   passiveAbilities:
   - {fileID: 8083196948441015319}
-  currentHealth: 20
   currentTenacity: 0
   targetPlayer: {fileID: 0}
   targetEnemy: {fileID: 0}
@@ -1733,7 +1734,6 @@ MonoBehaviour:
   weaponDescription: "\u6FC0\u5149\u592A\u5200"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
-  rb: {fileID: 0}
 --- !u!4 &5417715533104391790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,

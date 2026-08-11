@@ -28,7 +28,8 @@ public class Projectile : MonoBehaviour
 
     void Update()
     {
-        float stepDist = speed * Time.deltaTime;
+        float deltaTime = ownerEnemy != null && ownerEnemy.IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
+        float stepDist = speed * deltaTime;
         int obstacleMask = ~((1 << 8) | (1 << 9));
         if (Physics.Raycast(transform.position, transform.forward, out RaycastHit wallHit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
         {
@@ -44,14 +45,14 @@ public class Projectile : MonoBehaviour
 
         transform.position += transform.forward * stepDist;
 
-        hitCheckTimer -= Time.deltaTime;
+        hitCheckTimer -= deltaTime;
         if (hitCheckTimer <= 0)
         {
             hitCheckTimer = hitCheckInterval;
             CheckHit();
         }
 
-        lifetime -= Time.deltaTime;
+        lifetime -= deltaTime;
         if (lifetime <= 0) Destroy(gameObject);
     }
 
@@ -74,7 +75,7 @@ public class Projectile : MonoBehaviour
             if (!isPlayerProjectile && hit.CompareTag("Player"))
             {
                 var playerHealth = hit.GetComponent<PlayerHealth>();
-                if (playerHealth != null)
+                if (playerHealth != null && (ownerEnemy == null || ownerEnemy.CanDamageSoul()))
                 {
                     playerHealth.TakeDamage(damage);
                     OnHit();
@@ -84,18 +85,6 @@ public class Projectile : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (isPlayerProjectile && other.CompareTag("Enemy"))
-        {
-            var enemy = other.GetComponent<Enemy>();
-            if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
-            {
-                DealDamage(enemy);
-                OnHit();
-            }
-        }
-    }
 
     void DealDamage(Enemy enemy)
     {

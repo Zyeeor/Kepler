@@ -79,7 +79,7 @@ public class EnemyAbility_Slash : EnemyAbility
 
             // Check other enemies
             var enemy = hit.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed && !hitEnemies.Contains(enemy))
+            if (owner.CanDamage(enemy) && !hitEnemies.Contains(enemy))
             {
                 Debug.Log("[Slash] HITTING " + enemy.name + " for " + damage + " damage (possessed=" + owner.isPossessed + ")");
                 DealDamageTo(enemy, damage);

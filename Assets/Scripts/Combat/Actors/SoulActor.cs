@@ -16,6 +16,7 @@ public class SoulActor : Actor
 
     /// <summary>附身期间 = true（PossessionManager.SetSuppressed 控制）。</summary>
     public bool IsSuppressed { get; private set; }
+    public bool IsInPossessionFlight { get; private set; }
 
     public override bool IsDowned => false; // 灵魂无倒地
     public override string DisplayName => "Soul";
@@ -25,7 +26,6 @@ public class SoulActor : Actor
     public override float CurrentHealth => stats != null ? stats.currentHealth : 0f;
     public override float MaxHealth => stats != null ? stats.maxHealth : 0f;
 
-    private Rigidbody rb;
     private Vector3 currentVelocity;          // 加速度平滑（移动手感）
 
     /// <summary>移动速度：SoulActor 自身配置优先，否则读 PlayerPassiveManager 当前移速（含被动加成）。</summary>
@@ -53,7 +53,6 @@ public class SoulActor : Actor
     {
         if (stats == null) stats = GetComponent<PlayerHealth>();
         if (combat == null) combat = GetComponent<PlayerCombat>();
-        rb = GetComponent<Rigidbody>();
         base.Awake(); // 挂载默认 Controller（PlayerController.Instance）
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Soul" });
     }
@@ -71,8 +70,7 @@ public class SoulActor : Actor
 
     /// <summary>
     /// 附身抑制（PossessionManager 调用）：
-    /// true  = 停用控制（NullController）+ 碰撞器关 + rb kinematic + 进入跟随模式；
-    /// false = 恢复 PlayerController + 碰撞器开 + rb 恢复。
+    /// true  = 停用控制并关闭 Collider；false = 恢复玩家控制和 Collider。
     /// 灵魂 renderer 保持可见（附身时灵魂跟随被附身怪头顶）。
     /// </summary>
     public void SetSuppressed(bool suppressed)
@@ -87,13 +85,12 @@ public class SoulActor : Actor
             // 消除双 Player tag 二义性：期间 FindGameObjectWithTag("Player") 唯一命中身体（怪物转火/相机跟随/AoE 判定）。
             gameObject.tag = "Soul";
             // 清空 stale 指令与惯性：抑制期 Update 不再刷新 pendingCmd，
-            // 若不清理，FixedUpdate 会持续用旧指令驱动 rb.MovePosition 与 FollowBody 直写互相拉扯。
+            // 若不清理，FixedUpdate 会持续用旧指令驱动常规移动并与 FollowBody 直写互相拉扯。
             pendingCmd = new ControlCommand();
             currentVelocity = Vector3.zero;
             var col = GetComponent<Collider>();
             if (col != null) col.enabled = false;
-            var rb = GetComponent<Rigidbody>();
-            if (rb != null) rb.isKinematic = true;
+
         }
         else
         {
@@ -101,9 +98,32 @@ public class SoulActor : Actor
             SetController(PlayerController.Instance);
             var col = GetComponent<Collider>();
             if (col != null) col.enabled = true;
-            var rb = GetComponent<Rigidbody>();
-            if (rb != null) rb.isKinematic = false;
         }
+    }
+
+    public void SetPossessionFlight(bool inFlight)
+    {
+        IsInPossessionFlight = inFlight;
+        Collider collider = GetComponent<Collider>();
+        if (inFlight)
+        {
+            pendingCmd = new ControlCommand();
+            currentVelocity = Vector3.zero;
+            SetController(NullController.Instance);
+            gameObject.tag = "Soul";
+            if (collider != null) collider.enabled = false;
+        }
+        else if (!IsSuppressed)
+        {
+            gameObject.tag = "Player";
+            SetController(PlayerController.Instance);
+            if (collider != null) collider.enabled = true;
+        }
+    }
+
+    public void SetPossessionPosition(Vector3 bodyPosition, float yOffset)
+    {
+        transform.position = bodyPosition + Vector3.up * yOffset;
     }
 
     /// <summary>
@@ -119,6 +139,8 @@ public class SoulActor : Actor
 
     protected override void Update()
     {
+        if (IsInPossessionFlight) return;
+
         // 抑制期：不消费输入，仅跟随被附身怪头顶（目标由 PossessionManager.CurrentBody 提供）
         if (IsSuppressed)
         {
@@ -130,28 +152,33 @@ public class SoulActor : Actor
     }
 
     /// <summary>
-    /// 灵魂态按钮映射：
-    /// Basic→Combat 普攻；Skill1→技能0(SoulBullet)；Skill3→普攻(E)；Skill2→技能1(GhostDash)；
-    /// Interact(Space)→PossessionManager.RequestPossess（含冷却/合法性校验）。
+    /// Soul controls only its left-click BasicAbility. Right-click is exclusively reserved for corpse possession.
     /// </summary>
     protected override void ExecuteButtons(in ControlCommand cmd)
     {
-        if (combat == null) return;
-        if ((cmd.Pressed & CommandButtons.Basic) != 0) combat.PlayerTriggerBasicAttack();
-        if ((cmd.Pressed & CommandButtons.Skill1) != 0) combat.PlayerTriggerSkill(0);
-        if ((cmd.Pressed & CommandButtons.Skill3) != 0) combat.PlayerTriggerBasicAttack();
-        if ((cmd.Pressed & CommandButtons.Skill2) != 0 && combat.skillAbilities.Count > 1) combat.PlayerTriggerSkill(1);
-        if ((cmd.Pressed & CommandButtons.Interact) != 0)
+        if ((cmd.Pressed & CommandButtons.Basic) != 0 && combat != null)
+            combat.PlayerTriggerBasicAttack();
+
+        if ((cmd.Pressed & CommandButtons.Skill1) == 0) return;
+
+        if (PossessionManager.Instance == null)
         {
-            var pm = PossessionManager.Instance;
-            if (pm != null && PlayerController.Instance != null)
-                pm.RequestPossess(PlayerController.Instance.GetMouseRay());
+            Debug.LogWarning("[PossessionInput] Ignored right-click: PossessionManager is missing.");
+            return;
         }
+
+        if (PlayerController.Instance == null)
+        {
+            Debug.LogWarning("[PossessionInput] Ignored right-click: PlayerController is missing.");
+            return;
+        }
+
+        PossessionManager.Instance.TryRequestPossessFromInput(PlayerController.Instance.GetMouseRay(), "SoulActor");
     }
 
     /// <summary>
     /// 灵魂移动 + 朝向 + 位移：
-    /// 移动时朝移动方向平滑转向；静止时面向鼠标；位移 = 加速度平滑 + spherecast 预检测 + rb.MovePosition。
+    /// 移动时朝移动方向平滑转向；静止时面向鼠标；位移 = 加速度平滑 + SphereCast 预检测。
     /// </summary>
     protected override void ExecuteMovement(in ControlCommand cmd)
     {
@@ -193,8 +220,7 @@ public class SoulActor : Actor
         if (currentVelocity.sqrMagnitude <= 0.01f) return;
         Vector3 targetPos = ApplySpherecast(transform.position, currentVelocity.normalized, currentVelocity.magnitude * Time.deltaTime);
         targetPos.y = transform.position.y;
-        if (rb != null) rb.MovePosition(targetPos);
-        else transform.position = targetPos;
+        transform.position = targetPos;
     }
 
     /// <summary>spherecast 预检测：撞墙缩短步长防穿墙。</summary>
@@ -221,10 +247,6 @@ public class SoulActor : Actor
             if (a == null) continue;
             buffer.Add(new AbilitySlotInfo { Name = a.abilityName, CooldownRemaining = 0f, CooldownTotal = 0f, HpCost = 0f });
         }
-        foreach (var a in combat.skillAbilities)
-        {
-            if (a == null) continue;
-            buffer.Add(new AbilitySlotInfo { Name = a.abilityName, CooldownRemaining = 0f, CooldownTotal = 0f, HpCost = 0f });
-        }
+
     }
 }

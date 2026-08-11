@@ -31,7 +31,6 @@ public class PlayerHealth : MonoBehaviour
     public float maxHealth; // 灵魂当前上限（附身切换时由 PossessionManager 同步）
     private float decayTimer;
     private PlayerCombat combat;
-    private Rigidbody rb;
     private MonoBehaviour[] soulComponents;
     private Renderer[] soulRenderers;
     private Collider[] soulColliders;
@@ -42,7 +41,6 @@ public class PlayerHealth : MonoBehaviour
     {
         Instance = this;
         combat = GetComponent<PlayerCombat>();
-        rb = GetComponent<Rigidbody>();
         soulComponents = GetComponents<MonoBehaviour>();
         soulRenderers = GetComponentsInChildren<Renderer>(true);
         soulColliders = GetComponentsInChildren<Collider>(true);
@@ -84,7 +82,6 @@ public class PlayerHealth : MonoBehaviour
             if (comp == null || comp == this) continue;
             comp.enabled = active;
         }
-        if (rb != null) { if (!active) { rb.velocity = Vector3.zero; rb.isKinematic = true; } else { rb.isKinematic = false; } }
     }
 
     // ── 附身 HUD 已迁至 PossessionManager（Show/Hide 统一走 PossessionHUD.Instance） ──

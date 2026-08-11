@@ -72,18 +72,23 @@ public class PlayerController : MonoBehaviour, IController
 
         // 按钮位
         if (Input.GetMouseButtonDown(0)) cmd.Pressed |= CommandButtons.Basic;
-        if (Input.GetMouseButtonDown(1)) cmd.Pressed |= CommandButtons.Skill1;
-        if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;
-        if (Input.GetKeyDown(KeyCode.E)) cmd.Pressed |= CommandButtons.Skill3; // E=普攻位，由 Actor 映射
-        if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Interact; // Space=附身尝试/脱离
-        if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release;      // F=脱离
+        if (Input.GetMouseButtonDown(1)) cmd.Pressed |= CommandButtons.Skill1; // right-click possession / body switch
+        if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
+        if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Mobility;
+        if (Input.GetKeyDown(KeyCode.E)) cmd.Pressed |= CommandButtons.Skill3;  // possessed-monster bullet time
+        if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release; // F=脱离
     }
 
     /// <summary>从鼠标位置构造射线（附身发起 RequestPossess 用）。</summary>
     public Ray GetMouseRay()
     {
-        if (mainCamera == null) { mainCamera = Camera.main; }
-        if (mainCamera == null) return default(Ray);
+        Camera activeCamera = Camera.main;
+        if (activeCamera != null) mainCamera = activeCamera;
+        if (mainCamera == null)
+        {
+            Debug.LogWarning("[PossessionInput] Cannot create mouse ray: no active MainCamera.");
+            return default(Ray);
+        }
         return mainCamera.ScreenPointToRay(Input.mousePosition);
     }
 

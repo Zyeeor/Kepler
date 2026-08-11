@@ -83,13 +83,13 @@ public class EnemyAbility_SpinBlade : EnemyAbility
         if (ownerEnemy == null) yield break;
         originalMoveSpeed = ownerEnemy.moveSpeed;
         ownerEnemy.moveSpeed *= speedBoostMult;
-        yield return new WaitForSeconds(speedBoostDuration);
+        yield return AbilityWait(speedBoostDuration);
         if (ownerEnemy != null) ownerEnemy.moveSpeed = originalMoveSpeed;
     }
 
     IEnumerator BladeLifetimeRoutine()
     {
-        yield return new WaitForSeconds(bladeLifetime);
+        yield return AbilityWait(bladeLifetime);
         foreach (var b in blades) if (b != null) Destroy(b);
         blades.Clear();
     }
@@ -106,7 +106,7 @@ public class EnemyAbility_SpinBlade : EnemyAbility
         for (int i = 0; i < blades.Count; i++)
         {
             if (blades[i] == null) continue;
-            float angle = Time.time * spinSpeed + i * angleStep;
+            float angle = AbilityTime * spinSpeed + i * angleStep;
             blades[i].transform.position = GetOrbitPos(angle);
             // Face toward circle center (inward)
             Vector3 toCenter = (center - blades[i].transform.position).normalized;
@@ -115,7 +115,7 @@ public class EnemyAbility_SpinBlade : EnemyAbility
         }
 
         // Hit detection (pass-through, no destroy)
-        hitTimer += Time.deltaTime;
+        hitTimer += AbilityDeltaTime;
         if (hitTimer >= hitInterval)
         {
             hitTimer -= hitInterval;
@@ -130,7 +130,7 @@ public class EnemyAbility_SpinBlade : EnemyAbility
                     if (recentHits.Contains(h.transform.root)) continue;
 
                     var enemy = h.GetComponentInParent<Enemy>();
-                    if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
+                    if (owner.CanDamage(enemy))
                     {
                         DealDamageTo(enemy, damage * damageMultiplier);
                         recentHits.Add(enemy.transform);

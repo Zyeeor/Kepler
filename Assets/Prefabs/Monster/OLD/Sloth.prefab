@@ -420,6 +420,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0
   cooldown: 2
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   minePrefab: {fileID: 1455237202425575238, guid: 2de265022472a3e4b96294cae884560c,
     type: 3}
   mineDuration: 10
@@ -485,6 +493,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 0
   burnBonusPercent: 0
@@ -690,6 +706,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 2
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   projectilePrefab: {fileID: 1455237202425575238, guid: f521ce0cedbf59d4db85b8a31772ea43,
     type: 3}
   projectileWidth: 1.5
@@ -713,6 +737,15 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   animTrigger: Basic
+  sloth01MinePrefab: {fileID: 0}
+  sloth01MineDamageMult: 1
+  sloth01MineLifetime: 10
+  sloth01MineDelay: 0.5
+  sloth02BulletMult: 2
+  sloth02BulletScale: 0.5
+  sloth02BulletSpeed: 15
+  sloth02BulletRange: 6
+  sloth02BulletYOffset: 1
 --- !u!1 &8410641803560030266
 GameObject:
   m_ObjectHideFlags: 0
@@ -846,7 +879,8 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 793b9fca51b0a64498a9795022182c4a, type: 2}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1710333819229585003, guid: 4244737609abee747a04c20a81d8cb57, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

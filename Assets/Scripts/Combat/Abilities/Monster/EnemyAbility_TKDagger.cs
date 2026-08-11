@@ -83,12 +83,12 @@ public class EnemyAbility_TKDagger : EnemyAbility
         for (int i = daggers.Count - 1; i >= 0; i--)
         {
             if (daggers[i] == null) { daggers.RemoveAt(i); continue; }
-            float angle = Time.time * orbitSpeed + i * (360f / Mathf.Max(1, daggers.Count));
+            float angle = AbilityTime * orbitSpeed + i * (360f / Mathf.Max(1, daggers.Count));
             daggers[i].transform.position = GetOrbitPos(angle);
         }
 
         // Launch daggers at target
-        launchTimer += Time.deltaTime;
+        launchTimer += AbilityDeltaTime;
         if (launchTimer >= launchInterval && daggers.Count > 0)
         {
             launchTimer -= launchInterval;
@@ -111,7 +111,7 @@ public class EnemyAbility_TKDagger : EnemyAbility
             float bestDist = float.MaxValue;
             foreach (var e in FindObjectsOfType<Enemy>())
             {
-                if (e == owner || e.isDowned || e.isPossessed) continue;
+                if (!owner.CanDamage(e)) continue;
                 float d = Vector3.Distance(owner.transform.position, e.transform.position);
                 if (d <= detectRange && d < bestDist) { bestDist = d; best = e; }
             }
@@ -137,13 +137,13 @@ public class EnemyAbility_TKDagger : EnemyAbility
             Vector3 desiredDir = Vector3.Slerp(currentForward, toTarget, homingCurveStrength).normalized;
 
             // Smoothly rotate toward desired direction
-            dagger.transform.forward = Vector3.RotateTowards(currentForward, desiredDir, homingTurnRate * Mathf.Deg2Rad * Time.deltaTime, 1f);
-            dagger.transform.position += dagger.transform.forward * homingSpeed * Time.deltaTime;
+            dagger.transform.forward = Vector3.RotateTowards(currentForward, desiredDir, homingTurnRate * Mathf.Deg2Rad * AbilityDeltaTime, 1f);
+            dagger.transform.position += dagger.transform.forward * homingSpeed * AbilityDeltaTime;
 
             if (Vector3.Distance(dagger.transform.position, target.position) < 0.8f)
             {
                 var enemy = target.GetComponent<Enemy>();
-                if (enemy != null && !enemy.isDowned)
+                if (owner.CanDamage(enemy))
                     DealDamageTo(enemy, damage * damageMultiplier);
                 var ph = target.GetComponent<PlayerHealth>();
                 if (ph != null)

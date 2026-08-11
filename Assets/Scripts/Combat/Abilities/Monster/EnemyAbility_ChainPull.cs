@@ -71,7 +71,7 @@ public class EnemyAbility_ChainPull : EnemyAbility
         float t = 0f;
         while (t < lungeDuration)
         {
-            t += Time.deltaTime;
+            t += AbilityDeltaTime;
             float k = t / lungeDuration;
             owner.transform.position = Vector3.Lerp(start, end, k);
             owner.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
@@ -82,18 +82,16 @@ public class EnemyAbility_ChainPull : EnemyAbility
     IEnumerator PullTarget(Enemy target)
     {
         if (target == null || owner == null) yield break;
-        // Disable target's own movement during pull by freezing rigidbody
-        var trb = target.GetComponent<Rigidbody>();
-        bool wasKinematic = false;
-        if (trb != null) { wasKinematic = trb.isKinematic; trb.isKinematic = true; }
 
+        IController previousController = target.Controller;
+        target.SetController(NullController.Instance);
         Vector3 endPos = owner.transform.position;
         while (target != null && Vector3.Distance(target.transform.position, endPos) > 0.3f)
         {
-            target.transform.position = Vector3.MoveTowards(target.transform.position, endPos, pullSpeed * Time.deltaTime);
+            target.transform.position = Vector3.MoveTowards(target.transform.position, endPos, pullSpeed * AbilityDeltaTime);
             yield return null;
         }
-        if (trb != null) trb.isKinematic = wasKinematic;
+        if (target != null) target.SetController(previousController);
     }
 
     Enemy FindTargetInFan()

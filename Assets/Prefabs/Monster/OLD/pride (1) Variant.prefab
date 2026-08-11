@@ -151,30 +151,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 2222253454548501203}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7037225536051561946 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 9186842864193554185, guid: 3c5ce0b5e1c29a84b9a940ead95ef7ef,
-    type: 3}
-  m_PrefabInstance: {fileID: 2222253454548501203}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e7022779ca451f4cae73c4066d97dc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &7290166318557194902 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8934253368656914501, guid: 3c5ce0b5e1c29a84b9a940ead95ef7ef,
-    type: 3}
-  m_PrefabInstance: {fileID: 2222253454548501203}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cb22063e5a41ff4c9f7e428681a40bd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!223 &9146463683110432641 stripped
 Canvas:
   m_CorrespondingSourceObject: {fileID: 6933788589787540818, guid: 3c5ce0b5e1c29a84b9a940ead95ef7ef,
@@ -392,10 +368,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886539095945043905}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 5709296913803227026}
   m_SourcePrefab: {fileID: 100100000, guid: 7280f001c5bd96f49b2f9cb7d2ef841c, type: 3}
 --- !u!1 &4774831477483283998 stripped
 GameObject:
@@ -532,15 +504,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayName: Pride
-  maxHealth: 40
-  maxTenacity: 150
   moveSpeed: 12
+  acceleration: 0
+  deceleration: 0
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  maxHealth: 40
+  currentHealth: 20
+  displayName: Pride
+  maxTenacity: 150
   collisionDamage: 10
   detectionRadius: 8
   aiAttackRange: 3
   aiMinRange: 2
   attackSpeed: 1
+  basicCastTime: 0.5
+  skillCastTime: 10
   bodyColor: {r: 0.44968545, g: 0.9802124, b: 1, a: 1}
   weakenedColor: {r: 1, g: 0.70712787, b: 0.41194963, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -551,16 +531,20 @@ MonoBehaviour:
   isDowned: 0
   isPossessed: 0
   playerDetected: 0
+  corpsePossessionWindow: 5
+  corpseFadeDuration: 3
+  hitStateDuration: 0.12
   healthSlider: {fileID: 5191290425998053232}
   healthCanvas: {fileID: 9146463683110432641}
   showHealthBar: 1
   basicAbilities:
-  - {fileID: 7037225536051561946}
+  - ability: {fileID: 0}
+    hpCost: 0
   skillAbilities:
-  - {fileID: 7290166318557194902}
+  - ability: {fileID: 0}
+    hpCost: 0
   passiveAbilities:
   - {fileID: 4898463986674773883}
-  currentHealth: 20
   currentTenacity: 0
   targetPlayer: {fileID: 0}
   targetEnemy: {fileID: 0}
@@ -592,33 +576,6 @@ CapsuleCollider:
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.2, z: 0}
---- !u!54 &5709296913803227026
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4774831477483283998}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
-  m_CollisionDetection: 2
 --- !u!4 &5262538914225126564 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,

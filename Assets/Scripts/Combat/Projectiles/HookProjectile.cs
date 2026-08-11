@@ -19,6 +19,9 @@ public class HookProjectile : MonoBehaviour
     public GameObject hitVfxPrefab;
     public float hitVfxDuration = 0.5f;
 
+    [Header("Debug")]
+    public bool debugLogging = true;
+
     // Set by the ability that fires this projectile
     [HideInInspector] public EnemyAbility_SweepPull ownerAbility;
     [HideInInspector] public Transform ownerTransform;   // the enemy that fired this hook
@@ -27,64 +30,88 @@ public class HookProjectile : MonoBehaviour
 
     private float lifetime;
     private float hitCheckTimer;
+    private Vector3 lastHitCheckPosition;
 
     void Start()
     {
         lifetime = maxLifetime;
         hitCheckTimer = hitCheckInterval;
+        lastHitCheckPosition = transform.position;
+        if (debugLogging)
+            Debug.Log($"[Hook] Launched owner={ownerTransform?.name ?? "none"} position={transform.position:F2} forward={transform.forward:F2} radius={hitRadius:F2}");
     }
 
     void Update()
     {
+        float deltaTime = ownerAbility != null && ownerAbility.IsOwnedByPlayer ? Time.unscaledDeltaTime : Time.deltaTime;
         // Fly forward
-        transform.position += transform.forward * speed * Time.deltaTime;
+        transform.position += transform.forward * speed * deltaTime;
 
         // Hit detection
-        hitCheckTimer -= Time.deltaTime;
+        hitCheckTimer -= deltaTime;
         if (hitCheckTimer <= 0)
         {
             hitCheckTimer = hitCheckInterval;
-            CheckHit();
+            CheckHit(lastHitCheckPosition, transform.position);
+            lastHitCheckPosition = transform.position;
         }
 
         // Timeout
-        lifetime -= Time.deltaTime;
+        lifetime -= deltaTime;
         if (lifetime <= 0)
         {
             // Timeout — notify ability that nothing was hit
+            if (debugLogging)
+                Debug.Log($"[Hook] Missed owner={ownerTransform?.name ?? "none"} position={transform.position:F2} forward={transform.forward:F2}");
             if (ownerAbility != null) ownerAbility.OnHookMissed();
             Destroy(gameObject);
         }
     }
 
-    void CheckHit()
+    void CheckHit(Vector3 from, Vector3 to)
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, hitRadius, hitMask, QueryTriggerInteraction.Collide);
+        Vector3 displacement = to - from;
+        float distance = displacement.magnitude;
+        if (distance > 0.0001f)
+        {
+            RaycastHit[] sweptHits = Physics.SphereCastAll(from, hitRadius, displacement / distance, distance, hitMask, QueryTriggerInteraction.Collide);
+            foreach (var hit in sweptHits)
+                if (TryHitCollider(hit.collider, "sweep")) return;
+        }
+
+        Collider[] hits = Physics.OverlapSphere(to, hitRadius, hitMask, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {
-            // Don't hit the owner
-            if (ownerTransform != null && h.transform.IsChildOf(ownerTransform))
-                continue;
-
-            // Don't hit self
-            if (h.gameObject == gameObject) continue;
-
-            // Check player
-            var ph = h.GetComponentInParent<PlayerHealth>();
-            if (ph != null)
-            {
-                HitTarget(ph.transform, true);
-                return;
-            }
-
-            // Check other enemies
-            var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy.transform != ownerTransform && !enemy.isDowned && !enemy.isPossessed)
-            {
-                HitTarget(enemy.transform, false);
-                return;
-            }
+            if (TryHitCollider(h, "overlap")) return;
         }
+    }
+
+    bool TryHitCollider(Collider collider, string source)
+    {
+        if (collider == null) return false;
+        if (ownerTransform != null && collider.transform.IsChildOf(ownerTransform)) return false;
+        if (collider.gameObject == gameObject) return false;
+
+        var ph = collider.GetComponentInParent<PlayerHealth>();
+        if (ph != null)
+        {
+            if (debugLogging) Debug.Log($"[Hook] Hit player via {source}: collider={collider.name}");
+            HitTarget(ph.transform, true);
+            return true;
+        }
+
+        var enemy = collider.GetComponentInParent<Enemy>();
+        if (enemy == null) return false;
+        if (enemy.transform == ownerTransform || enemy.isDowned || enemy.isPossessed)
+        {
+            if (debugLogging)
+                Debug.Log($"[Hook] Ignored enemy via {source}: target={enemy.name} downed={enemy.isDowned} possessed={enemy.isPossessed}");
+            return false;
+        }
+
+        if (debugLogging) Debug.Log($"[Hook] Hit enemy via {source}: target={enemy.name} collider={collider.name}");
+        HitTarget(enemy.transform, false);
+        return true;
     }
 
     void HitTarget(Transform target, bool isPlayer)
