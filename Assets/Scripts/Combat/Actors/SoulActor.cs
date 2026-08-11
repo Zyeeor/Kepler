@@ -189,6 +189,7 @@ public class SoulActor : Actor
         }
 
         bool hasMove = cmd.HasMove && cmd.MoveDirection.sqrMagnitude >= 0.0001f;
+        float movementDeltaTime = Time.timeScale < 1f ? Time.unscaledDeltaTime : Time.deltaTime;
         Vector3 move = cmd.MoveDirection;
         move.y = 0f;
 
@@ -196,7 +197,7 @@ public class SoulActor : Actor
         {
             // 移动：平滑转向移动方向
             Quaternion targetRot = Quaternion.LookRotation(move, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 12f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, movementDeltaTime * 12f);
         }
         else
         {
@@ -215,10 +216,10 @@ public class SoulActor : Actor
         float speed = EffectiveMoveSpeed;
         Vector3 desired = hasMove ? move * speed : Vector3.zero;
         float accel = hasMove ? (acceleration > 0f ? acceleration : 30f) : (deceleration > 0f ? deceleration : 25f);
-        currentVelocity = Vector3.MoveTowards(currentVelocity, desired, accel * Time.deltaTime);
+        currentVelocity = Vector3.MoveTowards(currentVelocity, desired, accel * movementDeltaTime);
 
         if (currentVelocity.sqrMagnitude <= 0.01f) return;
-        Vector3 targetPos = ApplySpherecast(transform.position, currentVelocity.normalized, currentVelocity.magnitude * Time.deltaTime);
+        Vector3 targetPos = ApplySpherecast(transform.position, currentVelocity.normalized, currentVelocity.magnitude * movementDeltaTime);
         targetPos.y = transform.position.y;
         transform.position = targetPos;
     }

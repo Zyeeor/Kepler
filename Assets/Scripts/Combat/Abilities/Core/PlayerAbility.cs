@@ -47,14 +47,10 @@ public abstract class PlayerAbility : MonoBehaviour
     [Tooltip("Effect Tags applied to targets hit through this ability's shared damage helper.")]
     public System.Collections.Generic.List<string> appliedEffectTags = new System.Collections.Generic.List<string>();
 
-    [Header("Gameplay Tags")]
+    [Header("Activation Requirements")]
     [Tooltip("All listed tags must be active on the player to activate this ability. Empty means no requirement.")]
     public System.Collections.Generic.List<string> requiredTags = new System.Collections.Generic.List<string>();
-    [Tooltip("This ability cannot start while the player has any matching tag. Parent tags match child tags.")]
-    public System.Collections.Generic.List<string> blockedTags = new System.Collections.Generic.List<string> { "State.Action.Fight" };
-    [Tooltip("Tags owned by this ability for its full lifecycle. They are removed only when this ability ends.")]
-    public System.Collections.Generic.List<string> grantedTags = new System.Collections.Generic.List<string> { "State.Action.Fight" };
-    [Tooltip("Effect applied to this ability owner when activation starts. Configure its independent Tags and duration on the Effect asset.")]
+    [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
     [Header("Screen Shake")]
@@ -112,7 +108,7 @@ public abstract class PlayerAbility : MonoBehaviour
 
         CombatAbilityComponent combat = owner.GetComponent<CombatAbilityComponent>();
         string reason;
-        return combat == null || combat.CanActivate(this, requiredTags, blockedTags, out reason);
+        return combat == null || combat.CanActivate(this, requiredTags, out reason);
     }
 
     /// <summary>Trigger the ability. Called by PlayerCombat when player presses the corresponding key.</summary>
@@ -133,7 +129,7 @@ public abstract class PlayerAbility : MonoBehaviour
     protected bool TryBeginAbilityEffect()
     {
         CombatAbilityComponent combat = owner != null ? owner.GetComponent<CombatAbilityComponent>() : null;
-        return combat == null || combat.TryBeginAbility(this, requiredTags, blockedTags, grantedTags, activationEffect, abilityTags);
+        return combat == null || combat.TryBeginAbility(this, requiredTags, activationEffect, abilityTags);
     }
 
     /// <summary>Ends this ability and removes only the Activation Effect instance it created.</summary>

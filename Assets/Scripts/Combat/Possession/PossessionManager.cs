@@ -217,7 +217,11 @@ public class PossessionManager : MonoBehaviour
         }
         reservedBody = target;
 
-        if (State == SwitchState.Possessing) DetachCurrentBodyForSwitch();
+        if (State == SwitchState.Possessing)
+        {
+            StopBulletTime();
+            DetachCurrentBodyForSwitch();
+        }
 
         State = SwitchState.Flying;
         soul.SetPossessionFlight(true);
@@ -242,26 +246,26 @@ public class PossessionManager : MonoBehaviour
     {
         if (State != SwitchState.Possessing || CurrentBody == null) return;
 
-        if (bulletTimeRoutine != null) StopCoroutine(bulletTimeRoutine);
+        if (bulletTimeRoutine != null || ownsBulletTime) StopBulletTime();
         bulletTimeRoutine = StartCoroutine(BulletTimeRoutine());
     }
 
     private IEnumerator BulletTimeRoutine()
     {
+        bulletTimeRestoreScale = Time.timeScale;
+        ownsBulletTime = true;
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.BulletTime);
-        else Time.timeScale = bulletTimeScale;
-
         Time.timeScale = bulletTimeScale;
         Debug.Log($"[Possession] Bullet time started: scale={bulletTimeScale:F2}, duration={bulletTimeDuration:F2}s");
         yield return new WaitForSecondsRealtime(bulletTimeDuration);
 
         if (ownsBulletTime && State == SwitchState.Possessing && !handlingGameOver)
         {
+            ownsBulletTime = false;
             if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
             else Time.timeScale = bulletTimeRestoreScale;
         }
 
-        ownsBulletTime = false;
         bulletTimeRoutine = null;
         Debug.Log("[Possession] Bullet time ended.");
     }
@@ -425,8 +429,19 @@ public class PossessionManager : MonoBehaviour
             bulletTimeRoutine = null;
         }
 
-        if (ownsBulletTime && Mathf.Approximately(Time.timeScale, bulletTimeScale))
-            Time.timeScale = bulletTimeRestoreScale;
+        if (ownsBulletTime)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.GameOver)
+            {
+                GameManager.Instance.SwitchState(State == SwitchState.Possessing
+                    ? GameManager.GameState.Possessed
+                    : GameManager.GameState.Soul);
+            }
+            else if (Mathf.Approximately(Time.timeScale, bulletTimeScale))
+            {
+                Time.timeScale = bulletTimeRestoreScale;
+            }
+        }
         ownsBulletTime = false;
     }
 

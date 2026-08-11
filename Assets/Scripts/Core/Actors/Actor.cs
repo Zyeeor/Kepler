@@ -26,7 +26,7 @@ public abstract class Actor : MonoBehaviour, IActor
 
     // ---- Control ----
     public IController Controller { get; private set; } = NullController.Instance;
-    protected ControlCommand pendingCmd;    // Collected in Update, movement segment consumed in FixedUpdate
+    protected ControlCommand pendingCmd;    // Collected in Update, consumed by the active movement path
     public event Action<Actor> OnControllerChanged;
 
     /// <summary>
@@ -57,9 +57,9 @@ public abstract class Actor : MonoBehaviour, IActor
     }
 
     /// <summary>
-    /// 统一帧循环：Update 收集指令（Controller.Tick → pendingCmd + ExecuteButtons），
-    /// FixedUpdate 消费移动段（ExecuteMovement）。
-    /// Actor 移动由子类使用Transform和显式物理查询处理。
+    /// 统一帧循环：Update 收集指令（Controller.Tick → pendingCmd + ExecuteButtons）。
+    /// 玩家控制角色在 Update 消费移动，以便子弹时间使用非缩放时间；
+    /// AI 保持在 FixedUpdate 消费移动。
     /// </summary>
     protected virtual void Update()
     {
@@ -74,12 +74,12 @@ public abstract class Actor : MonoBehaviour, IActor
         pendingCmd = new ControlCommand();
         Controller.Tick(in ctx, ref pendingCmd);
         ExecuteButtons(in pendingCmd);
-        // 移动段在 FixedUpdate 消费（见类注释：Collected in Update, movement segment consumed in FixedUpdate）
+        if (IsPlayerControlled) ExecuteMovement(in pendingCmd);
     }
 
     protected virtual void FixedUpdate()
     {
-        ExecuteMovement(in pendingCmd);
+        if (!IsPlayerControlled) ExecuteMovement(in pendingCmd);
     }
 
     /// <summary>由子类提供"当前追击/交互目标"（MonsterActor=targetPlayer）。</summary>

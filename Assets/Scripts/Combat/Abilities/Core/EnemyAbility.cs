@@ -75,14 +75,10 @@ public abstract class EnemyAbility : MonoBehaviour
     [Tooltip("Effect Tags applied to targets hit through this ability's shared damage helpers. Cards may add to this list at runtime.")]
     public List<string> appliedEffectTags = new List<string>();
 
-    [Header("Gameplay Tags")]
+    [Header("Activation Requirements")]
     [Tooltip("All listed tags must be active on the owner to activate this ability. Empty means no requirement.")]
     public List<string> requiredTags = new List<string>();
-    [Tooltip("This ability cannot start while the owner has any matching tag. Parent tags match child tags.")]
-    public List<string> blockedTags = new List<string> { "State.Action.Fight" };
-    [Tooltip("Tags owned by this ability for its full lifecycle. They are removed only when this ability ends.")]
-    public List<string> grantedTags = new List<string> { "State.Action.Fight" };
-    [Tooltip("Effect applied to this ability owner when activation starts. Configure its independent Tags and duration on the Effect asset.")]
+    [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
@@ -141,7 +137,7 @@ public abstract class EnemyAbility : MonoBehaviour
 
         CombatAbilityComponent combat = owner.Combat;
         string reason;
-        return combat == null || combat.CanActivate(this, requiredTags, blockedTags, out reason);
+        return combat == null || combat.CanActivate(this, requiredTags, out reason);
     }
 
     /// <summary>Trigger the ability. Called by Enemy AI / Player when possessing.</summary>
@@ -161,7 +157,7 @@ public abstract class EnemyAbility : MonoBehaviour
     protected bool TryBeginActivationEffect()
     {
         CombatAbilityComponent combat = owner != null ? owner.Combat : null;
-        return combat == null || combat.TryBeginAbility(this, requiredTags, blockedTags, grantedTags, activationEffect, abilityTags);
+        return combat == null || combat.TryBeginAbility(this, requiredTags, activationEffect, abilityTags);
     }
 
     /// <summary>Ends this ability and removes only the Activation Effect instance it created.</summary>
