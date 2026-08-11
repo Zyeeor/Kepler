@@ -17,11 +17,8 @@ public class PlayerAbility_GhostDash : PlayerAbility
 
     protected override void OnTrigger()
     {
+        // 冲刺方向统一为鼠标朝向（覆盖灵魂态与附身态）
         Vector3 dashDir = GetMouseAimDirection();
-        // If there's a PlayerInputController with a current move direction, prefer that
-        var input = owner.GetComponent<PlayerInputController>();
-        if (input != null && input.moveDirection != Vector3.zero)
-            dashDir = input.moveDirection;
 
         Vector3 newPos = owner.transform.position + dashDir * dashDistance;
         newPos.y = owner.transform.position.y;

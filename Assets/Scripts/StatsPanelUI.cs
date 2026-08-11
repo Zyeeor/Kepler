@@ -14,7 +14,6 @@ public class StatsPanelUI : MonoBehaviour
 
     [Header("References (auto-found)")]
     private PlayerPassiveManager passives;
-    private PlayerInputController input;
     private PlayerHealth health;
     private PlayerCombat combat;
 
@@ -43,18 +42,16 @@ public class StatsPanelUI : MonoBehaviour
 
     void RefreshPlayerRefs()
     {
-        if (PlayerHealth.Instance != null && PlayerHealth.Instance.isPossessing && PlayerHealth.Instance.possessedEnemy != null)
-        {
-            // Possessed — player is the soul but the controlled body is the enemy
-            // Stats come from PlayerHealth/PlayerInputController/PlayerCombat (soul)
-        }
+        var pm = PossessionManager.Instance;
+        bool possessing = pm != null && pm.State == PossessionManager.SwitchState.Possessing;
+        // Possessed — player is the soul but the controlled body is the enemy
+        // Stats come from PlayerHealth/PlayerInputController/PlayerCombat (soul)
 
-        if (input == null)
+        if (health == null || combat == null)
         {
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
-                input = player.GetComponent<PlayerInputController>();
                 health = player.GetComponent<PlayerHealth>();
                 combat = player.GetComponent<PlayerCombat>();
             }
@@ -65,9 +62,8 @@ public class StatsPanelUI : MonoBehaviour
     {
         if (statsText == null) return;
 
-        float baseSpeed = passives != null ? passives.baseMoveSpeed : (input != null ? input.moveSpeed : 5f);
         float speedBonus = passives != null ? passives.totalMoveSpeedBonus : 0f;
-        float currentSpeed = baseSpeed * (1f + speedBonus);
+        float currentSpeed = passives != null ? passives.CurrentMoveSpeed : 5f;
 
         float lifesteal = passives != null ? passives.totalLifestealBonus : 0f;
 

@@ -119,7 +119,7 @@ public abstract class PlayerAbility : MonoBehaviour
             amount *= (1f + PlayerPassiveManager.Instance.GetDamageAmp());
 
         // If possessing an enemy, route through its ApplyOffensiveDamage to trigger passives
-        var possessed = PlayerHealth.Instance != null ? PlayerHealth.Instance.possessedEnemy : null;
+        var possessed = PossessionManager.Instance != null ? PossessionManager.Instance.CurrentBody : null;
         if (possessed != null)
             possessed.ApplyOffensiveDamage(target, amount);
         else

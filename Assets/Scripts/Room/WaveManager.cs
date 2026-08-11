@@ -102,7 +102,8 @@ public class WaveManager : MonoBehaviour
                 for (int j = spawnedEnemies.Count - 1; j >= 0; j--)
                 {
                     var e = spawnedEnemies[j];
-                    if (e == null || e.isDowned)
+                    // isPossessed：被玩家附身身体 tag 已改为 Player，不再计入本波敌人存活数
+                    if (e == null || e.isDowned || e.isPossessed)
                     {
                         if (e != null) OnEnemyKilled?.Invoke(e);
                         spawnedEnemies.RemoveAt(j);
