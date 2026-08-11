@@ -78,7 +78,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
     IEnumerator SwordQiRoutine()
     {
         if (projectileDelay > 0f)
-            yield return new WaitForSeconds(projectileDelay);
+            yield return AbilityWait(projectileDelay);
 
         // Check upgrades
         float effectiveMaxRange = maxRange;
@@ -122,7 +122,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         // --- Travel loop ---
         while (traveled < effectiveMaxRange)
         {
-            float step = projectileSpeed * Time.deltaTime;
+            float step = projectileSpeed * AbilityDeltaTime;
             traveled += step;
             currentPos = origin + forward * Mathf.Min(traveled, effectiveMaxRange);
 
@@ -144,7 +144,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
             foreach (var h in hits)
             {
                 var enemy = h.GetComponentInParent<Enemy>();
-                if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
+                if (owner.CanDamage(enemy))
                 {
                     DealDamageTo(enemy, damage);
                     hitSomething = true;
@@ -196,7 +196,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         foreach (var h in hits)
         {
             var enemy = h.GetComponentInParent<Enemy>();
-            if (enemy != null && enemy != owner && !enemy.isDowned && !enemy.isPossessed)
+            if (owner.CanDamage(enemy))
             {
                 // Blast damage: reduced multiplier (enemies already hit directly get less from blast)
                 float dmg = damage * blastDamageMultiplier;

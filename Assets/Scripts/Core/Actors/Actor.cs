@@ -59,8 +59,7 @@ public abstract class Actor : MonoBehaviour, IActor
     /// <summary>
     /// 统一帧循环：Update 收集指令（Controller.Tick → pendingCmd + ExecuteButtons），
     /// FixedUpdate 消费移动段（ExecuteMovement）。
-    /// 移动必须在物理帧执行——rb.MovePosition 对 dynamic Rigidbody 在渲染帧调用时，
-    /// 位移会被下一个物理步进覆盖 → 移动变慢/手感异常。
+    /// Actor 移动由子类使用Transform和显式物理查询处理。
     /// </summary>
     protected virtual void Update()
     {

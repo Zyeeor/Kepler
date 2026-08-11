@@ -145,7 +145,7 @@ public class WaveManager : MonoBehaviour
                 if (currentTemplate != null)
                     pos += currentTemplate.roomPosition;
 
-                var go = Instantiate(entry.enemyPrefab, pos, Quaternion.identity);
+                var go = MonsterPool.Instance.Spawn(entry.enemyPrefab, pos, Quaternion.identity);
                 go.tag = "Enemy";
                 // Apply all unlocked upgrades to this new enemy
                 if (CardManager.Instance != null)

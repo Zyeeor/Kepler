@@ -61,7 +61,7 @@ public class EnemyAbility_Laser : EnemyAbility
         {
             if (!isFiring)
             {
-                if (!TryBeginAbilityTags(-1f)) return;
+                if (!TryBeginActivationEffect()) return;
                 isFiring = true;
                 damageTimer = 0f;
                 fireDuration = 0f;
@@ -92,8 +92,8 @@ public class EnemyAbility_Laser : EnemyAbility
             var primary = FindNearestEnemy(origin);
             if (primary == null || primary.isDowned) { StopLaser(); return; }
 
-            damageTimer += Time.deltaTime;
-            fireDuration += Time.deltaTime;
+            damageTimer += AbilityDeltaTime;
+            fireDuration += AbilityDeltaTime;
             if (damageTimer >= tickInterval)
             {
                 float tickDamage = GetTickDamage();
@@ -116,8 +116,8 @@ public class EnemyAbility_Laser : EnemyAbility
             { StopLaser(); return; }
 
             Vector3 targetPos = owner.targetPlayer.position + Vector3.up * 1f;
-            damageTimer += Time.deltaTime;
-            fireDuration += Time.deltaTime;
+            damageTimer += AbilityDeltaTime;
+            fireDuration += AbilityDeltaTime;
             if (damageTimer >= tickInterval)
             {
                 float tickDamage = GetTickDamage();
@@ -198,7 +198,7 @@ public class EnemyAbility_Laser : EnemyAbility
         foreach (var obj in GameObject.FindGameObjectsWithTag("Enemy"))
         {
             var e = obj.GetComponent<Enemy>();
-            if (e != null && e != owner && !e.isDowned && !e.isPossessed)
+            if (owner.CanDamage(e))
             {
                 float d = Vector3.Distance(origin, e.transform.position);
                 if (d <= maxRange && d < nearestDist) { nearestDist = d; nearest = e; }
@@ -210,7 +210,7 @@ public class EnemyAbility_Laser : EnemyAbility
     void StopLaser()
     {
         isFiring = false;
-        EndAbilityTags();
+        EndActivationEffect();
         currentTarget = null;
         if (hitVfx != null) { Destroy(hitVfx, hitImpactDuration); hitVfx = null; }
     }
@@ -222,5 +222,10 @@ public class EnemyAbility_Laser : EnemyAbility
     }
 
     protected override void OnTrigger() { }
-    void OnDisable() { if (isFiring) StopLaser(); }
+
+    protected override void OnDisable()
+    {
+        if (isFiring) StopLaser();
+        base.OnDisable();
+    }
 }

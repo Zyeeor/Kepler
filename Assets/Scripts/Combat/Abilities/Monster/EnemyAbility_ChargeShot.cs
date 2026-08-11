@@ -95,7 +95,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         {
             if (!isCharging)
             {
-                if (!TryBeginAbilityTags(-1f)) return;
+                if (!TryBeginActivationEffect()) return;
                 isCharging = true;
                 chargeTimer = 0f;
                 currentCooldown = 0f;
@@ -108,7 +108,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
                 }
             }
 
-            chargeTimer += Time.deltaTime;
+            chargeTimer += AbilityDeltaTime;
 
             if (chargeVfxInstance != null)
             {
@@ -152,7 +152,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
         while (traveled < maxRange && projectileGo != null)
         {
-            float step = projectileSpeed * Time.deltaTime;
+            float step = projectileSpeed * AbilityDeltaTime;
             traveled += step;
             Vector3 currentPos = origin + forward * Mathf.Min(traveled, maxRange);
             projectileGo.transform.position = currentPos;
@@ -168,7 +168,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponentInParent<Enemy>();
-                if (enemy != null && enemy != owner && !enemy.isDowned)
+                if (owner.CanDamage(enemy))
                 {
                     DealDamageTo(enemy, damage * damageMultiplier * dmgMult);
                     hitSomething = true;
@@ -243,7 +243,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
     IEnumerator SpawnMineDelayed(Vector3 pos)
     {
-        yield return new WaitForSeconds(sloth01MineDelay);
+        yield return AbilityWait(sloth01MineDelay);
         var mineGo = Instantiate(sloth01MinePrefab, pos, Quaternion.identity);
         var mine = mineGo.GetComponent<MineBehaviour>();
         if (mine == null) mine = mineGo.AddComponent<MineBehaviour>();
@@ -263,7 +263,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
         while (traveled < range && bullet != null)
         {
-            float step = sloth02BulletSpeed * Time.deltaTime;
+            float step = sloth02BulletSpeed * AbilityDeltaTime;
             traveled += step;
             Vector3 currentPos = origin + dir * Mathf.Min(traveled, range);
             bullet.transform.position = currentPos;
@@ -272,7 +272,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponentInParent<Enemy>();
-                if (enemy != null && enemy != owner && !enemy.isDowned && (excludeEnemies == null || !excludeEnemies.Contains(enemy)))
+                if (owner.CanDamage(enemy) && (excludeEnemies == null || !excludeEnemies.Contains(enemy)))
                 {
                     DealDamageTo(enemy, damage * damageMultiplier * dmgMult * sloth02BulletScale);
                     Destroy(bullet);
@@ -294,7 +294,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
     void StopCharging()
     {
         isCharging = false;
-        EndAbilityTags();
+        EndActivationEffect();
         chargeTimer = 0f;
         currentCooldown = EffectiveCooldown;
 
@@ -306,4 +306,10 @@ public class EnemyAbility_ChargeShot : EnemyAbility
     }
 
     protected override void OnTrigger() { }
+
+    protected override void OnDisable()
+    {
+        if (isCharging) StopCharging();
+        base.OnDisable();
+    }
 }

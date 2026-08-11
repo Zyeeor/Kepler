@@ -2,19 +2,14 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 附身用例编排器（场景级服务，随场景重建）：统一承载换身状态机与附身全流程编排。
-///
-/// 核心架构语义：附身 = Controller 切换 —— body.SetController(PlayerController.Instance) 一行；
-/// 灵魂与身体共享 PlayerController 输入，附身通过 Controller 挂接目标实现。
-/// State 机：Idle → Flying → Possessing → (Releasing →) Idle
-/// 生命周期要点：飞行协程由本服务持有——GameOver 时由 GameManager 显式调用 OnGameOver 终止，
-/// 避免 timeScale=0 下协程用 unscaledDeltaTime 继续推进而覆盖 GameOver 状态。
+/// Scene-level possession orchestrator. Possession switches the shared PlayerController
+/// from SoulActor to MonsterActor, while PossessionBehavior resolves right-click targets.
 /// </summary>
 public class PossessionManager : MonoBehaviour
 {
     public static PossessionManager Instance { get; private set; }
 
-    [Header("Tuning（附身飞行/偏移/冷却/衰减参数，Inspector 唯一调参入口）")]
+    [Header("Possession")]
     public float possessFlySpeedMultiplier = 5f;
     public float possessYOffset = 0.5f;
     public float possessCooldown = 3f;
@@ -22,252 +17,445 @@ public class PossessionManager : MonoBehaviour
     public float possessionDecayPercent = 0.05f;
     public float decayInterval = 1f;
 
-    // 换身状态机（ENG-SWITCH-001）：
+    [Header("Bullet Time")]
+    [Range(0.05f, 1f)] public float bulletTimeScale = 0.2f;
+    [Min(0.01f)] public float bulletTimeDuration = 2f;
+
     public enum SwitchState { Idle, Flying, Possessing, Releasing }
     public SwitchState State { get; private set; }
     public MonsterActor CurrentBody { get; private set; }
     public float CooldownRemaining { get; private set; }
 
-    // 事件（风格对齐房间模块 event Action）：
     public event System.Action<MonsterActor> OnPossessionStarted;
     public event System.Action OnPossessionEnded;
     public event System.Action<MonsterActor> OnBodyDiedWhilePossessing;
 
     private Coroutine flyRoutine;
+    private Coroutine bulletTimeRoutine;
     private float possessStartTime;
     private float possessionDecayTimer;
     private SoulActor soul;
-
-    // ── 生命周期 ──
+    private PossessionBehavior behavior;
+    private MonsterActor reservedBody;
+    private bool handlingGameOver;
+    private bool ownsBulletTime;
+    private float bulletTimeRestoreScale = 1f;
+    private int lastPossessionInputFrame = -1;
 
     void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
+        Instance = this;
         State = SwitchState.Idle;
         soul = FindObjectOfType<SoulActor>();
+        behavior = GetComponent<PossessionBehavior>();
+        if (behavior == null) behavior = gameObject.AddComponent<PossessionBehavior>();
+        behavior.Initialize(this);
+    }
+
+    void OnDisable()
+    {
+        if (State != SwitchState.Flying) return;
+
+        if (flyRoutine != null)
+        {
+            StopCoroutine(flyRoutine);
+            flyRoutine = null;
+        }
+        if (reservedBody != null) reservedBody.CancelPossessionReservation();
+        reservedBody = null;
+        if (soul == null) soul = FindObjectOfType<SoulActor>();
+        if (soul != null)
+        {
+            soul.SetPossessionFlight(false);
+            soul.SetSuppressed(false);
+        }
+        State = SwitchState.Idle;
+        Debug.LogWarning("[Possession] Flight aborted because PossessionManager was disabled; soul control restored.");
     }
 
     void Update()
     {
-        // 冷却计时
-        if (CooldownRemaining > 0f)
-            CooldownRemaining -= Time.deltaTime;
+        if (handlingGameOver && (GameManager.Instance == null || GameManager.Instance.currentState != GameManager.GameState.GameOver))
+            handlingGameOver = false;
 
-        // 附身衰减：CurrentBody 持续掉血 → 血尽 force 释放
-        if (State == SwitchState.Possessing && CurrentBody != null)
-        {
-            possessionDecayTimer += Time.deltaTime;
-            if (possessionDecayTimer >= decayInterval)
-            {
-                possessionDecayTimer -= decayInterval;
-                float decayAmount = CurrentBody.maxHealth * possessionDecayPercent;
-                CurrentBody.currentHealth -= decayAmount;
-                if (CurrentBody.currentHealth <= 0)
-                {
-                    CurrentBody.currentHealth = 0;
-                    Debug.Log("[PossessionManager] Possessed body died - force release");
-                    // 统一走 NotifyBodyDied：先存 dead 引用 → force release → 事件传 dead
-                    // （避免 RequestRelease 已清空 CurrentBody 导致事件参数为 null）
-                    NotifyBodyDied();
-                }
-            }
-        }
+        if (CooldownRemaining > 0f) CooldownRemaining -= Time.deltaTime;
+
+        if (State != SwitchState.Possessing || CurrentBody == null) return;
+
+        possessionDecayTimer += Time.deltaTime;
+        if (possessionDecayTimer < decayInterval) return;
+
+        possessionDecayTimer -= decayInterval;
+        float decayAmount = CurrentBody.maxHealth * possessionDecayPercent;
+        CurrentBody.currentHealth -= decayAmount;
+        if (CurrentBody.currentHealth > 0f) return;
+
+        CurrentBody.currentHealth = 0f;
+        Debug.Log("[Possession] Current possessed body expired from decay.");
+        NotifyBodyDied();
     }
 
-    // ── 用例入口 ──
+    private void ProcessPossessionInput()
+    {
+        if (!Input.GetMouseButtonDown(1)) return;
 
-    /// <summary>玩家发起附身（SoulActor.ExecuteButtons.Possess → 此处）。</summary>
+        PlayerController controller = PlayerController.Instance;
+        if (controller == null)
+        {
+            Debug.LogWarning("[PossessionInput] Ignored manager right-click: PlayerController is missing.");
+            return;
+        }
+
+        TryRequestPossessFromInput(controller.GetMouseRay(), "PossessionManager");
+    }
+
+    public bool TryRequestPossessFromInput(Ray aimRay, string source)
+    {
+        if (lastPossessionInputFrame == Time.frameCount) return false;
+        lastPossessionInputFrame = Time.frameCount;
+        Debug.Log("[PossessionInput] Right-click received by " + source + ".");
+        return TryRequestPossess(aimRay);
+    }
+
+    public bool TryRequestPossess(Ray aimRay)
+    {
+        if (behavior == null)
+        {
+            behavior = GetComponent<PossessionBehavior>();
+            if (behavior == null) behavior = gameObject.AddComponent<PossessionBehavior>();
+            behavior.Initialize(this);
+            Debug.LogWarning("[Possession] Recreated missing PossessionBehavior.");
+        }
+
+        return behavior.TryBegin(aimRay);
+    }
+
     public void RequestPossess(Ray aimRay)
     {
-        if (State != SwitchState.Idle)
-        {
-            Debug.Log("[Possess] State busy: " + State);
-            return;
-        }
-        if (CooldownRemaining > 0f)
-        {
-            Debug.Log("[Possess] Cooldown: " + CooldownRemaining.ToString("F1") + "s remaining");
-            return;
-        }
-
-        RaycastHit hit;
-        if (!Physics.Raycast(aimRay, out hit, 100f)) return;
-        var body = hit.collider.GetComponentInParent<MonsterActor>();
-        string reason;
-        if (!ValidateTarget(body, out reason))
-        {
-            if (body != null && !string.IsNullOrEmpty(reason)) Debug.Log(reason);
-            return;
-        }
-
-        State = SwitchState.Flying;
-        flyRoutine = StartCoroutine(FlyAndCommitRoutine(body));
+        TryRequestPossess(aimRay);
     }
 
-    /// <summary>脱离附身（玩家按键 / 身体血尽 force:true）。</summary>
+    public bool CanStartPossession(out string reason)
+    {
+        if (handlingGameOver || (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver))
+        {
+            reason = "game is over";
+            return false;
+        }
+
+        if (State == SwitchState.Flying || State == SwitchState.Releasing)
+        {
+            reason = "possession state is busy: " + State;
+            return false;
+        }
+
+        if (State == SwitchState.Idle && CooldownRemaining > 0f)
+        {
+            reason = "possession cooldown remaining=" + CooldownRemaining.ToString("F2");
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    public bool ValidatePossessionTarget(MonsterActor target, out string reason)
+    {
+        if (target == null)
+        {
+            reason = "target has no MonsterActor";
+            return false;
+        }
+
+        if (!target.CanBePossessed)
+        {
+            reason = "target is not in its downed possession window";
+            return false;
+        }
+
+        if (target.isPossessed)
+        {
+            reason = "target is already possessed";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    public bool BeginPossessionFlight(MonsterActor target)
+    {
+        if (!CanStartPossession(out string stateReason))
+        {
+            Debug.Log("[Possession] Flight rejected: " + stateReason);
+            return false;
+        }
+
+        if (!ValidatePossessionTarget(target, out string targetReason))
+        {
+            Debug.Log("[Possession] Flight rejected: " + targetReason);
+            return false;
+        }
+
+        if (soul == null) soul = FindObjectOfType<SoulActor>();
+        if (soul == null)
+        {
+            Debug.LogWarning("[Possession] Flight rejected: SoulActor is missing.");
+            return false;
+        }
+
+        if (!target.TryReserveForPossession())
+        {
+            Debug.Log("[Possession] Flight rejected: target reservation failed.");
+            return false;
+        }
+        reservedBody = target;
+
+        if (State == SwitchState.Possessing) DetachCurrentBodyForSwitch();
+
+        State = SwitchState.Flying;
+        soul.SetPossessionFlight(true);
+        flyRoutine = StartCoroutine(FlyAndCommitRoutine(target));
+        Debug.Log($"[Possession] Flight started: target='{target.displayName}', speedMultiplier={possessFlySpeedMultiplier:F1}");
+        return true;
+    }
+
     public void RequestRelease(bool force)
     {
         if (State != SwitchState.Possessing) return;
         if (!force && Time.time - possessStartTime < minPossessTime)
         {
-            Debug.Log("[Possess] Cannot unpossess yet — " + (minPossessTime - (Time.time - possessStartTime)).ToString("F1") + "s remaining");
+            Debug.Log("[Possession] Release rejected: min possession time remaining=" + (minPossessTime - (Time.time - possessStartTime)).ToString("F2"));
             return;
         }
-        CommitRelease(destroyBody: true);
+
+        CommitRelease(recycleBody: true, startCooldown: true);
     }
 
-    // ── 内部 ──
-
-    private bool ValidateTarget(MonsterActor m, out string reason)
+    public void TriggerBulletTime()
     {
-        reason = null;
-        if (m == null) { reason = "Target is not a MonsterActor"; return false; }
-        // 合法性：BodyState ∈ {Weakened, Downed}（ENG-POSS-001 合法性扩展点）
-        if (!m.isWeakened && !m.isDowned) { reason = "Enemy is not downed yet, keep attacking!"; return false; }
-        if (m.isPossessed) { reason = "Enemy already possessed"; return false; }
-        return true;
+        if (State != SwitchState.Possessing || CurrentBody == null) return;
+
+        if (bulletTimeRoutine != null) StopCoroutine(bulletTimeRoutine);
+        bulletTimeRoutine = StartCoroutine(BulletTimeRoutine());
+    }
+
+    private IEnumerator BulletTimeRoutine()
+    {
+        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.BulletTime);
+        else Time.timeScale = bulletTimeScale;
+
+        Time.timeScale = bulletTimeScale;
+        Debug.Log($"[Possession] Bullet time started: scale={bulletTimeScale:F2}, duration={bulletTimeDuration:F2}s");
+        yield return new WaitForSecondsRealtime(bulletTimeDuration);
+
+        if (ownsBulletTime && State == SwitchState.Possessing && !handlingGameOver)
+        {
+            if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
+            else Time.timeScale = bulletTimeRestoreScale;
+        }
+
+        ownsBulletTime = false;
+        bulletTimeRoutine = null;
+        Debug.Log("[Possession] Bullet time ended.");
     }
 
     private IEnumerator FlyAndCommitRoutine(MonsterActor target)
     {
-        // 飞行前灵魂回血：接管身体前把灵魂 HP 补满，保证附身切换时的血量语义
         if (PlayerHealth.Instance != null)
         {
             PlayerHealth.Instance.currentHealth = PlayerHealth.Instance.soulMaxHealth;
             PlayerHealth.Instance.UpdateHealthUI();
         }
 
-        Vector3 targetPos = target.transform.position;
-        if (soul != null) targetPos.y = soul.transform.position.y;
-        else targetPos.y = 0f;
         float flySpeed = (PlayerHealth.Instance != null ? PlayerHealth.Instance.SoulMoveSpeedForFly : 5f) * possessFlySpeedMultiplier;
-
-        while (soul != null && Vector3.Distance(soul.transform.position, targetPos) > 0.3f)
+        while (target != null && target.CanCompleteReservedPossession)
         {
-            if (target == null) { State = SwitchState.Idle; flyRoutine = null; yield break; }
-            targetPos = target.transform.position;
-            targetPos.y = soul.transform.position.y;
-            Vector3 dir = (targetPos - soul.transform.position).normalized;
-            soul.transform.position = Vector3.MoveTowards(soul.transform.position, targetPos, flySpeed * Time.unscaledDeltaTime);
-            soul.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            Vector3 targetPosition = target.transform.position;
+            targetPosition.y = soul.transform.position.y;
+            if (Vector3.Distance(soul.transform.position, targetPosition) <= 0.3f) break;
+
+            Vector3 direction = targetPosition - soul.transform.position;
+            soul.transform.position = Vector3.MoveTowards(soul.transform.position, targetPosition, flySpeed * Time.unscaledDeltaTime);
+            if (direction.sqrMagnitude > 0.0001f) soul.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
             yield return null;
         }
 
-        if (target == null) { State = SwitchState.Idle; flyRoutine = null; yield break; }
-        State = SwitchState.Idle;
         flyRoutine = null;
+        if (target == null || !target.CanCompleteReservedPossession)
+        {
+            if (reservedBody != null) reservedBody.CancelPossessionReservation();
+            reservedBody = null;
+            Debug.Log("[Possession] Flight cancelled: target was no longer a valid reserved corpse.");
+            CancelFlightToSoul();
+            yield break;
+        }
+
         CommitPossession(target);
     }
 
-    /// <summary>接管身体：Controller 切换为附身核心，随后激活身体/切相机/同步全局状态。</summary>
     private void CommitPossession(MonsterActor target)
     {
         if (target == null) return;
-        if (State == SwitchState.Possessing && CurrentBody != null) CommitRelease(destroyBody: true);
 
+        reservedBody = null;
         CurrentBody = target;
         State = SwitchState.Possessing;
-        if (soul != null && soul.Combat != null)
-            soul.Combat.AddLooseTags(this, new[] { "State.Possession.Active", "State.Soul.Suppressed" });
-        if (target.Combat != null)
-            target.Combat.AddLooseTags(this, new[] { "State.Possession.Active", "State.Possession.Controlled" });
         possessionDecayTimer = 0f;
         possessStartTime = Time.time;
 
-        // ① 灵魂抑制（Controller→Null + collider off + rb kinematic + 跟随模式）
-        if (soul != null) soul.SetSuppressed(true);
-        else if (PlayerHealth.Instance != null) PlayerHealth.Instance.SetSoulActive(false);
+        if (soul != null)
+        {
+            soul.SetPossessionFlight(false);
+            soul.SetSuppressed(true);
+            if (soul.Combat != null) soul.Combat.AddLooseTags(this, new[] { "State.Possession.Active", "State.Soul.Suppressed" });
+        }
+        else if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.SetSoulActive(false);
+        }
 
-        // ② 身体激活（回血回韧性 / tag→Player / 颜色 / 动画）
+        if (target.Combat != null) target.Combat.AddLooseTags(this, new[] { "State.Possession.Active", "State.Possession.Controlled" });
         target.OnPossessed();
-
-        // ③ 附身的架构本质：Controller 切换（AI → 玩家输入）
         target.SetController(PlayerController.Instance);
+        SetCameraTarget(target.transform);
 
-        // ④ 相机切换到身体
-        CameraFollow cf = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
-        if (cf != null) cf.target = target.transform;
-        CameraTarget ct = FindObjectOfType<CameraTarget>();
-        if (ct != null) ct.player = target.transform;
-
-        // ⑤ 被动积累：MonsterActor 经 Enemy 壳类路由到 PlayerPassiveManager
         if (PlayerPassiveManager.Instance != null && target is Enemy)
             PlayerPassiveManager.Instance.OnEnemyPossessed(target as Enemy);
 
-        // ⑥ HUD / 全局状态（HUD 走 IActor 只读视图，不依赖具体类型）
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Show(target);
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
 
-        Debug.Log("[PossessionManager] POSSESSED " + target.displayName);
+        Debug.Log("[Possession] Possessed " + target.displayName);
         OnPossessionStarted?.Invoke(target);
     }
 
-    /// <summary>归还身体：Controller 切回 + 灵魂恢复；destroyBody=true 时销毁身体（对象池唯一钩子点）。</summary>
-    private void CommitRelease(bool destroyBody)
+    private void DetachCurrentBodyForSwitch()
     {
         MonsterActor oldBody = CurrentBody;
-        State = SwitchState.Idle;
         CurrentBody = null;
+        if (oldBody != null)
+        {
+            if (oldBody.Combat != null) oldBody.Combat.RemoveLooseTags(this);
+            oldBody.SetController(NullController.Instance);
+            oldBody.OnUnpossessed();
+            oldBody.BeginDisappearing();
+        }
+
+        if (soul != null)
+        {
+            soul.SetSuppressed(false);
+            if (oldBody != null) soul.transform.position = oldBody.transform.position + Vector3.up * possessYOffset;
+            if (soul.Combat != null) soul.Combat.RemoveLooseTags(this);
+        }
+
+        if (PossessionHUD.Instance != null) PossessionHUD.Instance.Hide();
+        SetCameraTarget(soul != null ? soul.transform : null);
+        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
+    }
+
+    private void CommitRelease(bool recycleBody, bool startCooldown)
+    {
+        MonsterActor oldBody = CurrentBody;
+        CurrentBody = null;
+        State = SwitchState.Releasing;
+        StopBulletTime();
+
         if (soul != null && soul.Combat != null) soul.Combat.RemoveLooseTags(this);
         if (oldBody != null && oldBody.Combat != null) oldBody.Combat.RemoveLooseTags(this);
 
-        // ① 身体 Controller → Null（停用输入；若销毁则先解除引用）
         if (oldBody != null)
         {
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
+            if (recycleBody) oldBody.BeginDisappearing();
         }
 
-        // ② 灵魂恢复（Controller→PlayerController + collider/rb 恢复）
-        if (soul != null) soul.SetSuppressed(false);
-        else if (PlayerHealth.Instance != null) PlayerHealth.Instance.SetSoulActive(true);
-
-        // ③ 相机切回灵魂
-        CameraFollow cf = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
-        Transform restore = soul != null ? soul.transform : (PlayerHealth.Instance != null ? PlayerHealth.Instance.transform : null);
-        if (cf != null && restore != null) cf.target = restore;
-        CameraTarget ct = FindObjectOfType<CameraTarget>();
-        if (ct != null && restore != null) ct.player = restore;
-
-        // ④ 销毁身体（对象池唯一钩子点，后续可在此换回池实现）
-        if (destroyBody && oldBody != null)
+        if (soul != null)
         {
-            var go = oldBody.gameObject;
-            if (go != null) Destroy(go);
+            soul.SetPossessionPosition(oldBody != null ? oldBody.transform.position : soul.transform.position, possessYOffset);
+            soul.SetPossessionFlight(false);
+            soul.SetSuppressed(false);
+        }
+        else if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.SetSoulActive(true);
         }
 
-        // ⑤ 冷却 / HUD / 全局状态
-        CooldownRemaining = possessCooldown;
+        SetCameraTarget(soul != null ? soul.transform : null);
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Hide();
         if (PlayerHealth.Instance != null)
         {
             PlayerHealth.Instance.maxHealth = PlayerHealth.Instance.soulMaxHealth;
             PlayerHealth.Instance.UpdateHealthUI();
         }
-        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
+        if (!handlingGameOver && GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
 
-        Debug.Log("[PossessionManager] Unpossessed - soul form restored");
+        State = SwitchState.Idle;
+        if (startCooldown) CooldownRemaining = possessCooldown;
+        Debug.Log("[Possession] Returned to soul form.");
         OnPossessionEnded?.Invoke();
     }
 
-    /// <summary>被附身身体死亡（由 MonsterActor.TakeDamage 附身分支调用）。</summary>
+    private void CancelFlightToSoul()
+    {
+        if (reservedBody != null) reservedBody.CancelPossessionReservation();
+        reservedBody = null;
+        State = SwitchState.Idle;
+        if (soul != null)
+        {
+            soul.SetPossessionFlight(false);
+            soul.SetSuppressed(false);
+        }
+        SetCameraTarget(soul != null ? soul.transform : null);
+        if (!handlingGameOver && GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
+    }
+
+    private void StopBulletTime()
+    {
+        if (bulletTimeRoutine != null)
+        {
+            StopCoroutine(bulletTimeRoutine);
+            bulletTimeRoutine = null;
+        }
+
+        if (ownsBulletTime && Mathf.Approximately(Time.timeScale, bulletTimeScale))
+            Time.timeScale = bulletTimeRestoreScale;
+        ownsBulletTime = false;
+    }
+
+    private static void SetCameraTarget(Transform target)
+    {
+        if (CameraDirector.Instance != null) CameraDirector.Instance.Target = target;
+    }
+
     public void NotifyBodyDied()
     {
         if (State != SwitchState.Possessing || CurrentBody == null) return;
-        Debug.Log("[PossessionManager] Possessed body died - returning to soul form");
+
         MonsterActor dead = CurrentBody;
-        RequestRelease(force: true);
+        Debug.Log("[Possession] Possessed body died.");
+        CommitRelease(recycleBody: true, startCooldown: true);
         OnBodyDiedWhilePossessing?.Invoke(dead);
     }
 
-    /// <summary>GameOver 防御（GameManager 状态机 GameOver 分支调用）：
-    /// 显式停止飞行协程；若正处于附身态，同步恢复灵魂形态，避免 timeScale=0 下面板与附身状态并存。</summary>
     public void OnGameOver()
     {
-        if (flyRoutine != null) { StopCoroutine(flyRoutine); flyRoutine = null; }
-        if (State == SwitchState.Possessing) CommitRelease(destroyBody: false);
+        handlingGameOver = true;
+        if (flyRoutine != null)
+        {
+            StopCoroutine(flyRoutine);
+            flyRoutine = null;
+        }
+        StopBulletTime();
+        if (State == SwitchState.Possessing) CommitRelease(recycleBody: false, startCooldown: false);
+        else if (State == SwitchState.Flying) CancelFlightToSoul();
         State = SwitchState.Idle;
     }
 }

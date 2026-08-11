@@ -10544,6 +10544,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 90, z: 0}
   damage: 20
   cooldown: 1
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   shakeOnHit: 1
   shakeForce: 0.25
   hitStopOnHit: 1
@@ -10598,7 +10606,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7418821618017662042}
   - component: {fileID: 920952039045924966}
-  - component: {fileID: 1124232026830190194}
   - component: {fileID: 1025113241247231900}
   - component: {fileID: 6900587697003508178}
   - component: {fileID: 2575371082769056}
@@ -10645,43 +10652,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae255e0a7eb45bb4aa20f8db501d0e70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableAutoAttack: 0
-  autoAttackRange: 5
-  autoAttackInterval: 0.5
-  autoAttackDamage: 10
   attackSpeed: 1
   basicAbilities:
   - {fileID: 1440973064119128767}
-  skillAbilities:
-  - {fileID: 2429226288995382171}
-  passiveAbilities: []
---- !u!54 &1124232026830190194
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6619887426231394227}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 5
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
-  m_CollisionDetection: 2
 --- !u!114 &1025113241247231900
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10698,11 +10671,6 @@ MonoBehaviour:
   currentHealth: 200
   healthDecayPercent: 0.02
   decayInterval: 1
-  possessFlySpeedMultiplier: 3
-  possessYOffset: 2
-  possessCooldown: 0
-  minPossessTime: 1
-  possessionDecayPercent: 0.04
   healthSlider: {fileID: 0}
   sliderFillImage: {fileID: 0}
   healthGradient:
@@ -10913,6 +10881,14 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 10
   cooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  blockedTags:
+  - State.Action.Fight
+  grantedTags:
+  - State.Action.Fight
+  activationEffect: {fileID: 0}
   shakeOnHit: 0
   shakeForce: 1
   hitStopOnHit: 0

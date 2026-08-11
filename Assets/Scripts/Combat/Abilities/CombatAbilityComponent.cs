@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -57,12 +56,13 @@ public class CombatAbilityComponent : MonoBehaviour
     private class ActiveAbility
     {
         public Component source;
-        public Coroutine endRoutine;
+        public ActiveEffect activationEffect;
     }
 
     private class ActiveEffect
     {
         public GameplayEffectDefinition definition;
+        public Component ownerAbility;
         public int stacks;
         public float expiresAt;
         public GameObject vfxInstance;
@@ -104,7 +104,7 @@ public class CombatAbilityComponent : MonoBehaviour
         return true;
     }
 
-    public bool TryBeginAbility(Component ability, IList<string> requiredTags, IList<string> blockedTags, IList<string> grantedTags, float activeDuration)
+    public bool TryBeginAbility(Component ability, IList<string> requiredTags, IList<string> blockedTags, IList<string> grantedTags, GameplayEffectDefinition activationEffect, IEnumerable<string> sourceTags)
     {
         if (ability == null) return false;
 
@@ -116,14 +116,21 @@ public class CombatAbilityComponent : MonoBehaviour
         }
 
         if (FindActiveAbility(ability) != null) return true;
+        if (activationEffect == null) return true;
 
-        var entry = new ActiveAbility { source = ability };
+        if (!CanApplyEffect(activationEffect, this, sourceTags, out reason))
+        {
+            OnAbilityRejected?.Invoke(reason);
+            return false;
+        }
+
+        var entry = new ActiveAbility
+        {
+            source = ability,
+            activationEffect = CreateEffectInstance(activationEffect, ability)
+        };
         activeAbilities.Add(entry);
         tags.AddTags(entry, grantedTags);
-
-        if (activeDuration > 0f)
-            entry.endRoutine = StartCoroutine(EndAbilityAfterDuration(entry, activeDuration));
-
         return true;
     }
 
@@ -132,8 +139,8 @@ public class CombatAbilityComponent : MonoBehaviour
         ActiveAbility entry = FindActiveAbility(ability);
         if (entry == null) return;
 
-        if (entry.endRoutine != null) StopCoroutine(entry.endRoutine);
         tags.RemoveTags(entry);
+        if (entry.activationEffect != null) RemoveEffectInstance(entry.activationEffect);
         activeAbilities.Remove(entry);
     }
 
@@ -165,32 +172,14 @@ public class CombatAbilityComponent : MonoBehaviour
         ActiveEffect active = FindActiveEffect(definition);
         if (active == null)
         {
-            active = new ActiveEffect
-            {
-                definition = definition,
-                stacks = 1,
-                expiresAt = GetExpiry(definition),
-                vfxInstance = SpawnEffectVfx(definition)
-            };
-            activeEffects.Add(active);
-            AddEffectTags(active, definition);
+            active = CreateEffectInstance(definition, null);
         }
         else
         {
             if (definition.stackPolicy == GameplayEffectStackPolicy.Replace)
             {
-                tags.RemoveTags(active);
-                if (active.vfxInstance != null) Destroy(active.vfxInstance);
-                activeEffects.Remove(active);
-                active = new ActiveEffect
-                {
-                    definition = definition,
-                    stacks = 1,
-                    expiresAt = GetExpiry(definition),
-                    vfxInstance = SpawnEffectVfx(definition)
-                };
-                activeEffects.Add(active);
-                AddEffectTags(active, definition);
+                RemoveEffectInstance(active);
+                active = CreateEffectInstance(definition, null);
             }
             else
             {
@@ -253,10 +242,7 @@ public class CombatAbilityComponent : MonoBehaviour
         ActiveEffect active = FindActiveEffect(definition);
         if (active == null) return;
 
-        tags.RemoveTags(active);
-        if (active.vfxInstance != null) Destroy(active.vfxInstance);
-        activeEffects.Remove(active);
-        OnEffectExpired?.Invoke(definition);
+        RemoveEffectInstance(active);
     }
 
     public float ModifyMoveSpeed(float value)
@@ -281,17 +267,34 @@ public class CombatAbilityComponent : MonoBehaviour
             ActiveEffect effect = activeEffects[i];
             if (effect.expiresAt < 0f || Time.time < effect.expiresAt) continue;
 
-            tags.RemoveTags(effect);
-            if (effect.vfxInstance != null) Destroy(effect.vfxInstance);
-            activeEffects.RemoveAt(i);
-            OnEffectExpired?.Invoke(effect.definition);
+            if (effect.ownerAbility != null) EndAbility(effect.ownerAbility);
+            else RemoveEffectInstance(effect);
         }
     }
 
-    private IEnumerator EndAbilityAfterDuration(ActiveAbility entry, float duration)
+    private ActiveEffect CreateEffectInstance(GameplayEffectDefinition definition, Component ownerAbility)
     {
-        yield return new WaitForSeconds(duration);
-        if (entry != null && entry.source != null) EndAbility(entry.source);
+        var effect = new ActiveEffect
+        {
+            definition = definition,
+            ownerAbility = ownerAbility,
+            stacks = 1,
+            expiresAt = GetExpiry(definition),
+            vfxInstance = SpawnEffectVfx(definition)
+        };
+        activeEffects.Add(effect);
+        AddEffectTags(effect, definition);
+        return effect;
+    }
+
+    private void RemoveEffectInstance(ActiveEffect effect)
+    {
+        if (effect == null) return;
+
+        tags.RemoveTags(effect);
+        if (effect.vfxInstance != null) Destroy(effect.vfxInstance);
+        activeEffects.Remove(effect);
+        OnEffectExpired?.Invoke(effect.definition);
     }
 
     private void AddEffectTags(ActiveEffect active, GameplayEffectDefinition definition)
@@ -362,7 +365,8 @@ public class CombatAbilityComponent : MonoBehaviour
     {
         for (int i = 0; i < activeEffects.Count; i++)
         {
-            if (activeEffects[i].definition == definition) return activeEffects[i];
+            ActiveEffect effect = activeEffects[i];
+            if (effect.definition == definition && effect.ownerAbility == null) return effect;
         }
         return null;
     }

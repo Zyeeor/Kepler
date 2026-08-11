@@ -30,12 +30,12 @@ public class MineBehaviour : MonoBehaviour
             var enemy = hit.GetComponentInParent<Enemy>();
             if (enemy != null && enemy != placer && !enemy.isDowned)
             {
-                if (placer != null && placer.isPossessed && enemy.isPossessed) continue;
+                if (placer != null && !placer.CanDamage(enemy)) continue;
                 Explode(enemy.transform.position);
                 return;
             }
             var ph = hit.GetComponentInParent<PlayerHealth>();
-            if (ph != null && (placer == null || !placer.isPossessed))
+            if (ph != null && (placer == null || placer.CanDamageSoul()))
             {
                 Explode(ph.transform.position);
                 return;
@@ -58,14 +58,14 @@ public class MineBehaviour : MonoBehaviour
             var enemy = hit.GetComponentInParent<Enemy>();
             if (enemy != null && enemy != placer && !enemy.isDowned)
             {
-                if (placer != null && placer.isPossessed && enemy.isPossessed) continue;
+                if (placer != null && !placer.CanDamage(enemy)) continue;
                 if (placer != null)
                     placer.ApplyOffensiveDamage(enemy, damage);
                 else
                     enemy.TakeDamage(damage);
             }
             var ph = hit.GetComponentInParent<PlayerHealth>();
-            if (ph != null && (placer == null || !placer.isPossessed))
+            if (ph != null && (placer == null || placer.CanDamageSoul()))
             {
                 ph.TakeDamage(damage);
             }

@@ -31,6 +31,9 @@ public class EnemyAbility_SweepPull : EnemyAbility
 
     [Header("Targeting")]
     public LayerMask targetMask = -1;
+    [Tooltip("Possessed owner turn speed before firing toward the mouse aim. 720 = one full turn per 0.5 seconds.")]
+    public float aimTurnSpeed = 720f;
+    public bool debugLogging = true;
 
     [Header("Animation")]
     public string animTrigger = "SweepPull";
@@ -58,6 +61,18 @@ public class EnemyAbility_SweepPull : EnemyAbility
         cooldown = cooldown <= 0f ? 8f : cooldown;
     }
 
+    protected override void OnDisable()
+    {
+        if (owner != null) owner.IsAbilityFacingLocked = false;
+        base.OnDisable();
+    }
+
+    public override void ResetForOwnerReuse()
+    {
+        if (owner != null) owner.IsAbilityFacingLocked = false;
+        base.ResetForOwnerReuse();
+    }
+
     public override bool CanTrigger()
     {
         if (owner.isPossessed) return base.CanTrigger();
@@ -79,8 +94,33 @@ public class EnemyAbility_SweepPull : EnemyAbility
 
     IEnumerator SweepPullRoutine()
     {
-        Vector3 origin = owner.transform.position;
         Vector3 forward = owner.transform.forward;
+        if (owner.isPossessed && PlayerController.Instance != null && PlayerController.Instance.TryGetAimPoint(out Vector3 aimPoint))
+        {
+            Vector3 aimDirection = aimPoint - owner.transform.position;
+            aimDirection.y = 0f;
+            if (aimDirection.sqrMagnitude > 0.0001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(aimDirection.normalized, Vector3.up);
+                owner.IsAbilityFacingLocked = true;
+                while (owner != null && Quaternion.Angle(owner.transform.rotation, targetRotation) > 0.1f)
+                {
+                    owner.transform.rotation = Quaternion.RotateTowards(
+                        owner.transform.rotation,
+                        targetRotation,
+                        aimTurnSpeed * AbilityDeltaTime);
+                    yield return null;
+                }
+                if (owner == null) yield break;
+                owner.transform.rotation = targetRotation;
+                owner.IsAbilityFacingLocked = false;
+                forward = aimDirection.normalized;
+            }
+        }
+
+        Vector3 origin = owner.transform.position;
+        if (debugLogging)
+            Debug.Log($"[Hook] Fire owner={owner.name} position={origin:F2} forward={forward:F2} possessed={owner.isPossessed}");
 
         // Wrath01: dash toward hook direction
         if (IsUpgradeUnlocked("Wrath01"))
@@ -128,7 +168,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
         float elapsed = 0f;
         while (!hookHit && elapsed < timeout)
         {
-            elapsed += Time.deltaTime;
+            elapsed += AbilityDeltaTime;
             yield return null;
         }
 
@@ -186,16 +226,14 @@ public class EnemyAbility_SweepPull : EnemyAbility
     IEnumerator DashForward(Vector3 forward)
     {
         if (owner == null) yield break;
-        var rb = owner.GetComponent<Rigidbody>();
         float dist = 0f;
         while (dist < wrath01DashMaxDist && owner != null)
         {
-            float step = wrath01DashSpeed * Time.deltaTime;
+            float step = wrath01DashSpeed * AbilityDeltaTime;
             dist += step;
             Vector3 targetPos = owner.transform.position + forward * step;
             targetPos.y = owner.transform.position.y;
-            if (rb != null) rb.MovePosition(targetPos);
-            else owner.transform.position = targetPos;
+            owner.transform.position = targetPos;
             yield return null;
         }
     }
@@ -205,6 +243,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
         hookHit = true;
         pullTarget = target;
         isPullingPlayer = isPlayer;
+        if (debugLogging) Debug.Log($"[Hook] Pull target={target?.name ?? "none"} isPlayer={isPlayer}");
     }
 
     /// <summary>Called by HookProjectile when hitting a target (Wrath02: multiple).</summary>
@@ -221,25 +260,26 @@ public class EnemyAbility_SweepPull : EnemyAbility
     {
         hookHit = false;
         pullTarget = null;
+        if (debugLogging) Debug.Log("[Hook] No valid target found before timeout.");
     }
 
     IEnumerator PullTarget(Transform target)
     {
         if (target == null || owner == null) yield break;
 
-        var trb = target.GetComponent<Rigidbody>();
-        bool wasKinematic = false;
-        if (trb != null) { wasKinematic = trb.isKinematic; trb.isKinematic = true; }
+        Actor targetActor = target.GetComponent<Actor>();
+        IController previousController = targetActor != null ? targetActor.Controller : null;
+        if (targetActor != null) targetActor.SetController(NullController.Instance);
 
         while (target != null && owner != null)
         {
             Vector3 ownerPos = owner.transform.position;
             float dist = Vector3.Distance(target.position, ownerPos);
             if (dist <= pullStopDistance) break;
-            target.position = Vector3.MoveTowards(target.position, ownerPos, pullSpeed * Time.deltaTime);
+            target.position = Vector3.MoveTowards(target.position, ownerPos, pullSpeed * AbilityDeltaTime);
             yield return null;
         }
 
-        if (trb != null) trb.isKinematic = wasKinematic;
+        if (targetActor != null && previousController != null) targetActor.SetController(previousController);
     }
 }
