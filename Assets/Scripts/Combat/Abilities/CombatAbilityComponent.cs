@@ -78,7 +78,7 @@ public class CombatAbilityComponent : MonoBehaviour
         tags.RemoveTags(source);
     }
 
-    public bool CanActivate(Component ability, IList<string> requiredTags, IList<string> blockedTags, out string reason)
+    public bool CanActivate(Component ability, IList<string> requiredTags, out string reason)
     {
         reason = string.Empty;
         if (ability != null && FindActiveAbility(ability) != null) return true;
@@ -95,21 +95,15 @@ public class CombatAbilityComponent : MonoBehaviour
             return false;
         }
 
-        if (tags.HasAny(blockedTags))
-        {
-            reason = "Blocked by ability Gameplay Tag";
-            return false;
-        }
-
         return true;
     }
 
-    public bool TryBeginAbility(Component ability, IList<string> requiredTags, IList<string> blockedTags, IList<string> grantedTags, GameplayEffectDefinition activationEffect, IEnumerable<string> sourceTags)
+    public bool TryBeginAbility(Component ability, IList<string> requiredTags, GameplayEffectDefinition activationEffect, IEnumerable<string> sourceTags)
     {
         if (ability == null) return false;
 
         string reason;
-        if (!CanActivate(ability, requiredTags, blockedTags, out reason))
+        if (!CanActivate(ability, requiredTags, out reason))
         {
             OnAbilityRejected?.Invoke(reason);
             return false;
@@ -130,7 +124,6 @@ public class CombatAbilityComponent : MonoBehaviour
             activationEffect = CreateEffectInstance(activationEffect, ability)
         };
         activeAbilities.Add(entry);
-        tags.AddTags(entry, grantedTags);
         return true;
     }
 
