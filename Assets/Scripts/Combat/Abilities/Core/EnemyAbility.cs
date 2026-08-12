@@ -64,6 +64,8 @@ public abstract class EnemyAbility : MonoBehaviour
     [Header("VFX")]
     public GameObject vfxPrefab;       // VFX prefab spawned when the ability triggers
     public Transform vfxSpawnPoint;    // optional spawn anchor (defaults to enemy root)
+    [Tooltip("Optional weapon anchor for Gameplay Effect weapon VFX. Falls back to VFX Spawn Point.")]
+    public Transform weaponVfxSpawnPoint;
     [Tooltip("Local position offset added to the spawn point (relative to anchor's transform).")]
     public Vector3 vfxPositionOffset = Vector3.zero;
     [Tooltip("Delay in seconds before the VFX spawns. 0 = instant.")]
@@ -283,8 +285,29 @@ public abstract class EnemyAbility : MonoBehaviour
             if (!manager.TryGetGameplayEffect(effectTag, out definition)) continue;
 
             string ignoredReason;
-            target.ApplyEffect(definition, owner != null ? owner.Combat : null, abilityTags, out ignoredReason);
+            if (!target.ApplyEffect(definition, owner != null ? owner.Combat : null, abilityTags, out ignoredReason)) continue;
+            SpawnAttackEffectVfx(definition, target, target.transform.position);
         }
+    }
+
+    private void SpawnAttackEffectVfx(GameplayEffectDefinition definition, CombatAbilityComponent target, Vector3 hitPosition)
+    {
+        if (definition == null) return;
+        Transform weaponAnchor = weaponVfxSpawnPoint != null ? weaponVfxSpawnPoint : vfxSpawnPoint;
+        if (definition.weaponVfxPrefab != null && weaponAnchor != null)
+            SpawnEffectVfx(definition.weaponVfxPrefab, weaponAnchor.position, weaponAnchor.rotation, definition.weaponVfxLifetime, definition.attackVfxDuration, target, definition);
+        if (definition.hitVfxPrefab != null)
+            SpawnEffectVfx(definition.hitVfxPrefab, hitPosition, Quaternion.identity, definition.hitVfxLifetime, definition.attackVfxDuration, target, definition);
+    }
+
+    private void SpawnEffectVfx(GameObject prefab, Vector3 position, Quaternion rotation, GameplayEffectVfxLifetime lifetime, float fixedDuration, CombatAbilityComponent target, GameplayEffectDefinition definition)
+    {
+        GameObject instance = Instantiate(prefab, position, rotation);
+        PlayVfx(instance);
+        if (lifetime == GameplayEffectVfxLifetime.FixedDuration && fixedDuration > 0f)
+            Destroy(instance, fixedDuration);
+        else if (lifetime == GameplayEffectVfxLifetime.EffectLifetime)
+            target.RegisterEffectVfx(definition, instance);
     }
 
     protected List<Enemy> FindEnemiesInArc(Vector3 origin, Vector3 forward, float range, float angle, int layerMask = ~0)

@@ -87,6 +87,7 @@ public class PossessionManager : MonoBehaviour
         if (CooldownRemaining > 0f) CooldownRemaining -= Time.deltaTime;
 
         if (State != SwitchState.Possessing || CurrentBody == null) return;
+        if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
 
         possessionDecayTimer += Time.deltaTime;
         if (possessionDecayTimer < decayInterval) return;
@@ -241,6 +242,56 @@ public class PossessionManager : MonoBehaviour
         }
 
         CommitRelease(recycleBody: true, startCooldown: true);
+    }
+
+    /// <summary>
+    /// Debug/test helper: instantly possess a living body, skipping downed-window validation and flight.
+    /// </summary>
+    public bool DebugForcePossess(MonsterActor target)
+    {
+        if (target == null)
+        {
+            Debug.LogWarning("[Possession] DebugForcePossess rejected: target is null.");
+            return false;
+        }
+
+        if (handlingGameOver || (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver))
+        {
+            Debug.Log("[Possession] DebugForcePossess rejected: game is over.");
+            return false;
+        }
+
+        if (soul == null) soul = FindObjectOfType<SoulActor>();
+        if (soul == null)
+        {
+            Debug.LogWarning("[Possession] DebugForcePossess rejected: SoulActor is missing.");
+            return false;
+        }
+
+        if (State == SwitchState.Flying)
+        {
+            if (flyRoutine != null)
+            {
+                StopCoroutine(flyRoutine);
+                flyRoutine = null;
+            }
+            if (reservedBody != null) reservedBody.CancelPossessionReservation();
+            reservedBody = null;
+            soul.SetPossessionFlight(false);
+            State = SwitchState.Idle;
+        }
+
+        if (State == SwitchState.Possessing)
+        {
+            if (CurrentBody == target) return true;
+            StopBulletTime();
+            DetachCurrentBodyForSwitch();
+        }
+
+        CooldownRemaining = 0f;
+        CommitPossession(target);
+        Debug.Log($"[Possession] DebugForcePossess committed: target='{target.displayName}'");
+        return true;
     }
 
     public void TriggerBulletTime()

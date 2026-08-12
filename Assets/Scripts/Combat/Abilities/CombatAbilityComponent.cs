@@ -68,6 +68,7 @@ public class CombatAbilityComponent : MonoBehaviour
         public float expiresAt;
         public float nextPeriodicAt;
         public GameObject vfxInstance;
+        public List<GameObject> attachedVfx = new List<GameObject>();
     }
 
     public void AddLooseTags(object source, IEnumerable<string> grantedTags)
@@ -240,6 +241,12 @@ public class CombatAbilityComponent : MonoBehaviour
         RemoveEffectInstance(active);
     }
 
+    public void RegisterEffectVfx(GameplayEffectDefinition definition, GameObject instance)
+    {
+        ActiveEffect effect = FindActiveEffect(definition);
+        if (effect != null && instance != null) effect.attachedVfx.Add(instance);
+    }
+
     public float ModifyMoveSpeed(float value)
     {
         return value * GetModifier(GameplayEffectModifierType.MoveSpeedMultiplier);
@@ -297,6 +304,8 @@ public class CombatAbilityComponent : MonoBehaviour
 
         tags.RemoveTags(effect);
         if (effect.vfxInstance != null) Destroy(effect.vfxInstance);
+        foreach (GameObject instance in effect.attachedVfx)
+            if (instance != null) Destroy(instance);
         SpawnOneShotVfx(effect.definition != null ? effect.definition.expireVfxPrefab : null, effect.definition);
         activeEffects.Remove(effect);
         OnEffectExpired?.Invoke(effect.definition);

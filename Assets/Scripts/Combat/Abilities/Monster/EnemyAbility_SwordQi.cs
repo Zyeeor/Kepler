@@ -1,10 +1,15 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
 /// Skill: 剑气 - Sword Qi. Fires a directed sword-energy projectile that travels forward.
 /// Upon hitting an enemy or reaching max range, it explodes in an AoE dealing damage
 /// to all enemies within the blast radius.
+/// Builds:
+/// - Pride01: ranged max range
+/// - Pride02: 3-way spread
+/// - Pride.Pierce: pierce enemies, X-pattern follow-up, double damage
 /// </summary>
 public class EnemyAbility_SwordQi : EnemyAbility
 {
@@ -56,10 +61,22 @@ public class EnemyAbility_SwordQi : EnemyAbility
     [Tooltip("Pride02: fire 3 projectiles in a spread. Angle between each shot.")]
     public float pride02SpreadAngle = 15f;
 
+    [Header("Upgrade - Pride.Pierce")]
+    [Tooltip("Pride.Pierce: X-pattern diagonal angle from the pierce axis.")]
+    public float pierceXAngle = 45f;
+    [Tooltip("Pride.Pierce: travel distance of each X arm.")]
+    public float pierceXRange = 4f;
+    [Tooltip("Pride.Pierce: damage multiplier applied to the main blade and X arms.")]
+    public float pierceDamageMultiplier = 2f;
+
     private void OnEnable()
     {
-        type = AbilityType.Skill;
+        // Pride maps Sword Qi to left-click basic attack; keep Inspector type if already set.
+        if (type != AbilityType.BasicAttack) type = AbilityType.BasicAttack;
         abilityName = "剑气";
+        if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.SwordQi", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride.SwordQi");
     }
 
     public override bool CanTrigger()
@@ -77,6 +94,20 @@ public class EnemyAbility_SwordQi : EnemyAbility
         StartCoroutine(SwordQiRoutine());
     }
 
+    /// <summary>Fire an immediate sword-qi burst in a world direction (no windup). Used by BlinkChain build.</summary>
+    public void FireDirectedBurst(Vector3 worldDirection, float overrideDamage = -1f)
+    {
+        if (owner == null) return;
+        Vector3 forward = worldDirection;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f) forward = owner.transform.forward;
+        forward.Normalize();
+
+        float effectiveMaxRange = IsUpgradeUnlocked("Pride01") ? pride01MaxRange : maxRange;
+        float shotDamage = overrideDamage > 0f ? overrideDamage : GetShotDamage();
+        StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, spawnXOnPierce: false));
+    }
+
     IEnumerator SwordQiRoutine()
     {
         if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
@@ -85,36 +116,46 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (projectileDelay > 0f)
             yield return AbilityWait(projectileDelay);
 
-        // Check upgrades
         float effectiveMaxRange = maxRange;
         if (IsUpgradeUnlocked("Pride01"))
             effectiveMaxRange = pride01MaxRange;
 
         bool pride02 = IsUpgradeUnlocked("Pride02");
+        float shotDamage = GetShotDamage();
+        bool pierce = IsUpgradeUnlocked("Pride.Pierce");
 
         if (pride02)
         {
-            // Fire 3 projectiles in a spread
             Vector3 baseForward = owner.transform.forward;
-            StartCoroutine(LaunchProjectile(baseForward, effectiveMaxRange));
+            StartCoroutine(LaunchProjectile(baseForward, effectiveMaxRange, shotDamage, pierce));
             Vector3 left = Quaternion.Euler(0, -pride02SpreadAngle, 0) * baseForward;
-            StartCoroutine(LaunchProjectile(left, effectiveMaxRange));
+            StartCoroutine(LaunchProjectile(left, effectiveMaxRange, shotDamage, pierce));
             Vector3 right = Quaternion.Euler(0, pride02SpreadAngle, 0) * baseForward;
-            StartCoroutine(LaunchProjectile(right, effectiveMaxRange));
+            StartCoroutine(LaunchProjectile(right, effectiveMaxRange, shotDamage, pierce));
         }
         else
         {
-            StartCoroutine(LaunchProjectile(owner.transform.forward, effectiveMaxRange));
+            StartCoroutine(LaunchProjectile(owner.transform.forward, effectiveMaxRange, shotDamage, pierce));
         }
     }
 
-    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange)
+    private float GetShotDamage()
+    {
+        float shotDamage = damage;
+        if (IsUpgradeUnlocked("Pride.Pierce"))
+            shotDamage *= pierceDamageMultiplier;
+        return shotDamage;
+    }
+
+    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange, float shotDamage, bool spawnXOnPierce)
     {
         Vector3 origin = owner.transform.position;
         Vector3 currentPos = origin + forward * 1f;
         float traveled = 0f;
+        bool pierce = IsUpgradeUnlocked("Pride.Pierce");
+        var hitIds = new HashSet<int>();
+        bool spawnedX = false;
 
-        // Spawn projectile VFX
         GameObject projVfx = null;
         if (projectileVfxPrefab != null)
         {
@@ -124,7 +165,6 @@ public class EnemyAbility_SwordQi : EnemyAbility
             projVfx.transform.localScale *= projectileVfxScale;
         }
 
-        // --- Travel loop ---
         while (traveled < effectiveMaxRange)
         {
             float step = projectileSpeed * AbilityDeltaTime;
@@ -152,14 +192,18 @@ public class EnemyAbility_SwordQi : EnemyAbility
                 var enemy = h.GetComponentInParent<Enemy>();
                 if (owner.CanDamage(enemy))
                 {
-                    DealDamageTo(enemy, damage);
+                    int id = enemy.GetInstanceID();
+                    if (!hitIds.Add(id)) continue;
+                    DealDamageTo(enemy, shotDamage);
                     hitSomething = true;
                     hitPos = enemy.transform.position;
                 }
                 var ph = h.GetComponentInParent<PlayerHealth>();
                 if (ph != null)
                 {
-                    DealDamageToPlayer(ph, damage);
+                    int id = ph.GetInstanceID();
+                    if (!hitIds.Add(id)) continue;
+                    DealDamageToPlayer(ph, shotDamage);
                     hitSomething = true;
                     hitPos = ph.transform.position;
                 }
@@ -167,24 +211,49 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
             if (hitSomething)
             {
-                if (projVfx != null) Destroy(projVfx);
-                DoExplosion(hitPos);
-                yield break;
+                if (pierce)
+                {
+                    if (spawnXOnPierce && !spawnedX)
+                    {
+                        spawnedX = true;
+                        SpawnXPattern(hitPos, forward, shotDamage);
+                    }
+                    // Keep traveling through targets.
+                }
+                else
+                {
+                    if (projVfx != null) Destroy(projVfx);
+                    DoExplosion(hitPos, shotDamage);
+                    yield break;
+                }
             }
 
             yield return null;
         }
 
         if (projVfx != null) Destroy(projVfx);
-        DoExplosion(currentPos);
+        if (!pierce)
+            DoExplosion(currentPos, shotDamage);
+        else if (spawnXOnPierce && !spawnedX)
+            SpawnXPattern(currentPos, forward, shotDamage);
     }
 
-    /// <summary>
-    /// AoE explosion at the given position. Damages all enemies within blastRadius.
-    /// </summary>
-    void DoExplosion(Vector3 center)
+    private void SpawnXPattern(Vector3 origin, Vector3 axis, float shotDamage)
     {
-        // Spawn explosion VFX
+        Vector3 forward = axis;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f) forward = owner != null ? owner.transform.forward : Vector3.forward;
+        forward.Normalize();
+
+        Vector3 armA = Quaternion.Euler(0f, pierceXAngle, 0f) * forward;
+        Vector3 armB = Quaternion.Euler(0f, -pierceXAngle, 0f) * forward;
+        StartCoroutine(LaunchProjectile(armA, pierceXRange, shotDamage, spawnXOnPierce: false));
+        StartCoroutine(LaunchProjectile(armB, pierceXRange, shotDamage, spawnXOnPierce: false));
+        DoExplosion(origin, shotDamage);
+    }
+
+    void DoExplosion(Vector3 center, float shotDamage)
+    {
         if (explosionVfxPrefab != null)
         {
             Vector3 expPos = center + explosionVfxPositionOffset;
@@ -196,7 +265,6 @@ public class EnemyAbility_SwordQi : EnemyAbility
             Debug.LogWarning("[SwordQi] explosionVfxPrefab is NULL — assign one in the Inspector");
         }
 
-        // AoE damage — when possessed, hit all layers (to damage other enemies)
         int layerMask = owner.isPossessed ? ~0 : targetMask;
         Collider[] hits = Physics.OverlapSphere(center, blastRadius, layerMask, QueryTriggerInteraction.Collide);
         CombatHitboxDebug.DrawSphere(drawHitboxes, center, blastRadius);
@@ -205,14 +273,13 @@ public class EnemyAbility_SwordQi : EnemyAbility
             var enemy = h.GetComponentInParent<Enemy>();
             if (owner.CanDamage(enemy))
             {
-                // Blast damage: reduced multiplier (enemies already hit directly get less from blast)
-                float dmg = damage * blastDamageMultiplier;
+                float dmg = shotDamage * blastDamageMultiplier;
                 DealDamageTo(enemy, dmg);
             }
             var ph = h.GetComponentInParent<PlayerHealth>();
             if (ph != null)
             {
-                DealDamageToPlayer(ph, damage * blastDamageMultiplier);
+                DealDamageToPlayer(ph, shotDamage * blastDamageMultiplier);
             }
         }
     }
@@ -222,15 +289,12 @@ public class EnemyAbility_SwordQi : EnemyAbility
         Vector3 origin = Application.isPlaying && owner != null ? owner.transform.position : transform.position;
         Vector3 forward = Application.isPlaying && owner != null ? owner.transform.forward : transform.forward;
 
-        // Draw projectile path
         Gizmos.color = new Color(0.8f, 0.8f, 0.2f, 0.5f);
         Gizmos.DrawLine(origin, origin + forward * maxRange);
 
-        // Draw blast radius at max range
         Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.3f);
         Gizmos.DrawWireSphere(origin + forward * maxRange, blastRadius);
 
-        // Draw projectile width
         Gizmos.color = new Color(0.8f, 0.8f, 0.2f, 0.2f);
         Vector3 right = Quaternion.Euler(0, 90, 0) * forward;
         Vector3 halfW = right * (projectileWidth * 0.5f);

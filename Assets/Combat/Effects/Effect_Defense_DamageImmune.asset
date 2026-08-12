@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ffa75f8f1f74df2b0838f2bbe7f8d5, type: 3}
+  m_Name: Effect_Defense_DamageImmune
+  m_EditorClassIdentifier: 
+  effectName: "\u4F24\u5BB3\u514D\u75AB"
+  effectTag: Effect.Defense.DamageImmune
+  duration: 0
+  maxStacks: 1
+  stackPolicy: 0
+  requiredTargetTags: []
+  blockedTargetTags: []
+  requiredSourceTags: []
+  blockedSourceTags: []
+  grantedTags:
+  - State.Defense.DamageImmune
+  modifiers:
+  - type: 2
+    multiplier: 0
+  periodicInterval: 0
+  activeVfxPrefab: {fileID: 0}
+  parentVfxToTarget: 1
+  applyVfxPrefab: {fileID: 0}
+  expireVfxPrefab: {fileID: 0}
+  oneShotVfxDuration: 2
+  weaponVfxPrefab: {fileID: 0}
+  hitVfxPrefab: {fileID: 0}
+  weaponVfxLifetime: 0
+  hitVfxLifetime: 0
+  attackVfxDuration: 1
