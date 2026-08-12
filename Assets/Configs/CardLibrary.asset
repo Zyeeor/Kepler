@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fae0a69f9347fc44874c43b515c00dc, type: 3}
+  m_Name: CardLibrary
+  m_EditorClassIdentifier: 
+  cards:
+  - cardName: Qi Blade
+    effectId: Pride01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: Unleashes ranged Sword QI
+    abilityPrefab: {fileID: 2751529135426893704, guid: ec5bb6704faff894cadeb058433abcfb,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Shadow Blade
+    effectId: Pride02
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: Unleashes 2 extra shadow blade, now fires three blade
+    abilityPrefab: {fileID: 2751529135426893704, guid: ec5bb6704faff894cadeb058433abcfb,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Death Eye
+    effectId: Envy01
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: lazer Damage will ramp up while tethering its enemy
+    abilityPrefab: {fileID: 1991930722731350795, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Muti Eye
+    effectId: Envy02
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: death eye split into two, both shoot lazer
+    abilityPrefab: {fileID: 1991930722731350795, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Chain Dash
+    effectId: Wrath01
+    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    description: Wrath uses the chain to lauch itself forward
+    abilityPrefab: {fileID: 4458424409059008162, guid: 66d90218762cbc74c8a67b828c7e4e85,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Grasping Chain
+    effectId: Wrath02
+    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    description: The Chain can grap mutiple enemies in an area
+    abilityPrefab: {fileID: 8551900017215022505, guid: 66d90218762cbc74c8a67b828c7e4e85,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Parasidic Mine
+    effectId: Sloth01
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: Enemy died from eneergy blast will spawn a mine automaticlally
+    abilityPrefab: {fileID: 6423168399959792756, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []
+  - cardName: Shatter Blast
+    effectId: Sloth02
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: Based on charge time, blast will spread more blasts upon impact
+    abilityPrefab: {fileID: 4365737887685492572, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
+      type: 3}
+    targetAbilityTags: []
+    grantedEffectTags: []

@@ -19,6 +19,10 @@ public class GameManager : MonoBehaviour
 
     [Header("GameOver UI")]
     public GameObject gameOverPanel;
+
+    [Header("Test")]
+    [Tooltip("测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）。")]
+    public bool testDoublePickOnStart = true;
     
     public enum GameState
     {
@@ -59,6 +63,23 @@ public class GameManager : MonoBehaviour
         var listeners = FindObjectsOfType<AudioListener>();
         for (int i = 1; i < listeners.Length; i++)
             listeners[i].enabled = false;
+
+        // 测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）
+        if (testDoublePickOnStart)
+            StartCoroutine(TriggerTestDoublePick());
+    }
+
+    // 测试用：延迟两帧确保 CoreChoiceUI.Instance 已就绪后，触发双选弹窗
+    System.Collections.IEnumerator TriggerTestDoublePick()
+    {
+        yield return null;          // 等一帧，确保 CoreChoiceUI.Instance 已 Awake
+        yield return null;          // 再等一帧，确保场景完全就绪
+        var ui = CoreChoiceUI.Instance;
+        Debug.Log($"[Test] TriggerTestDoublePick: CoreChoiceUI.Instance={(ui != null ? "found" : "NULL")}");
+        if (ui != null)
+        {
+            ui.Show(onClosed: () => Debug.Log("[Test] DoublePick closed"), doublePick: true);
+        }
     }
     
     void Update()

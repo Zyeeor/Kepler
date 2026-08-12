@@ -134,6 +134,9 @@ public class PlayerController : MonoBehaviour, IController
         CurrentMoveDirection = Vector3.zero;
         if (IsGameplayInputBlocked) return;
 
+        // 暂停/选卡期间（timeScale=0）屏蔽玩家输入，产出空指令
+        if (Time.timeScale == 0f) return;
+
         // 移动（WASD，映射到世界空间）
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");

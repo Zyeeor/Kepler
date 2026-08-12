@@ -119,6 +119,13 @@ public class UIManager : MonoBehaviour
                 return;
             }
 
+            // 选卡会话进行中（含隐藏界面）：ESC 进暂停菜单，选卡保持，暂停后可继续选卡
+            if (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting)
+            {
+                TogglePause();
+                return;
+            }
+
             // GameOver 状态下不响应 ESC（由 GameOver 面板上的按钮处理）
             if (gameOverPanel != null && gameOverPanel.activeSelf)
                 return;
@@ -178,11 +185,18 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Time.timeScale = 1f;
+            // 选卡会话进行中退出暂停：保持暂停（timeScale=0），继续选卡
+            Time.timeScale = IsDraftingActive() ? 0f : 1f;
             Debug.Log("UIManager: Game resumed");
         }
 
         UpdatePauseButtonText();
+    }
+
+    /// <summary>选卡会话是否进行中（UIManager 视角：CoreChoiceUI 存在且 IsDrafting）。</summary>
+    bool IsDraftingActive()
+    {
+        return CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting;
     }
 
     void UpdatePauseButtonText()
@@ -225,17 +239,30 @@ public class UIManager : MonoBehaviour
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
+        // 暂停期间把选卡界面 Canvas 降到暂停菜单之下：
+        // 暂停菜单的全屏半透明遮罩（raycastTarget=true）会盖住并拦截选卡界面点击，
+        // 因此不需要专门禁用 continue 按钮
+        if (CoreChoiceUI.Instance != null)
+            CoreChoiceUI.Instance.SetCanvasSortingOrder(-10);
+
         Debug.Log("UIManager: Pause menu shown");
     }
 
     void HidePauseMenu()
     {
-        Time.timeScale = 1f;
+        // 选卡会话进行中退出暂停：保持暂停（timeScale=0），继续选卡
+        bool drafting = IsDraftingActive();
+        Time.timeScale = drafting ? 0f : 1f;
         if (pauseMenuPanel != null)
             pauseMenuPanel.SetActive(false);
 
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        // 恢复选卡界面 Canvas 层级（暂停时被降到 -10）
+        if (CoreChoiceUI.Instance != null)
+            CoreChoiceUI.Instance.SetCanvasSortingOrder(100);
+
+        // 游戏正常态光标可见（项目无锁定光标的游玩方式），恢复暂停时保持光标可见
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
         Debug.Log("UIManager: Pause menu hidden");
     }
