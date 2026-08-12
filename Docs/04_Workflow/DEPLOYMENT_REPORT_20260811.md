@@ -57,3 +57,50 @@ The deployment commit containing this report uses message `chore: bootstrap mini
 `PASS`
 
 The repository now defines where source inputs, Canonical, Open Decisions, Tasks, workflow rules, audits, PM inputs, and Agent prompts belong. Team members and supported Agents can follow a consistent Task-to-review path, while the old Demo has a remotely verified recovery baseline. Remaining GitHub administration and LFS adoption are explicit human decisions rather than deployment failures.
+
+## G. Post-deployment Task workflow update
+
+On 2026-08-11, the Owner confirmed that the `Possession Development` GitHub Project was created under `Zyeeor`, uses `Zyeeor/Kepler` as its default repository, and exposes `Backlog`, `Ready`, `Doing`, `Review`, and `Done` statuses. The connected collaborator can open and edit the Project.
+
+The repository workflow documentation was subsequently aligned to a GitHub Issue + Markdown Contract hybrid mode:
+
+- Every Task uses a GitHub Issue as the human entry point.
+- Low-risk, well-specified work may remain Issue-only.
+- Complex or high-risk work additionally requires a linked Detailed Contract under `Tasks/`.
+- GitHub Project status controls daily tracking; Contract directories map to the relevant lifecycle stages when a Contract exists.
+
+This section records a later workflow clarification and does not rewrite the original deployment facts. Branch protection, required PR rules, collaborator administration, LFS adoption, Canonical content, and Unity business content remain unchanged.
+## H. Team-Facing Summary / 普通成员需要知道什么
+
+本次部署为《Possession》增加了最小 Agent 开发流水线和团队协作规则。
+
+普通成员日常只需要理解：
+
+1. `Possession Development` 是团队任务总看板；
+2. GitHub Issue 是所有正式 Task 的人类主入口；
+3. 简单、低风险 Task 可以 Issue-only；
+4. 复杂或高风险 Task 使用 Issue + `Tasks/*.md` Detailed Contract；
+5. 正式 Task 从最新 `main` 创建独立 Branch；
+6. Branch 命名以 `work/<TASK-ID>-description` 为主；
+7. 一个逻辑完整 Task 原则上对应一个主要 Branch 和一个 PR；
+8. 完成后通过 PR 进入 Review，不直接修改或自行 Merge `main`；
+9. Professional Owner 负责专业 Review；
+10. Owner / Integration Owner 负责最终 Merge；
+11. WorkBuddy、Codex 等 Agent 统一从 `AGENTS.md` 进入项目规则；
+12. 团队使用指南为 `Docs/04_Workflow/TEAM_QUICKSTART.md` 和 `Docs/04_Workflow/TEAM_WORKFLOW_GUIDE.md`。
+
+Project 状态统一为：
+
+```text
+Backlog -> Ready -> Doing -> Review -> Done
+```
+
+Priority 已由 Owner 于 2026-08-12 确认为保存成功的 Single select 字段，正式选项为 P0 / P1 / P2 / P3。
+
+需要注意：
+
+- 团队规范和 GitHub 管理员级强制设置是两回事；Branch Protection、Required Review、Actions 等只有在管理员实际启用后才能写成 GitHub 已强制；
+- Git LFS 尚未正式启用广泛规则，也没有执行历史迁移；
+- Legacy Audit 机制已准备，不代表旧 Demo 审计已经完成；
+- Canonical 不能由 Agent 从旧 Demo 自行推断；
+- 本摘要所在文档变更当前仍位于 `work/INFRA-agent-pipeline-v1`，等待 Owner Review，尚未 Merge 到 `main`。

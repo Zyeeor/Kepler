@@ -10,6 +10,7 @@ Bootstrap a minimum, repository-centric Agent collaboration pipeline for Possess
 - Added standard `Docs/`, `Tasks/`, and `Templates/` structures.
 - Added pre-deployment audit and Git LFS recommendation.
 - Added branch, GitHub manual setup, WorkBuddy onboarding, Agent start, Design Intake, Legacy Audit, PM, review, handoff, and integration guidance.
+- Defined the Task entry model as GitHub Issue for every Task, with a linked Markdown Contract only for complex or high-risk work.
 - Added this PR summary and the dated deployment report.
 
 ## What did not change

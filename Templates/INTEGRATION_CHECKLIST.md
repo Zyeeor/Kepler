@@ -1,10 +1,12 @@
 # Integration Checklist: <TASK-ID>
 
-- [ ] Task is Ready for Review.
+- [ ] The GitHub Issue exists and is in `Review`.
+- [ ] If a Detailed Contract is required, the Issue links it and it is under `Tasks/Review/`.
 - [ ] Professional Owner completed review.
-- [ ] Scope matches the Task.
+- [ ] Scope matches the Issue and any linked Detailed Contract.
+- [ ] Acceptance Criteria are satisfied.
 - [ ] Git diff contains no unrelated changes.
-- [ ] Unity opens normally.
+- [ ] Unity opens normally when Unity validation is required.
 - [ ] No new severe Console errors.
 - [ ] ProjectSettings changes are approved and documented.
 - [ ] Packages changes are approved and documented.

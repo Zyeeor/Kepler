@@ -122,18 +122,35 @@ Never silently convert an Open Decision or Agent inference into Canonical. Exist
 
 ## Task start protocol
 
-Before changing files, read:
+The GitHub Issue is the first Task entry point. Before changing files, read:
 
 1. `AGENTS.md`
 2. `.vibe/rules.md`
-3. The current Task
-4. Its Parent Feature
-5. Related Canonical
-6. Open Decisions
-7. The current implementation
+3. The current GitHub Issue
+4. The linked Detailed Contract under `Tasks/`, if the Issue provides one
+5. Its Parent Feature, when applicable
+6. Related Canonical
+7. Open Decisions
+8. The current implementation
+
+An Issue-only Task is valid without a Markdown Contract. Do not refuse it only because `Tasks/*.md` is absent. If a Contract is linked, it is mandatory execution context. If the Issue and any linked Contract do not provide enough rules, scope, dependencies, or acceptance criteria, stop and request clarification rather than guessing.
 
 Report Goal, Scope, Out of Scope, files to modify, implementation plan, test plan, risks, requirement conflicts, and Shared Original impact before execution. Stop on unclear rules, unresolved Open Decisions, or high-risk modifications.
 
+## Team Workflow Navigation
+
+For team collaboration and daily Task execution:
+
+- First-time human onboarding: `Docs/04_Workflow/TEAM_QUICKSTART.md`
+- Full team workflow guide: `Docs/04_Workflow/TEAM_WORKFLOW_GUIDE.md`
+- Task system: `Tasks/README.md`
+- Branch rules: `Docs/04_Workflow/BRANCH_RULES.md`
+- WorkBuddy onboarding: `Docs/04_Workflow/WORKBUDDY_ONBOARDING.md`
+- Agent Task start procedure: `Docs/04_Workflow/AGENT_TASK_START_PROMPT.md`
+- Design update workflow: `Docs/04_Workflow/DESIGN_INTAKE.md`
+- Integration checklist: `Templates/INTEGRATION_CHECKLIST.md`
+
+When answering questions about Task location, Markdown Contracts, Branches, Commit / Push / PR, Review, Merge, or role-specific execution, read the relevant guide above and then confirm the answer against its underlying rule source. Do not create a second workflow by inference.
 ## Scope and ownership
 
 - Each Task records a Professional Owner and an Executor; they may be different.
