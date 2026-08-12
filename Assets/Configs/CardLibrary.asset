@@ -13,22 +13,64 @@ MonoBehaviour:
   m_Name: CardLibrary
   m_EditorClassIdentifier: 
   cards:
-  - cardName: Qi Blade
-    effectId: Pride01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Unleashes ranged Sword QI
-    abilityPrefab: {fileID: 2751529135426893704, guid: ec5bb6704faff894cadeb058433abcfb,
-      type: 3}
-    targetAbilityTags: []
+  - cardName: "\u5251\u6C14\u7A7F\u900F"
+    effectId: Pride.Pierce
+    image: {fileID: 0}
+    description: Sword Qi pierces, X follow-up, double damage.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.SwordQi
     grantedEffectTags: []
-  - cardName: Shadow Blade
+    abilityParameters: []
+  - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
     effectId: Pride02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Unleashes 2 extra shadow blade, now fires three blade
-    abilityPrefab: {fileID: 2751529135426893704, guid: ec5bb6704faff894cadeb058433abcfb,
-      type: 3}
-    targetAbilityTags: []
+    image: {fileID: 0}
+    description: Fires three Sword Qi blades in a spread.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.SwordQi
     grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
+    effectId: Pride01
+    image: {fileID: 0}
+    description: Sword Qi becomes long-range.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.SwordQi
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u84C4\u529B\u7A81\u8FDB"
+    effectId: Pride.ChargeEmpowered
+    image: {fileID: 0}
+    description: Charge farther; damage scales up to +100%.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.ChargeStrike
+    grantedEffectTags: []
+    abilityParameters:
+    - key: ChargeDistance
+      value: 10
+  - cardName: "\u7A7F\u68AD\u9644\u52A0\u6C14\u5203"
+    effectId: Pride.BlinkSwordQi
+    image: {fileID: 0}
+    description: Each blink also fires Sword Qi along blink direction.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.BlinkChain
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u7A7F\u68AD+2"
+    effectId: Pride.BlinkCountPlusTwo
+    image: {fileID: 0}
+    description: Blink Chain strikes 6 times.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.BlinkChain
+    grantedEffectTags: []
+    abilityParameters:
+    - key: BlinkCount
+      value: 6
   - cardName: Death Eye
     effectId: Envy01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
@@ -37,6 +79,7 @@ MonoBehaviour:
       type: 3}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: Muti Eye
     effectId: Envy02
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
@@ -45,6 +88,7 @@ MonoBehaviour:
       type: 3}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: Chain Dash
     effectId: Wrath01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -53,6 +97,7 @@ MonoBehaviour:
       type: 3}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: Grasping Chain
     effectId: Wrath02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -61,6 +106,7 @@ MonoBehaviour:
       type: 3}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: Parasidic Mine
     effectId: Sloth01
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -69,6 +115,7 @@ MonoBehaviour:
       type: 3}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: Shatter Blast
     effectId: Sloth02
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -77,3 +124,4 @@ MonoBehaviour:
       type: 3}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
