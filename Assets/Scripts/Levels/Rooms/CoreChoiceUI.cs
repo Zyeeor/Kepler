@@ -209,7 +209,10 @@ public class CoreChoiceUI : MonoBehaviour
             if (selectedIndex == index) selectedIndex = -1;
             Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}");
         }
-        else Debug.LogWarning($"[CoreChoiceUI] Reroll produced no card: index={index}");
+        else
+        {
+            Debug.LogWarning($"[CoreChoiceUI] Reroll produced no card: index={index}");
+        }
     }
 
     /// <summary>
