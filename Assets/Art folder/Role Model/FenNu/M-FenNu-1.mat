@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties: _Maintex
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -101,7 +101,7 @@ Material:
     - _Cutoff: 0.5
     - _DarkRange: -1
     - _Dark_intensity: 0
-    - _Darksoft: 0.401
+    - _Darksoft: 0.45
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0

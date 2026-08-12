@@ -1,0 +1,246 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-08-07T15:03:15",
+  "material_source_mode": "material",
+  "material_source_path": "Assets/Art folder/Shader/MAP_Standard.mat",
+  "material_update_policy": "preserve_existing",
+  "shader_slots": [
+    "_AO=_MetallicGlossMap",
+    "_BC=_ParallaxMap",
+    "_G=_MetallicGlossMap",
+    "_M=_MetallicGlossMap",
+    "_MRA=_MetallicGlossMap",
+    "_N=_NormalMap",
+    "_R=_MetallicGlossMap"
+  ],
+  "mesh_folder": "Assets/Art folder/Scene_Mesh",
+  "material_folder": "Assets/Art folder/Scene_Mesh",
+  "texture_folder": "Assets/Art folder/Scene_Mesh",
+  "assets": [
+    {
+      "asset_name": "Rage_Build_Wall_066",
+      "meshes": [
+        {
+          "name": "Rage_Build_Wall_066",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Rage_Build_Wall_066.fbx",
+          "source_material": "Mat_Rage_Build_Wall_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Rage_Build_Wall_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall_01.mat",
+          "meshes": [
+            "Rage_Build_Wall_066"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_M",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall_01_M.png",
+              "srgb": false,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "asset_name": "Rage_Build_Arch01_007",
+      "meshes": [
+        {
+          "name": "Rage_Build_Arch01_007",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Rage_Build_Arch01_007.fbx",
+          "source_material": "Mat_Rage_Build_Arch01_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Rage_Build_Arch01_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Arch01_01.mat",
+          "meshes": [
+            "Rage_Build_Arch01_007"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Arch01_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Arch01_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_M",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Arch01_01_M.png",
+              "srgb": false,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Arch01_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "asset_name": "Rage_Build_Wall02_006",
+      "meshes": [
+        {
+          "name": "Rage_Build_Wall02_006",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Rage_Build_Wall02_006.fbx",
+          "source_material": "Mat_Rage_Build_Wall02_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Rage_Build_Wall02_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall02_01.mat",
+          "meshes": [
+            "Rage_Build_Wall02_006"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall02_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall02_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_M",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall02_01_M.png",
+              "srgb": false,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Wall02_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "asset_name": "Rage_Build_BoosDoor_01",
+      "meshes": [
+        {
+          "name": "Rage_Build_BoosDoor_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Rage_Build_BoosDoor_01.fbx",
+          "source_material": "Mat_Rage_Build_BoosDoor_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Rage_Build_BoosDoor_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01.mat",
+          "meshes": [
+            "Rage_Build_BoosDoor_01"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_M",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_M.png",
+              "srgb": false,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "asset_name": "Rage_Build_Pillar_005",
+      "meshes": [
+        {
+          "name": "Rage_Build_Pillar_005",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Rage_Build_Pillar_005.fbx",
+          "source_material": "Mat_Rage_Build_Pillar_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Rage_Build_Pillar_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Pillar_01.mat",
+          "meshes": [
+            "Rage_Build_Pillar_005"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Pillar_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Pillar_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_M",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Pillar_01_M.png",
+              "srgb": false,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_Pillar_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

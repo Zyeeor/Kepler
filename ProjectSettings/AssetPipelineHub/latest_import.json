@@ -1,0 +1,119 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-08-12T14:53:12",
+  "material_source_mode": "material",
+  "material_source_path": "Assets/Art folder/Scene_Mesh/Brick_01.mat",
+  "material_update_policy": "preserve_existing",
+  "shader_slots": [
+    "_AO=_OcclusionMap",
+    "_BC=_BaseMap",
+    "_G=_MetallicGlossMap",
+    "_M=_MetallicGlossMap",
+    "_MRA=_MetallicGlossMap",
+    "_N=_NormalMap",
+    "_R=_MetallicGlossMap"
+  ],
+  "mesh_folder": "Assets/Art folder/Scene_Mesh",
+  "material_folder": "Assets/Art folder/Scene_Mesh",
+  "texture_folder": "Assets/Art folder/Scene_Mesh",
+  "assets": [
+    {
+      "asset_name": "SeepdUP_01",
+      "meshes": [
+        {
+          "name": "SeepdUP_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/SeepdUP_01.fbx",
+          "source_material": "Mat_SeepdUP_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_SeepdUP_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_SeepdUP_01.mat",
+          "meshes": [
+            "SeepdUP_01"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_SeepdUP_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_SeepdUP_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_SeepdUP_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "asset_name": "glass",
+      "meshes": [
+        {
+          "name": "glass",
+          "asset_path": "Assets/Art folder/Scene_Mesh/glass.fbx",
+          "source_material": "Glass"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Glass",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Glass.mat",
+          "meshes": [
+            "glass"
+          ],
+          "textures": []
+        }
+      ]
+    },
+    {
+      "asset_name": "Chip",
+      "meshes": [
+        {
+          "name": "Chip",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Chip.fbx",
+          "source_material": "Mat_Brick01_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Brick01_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Brick01_01.mat",
+          "meshes": [
+            "Chip"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Brick01_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Brick01_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_MRA",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Brick01_01_MRA.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
