@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7863503959540947853}
   - component: {fileID: 7437758302867730605}
   m_Layer: 0
-  m_Name: lust_basic (1)
+  m_Name: greed_basic (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -57,10 +57,6 @@ MonoBehaviour:
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
-  blockedTags:
-  - State.Action.Fight
-  grantedTags:
-  - State.Action.Fight
   activationEffect: {fileID: 0}
   daggerPrefab: {fileID: 8044316912354738735, guid: 06fd062bc6d8bf746ac0a5d44d3cd5e3,
     type: 3}
@@ -164,7 +160,7 @@ GameObject:
   - component: {fileID: 8235458385406971640}
   - component: {fileID: 850341681528170046}
   m_Layer: 0
-  m_Name: lust_skill (1)
+  m_Name: greed_skill (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -210,10 +206,6 @@ MonoBehaviour:
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
-  blockedTags:
-  - State.Action.Fight
-  grantedTags:
-  - State.Action.Fight
   activationEffect: {fileID: 0}
   bladePrefab: {fileID: 8044316912354738735, guid: 806b81d0ef6dbf44e8fcf5810e55f8e9,
     type: 3}
@@ -447,7 +439,7 @@ GameObject:
   - component: {fileID: 8030582942482061157}
   - component: {fileID: 8083196948441015319}
   m_Layer: 0
-  m_Name: lust_passive (1)
+  m_Name: greed_passive (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -493,10 +485,6 @@ MonoBehaviour:
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
-  blockedTags:
-  - State.Action.Fight
-  grantedTags:
-  - State.Action.Fight
   activationEffect: {fileID: 0}
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
@@ -513,7 +501,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4202068629033295698}
   m_Layer: 0
-  m_Name: lust(full)
+  m_Name: "Greed\uFF08full"
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1725,6 +1713,7 @@ MonoBehaviour:
   skillAbilities:
   - ability: {fileID: 850341681528170046}
     hpCost: 5
+  mobilityAbilities: []
   passiveAbilities:
   - {fileID: 8083196948441015319}
   currentTenacity: 0
