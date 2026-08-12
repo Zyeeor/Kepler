@@ -26,7 +26,7 @@ Material:
     m_TexEnvs:
     - _BumpMap:
         m_Texture: {fileID: 2800000, guid: efb8581921ebc1346a65a80765fc88c3, type: 3}
-        m_Scale: {x: 2, y: 8}
+        m_Scale: {x: 2, y: 2}
         m_Offset: {x: 0, y: 0}
     - _CubeMap:
         m_Texture: {fileID: 8900000, guid: 4915995645a79da48b50ba211a70c3c7, type: 3}
@@ -34,7 +34,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
         m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 2, y: 2}
         m_Offset: {x: 0, y: 0}
     - _DetailNormalMap:
         m_Texture: {fileID: 0}
@@ -87,14 +87,14 @@ Material:
     - _Cull: 2
     - _EmissiveIntensity: 1
     - _EnvironmentReflections: 1
-    - _Fade: 0.455
+    - _Fade: 0.195
     - _FalloffFade: 0
     - _FalloffFade1: 0
     - _FalloffOpacity: 0
     - _FalloffOpacityIntensity: 1
     - _FresnelStrength: 0.15
     - _GlassOpacity: 0
-    - _Glossiness: 1
+    - _Glossiness: 0.463
     - _GlossinessDecal: 1
     - _Gradient1: 1
     - _GradientFade: 1
@@ -106,7 +106,7 @@ Material:
     - _InvertFresnelFade: 0
     - _Keyword0: 0
     - _LightAbsortion: 1
-    - _Metallic: 0.2
+    - _Metallic: 0
     - _MetallicDecal: 1
     - _OffsetX: 0
     - _OffsetY: 0
@@ -158,7 +158,7 @@ Material:
     - _ZWrite: 1
     - __dirty: 1
     m_Colors:
-    - _Color: {r: 0.41509432, g: 0.41509432, b: 0.41509432, a: 0}
+    - _Color: {r: 0.31446534, g: 0.31446534, b: 0.31446534, a: 0}
     - _Color0: {r: 0.990566, g: 0.91486794, b: 0.098122105, a: 0}
     - _ColorCubemap: {r: 1, g: 1, b: 1, a: 1}
     - _ColorDecal: {r: 1, g: 1, b: 1, a: 0}
