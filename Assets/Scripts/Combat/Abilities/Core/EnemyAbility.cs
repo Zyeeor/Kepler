@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System;
 
@@ -110,6 +111,46 @@ public abstract class EnemyAbility : MonoBehaviour
     protected object AbilityWait(float seconds) => owner != null && owner.IsPlayerControlled
         ? (object)new WaitForSecondsRealtime(seconds)
         : new WaitForSeconds(seconds);
+
+    protected bool TryGetPossessedMouseDirection(out Vector3 direction)
+    {
+        direction = Vector3.zero;
+        if (owner == null || !owner.isPossessed || PlayerController.Instance == null) return false;
+        if (!PlayerController.Instance.TryGetAimPoint(out Vector3 aimPoint)) return false;
+
+        direction = aimPoint - owner.transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            direction = Vector3.zero;
+            return false;
+        }
+
+        direction.Normalize();
+        return true;
+    }
+
+    protected IEnumerator RotatePossessedOwnerTowards(Vector3 direction, float turnSpeed)
+    {
+        if (owner == null || direction.sqrMagnitude < 0.0001f) yield break;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        owner.IsAbilityFacingLocked = true;
+        while (owner != null && Quaternion.Angle(owner.transform.rotation, targetRotation) > 0.1f)
+        {
+            owner.transform.rotation = Quaternion.RotateTowards(
+                owner.transform.rotation,
+                targetRotation,
+                turnSpeed * AbilityDeltaTime);
+            yield return null;
+        }
+
+        if (owner != null)
+        {
+            owner.transform.rotation = targetRotation;
+            owner.IsAbilityFacingLocked = false;
+        }
+    }
 
     protected virtual void Update()
     {

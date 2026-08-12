@@ -29,6 +29,8 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
     [Header("Animation")]
     public string animTrigger = "SwordQi";
+    [Tooltip("Possessed owner turn speed before firing toward the mouse aim.")]
+    public float aimTurnSpeed = 720f;
 
     [Header("VFX - Projectile")]
     public GameObject projectileVfxPrefab;  // the flying sword qi VFX
@@ -77,6 +79,9 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
     IEnumerator SwordQiRoutine()
     {
+        if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
+            yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
+
         if (projectileDelay > 0f)
             yield return AbilityWait(projectileDelay);
 

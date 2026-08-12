@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour, IController
     /// <summary>全局唯一实例（玩家根物体）。</summary>
     public static PlayerController Instance { get; private set; }
     public static bool IsGameplayInputBlocked { get; private set; }
+    public static Vector3 CurrentMoveDirection { get; private set; }
 
     [Header("Input")]
     public LayerMask groundLayer = -1;
@@ -36,6 +37,7 @@ public class PlayerController : MonoBehaviour, IController
         {
             Instance = null;
             IsGameplayInputBlocked = false;
+            CurrentMoveDirection = Vector3.zero;
         }
     }
 
@@ -129,6 +131,7 @@ public class PlayerController : MonoBehaviour, IController
     public void Tick(in ActorContext ctx, ref ControlCommand cmd)
     {
         cmd = ControlCommand.Empty;
+        CurrentMoveDirection = Vector3.zero;
         if (IsGameplayInputBlocked) return;
 
         // 移动（WASD，映射到世界空间）
@@ -140,6 +143,7 @@ public class PlayerController : MonoBehaviour, IController
         {
             cmd.HasMove = true;
             cmd.MoveDirection = dir;
+            CurrentMoveDirection = dir;
         }
 
         // 瞄准（鼠标在地面平面的投影）
