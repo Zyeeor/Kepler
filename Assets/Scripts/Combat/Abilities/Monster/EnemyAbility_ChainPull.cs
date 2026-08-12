@@ -19,6 +19,8 @@ public class EnemyAbility_ChainPull : EnemyAbility
 
     [Header("Animation")]
     public string animTrigger = "ChainPull";
+    [Tooltip("Possessed owner turn speed before throwing toward the mouse aim.")]
+    public float aimTurnSpeed = 720f;
 
     private void OnEnable()
     {
@@ -46,6 +48,9 @@ public class EnemyAbility_ChainPull : EnemyAbility
 
     IEnumerator ChainRoutine()
     {
+        if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
+            yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
+
         // 1) Find target inside fan in front of owner
         Enemy target = FindTargetInFan();
         if (target == null) yield break;

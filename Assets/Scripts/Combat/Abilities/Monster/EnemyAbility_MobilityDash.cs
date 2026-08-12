@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Shared possessed-monster mobility: dash toward the current mouse aim.
+/// Shared possessed-monster mobility: dash in the current movement direction.
 /// Added at runtime by MonsterActor so every monster receives the same Space input ability.
 /// </summary>
 public class EnemyAbility_MobilityDash : EnemyAbility
@@ -27,11 +27,9 @@ public class EnemyAbility_MobilityDash : EnemyAbility
     private IEnumerator DashRoutine()
     {
         Vector3 direction = owner.transform.forward;
-        if (PlayerController.Instance != null && PlayerController.Instance.TryGetAimPoint(out Vector3 aimPoint))
-        {
-            direction = aimPoint - owner.transform.position;
-            direction.y = 0f;
-        }
+        if (PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f)
+            direction = PlayerController.CurrentMoveDirection;
+        direction.y = 0f;
         if (direction.sqrMagnitude < 0.0001f) yield break;
 
         direction.Normalize();

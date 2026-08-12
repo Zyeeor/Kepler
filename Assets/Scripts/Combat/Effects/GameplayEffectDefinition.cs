@@ -72,10 +72,19 @@ public class GameplayEffectDefinition : ScriptableObject
     [Header("Optional Numeric Modifiers")]
     public List<GameplayEffectModifier> modifiers = new List<GameplayEffectModifier>();
 
+    [Header("Optional Periodic Trigger")]
+    [Tooltip("Seconds between periodic callbacks. Values <= 0 disable periodic behavior.")]
+    public float periodicInterval;
+
     [Header("Optional VFX")]
     [Tooltip("Spawned once while this effect is active. Leave empty when the effect has no persistent visual.")]
     public GameObject activeVfxPrefab;
     public bool parentVfxToTarget = true;
+    [Tooltip("Played once when the Effect is successfully applied.")]
+    public GameObject applyVfxPrefab;
+    [Tooltip("Played once when the Effect expires or is removed.")]
+    public GameObject expireVfxPrefab;
+    [Min(0f)] public float oneShotVfxDuration = 2f;
 
     private void OnValidate()
     {

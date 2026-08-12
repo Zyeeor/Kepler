@@ -22,4 +22,14 @@ public class CardData
     public System.Collections.Generic.List<string> targetAbilityTags = new System.Collections.Generic.List<string>();
     [Tooltip("Effect Tags dynamically bound to every matching attack for this run. Resolve these through CardManager's Gameplay Tag Catalog.")]
     public System.Collections.Generic.List<string> grantedEffectTags = new System.Collections.Generic.List<string>();
+    [Tooltip("Optional numeric overrides read by the targeted ability when this card is unlocked.")]
+    public System.Collections.Generic.List<CardAbilityParameter> abilityParameters = new System.Collections.Generic.List<CardAbilityParameter>();
+}
+
+[Serializable]
+public class CardAbilityParameter
+{
+    [Tooltip("Stable key understood by the targeted ability, for example ExtraProjectiles.")]
+    public string key;
+    public float value;
 }

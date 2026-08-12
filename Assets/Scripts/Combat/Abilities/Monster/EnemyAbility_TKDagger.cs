@@ -21,6 +21,8 @@ public class EnemyAbility_TKDagger : EnemyAbility
     public float detectRange = 8f;
     public float homingSpeed = 20f;
     public float launchInterval = 0.3f;
+    [Tooltip("Possessed owner turn speed before launching a dagger toward the mouse aim.")]
+    public float aimTurnSpeed = 720f;
     [Tooltip("How fast the dagger rotates toward the target (degrees/sec).")]
     public float homingTurnRate = 360f;
     [Tooltip("Curve strength: how aggressively it curves toward target. 0=linear, 1=max curve.")]
@@ -39,6 +41,8 @@ public class EnemyAbility_TKDagger : EnemyAbility
     private List<GameObject> daggers = new List<GameObject>();
     private float launchTimer;
     private float orbitAngleOffset;
+    private bool aimingForLaunch;
+    private Vector3 nextLaunchDirection;
 
     private void OnEnable()
     {
@@ -71,6 +75,9 @@ public class EnemyAbility_TKDagger : EnemyAbility
             var d = SpawnVfxTracked(daggerPrefab, GetOrbitPos(orbitAngleOffset), Quaternion.identity);
             daggers.Add(d);
             orbitAngleOffset += 360f / maxDaggers;
+
+            if (owner.isPossessed && !aimingForLaunch)
+                StartCoroutine(AimForDaggerLaunch());
         }
     }
 
@@ -89,7 +96,7 @@ public class EnemyAbility_TKDagger : EnemyAbility
 
         // Launch daggers at target
         launchTimer += AbilityDeltaTime;
-        if (launchTimer >= launchInterval && daggers.Count > 0)
+        if (!aimingForLaunch && launchTimer >= launchInterval && daggers.Count > 0)
         {
             launchTimer -= launchInterval;
             Transform target = GetHomingTarget();
@@ -97,9 +104,34 @@ public class EnemyAbility_TKDagger : EnemyAbility
             {
                 var d = daggers[0];
                 daggers.RemoveAt(0);
-                if (d != null) StartCoroutine(HomingRoutine(d, target));
+                if (d != null)
+                {
+                    Vector3 launchDirection = nextLaunchDirection.sqrMagnitude > 0.0001f
+                        ? nextLaunchDirection
+                        : target.position - d.transform.position;
+                    launchDirection.y = 0f;
+                    if (launchDirection.sqrMagnitude > 0.0001f)
+                        d.transform.forward = launchDirection.normalized;
+                    nextLaunchDirection = Vector3.zero;
+                    StartCoroutine(HomingRoutine(d, target));
+                }
             }
         }
+    }
+
+    IEnumerator AimForDaggerLaunch()
+    {
+        aimingForLaunch = true;
+        if (TryGetPossessedMouseDirection(out Vector3 aimDirection))
+        {
+            nextLaunchDirection = aimDirection;
+            yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
+        }
+        else if (owner != null)
+        {
+            nextLaunchDirection = owner.transform.forward;
+        }
+        aimingForLaunch = false;
     }
 
     Transform GetHomingTarget()
@@ -144,6 +176,7 @@ public class EnemyAbility_TKDagger : EnemyAbility
 
             if (Vector3.Distance(dagger.transform.position, target.position) < 0.8f)
             {
+                CombatHitboxDebug.DrawSphere(drawHitboxes, dagger.transform.position, 0.8f);
                 var enemy = target.GetComponent<Enemy>();
                 if (owner.CanDamage(enemy))
                     DealDamageTo(enemy, damage * damageMultiplier);
@@ -171,5 +204,19 @@ public class EnemyAbility_TKDagger : EnemyAbility
         float rad = angleDeg * Mathf.Deg2Rad;
         Vector3 offset = new Vector3(Mathf.Cos(rad), 0, Mathf.Sin(rad)) * orbitRadius;
         return owner.transform.position + Vector3.up * heightOffset + offset;
+    }
+
+    protected override void OnDisable()
+    {
+        aimingForLaunch = false;
+        nextLaunchDirection = Vector3.zero;
+        base.OnDisable();
+    }
+
+    public override void ResetForOwnerReuse()
+    {
+        aimingForLaunch = false;
+        nextLaunchDirection = Vector3.zero;
+        base.ResetForOwnerReuse();
     }
 }

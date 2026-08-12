@@ -103,6 +103,7 @@ public class PossessionManager : MonoBehaviour
 
     private void ProcessPossessionInput()
     {
+        if (PlayerController.IsGameplayInputBlocked) return;
         if (!Input.GetMouseButtonDown(1)) return;
 
         PlayerController controller = PlayerController.Instance;

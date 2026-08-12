@@ -35,6 +35,8 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
     [Header("Targeting")]
     public LayerMask targetMask = -1;
+    [Tooltip("Possessed owner turn speed before releasing toward the mouse aim.")]
+    public float aimTurnSpeed = 720f;
 
     [Header("Animation")]
     public string animTrigger = "Basic";
@@ -118,17 +120,25 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         }
         else if (isCharging)
         {
-            FireShot();
+            StartCoroutine(FireShotRoutine(chargeTimer));
             StopCharging();
         }
     }
 
-    void FireShot()
+    IEnumerator FireShotRoutine(float chargeTime)
+    {
+        if (owner != null && owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
+            yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
+
+        FireShot(chargeTime);
+    }
+
+    void FireShot(float chargeTime)
     {
         if (projectilePrefab == null || owner == null) return;
 
-        lastChargeTime = chargeTimer; // snapshot before reset
-        float t = Mathf.Clamp01(chargeTimer / maxChargeTime);
+        lastChargeTime = chargeTime;
+        float t = Mathf.Clamp01(chargeTime / maxChargeTime);
         float scale = Mathf.Lerp(minChargeScale, maxChargeScale, t);
         float radius = Mathf.Lerp(minBlastRadius, maxBlastRadius, t);
         float dmgMult = Mathf.Lerp(minDamageMultiplier, maxDamageMultiplier, t);
@@ -160,6 +170,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale, projectileHeight * 0.5f * scale, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
+            CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot);
 
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
             bool hitSomething = false;
