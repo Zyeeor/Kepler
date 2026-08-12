@@ -1,0 +1,106 @@
+using System;
+using UnityEngine;
+
+/// <summary>
+/// Resolves right-click possession targets and delegates the state transition to PossessionManager.
+/// This keeps input diagnostics and raycast policy separate from possession state changes.
+/// </summary>
+public class PossessionBehavior : MonoBehaviour
+{
+    [Header("Targeting")]
+    [Tooltip("Maximum right-click possession targeting distance.")]
+    public float maxTargetDistance = 100f;
+    [Tooltip("Log every right-click target resolution attempt for possession debugging.")]
+    public bool enableDebugLogs = true;
+
+    private PossessionManager manager;
+
+    public void Initialize(PossessionManager possessionManager)
+    {
+        manager = possessionManager;
+    }
+
+    public bool TryBegin(Ray aimRay)
+    {
+        if (manager == null)
+        {
+            Log("Rejected: PossessionManager is missing.");
+            return false;
+        }
+
+        if (!manager.CanStartPossession(out string stateReason))
+        {
+            Log("Rejected: " + stateReason);
+            return false;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(aimRay, maxTargetDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
+        Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+        Log($"Ray mouse={Input.mousePosition:F0}, origin={aimRay.origin:F2}, direction={aimRay.direction:F2}, hits={hits.Length}, state={manager.State}");
+
+        if (hits.Length == 0)
+        {
+            Log("Rejected: ray hit no collider.");
+            return false;
+        }
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+            MonsterActor target = hit.collider.GetComponentInParent<MonsterActor>();
+            if (target == null)
+            {
+                Log($"Hit[{i}] collider='{hit.collider.name}', distance={hit.distance:F2}, no MonsterActor.");
+                continue;
+            }
+
+            if (!manager.ValidatePossessionTarget(target, out string reason))
+            {
+                Log($"Hit[{i}] monster='{target.displayName}', distance={hit.distance:F2}, rejected: {reason}. {target.GetPossessionDebugState()}");
+                continue;
+            }
+
+            Log($"Selected monster='{target.displayName}', collider='{hit.collider.name}', distance={hit.distance:F2}. {target.GetPossessionDebugState()}");
+            return manager.BeginPossessionFlight(target);
+        }
+
+        if (TryFindRayAssistedCorpse(aimRay, out MonsterActor assistedTarget, out float missDistance))
+        {
+            Log($"Ray assist selected monster='{assistedTarget.displayName}', rayMiss={missDistance:F2}m. {assistedTarget.GetPossessionDebugState()}");
+            return manager.BeginPossessionFlight(assistedTarget);
+        }
+
+        Log("Rejected: no valid corpse collider was found on the ray.");
+        return false;
+    }
+
+    private bool TryFindRayAssistedCorpse(Ray aimRay, out MonsterActor selected, out float selectedMissDistance)
+    {
+        selected = null;
+        selectedMissDistance = float.MaxValue;
+        const float assistRadius = 1.5f;
+
+        foreach (MonsterActor candidate in FindObjectsOfType<MonsterActor>(true))
+        {
+            if (!manager.ValidatePossessionTarget(candidate, out _)) continue;
+
+            Vector3 toCandidate = candidate.transform.position - aimRay.origin;
+            float projectedDistance = Vector3.Dot(toCandidate, aimRay.direction);
+            if (projectedDistance < 0f || projectedDistance > maxTargetDistance) continue;
+
+            Vector3 closestPoint = aimRay.origin + aimRay.direction * projectedDistance;
+            float missDistance = Vector3.Distance(candidate.transform.position, closestPoint);
+            if (missDistance > assistRadius || missDistance >= selectedMissDistance) continue;
+
+            selected = candidate;
+            selectedMissDistance = missDistance;
+        }
+
+        return selected != null;
+    }
+
+    private void Log(string message)
+    {
+        if (enableDebugLogs) Debug.Log("[PossessionTargeting] " + message);
+    }
+}

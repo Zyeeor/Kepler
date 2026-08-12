@@ -1,0 +1,175 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance { get; private set; }
+    
+    [Header("Time System")]
+    public float soulTime = 15f;              // 灵魂初始时间
+    public float maxSoulTime = 30f;
+    public float soulDrainRate = 1f;          // 灵魂态流速
+    public float possessedDrainRate = 0.7f;   // 附体态流速
+    public float currentDrainRate;
+    
+    [Header("Game State")]
+    public GameState currentState = GameState.Soul;
+    public float gameTimer;
+
+    [Header("GameOver UI")]
+    public GameObject gameOverPanel;
+
+    [Header("Test")]
+    [Tooltip("测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）。")]
+    public bool testDoublePickOnStart = true;
+    
+    public enum GameState
+    {
+        Soul,        // 灵魂态
+        Possessed,   // 附体态
+        BulletTime,  // 子弹时间
+        GameOver
+    }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+    
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Debug.Log($"GameManager: Scene loaded - {scene.name}, resetting state");
+        ResetGame();
+    }
+    
+    void Start()
+    {
+        soulTime = 15f;
+        currentDrainRate = soulDrainRate;
+        currentState = GameState.Soul;
+
+        // Ensure only one AudioListener exists
+        var listeners = FindObjectsOfType<AudioListener>();
+        for (int i = 1; i < listeners.Length; i++)
+            listeners[i].enabled = false;
+
+        // 测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）
+        if (testDoublePickOnStart)
+            StartCoroutine(TriggerTestDoublePick());
+    }
+
+    // 测试用：延迟两帧确保 CoreChoiceUI.Instance 已就绪后，触发双选弹窗
+    System.Collections.IEnumerator TriggerTestDoublePick()
+    {
+        yield return null;          // 等一帧，确保 CoreChoiceUI.Instance 已 Awake
+        yield return null;          // 再等一帧，确保场景完全就绪
+        var ui = CoreChoiceUI.Instance;
+        Debug.Log($"[Test] TriggerTestDoublePick: CoreChoiceUI.Instance={(ui != null ? "found" : "NULL")}");
+        if (ui != null)
+        {
+            ui.Show(onClosed: () => Debug.Log("[Test] DoublePick closed"), doublePick: true);
+        }
+    }
+    
+    void Update()
+    {
+        if (currentState == GameState.GameOver) return;
+        
+        // Soul time drains over time (but does NOT trigger GameOver)
+        // GameOver is ONLY triggered by PlayerHealth reaching zero
+        if (currentState == GameState.Soul)
+        {
+            soulTime -= currentDrainRate * Time.deltaTime;
+            if (soulTime < 0) soulTime = 0;
+        }
+        gameTimer += Time.deltaTime;
+    }
+    
+    public void AddTime(float seconds)
+    {
+        soulTime = Mathf.Min(soulTime + seconds, maxSoulTime);
+        Debug.Log($"+{seconds}s, Current Time: {soulTime:F1}s");
+    }
+    
+    public void SpendTime(float seconds)
+    {
+        soulTime -= seconds;
+        Debug.Log($"-{seconds}s, Current Time: {soulTime:F1}s");
+    }
+    
+    public void SwitchState(GameState newState)
+    {
+        currentState = newState;
+        switch (newState)
+        {
+            case GameState.Soul:
+                currentDrainRate = soulDrainRate;
+                Time.timeScale = 1f;
+                break;
+            case GameState.Possessed:
+                currentDrainRate = possessedDrainRate;
+                Time.timeScale = 1f;
+                break;
+            case GameState.BulletTime:
+                Time.timeScale = 0.2f;   // 子弹时间
+                break;
+            case GameState.GameOver:
+                // 附身编排防御：GameOver 时显式终止飞行协程/附身态，防止协程用 unscaledDeltaTime 继续推进覆盖 GameOver
+                if (PossessionManager.Instance != null) PossessionManager.Instance.OnGameOver();
+                ShowGameOverUI();
+                break;
+        }
+        Debug.Log($"State: {newState}");
+    }
+    
+    void ShowGameOverUI()
+    {
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+            Time.timeScale = 0f;
+            Debug.Log("GameOver panel displayed");
+
+            // Show and unlock cursor so the player can click UI buttons
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else
+        {
+            Time.timeScale = 1f;
+            Debug.LogWarning("GameOver panel reference is null!");
+        }
+    }
+
+    void GameOver()
+    {
+        currentState = GameState.GameOver;
+        Debug.Log("GAME OVER - Soul time depleted!");
+        ShowGameOverUI();
+    }
+
+    /// <summary>
+    /// Reset game state for scene restart.
+    /// Called by UIManager.OnRestartClicked() before reloading the scene.
+    /// </summary>
+    public void ResetGame()
+    {
+        Debug.Log("GameManager: Resetting game state for restart");
+        soulTime = 15f;
+        gameTimer = 0f;
+        currentDrainRate = soulDrainRate;
+        currentState = GameState.Soul;
+        Time.timeScale = 1f;
+    }
+}

@@ -4380,18 +4380,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 246a270cf8f1398448444807fe41d3b8, type: 3}
---- !u!114 &875983718 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8551900017215022505, guid: 66d90218762cbc74c8a67b828c7e4e85,
-    type: 3}
-  m_PrefabInstance: {fileID: 1820462069617879303}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d611fd8f5c1b0d4ab565b7fedee6f42, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &878893379
 GameObject:
   m_ObjectHideFlags: 0
@@ -6343,7 +6331,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 14838033b246fd544b62e65175c55aa4, type: 2}
+  - {fileID: 2100000, guid: 266ba89010ff27a4ca3b73990268774b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6381,13 +6369,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1264099606}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.38268343, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 0.86, y: 2.85, z: -0.86}
-  m_LocalScale: {x: 5.366139, y: 5.366139, z: 5.366139}
+  m_LocalRotation: {x: 0.6532815, y: 0.27059805, z: -0.27059805, w: 0.6532815}
+  m_LocalPosition: {x: 43, y: 4.8, z: 58.6}
+  m_LocalScale: {x: 20.757092, y: 20.757092, z: 20.757092}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 45, z: 0}
 --- !u!1 &1279087847
 GameObject:
   m_ObjectHideFlags: 0
@@ -6488,7 +6476,7 @@ Transform:
   m_GameObject: {fileID: 1279087847}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2, z: 0}
+  m_LocalPosition: {x: 0, y: -3.42, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -6815,18 +6803,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1372730760 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1991930722731350795, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-    type: 3}
-  m_PrefabInstance: {fileID: 1028433633}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 77022b0f8df41b04aab86b9fea9085a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1373839442
 GameObject:
   m_ObjectHideFlags: 0
@@ -8716,6 +8692,7 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 837435964}
+  testDoublePickOnStart: 1
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -8743,49 +8720,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 596ef72ef54416340923ab54d3c29fde, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allCards:
-  - cardName: Qi Blade
-    effectId: Pride01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Unleashes ranged Sword QI
-    abilityPrefab: {fileID: 2008281949}
-  - cardName: Shadow Blade
-    effectId: Pride02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Unleashes 2 extra shadow blade, now fires three blade
-    abilityPrefab: {fileID: 2008281949}
-  - cardName: Death Eye
-    effectId: Envy01
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: lazer Damage will ramp up while tethering its enemy
-    abilityPrefab: {fileID: 1372730760}
-  - cardName: Muti Eye
-    effectId: Envy02
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: death eye split into two, both shoot lazer
-    abilityPrefab: {fileID: 1372730760}
-  - cardName: Chain Dash
-    effectId: Wrath01
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
-    description: Wrath uses the chain to lauch itself forward
-    abilityPrefab: {fileID: 875983718}
-  - cardName: Grasping Chain
-    effectId: Wrath02
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
-    description: 'The Chain can grap mutiple enemies in an area
-
-'
-    abilityPrefab: {fileID: 875983718}
-  - cardName: Parasidic Mine
-    effectId: Sloth01
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Enemy died from eneergy blast will spawn a mine automaticlally
-    abilityPrefab: {fileID: 2075511477}
-  - cardName: Shatter Blast
-    effectId: Sloth02
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Based on charge time, blast will spread more blasts upon impact
-    abilityPrefab: {fileID: 2075511477}
+  cardLibrary: {fileID: 0}
+  gameplayTagCatalog: {fileID: 0}
   maxRerolls: 3
   maxSelects: 1
   currentPicks:
@@ -8794,16 +8730,25 @@ MonoBehaviour:
     image: {fileID: 0}
     description: 
     abilityPrefab: {fileID: 0}
+    targetAbilityTags: []
+    grantedEffectTags: []
+    abilityParameters: []
   - cardName: 
     effectId: 
     image: {fileID: 0}
     description: 
     abilityPrefab: {fileID: 0}
+    targetAbilityTags: []
+    grantedEffectTags: []
+    abilityParameters: []
   - cardName: 
     effectId: 
     image: {fileID: 0}
     description: 
     abilityPrefab: {fileID: 0}
+    targetAbilityTags: []
+    grantedEffectTags: []
+    abilityParameters: []
 --- !u!1 &1890522062
 GameObject:
   m_ObjectHideFlags: 0
@@ -9503,18 +9448,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2002548938}
   m_CullTransparentMesh: 1
---- !u!114 &2008281949 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2751529135426893704, guid: ec5bb6704faff894cadeb058433abcfb,
-    type: 3}
-  m_PrefabInstance: {fileID: 1031719991}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cb22063e5a41ff4c9f7e428681a40bd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &2008515519
 GameObject:
   m_ObjectHideFlags: 0
@@ -10045,18 +9978,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2064786314}
   m_CullTransparentMesh: 1
---- !u!114 &2075511477 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4365737887685492572, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-    type: 3}
-  m_PrefabInstance: {fileID: 6173735037821395699}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9513e370860ee341926787290b159e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &2079549051
 GameObject:
   m_ObjectHideFlags: 0
