@@ -33,6 +33,8 @@ public class RoomFlowController : MonoBehaviour
     {
         if (currentTemplate == null) return;
         ChangeState(RoomState.Combat);
+        if (currentRoom != null)
+            currentRoom.SetExitsEnabled(false);
 
         waveManager.Initialize(currentTemplate, currentRoom);
         waveManager.OnAllWavesComplete += OnAllWavesCompleteHandler;
@@ -46,6 +48,12 @@ public class RoomFlowController : MonoBehaviour
 
     public void StartExitPhase()
     {
+        if (waveManager == null || !waveManager.AllWavesComplete)
+        {
+            Debug.LogWarning($"[RoomFlow] Exit phase rejected for '{currentTemplate?.roomName}': allWavesComplete={waveManager != null && waveManager.AllWavesComplete}");
+            return;
+        }
+
         ChangeState(RoomState.ExitPhase);
         if (currentRoom != null)
             currentRoom.SetExitsEnabled(true);

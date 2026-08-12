@@ -47,10 +47,15 @@ public class RoomInstance : MonoBehaviour
         {
             if (anchor != null)
             {
-                var col = anchor.GetComponent<Collider>();
-                if (col != null) col.enabled = enabled;
+                foreach (Collider collider in anchor.GetComponentsInChildren<Collider>(true))
+                {
+                    if (!collider.isTrigger) continue;
+                    collider.enabled = enabled;
+                }
             }
         }
+
+        Debug.Log($"[RoomInstance] Exit triggers {(enabled ? "enabled" : "disabled")}: anchors={exitAnchors.Count}");
     }
 
     void OnDrawGizmosSelected()

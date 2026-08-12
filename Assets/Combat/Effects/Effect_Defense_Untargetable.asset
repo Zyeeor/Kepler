@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ffa75f8f1f74df2b0838f2bbe7f8d5, type: 3}
+  m_Name: Effect_Defense_Untargetable
+  m_EditorClassIdentifier: 
+  effectName: "\u4E0D\u53EF\u9009\u4E2D"
+  effectTag: Effect.Defense.Untargetable
+  duration: 0
+  maxStacks: 1
+  stackPolicy: 0
+  requiredTargetTags: []
+  blockedTargetTags: []
+  requiredSourceTags: []
+  blockedSourceTags: []
+  grantedTags:
+  - State.Defense.Untargetable
+  modifiers: []
+  periodicInterval: 0
+  activeVfxPrefab: {fileID: 5434144139528540934, guid: 4299d5c66d4d613479536f298412d2e9,
+    type: 3}
+  parentVfxToTarget: 1
+  applyVfxPrefab: {fileID: 0}
+  expireVfxPrefab: {fileID: 0}
+  oneShotVfxDuration: 2
+  weaponVfxPrefab: {fileID: 0}
+  hitVfxPrefab: {fileID: 0}
+  weaponVfxLifetime: 0
+  hitVfxLifetime: 0
+  attackVfxDuration: 1
