@@ -1508,8 +1508,8 @@ MonoBehaviour:
   StepFactor: 0
   MainAlpha: 0
   BlurFactor: 0.47
-  LineUVScale: 2.51
-  Chromatic: 0
+  LineUVScale: 2.24
+  Chromatic: 0.18
   Frequency: 0
   Amplitude: 0
   VignettePower: 1
