@@ -20,6 +20,12 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     [Tooltip("Hide mesh/skinned renderers while blinking so only Effect afterimage VFX remains.")]
     public bool hideOwnerMeshes = true;
 
+    [Header("Activation Display")]
+    [Tooltip("First display object on the enemy body. It is shown while this ability is active.")]
+    public GameObject activationDisplayA;
+    [Tooltip("Second display object on the enemy body. It is shown while this ability is active.")]
+    public GameObject activationDisplayB;
+
     private readonly List<Renderer> _hiddenRenderers = new List<Renderer>();
 
     private void OnEnable()
@@ -30,6 +36,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.BlinkChain", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.BlinkChain");
+        SetActivationDisplays(false);
     }
 
     public override bool CanTrigger()
@@ -61,6 +68,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (untargetableEffect != null)
             owner.Combat.ApplyEffect(untargetableEffect, owner.Combat, abilityTags, out _);
 
+        SetActivationDisplays(true);
         if (hideOwnerMeshes) HideOwnerMeshes();
         owner.IsAbilityFacingLocked = true;
 
@@ -105,7 +113,14 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         }
 
         RestoreOwnerMeshes();
+        SetActivationDisplays(false);
         EndActivationEffect();
+    }
+
+    private void SetActivationDisplays(bool visible)
+    {
+        if (activationDisplayA != null) activationDisplayA.SetActive(visible);
+        if (activationDisplayB != null) activationDisplayB.SetActive(visible);
     }
 
     private Enemy FindNearestTarget(Vector3 origin, Enemy exclude)
@@ -156,6 +171,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (owner != null && owner.Combat != null && untargetableEffect != null)
             owner.Combat.RemoveEffect(untargetableEffect);
         RestoreOwnerMeshes();
+        SetActivationDisplays(false);
         base.OnDisable();
     }
 
@@ -165,6 +181,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (owner != null && owner.Combat != null && untargetableEffect != null)
             owner.Combat.RemoveEffect(untargetableEffect);
         RestoreOwnerMeshes();
+        SetActivationDisplays(false);
         base.ResetForOwnerReuse();
     }
 }
