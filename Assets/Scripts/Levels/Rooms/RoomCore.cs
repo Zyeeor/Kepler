@@ -72,7 +72,8 @@ public class RoomCore : MonoBehaviour
 
         uiShown = true;
         Log($"Showing choice UI via '{ui.name}', target='{playerTransform.name}' ({interactionTargetSource}), targetDistance={Vector3.Distance(transform.position, playerTransform.position):F2}");
-        ui.Show(this);
+        // 触发源只注入关闭回调，UI 不认识本类型；房间流程（解锁下一房间）由回调负责
+        ui.Show(onClosed: OnChoicesConfirmed);
     }
 
     private bool TryResolveInteractionTarget(out Transform target)
@@ -115,12 +116,16 @@ public class RoomCore : MonoBehaviour
         if (enableDebugLogs) Debug.LogWarning("[RoomCore] " + message);
     }
 
-    /// <summary>Called by CoreChoiceUI when the player confirms choices and closes the UI.</summary>
+    /// <summary>选卡弹窗关闭时由 CoreChoiceUI 回调：接续房间流程。</summary>
     public void OnChoicesConfirmed()
     {
         uiShown = false;
+        // 解锁下一房间（弹窗关闭回调移回触发方）
+        RoomManager.Instance?.OnCoreConfirmed();
         // Core stays but interaction is done for this room
         enabled = false;
+        // 本房间交互完成，核心可销毁（销毁职责移回触发方）
+        Destroy(gameObject);
     }
 
     void OnDrawGizmosSelected()

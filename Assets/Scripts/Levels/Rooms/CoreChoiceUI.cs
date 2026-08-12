@@ -1,13 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
-using System.Collections.Generic;
+using System;
 
 /// <summary>
-/// Horizontal 3-option choice UI for Room Core interaction.
-/// Uses a single card prefab instantiated 3 times into a HorizontalLayoutGroup parent.
-/// Each card has confirm / reroll buttons, text, image, and status marks.
+/// 升级选卡弹窗。触发方调 Show(onClosed, doublePick) 打开，UI 不依赖触发方类型。
+/// 弹窗期间游戏暂停（timeScale=0）+ 屏蔽玩家输入；界面可隐藏查看场景（仍暂停），continue 按钮切换显隐。
+/// 选卡会话进行中由 IsDrafting 标识（与面板可见性 IsOpen 分离：隐藏界面仍算会话进行中）。
 /// </summary>
 public class CoreChoiceUI : MonoBehaviour
 {
@@ -31,41 +30,59 @@ public class CoreChoiceUI : MonoBehaviour
     public TextMeshProUGUI titleText;
 
     // State
-    private RoomCore currentCore;
     private CoreChoiceCard[] cards;
     private int selectedIndex = -1;
-    private float previousTimeScale = 1f;
-    private bool gameplayInputWasBlocked;
-    private bool previousCursorVisible;
-    private CursorLockMode previousCursorLockState;
-    private float nextPointerDiagnosticTime;
+    private int picksRemaining = 1;
+    private bool doublePick;
+    private Action onClosed;
+    private float timeScaleBeforeOpen = 1f;
+    private bool _isDrafting;
+
+    /// <summary>面板当前是否可见（隐藏查看场景时 = false）。</summary>
+    public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
+
+    /// <summary>选卡会话是否进行中（Show 置 true，Close 置 false；与面板可见性无关）。</summary>
+    public bool IsDrafting => _isDrafting;
+
+    /// <summary>
+    /// 调整选卡界面 Canvas 的渲染层级。
+    /// 暂停时降到负值（让暂停菜单在上层），退出暂停恢复原值。
+    /// </summary>
+    public void SetCanvasSortingOrder(int order)
+    {
+        var canvas = GetComponent<Canvas>();
+        if (canvas != null) canvas.sortingOrder = order;
+    }
 
     void Awake()
     {
         Instance = this;
         if (panelRoot != null) panelRoot.SetActive(false);
-        confirmAllButton?.onClick.AddListener(OnConfirmAll);
-        if (confirmAllButton != null) confirmAllButton.interactable = true;
-        Debug.Log($"[CoreChoiceUI] Awake: object='{name}', panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}, confirmAll={(confirmAllButton != null ? confirmAllButton.name : "NULL")}, eventSystem={(EventSystem.current != null ? EventSystem.current.name : "NULL")}");
+        // continue 按钮随弹窗初始隐藏（在 panelRoot 外，显示时见 Show）
+        if (confirmAllButton != null)
+        {
+            confirmAllButton.onClick.AddListener(OnConfirmAll);
+            confirmAllButton.interactable = true;
+            confirmAllButton.gameObject.SetActive(false);
+        }
     }
 
-    void Update()
+    /// <summary>
+    /// 打开选卡弹窗。
+    /// </summary>
+    /// <param name="onClosed">弹窗关闭回调（触发方注入房间流程等；null 则仅关闭）。</param>
+    /// <param name="doublePick">true=双选（可选 2 张），false=单选。</param>
+    public void Show(Action onClosed = null, bool doublePick = false)
     {
-        if (panelRoot == null || !panelRoot.activeInHierarchy) return;
-        if (Time.unscaledTime < nextPointerDiagnosticTime) return;
+        if (_isDrafting) return;   // 会话进行中忽略重复打开
+        _isDrafting = true;
 
-        nextPointerDiagnosticTime = Time.unscaledTime + 0.5f;
-        LogPointerDiagnostics();
-    }
+        this.onClosed = onClosed;
+        this.doublePick = doublePick;
+        this.picksRemaining = doublePick ? 2 : 1;
 
-    public void Show(RoomCore core)
-    {
-        currentCore = core;
-        selectedIndex = -1;
-        previousTimeScale = Time.timeScale;
-        gameplayInputWasBlocked = PlayerController.IsGameplayInputBlocked;
-        previousCursorVisible = Cursor.visible;
-        previousCursorLockState = Cursor.lockState;
+        // 暂停特判：记录弹窗打开前 timeScale，关闭时恢复
+        timeScaleBeforeOpen = Time.timeScale;
 
         // Clear old cards
         if (cardParent != null)
@@ -75,61 +92,61 @@ public class CoreChoiceUI : MonoBehaviour
         }
 
         // Draw random cards from CardManager
-        cards = new CoreChoiceCard[cardCount];
-        string[] cardNames = new string[cardCount];
-        string[] cardDescriptions = new string[cardCount];
-        Sprite[] cardSprites = new Sprite[cardCount];
-        for (int i = 0; i < cardCount; i++) cardNames[i] = "Option " + (char)('A' + i);
-
         if (CardManager.Instance != null)
-        {
             CardManager.Instance.DrawCards(cardCount);
-            var picks = CardManager.Instance.currentPicks;
-            for (int i = 0; i < cardCount; i++)
-            {
-                if (i < picks.Length && picks[i] != null)
-                {
-                    cardNames[i] = picks[i].cardName;
-                    cardDescriptions[i] = picks[i].description ?? "";
-                    cardSprites[i] = picks[i].image;
-                }
-            }
-        }
         else
-        {
             Debug.LogWarning("[CoreChoiceUI] CardManager.Instance is null — no cards will be shown. Add CardManager to the scene.");
-        }
 
-        // Instantiate cards
-        for (int i = 0; i < cardCount; i++)
-        {
-            var go = cardPrefab != null ? Instantiate(cardPrefab, cardParent) : null;
-            if (go == null) continue;
+        RefreshCards();
 
-            var card = go.GetComponent<CoreChoiceCard>();
-            if (card == null) card = go.AddComponent<CoreChoiceCard>();
-            card.Init(i, cardNames[i], cardSprites[i], cardDescriptions[i], OnCardConfirm, OnCardReroll);
-            cards[i] = card;
-        }
-
-        Debug.Log($"[CoreChoiceUI] Show called: panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
-        Debug.Log($"[CoreChoiceUI] EventSystem={(EventSystem.current != null ? EventSystem.current.name : "NULL")}, generatedCards={CountGeneratedCards()}");
+        Debug.Log($"[CoreChoiceUI] Show called: doublePick={doublePick}, panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
         if (panelRoot != null) panelRoot.SetActive(true);
         else Debug.LogError("[CoreChoiceUI] panelRoot is NULL — drag the UI Panel into this field!");
 
-        // Re-bind confirm all
+        // continue 按钮在 panelRoot 外，始终显示（供 toggle 显隐选卡界面）
         if (confirmAllButton != null)
         {
+            confirmAllButton.gameObject.SetActive(true);
             confirmAllButton.onClick.RemoveAllListeners();
             confirmAllButton.onClick.AddListener(OnConfirmAll);
             confirmAllButton.interactable = true;
         }
 
-        PlayerController.SetGameplayInputBlocked(true, "CoreChoiceUI");
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        // 暂停特判：弹窗期间暂停 + 屏蔽玩家输入（不做全局时间仲裁）
         Time.timeScale = 0f;
-        Debug.Log($"[CoreChoiceUI] Gameplay paused for card selection. previousTimeScale={previousTimeScale:F2}, cursorUnlocked=true");
+        PlayerController.SetGameplayInputBlocked(true, "CoreChoiceUI");
+    }
+
+    /// <summary>根据 CardManager.currentPicks 重建卡片 UI。</summary>
+    private void RefreshCards()
+    {
+        if (cardParent != null)
+        {
+            for (int i = cardParent.childCount - 1; i >= 0; i--)
+                Destroy(cardParent.GetChild(i).gameObject);
+        }
+
+        var picks = CardManager.Instance != null ? CardManager.Instance.currentPicks : null;
+        cards = new CoreChoiceCard[cardCount];
+        for (int i = 0; i < cardCount; i++)
+        {
+            string name = "Option " + (char)('A' + i);
+            string desc = "";
+            Sprite sprite = null;
+            if (picks != null && i < picks.Length && picks[i] != null)
+            {
+                name = picks[i].cardName;
+                desc = picks[i].description ?? "";
+                sprite = picks[i].image;
+            }
+
+            var go = cardPrefab != null ? Instantiate(cardPrefab, cardParent) : null;
+            if (go == null) continue;
+            var card = go.GetComponent<CoreChoiceCard>();
+            if (card == null) card = go.AddComponent<CoreChoiceCard>();
+            card.Init(i, name, sprite, desc, OnCardConfirm, OnCardReroll);
+            cards[i] = card;
+        }
     }
 
     void OnCardConfirm(int index)
@@ -145,12 +162,23 @@ public class CoreChoiceUI : MonoBehaviour
             return;
         }
 
-        // Deselect previous, select new
-        if (selectedIndex >= 0 && selectedIndex < cards.Length && cards[selectedIndex] != null)
-            cards[selectedIndex].SetSelected(false);
-        cards[index].SetSelected(true);
-        selectedIndex = index;
-        Debug.Log($"[CoreChoiceUI] Card selected: index={index}, name={cards[index].name}");
+        // 点卡即选即生效（双选中更符合直觉）；解锁该卡
+        if (CardManager.Instance != null)
+            CardManager.Instance.SelectCard(index);
+
+        picksRemaining--;
+        if (picksRemaining > 0 && doublePick)
+        {
+            // 双选第二轮：保留会话排除（第一轮已出现/已选的卡不再出现）
+            if (CardManager.Instance != null)
+                CardManager.Instance.DrawCards(cardCount, keepSession: true);
+            RefreshCards();
+            selectedIndex = -1;
+        }
+        else
+        {
+            Close();
+        }
     }
 
     void OnCardReroll(int index)
@@ -171,88 +199,53 @@ public class CoreChoiceUI : MonoBehaviour
             return;
         }
 
-        var newCard = CardManager.Instance.DrawOneReroll();
+        var newCard = CardManager.Instance.DrawOneReroll(index);
         if (newCard != null)
         {
             Sprite sprite = null;
             if (newCard.image != null) sprite = newCard.image;
             cards[index].Replace(newCard.cardName, sprite, newCard.description ?? "");
-            CardManager.Instance.currentPicks[index] = newCard;
-            // If rerolled the selected card, deselect
+            // currentPicks[index] 已由 DrawOneReroll 内部更新，UI 不再直写
             if (selectedIndex == index) selectedIndex = -1;
             Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}");
         }
         else Debug.LogWarning($"[CoreChoiceUI] Reroll produced no card: index={index}");
     }
 
+    /// <summary>
+    /// 下方按钮：切换选卡界面显隐（隐藏看场景，仍暂停；再点又弹出）。
+    /// 注意：按钮在 panelRoot 外（UIChoicePopupCanvas 下），隐藏面板时按钮仍可见。
+    /// </summary>
     void OnConfirmAll()
     {
-        Debug.Log("[CoreChoiceUI] Continue clicked");
-
-        // Unlock the selected card (if any)
-        if (CardManager.Instance != null && selectedIndex >= 0 && selectedIndex < (cards?.Length ?? 0))
+        Debug.Log("[CoreChoiceUI] Toggle panel visibility");
+        if (panelRoot != null)
         {
-            CardManager.Instance.SelectCard(selectedIndex);
+            panelRoot.SetActive(!panelRoot.activeSelf);
+            // 隐藏面板看场景，游戏仍保持暂停（不恢复 timeScale）
         }
+    }
 
+    private void Close()
+    {
+        _isDrafting = false;
         if (panelRoot != null) panelRoot.SetActive(false);
-        if (!gameplayInputWasBlocked)
-            PlayerController.SetGameplayInputBlocked(false, "CoreChoiceUI");
-        Time.timeScale = previousTimeScale;
-        Cursor.visible = previousCursorVisible;
-        Cursor.lockState = previousCursorLockState;
-        Debug.Log($"[CoreChoiceUI] Gameplay resumed after card selection. restoredTimeScale={previousTimeScale:F2}, cursorRestored={previousCursorLockState}");
+        // continue 按钮随弹窗关闭隐藏
+        if (confirmAllButton != null) confirmAllButton.gameObject.SetActive(false);
+        // 恢复弹窗打开前的 timeScale + 恢复玩家输入
+        Time.timeScale = timeScaleBeforeOpen;
+        PlayerController.SetGameplayInputBlocked(false, "CoreChoiceUI");
 
-        // Unlock next room
-        RoomManager.Instance?.OnCoreConfirmed();
-
-        if (currentCore != null)
-        {
-            currentCore.OnChoicesConfirmed();
-            Destroy(currentCore.gameObject);
-        }
+        // 触发方回调（房间流程等）；先摘抄后清空，避免回调内重入 Show
+        var cb = onClosed;
+        onClosed = null;
+        cb?.Invoke();
     }
 
-    private int CountGeneratedCards()
+    /// <summary>关闭选卡弹窗（跳过剩余选择直接关闭，不推进房间流程的调用方自行处理）。</summary>
+    public void CloseChoiceUI()
     {
-        if (cards == null) return 0;
-        int count = 0;
-        foreach (CoreChoiceCard card in cards)
-            if (card != null) count++;
-        return count;
-    }
-
-    private void LogPointerDiagnostics()
-    {
-        EventSystem eventSystem = EventSystem.current;
-        Canvas canvas = GetComponent<Canvas>();
-        GraphicRaycaster raycaster = GetComponent<GraphicRaycaster>();
-        string selected = eventSystem != null && eventSystem.currentSelectedGameObject != null
-            ? eventSystem.currentSelectedGameObject.name
-            : "NULL";
-
-        Debug.Log($"[CoreChoiceUI] Pointer diagnostics: mouse={Input.mousePosition}, cursorVisible={Cursor.visible}, cursorLock={Cursor.lockState}, timeScale={Time.timeScale:F2}, panelActive={panelRoot.activeInHierarchy}, canvasActive={gameObject.activeInHierarchy}, canvasScale={transform.lossyScale}, raycaster={(raycaster != null ? raycaster.enabled.ToString() : "NULL")}, eventSystem={(eventSystem != null ? eventSystem.name : "NULL")}, pointerOverUI={(eventSystem != null && eventSystem.IsPointerOverGameObject())}, selected={selected}");
-
-        if (eventSystem == null) return;
-
-        PointerEventData pointerData = new PointerEventData(eventSystem)
-        {
-            position = Input.mousePosition
-        };
-        List<RaycastResult> results = new List<RaycastResult>();
-        eventSystem.RaycastAll(pointerData, results);
-
-        if (results.Count == 0)
-        {
-            Debug.LogWarning("[CoreChoiceUI] Pointer diagnostics: RaycastAll returned 0 UI hits.");
-            return;
-        }
-
-        for (int i = 0; i < Mathf.Min(results.Count, 8); i++)
-        {
-            GameObject hit = results[i].gameObject;
-            Button button = hit != null ? hit.GetComponentInParent<Button>() : null;
-            Debug.Log($"[CoreChoiceUI] RaycastHit[{i}]: object='{(hit != null ? hit.name : "NULL")}', layer={(hit != null ? hit.layer.ToString() : "n/a")}, active={(hit != null && hit.activeInHierarchy)}, button={(button != null ? button.name : "NULL")}, buttonInteractable={(button != null && button.interactable)}");
-        }
+        if (!_isDrafting) return;
+        Close();
     }
 }
