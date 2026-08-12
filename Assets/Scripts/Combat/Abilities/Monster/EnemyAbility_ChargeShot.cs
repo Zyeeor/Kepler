@@ -170,6 +170,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale, projectileHeight * 0.5f * scale, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
+            CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot);
 
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
             bool hitSomething = false;

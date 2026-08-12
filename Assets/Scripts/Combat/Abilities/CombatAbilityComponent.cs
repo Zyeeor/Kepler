@@ -38,6 +38,7 @@ public class CombatAbilityComponent : MonoBehaviour
     public event Action<GameplayEffectDefinition, int> OnEffectApplied;
     public event Action<GameplayEffectDefinition, string> OnEffectRejected;
     public event Action<GameplayEffectDefinition> OnEffectExpired;
+    public event Action<GameplayEffectDefinition, int> OnEffectPeriodic;
 
     private readonly GameplayTagContainer tags = new GameplayTagContainer();
     private readonly List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
@@ -65,6 +66,7 @@ public class CombatAbilityComponent : MonoBehaviour
         public Component ownerAbility;
         public int stacks;
         public float expiresAt;
+        public float nextPeriodicAt;
         public GameObject vfxInstance;
     }
 
@@ -263,6 +265,13 @@ public class CombatAbilityComponent : MonoBehaviour
             if (effect.ownerAbility != null) EndAbility(effect.ownerAbility);
             else RemoveEffectInstance(effect);
         }
+        for (int i = 0; i < activeEffects.Count; i++)
+        {
+            ActiveEffect effect = activeEffects[i];
+            if (effect.definition == null || effect.definition.periodicInterval <= 0f || Time.time < effect.nextPeriodicAt) continue;
+            effect.nextPeriodicAt = Time.time + effect.definition.periodicInterval;
+            OnEffectPeriodic?.Invoke(effect.definition, effect.stacks);
+        }
     }
 
     private ActiveEffect CreateEffectInstance(GameplayEffectDefinition definition, Component ownerAbility)
@@ -273,10 +282,12 @@ public class CombatAbilityComponent : MonoBehaviour
             ownerAbility = ownerAbility,
             stacks = 1,
             expiresAt = GetExpiry(definition),
+            nextPeriodicAt = definition.periodicInterval > 0f ? Time.time + definition.periodicInterval : -1f,
             vfxInstance = SpawnEffectVfx(definition)
         };
         activeEffects.Add(effect);
         AddEffectTags(effect, definition);
+        SpawnOneShotVfx(definition.applyVfxPrefab, definition);
         return effect;
     }
 
@@ -286,6 +297,7 @@ public class CombatAbilityComponent : MonoBehaviour
 
         tags.RemoveTags(effect);
         if (effect.vfxInstance != null) Destroy(effect.vfxInstance);
+        SpawnOneShotVfx(effect.definition != null ? effect.definition.expireVfxPrefab : null, effect.definition);
         activeEffects.Remove(effect);
         OnEffectExpired?.Invoke(effect.definition);
     }
@@ -343,6 +355,16 @@ public class CombatAbilityComponent : MonoBehaviour
         GameObject instance = Instantiate(definition.activeVfxPrefab, transform.position, transform.rotation);
         if (definition.parentVfxToTarget) instance.transform.SetParent(transform, true);
         return instance;
+    }
+
+    private void SpawnOneShotVfx(GameObject prefab, GameplayEffectDefinition definition)
+    {
+        if (prefab == null) return;
+        GameObject instance = Instantiate(prefab, transform.position, transform.rotation);
+        foreach (ParticleSystem particle in instance.GetComponentsInChildren<ParticleSystem>())
+            particle.Play(true);
+        if (definition != null && definition.oneShotVfxDuration > 0f)
+            Destroy(instance, definition.oneShotVfxDuration);
     }
 
     private ActiveAbility FindActiveAbility(Component source)

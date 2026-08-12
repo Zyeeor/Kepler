@@ -38,6 +38,13 @@ public abstract class EnemyAbility : MonoBehaviour
         return false;
     }
 
+    protected float GetCardParameter(string key, float defaultValue)
+    {
+        return CardManager.Instance != null && CardManager.Instance.TryGetUnlockedAbilityParameter(this, key, out float value)
+            ? value
+            : defaultValue;
+    }
+
     public bool HasAllAbilityTags(IEnumerable<string> queryTags)
     {
         return GameplayTagUtility.HasAll(abilityTags, queryTags);
@@ -66,6 +73,9 @@ public abstract class EnemyAbility : MonoBehaviour
 
     [Header("Damage (if applicable)")]
     public float damage = 0f;
+    [Header("Hitbox Debug")]
+    [Tooltip("Draw this ability's runtime physics queries when CombatHitboxDebug.Enabled is true.")]
+    public bool drawHitboxes;
 
     /// <summary>Cooldown in seconds. 0 = no cooldown. Only meaningful for BasicAttack / Skill / Mobility.</summary>
     public float cooldown = 0f;
@@ -277,6 +287,47 @@ public abstract class EnemyAbility : MonoBehaviour
         }
     }
 
+    protected List<Enemy> FindEnemiesInArc(Vector3 origin, Vector3 forward, float range, float angle, int layerMask = ~0)
+    {
+        List<Enemy> results = new List<Enemy>();
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f) return results;
+        forward.Normalize();
+        CombatHitboxDebug.DrawArc(drawHitboxes, origin, forward, range, angle);
+
+        Collider[] hits = Physics.OverlapSphere(origin, range, layerMask, QueryTriggerInteraction.Collide);
+        HashSet<Enemy> unique = new HashSet<Enemy>();
+        foreach (Collider hit in hits)
+        {
+            Enemy enemy = hit.GetComponentInParent<Enemy>();
+            if (enemy == null || !unique.Add(enemy)) continue;
+            Vector3 toTarget = enemy.transform.position - origin;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.0001f && Vector3.Angle(forward, toTarget) <= angle * 0.5f)
+                results.Add(enemy);
+        }
+        return results;
+    }
+
+    protected HashSet<Enemy> DamageEnemiesAlongPath(Vector3 start, Vector3 end, float radius, float amount)
+    {
+        HashSet<Enemy> results = new HashSet<Enemy>();
+        Vector3 direction = end - start;
+        float distance = direction.magnitude;
+        if (distance < 0.0001f) return DamageEnemiesInSphere(start, radius, amount);
+        direction /= distance;
+        CombatHitboxDebug.DrawCapsule(drawHitboxes, start, end, radius);
+
+        RaycastHit[] hits = Physics.SphereCastAll(start, radius, direction, distance, ~0, QueryTriggerInteraction.Collide);
+        foreach (RaycastHit hit in hits)
+        {
+            Enemy enemy = hit.collider.GetComponentInParent<Enemy>();
+            if (owner != null && owner.CanDamage(enemy) && results.Add(enemy))
+                DealDamageTo(enemy, amount);
+        }
+        return results;
+    }
+
     /// <summary>
     /// Try to find and damage the Player if they are within the given radius from a point.
     /// Returns true if the player was hit. Does NOT depend on targetMask — uses tag lookup.
@@ -305,6 +356,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// </summary>
     protected void DamageEnemiesInBox(Vector3 center, Vector3 halfExtents, Quaternion orientation, float amount, System.Action<Enemy, Vector3> onHit = null)
     {
+        CombatHitboxDebug.DrawBox(drawHitboxes, center, halfExtents, orientation);
         // Use All layers (~0) so we don't miss enemies due to targetMask misconfiguration
         Collider[] hits = Physics.OverlapBox(center, halfExtents, orientation, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
@@ -325,6 +377,7 @@ public abstract class EnemyAbility : MonoBehaviour
     protected HashSet<Enemy> DamageEnemiesInSphere(Vector3 center, float radius, float amount, System.Action<Enemy, Vector3> onHit = null)
     {
         var hitEnemies = new HashSet<Enemy>();
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius);
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {

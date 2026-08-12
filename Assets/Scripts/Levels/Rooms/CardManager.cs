@@ -192,6 +192,25 @@ public class CardManager : MonoBehaviour
         return !string.IsNullOrEmpty(effectId) && unlockedEffects.Contains(effectId);
     }
 
+    public bool TryGetUnlockedAbilityParameter(EnemyAbility ability, string key, out float value)
+    {
+        value = 0f;
+        if (ability == null || string.IsNullOrWhiteSpace(key)) return false;
+        foreach (CardData card in allCards)
+        {
+            if (card == null || !IsEffectUnlocked(card.effectId) || !DoesCardTargetAbility(card, ability) || card.abilityParameters == null) continue;
+            foreach (CardAbilityParameter parameter in card.abilityParameters)
+            {
+                if (parameter != null && string.Equals(parameter.key, key, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    value = parameter.value;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     void Shuffle<T>(List<T> list)
     {
         for (int i = list.Count - 1; i > 0; i--)

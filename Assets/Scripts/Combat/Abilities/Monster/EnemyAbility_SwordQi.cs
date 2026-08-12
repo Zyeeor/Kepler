@@ -140,6 +140,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
             Vector3 halfExtents = new Vector3(projectileWidth * 0.5f, projectileHeight * 0.5f, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
+            CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot);
 
             int layerMask = owner.isPossessed ? ~0 : targetMask;
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
@@ -198,6 +199,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         // AoE damage — when possessed, hit all layers (to damage other enemies)
         int layerMask = owner.isPossessed ? ~0 : targetMask;
         Collider[] hits = Physics.OverlapSphere(center, blastRadius, layerMask, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, blastRadius);
         foreach (var h in hits)
         {
             var enemy = h.GetComponentInParent<Enemy>();

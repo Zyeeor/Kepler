@@ -14,9 +14,12 @@ public class MineBehaviour : MonoBehaviour
     public GameObject blastVfxPrefab;
     public float blastVfxDuration = 1f;
     public System.Action<GameObject> onExplode;
+    [Tooltip("Draw trigger and blast ranges when CombatHitboxDebug.Enabled is true.")]
+    public bool drawHitboxes;
 
     void Update()
     {
+        CombatHitboxDebug.DrawSphere(drawHitboxes, transform.position, triggerRadius);
         lifetime -= Time.deltaTime;
         if (lifetime <= 0f)
         {
@@ -45,6 +48,7 @@ public class MineBehaviour : MonoBehaviour
 
     void Explode(Vector3 pos)
     {
+        CombatHitboxDebug.DrawSphere(drawHitboxes, pos, blastRadius);
         if (blastVfxPrefab != null)
         {
             var blast = Instantiate(blastVfxPrefab, pos, Quaternion.identity);
