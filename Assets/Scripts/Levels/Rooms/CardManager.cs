@@ -244,7 +244,7 @@ public class CardManager : MonoBehaviour
     {
         value = 0f;
         if (ability == null || string.IsNullOrWhiteSpace(key)) return false;
-        foreach (CardData card in allCards)
+        foreach (CardData card in cardLibrary != null ? cardLibrary.cards : null)
         {
             if (card == null || !IsEffectUnlocked(card.effectId) || !DoesCardTargetAbility(card, ability) || card.abilityParameters == null) continue;
             foreach (CardAbilityParameter parameter in card.abilityParameters)

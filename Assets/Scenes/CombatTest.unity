@@ -8668,6 +8668,7 @@ MonoBehaviour:
     abilityPrefab: {fileID: 0}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: 
     effectId: 
     image: {fileID: 0}
@@ -8675,6 +8676,7 @@ MonoBehaviour:
     abilityPrefab: {fileID: 0}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
   - cardName: 
     effectId: 
     image: {fileID: 0}
@@ -8682,6 +8684,7 @@ MonoBehaviour:
     abilityPrefab: {fileID: 0}
     targetAbilityTags: []
     grantedEffectTags: []
+    abilityParameters: []
 --- !u!1 &1890522062
 GameObject:
   m_ObjectHideFlags: 0
@@ -8925,6 +8928,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 4294967295
+  enableGlobalClickLogs: 1
+  globalClickLogRaycastLimit: 8
 --- !u!1 &1934480728
 GameObject:
   m_ObjectHideFlags: 0
