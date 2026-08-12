@@ -170,7 +170,8 @@ public class CardManager : MonoBehaviour
         UnlockEffect(card.effectId);
     }
 
-    void UnlockEffect(string effectId)
+    /// <summary>Permanently unlock an effect for this run (same path as selecting a card).</summary>
+    public void UnlockEffect(string effectId)
     {
         if (string.IsNullOrEmpty(effectId) || unlockedEffects.Contains(effectId)) return;
         unlockedEffects.Add(effectId);
@@ -192,7 +193,7 @@ public class CardManager : MonoBehaviour
         Debug.Log($"[CardManager] Unlock '{effectId}': {count} existing instances");
     }
 
-    private CardData FindCard(string effectId)
+    public CardData FindCard(string effectId)
     {
         if (cardLibrary == null || cardLibrary.cards == null) return null;
         foreach (var card in cardLibrary.cards)
@@ -200,7 +201,35 @@ public class CardManager : MonoBehaviour
         return null;
     }
 
-    private static bool DoesCardTargetAbility(CardData data, EnemyAbility ability)
+    /// <summary>
+    /// CardLibrary order preserved. Returns cards that target any of the given abilities.
+    /// Used by debug cheats to map number keys onto build entries.
+    /// </summary>
+    public List<CardData> GetCardsTargetingAbilities(IEnumerable<EnemyAbility> abilities)
+    {
+        var result = new List<CardData>();
+        if (abilities == null || cardLibrary == null || cardLibrary.cards == null) return result;
+
+        var abilityList = new List<EnemyAbility>();
+        foreach (EnemyAbility ability in abilities)
+            if (ability != null) abilityList.Add(ability);
+        if (abilityList.Count == 0) return result;
+
+        var seen = new HashSet<string>();
+        foreach (CardData card in cardLibrary.cards)
+        {
+            if (card == null || string.IsNullOrEmpty(card.effectId) || !seen.Add(card.effectId)) continue;
+            for (int i = 0; i < abilityList.Count; i++)
+            {
+                if (!DoesCardTargetAbility(card, abilityList[i])) continue;
+                result.Add(card);
+                break;
+            }
+        }
+        return result;
+    }
+
+    public static bool DoesCardTargetAbility(CardData data, EnemyAbility ability)
     {
         if (data == null || ability == null) return false;
         if (data.targetAbilityTags != null && data.targetAbilityTags.Count > 0)
@@ -243,8 +272,8 @@ public class CardManager : MonoBehaviour
     public bool TryGetUnlockedAbilityParameter(EnemyAbility ability, string key, out float value)
     {
         value = 0f;
-        if (ability == null || string.IsNullOrWhiteSpace(key)) return false;
-        foreach (CardData card in cardLibrary != null ? cardLibrary.cards : null)
+        if (ability == null || string.IsNullOrWhiteSpace(key) || cardLibrary == null || cardLibrary.cards == null) return false;
+        foreach (CardData card in cardLibrary.cards)
         {
             if (card == null || !IsEffectUnlocked(card.effectId) || !DoesCardTargetAbility(card, ability) || card.abilityParameters == null) continue;
             foreach (CardAbilityParameter parameter in card.abilityParameters)

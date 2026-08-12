@@ -16,6 +16,12 @@ public enum GameplayEffectModifierType
     IncomingDamageMultiplier
 }
 
+public enum GameplayEffectVfxLifetime
+{
+    FixedDuration,
+    EffectLifetime
+}
+
 [Serializable]
 public class GameplayEffectModifier
 {
@@ -85,6 +91,14 @@ public class GameplayEffectDefinition : ScriptableObject
     [Tooltip("Played once when the Effect expires or is removed.")]
     public GameObject expireVfxPrefab;
     [Min(0f)] public float oneShotVfxDuration = 2f;
+    [Header("Attack VFX")]
+    [Tooltip("Spawned on the source weapon or configured ability anchor when this Effect is applied by an attack.")]
+    public GameObject weaponVfxPrefab;
+    [Tooltip("Spawned at the target hit point when this Effect is applied by an attack.")]
+    public GameObject hitVfxPrefab;
+    public GameplayEffectVfxLifetime weaponVfxLifetime = GameplayEffectVfxLifetime.FixedDuration;
+    public GameplayEffectVfxLifetime hitVfxLifetime = GameplayEffectVfxLifetime.FixedDuration;
+    [Min(0f)] public float attackVfxDuration = 1f;
 
     private void OnValidate()
     {

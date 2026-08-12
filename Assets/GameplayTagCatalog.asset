@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ce6c9365d7ce407298c0fb5308716dd, type: 3}
+  m_Name: GameplayTagCatalog
+  m_EditorClassIdentifier: 
+  declaredTags:
+  - Ability.Monster.Pride.BlinkChain
+  - Ability.Monster.Pride.ChargeStrike
+  - Ability.Monster.Pride.SwordQi
+  - Effect.Combat.PrideBlinkHit
+  - Effect.Defense.DamageImmune
+  - Effect.Defense.Untargetable
+  - State.Defense.DamageImmune
+  - State.Defense.Untargetable
+  effectDefinitions:
+  - {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
+  - {fileID: 11400000, guid: fbfb59adaa30c448eade1b236543e4ea, type: 2}
+  - {fileID: 11400000, guid: 50f5c4657e60487a9dc102e7305dcbd2, type: 2}

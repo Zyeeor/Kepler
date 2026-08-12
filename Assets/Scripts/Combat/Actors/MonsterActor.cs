@@ -89,6 +89,8 @@ public class MonsterActor : Actor
     [Header("State")]
     public bool isWeakened = false;
     public bool isDowned = false;
+    [Tooltip("Debug/cheat: skip possession HP decay and ability HP costs while possessed.")]
+    public bool suppressPossessionDrain;
     public bool isPossessed = false;
     public bool playerDetected = false;
 
@@ -176,9 +178,6 @@ public class MonsterActor : Actor
         if (meshRenderer != null) meshRenderer.material.color = originalColor;
         bodyRenderers = GetComponentsInChildren<Renderer>(true);
 
-        if (GetComponent<EnemyAbility_MobilityDash>() == null)
-            gameObject.AddComponent<EnemyAbility_MobilityDash>();
-
         var found = GetComponentsInChildren<EnemyAbility>(true);
         passiveAbilities.Clear();
         // Keep existing basic/skill entries (preserves hpCost from Inspector), only add new ones
@@ -216,6 +215,10 @@ public class MonsterActor : Actor
 
     void Start()
     {
+        // After child OnEnable has stamped AbilityType, only inject shared dash when no custom Mobility exists.
+        if (!HasCustomMobilityAbility() && GetComponent<EnemyAbility_MobilityDash>() == null)
+            gameObject.AddComponent<EnemyAbility_MobilityDash>();
+
         gameObject.layer = 8;
         gameObject.tag = "Enemy";
 
@@ -360,7 +363,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && entry.hpCost > 0f)
+                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
                     {
                         Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
                         TakeDamage(entry.hpCost);
@@ -376,7 +379,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && entry.hpCost > 0f)
+                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
                     {
                         Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
                         TakeDamage(entry.hpCost);
@@ -420,7 +423,7 @@ public class MonsterActor : Actor
     /// </summary>
     public void PayAbilityHpCost(EnemyAbility a)
     {
-        if (!isPossessed || a == null) return;
+        if (!isPossessed || suppressPossessionDrain || a == null) return;
         float cost = 0f;
         foreach (var entry in basicAbilities)
         {
@@ -459,7 +462,9 @@ public class MonsterActor : Actor
     public void TakeDamage(float amount)
     {
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        if (IsUntargetable(this) || IsDamageImmune(this)) return;
         if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
+        if (amount <= 0f) return;
 
         EnterHitState();
         if (isPossessed)
@@ -517,7 +522,32 @@ public class MonsterActor : Actor
     {
         return target != null && target != this && !target.isDowned &&
                target.Body != BodyState.Fading && target.Body != BodyState.Despawned &&
-               isPossessed != target.isPossessed;
+               isPossessed != target.isPossessed &&
+               !IsUntargetable(target);
+    }
+
+    /// <summary>True while the actor owns State.Defense.Untargetable (e.g. Pride blink chain).</summary>
+    public static bool IsUntargetable(MonsterActor target)
+    {
+        return target != null && target.Combat != null && target.Combat.Tags.HasTag("State.Defense.Untargetable");
+    }
+
+    /// <summary>True while the actor owns State.Defense.DamageImmune (e.g. cheat immortal body).</summary>
+    public static bool IsDamageImmune(MonsterActor target)
+    {
+        return target != null && target.Combat != null && target.Combat.Tags.HasTag("State.Defense.DamageImmune");
+    }
+
+    private bool HasCustomMobilityAbility()
+    {
+        EnemyAbility[] abilities = GetComponentsInChildren<EnemyAbility>(true);
+        for (int i = 0; i < abilities.Length; i++)
+        {
+            EnemyAbility ability = abilities[i];
+            if (ability == null || ability is EnemyAbility_MobilityDash) continue;
+            if (ability.type == EnemyAbility.AbilityType.Mobility) return true;
+        }
+        return false;
     }
 
     /// <summary>Only AI-controlled monsters may damage the soul player.</summary>
@@ -700,6 +730,7 @@ public class MonsterActor : Actor
         isWeakened = false;
         isDowned = false;
         isPossessed = false;
+        suppressPossessionDrain = false;
         isPossessionReserved = false;
         playerDetected = false;
         Body = BodyState.Active;
