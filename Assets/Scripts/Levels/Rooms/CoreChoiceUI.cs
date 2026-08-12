@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
+using System.Collections.Generic;
 
 /// <summary>
 /// Horizontal 3-option choice UI for Room Core interaction.
@@ -31,6 +33,12 @@ public class CoreChoiceUI : MonoBehaviour
     // State
     private RoomCore currentCore;
     private CoreChoiceCard[] cards;
+    private int selectedIndex = -1;
+    private float previousTimeScale = 1f;
+    private bool gameplayInputWasBlocked;
+    private bool previousCursorVisible;
+    private CursorLockMode previousCursorLockState;
+    private float nextPointerDiagnosticTime;
 
     void Awake()
     {
@@ -38,11 +46,26 @@ public class CoreChoiceUI : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
         confirmAllButton?.onClick.AddListener(OnConfirmAll);
         if (confirmAllButton != null) confirmAllButton.interactable = true;
+        Debug.Log($"[CoreChoiceUI] Awake: object='{name}', panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}, confirmAll={(confirmAllButton != null ? confirmAllButton.name : "NULL")}, eventSystem={(EventSystem.current != null ? EventSystem.current.name : "NULL")}");
+    }
+
+    void Update()
+    {
+        if (panelRoot == null || !panelRoot.activeInHierarchy) return;
+        if (Time.unscaledTime < nextPointerDiagnosticTime) return;
+
+        nextPointerDiagnosticTime = Time.unscaledTime + 0.5f;
+        LogPointerDiagnostics();
     }
 
     public void Show(RoomCore core)
     {
         currentCore = core;
+        selectedIndex = -1;
+        previousTimeScale = Time.timeScale;
+        gameplayInputWasBlocked = PlayerController.IsGameplayInputBlocked;
+        previousCursorVisible = Cursor.visible;
+        previousCursorLockState = Cursor.lockState;
 
         // Clear old cards
         if (cardParent != null)
@@ -90,6 +113,7 @@ public class CoreChoiceUI : MonoBehaviour
         }
 
         Debug.Log($"[CoreChoiceUI] Show called: panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
+        Debug.Log($"[CoreChoiceUI] EventSystem={(EventSystem.current != null ? EventSystem.current.name : "NULL")}, generatedCards={CountGeneratedCards()}");
         if (panelRoot != null) panelRoot.SetActive(true);
         else Debug.LogError("[CoreChoiceUI] panelRoot is NULL — drag the UI Panel into this field!");
 
@@ -101,27 +125,51 @@ public class CoreChoiceUI : MonoBehaviour
             confirmAllButton.interactable = true;
         }
 
+        PlayerController.SetGameplayInputBlocked(true, "CoreChoiceUI");
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
         Time.timeScale = 0f;
+        Debug.Log($"[CoreChoiceUI] Gameplay paused for card selection. previousTimeScale={previousTimeScale:F2}, cursorUnlocked=true");
     }
-
-    private int selectedIndex = -1; // currently selected card, -1 = none
 
     void OnCardConfirm(int index)
     {
-        if (cards == null || index < 0 || index >= cards.Length) return;
-        if (cards[index] == null) return;
+        if (cards == null || index < 0 || index >= cards.Length)
+        {
+            Debug.LogWarning($"[CoreChoiceUI] Select rejected: invalid index={index}, cards={(cards != null ? cards.Length : 0)}");
+            return;
+        }
+        if (cards[index] == null)
+        {
+            Debug.LogWarning($"[CoreChoiceUI] Select rejected: card instance is null at index={index}");
+            return;
+        }
 
         // Deselect previous, select new
         if (selectedIndex >= 0 && selectedIndex < cards.Length && cards[selectedIndex] != null)
             cards[selectedIndex].SetSelected(false);
         cards[index].SetSelected(true);
         selectedIndex = index;
+        Debug.Log($"[CoreChoiceUI] Card selected: index={index}, name={cards[index].name}");
     }
 
     void OnCardReroll(int index)
     {
-        if (CardManager.Instance == null || cards == null || index < 0 || index >= cards.Length) return;
-        if (cards[index] == null) return;
+        if (CardManager.Instance == null)
+        {
+            Debug.LogWarning("[CoreChoiceUI] Reroll rejected: CardManager.Instance is null");
+            return;
+        }
+        if (cards == null || index < 0 || index >= cards.Length)
+        {
+            Debug.LogWarning($"[CoreChoiceUI] Reroll rejected: invalid index={index}, cards={(cards != null ? cards.Length : 0)}");
+            return;
+        }
+        if (cards[index] == null)
+        {
+            Debug.LogWarning($"[CoreChoiceUI] Reroll rejected: card instance is null at index={index}");
+            return;
+        }
 
         var newCard = CardManager.Instance.DrawOneReroll();
         if (newCard != null)
@@ -132,7 +180,9 @@ public class CoreChoiceUI : MonoBehaviour
             CardManager.Instance.currentPicks[index] = newCard;
             // If rerolled the selected card, deselect
             if (selectedIndex == index) selectedIndex = -1;
+            Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}");
         }
+        else Debug.LogWarning($"[CoreChoiceUI] Reroll produced no card: index={index}");
     }
 
     void OnConfirmAll()
@@ -146,7 +196,12 @@ public class CoreChoiceUI : MonoBehaviour
         }
 
         if (panelRoot != null) panelRoot.SetActive(false);
-        Time.timeScale = 1f;
+        if (!gameplayInputWasBlocked)
+            PlayerController.SetGameplayInputBlocked(false, "CoreChoiceUI");
+        Time.timeScale = previousTimeScale;
+        Cursor.visible = previousCursorVisible;
+        Cursor.lockState = previousCursorLockState;
+        Debug.Log($"[CoreChoiceUI] Gameplay resumed after card selection. restoredTimeScale={previousTimeScale:F2}, cursorRestored={previousCursorLockState}");
 
         // Unlock next room
         RoomManager.Instance?.OnCoreConfirmed();
@@ -155,6 +210,49 @@ public class CoreChoiceUI : MonoBehaviour
         {
             currentCore.OnChoicesConfirmed();
             Destroy(currentCore.gameObject);
+        }
+    }
+
+    private int CountGeneratedCards()
+    {
+        if (cards == null) return 0;
+        int count = 0;
+        foreach (CoreChoiceCard card in cards)
+            if (card != null) count++;
+        return count;
+    }
+
+    private void LogPointerDiagnostics()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        Canvas canvas = GetComponent<Canvas>();
+        GraphicRaycaster raycaster = GetComponent<GraphicRaycaster>();
+        string selected = eventSystem != null && eventSystem.currentSelectedGameObject != null
+            ? eventSystem.currentSelectedGameObject.name
+            : "NULL";
+
+        Debug.Log($"[CoreChoiceUI] Pointer diagnostics: mouse={Input.mousePosition}, cursorVisible={Cursor.visible}, cursorLock={Cursor.lockState}, timeScale={Time.timeScale:F2}, panelActive={panelRoot.activeInHierarchy}, canvasActive={gameObject.activeInHierarchy}, canvasScale={transform.lossyScale}, raycaster={(raycaster != null ? raycaster.enabled.ToString() : "NULL")}, eventSystem={(eventSystem != null ? eventSystem.name : "NULL")}, pointerOverUI={(eventSystem != null && eventSystem.IsPointerOverGameObject())}, selected={selected}");
+
+        if (eventSystem == null) return;
+
+        PointerEventData pointerData = new PointerEventData(eventSystem)
+        {
+            position = Input.mousePosition
+        };
+        List<RaycastResult> results = new List<RaycastResult>();
+        eventSystem.RaycastAll(pointerData, results);
+
+        if (results.Count == 0)
+        {
+            Debug.LogWarning("[CoreChoiceUI] Pointer diagnostics: RaycastAll returned 0 UI hits.");
+            return;
+        }
+
+        for (int i = 0; i < Mathf.Min(results.Count, 8); i++)
+        {
+            GameObject hit = results[i].gameObject;
+            Button button = hit != null ? hit.GetComponentInParent<Button>() : null;
+            Debug.Log($"[CoreChoiceUI] RaycastHit[{i}]: object='{(hit != null ? hit.name : "NULL")}', layer={(hit != null ? hit.layer.ToString() : "n/a")}, active={(hit != null && hit.activeInHierarchy)}, button={(button != null ? button.name : "NULL")}, buttonInteractable={(button != null && button.interactable)}");
         }
     }
 }

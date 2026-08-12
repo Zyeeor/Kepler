@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using System.Collections.Generic;
 
 /// <summary>
 /// 玩家控制器：全局唯一实例，只采集输入 → 产出 ControlCommand。
@@ -10,9 +13,12 @@ public class PlayerController : MonoBehaviour, IController
 {
     /// <summary>全局唯一实例（玩家根物体）。</summary>
     public static PlayerController Instance { get; private set; }
+    public static bool IsGameplayInputBlocked { get; private set; }
 
     [Header("Input")]
     public LayerMask groundLayer = -1;
+    public bool enableGlobalClickLogs = true;
+    [Range(1, 16)] public int globalClickLogRaycastLimit = 8;
 
     private Camera mainCamera;
     private Transform self;
@@ -26,7 +32,11 @@ public class PlayerController : MonoBehaviour, IController
 
     void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        if (Instance == this)
+        {
+            Instance = null;
+            IsGameplayInputBlocked = false;
+        }
     }
 
     public void OnAttached(Actor owner)
@@ -42,6 +52,75 @@ public class PlayerController : MonoBehaviour, IController
 
     private Actor _attached;
 
+    private void Update()
+    {
+        if (!enableGlobalClickLogs) return;
+
+        if (Input.GetMouseButtonDown(0)) LogGlobalMouseClick(0);
+        if (Input.GetMouseButtonDown(1)) LogGlobalMouseClick(1);
+        if (Input.GetMouseButtonDown(2)) LogGlobalMouseClick(2);
+    }
+
+    private void LogGlobalMouseClick(int button)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        string selected = eventSystem != null && eventSystem.currentSelectedGameObject != null
+            ? GetHierarchyPath(eventSystem.currentSelectedGameObject.transform)
+            : "NULL";
+
+        Debug.Log($"[GlobalClick] MouseDown button={button}, position={Input.mousePosition}, cursorVisible={Cursor.visible}, cursorLock={Cursor.lockState}, timeScale={Time.timeScale:F2}, gameplayInputBlocked={IsGameplayInputBlocked}, eventSystem={(eventSystem != null ? eventSystem.name : "NULL")}, selected='{selected}'");
+
+        if (eventSystem == null)
+        {
+            Debug.LogWarning("[GlobalClick] No EventSystem found; UI cannot receive pointer events.");
+            return;
+        }
+
+        PointerEventData pointerData = new PointerEventData(eventSystem)
+        {
+            button = button == 0 ? PointerEventData.InputButton.Left :
+                button == 1 ? PointerEventData.InputButton.Right : PointerEventData.InputButton.Middle,
+            position = Input.mousePosition
+        };
+        List<RaycastResult> results = new List<RaycastResult>();
+        eventSystem.RaycastAll(pointerData, results);
+
+        if (results.Count == 0)
+        {
+            Debug.Log("[GlobalClick] RaycastAll result: 0 objects.");
+            return;
+        }
+
+        int limit = Mathf.Min(globalClickLogRaycastLimit, results.Count);
+        for (int i = 0; i < limit; i++)
+        {
+            GameObject hit = results[i].gameObject;
+            Button buttonComponent = hit != null ? hit.GetComponentInParent<Button>() : null;
+            Selectable selectable = hit != null ? hit.GetComponentInParent<Selectable>() : null;
+            Debug.Log($"[GlobalClick] Hit[{i}] object='{(hit != null ? GetHierarchyPath(hit.transform) : "NULL")}', module='{(results[i].module != null ? results[i].module.GetType().Name : "NULL")}', distance={results[i].distance:F2}, button='{(buttonComponent != null ? buttonComponent.name : "NULL")}', interactable={(buttonComponent != null && buttonComponent.interactable)}, selectable='{(selectable != null ? selectable.name : "NULL")}'");
+        }
+    }
+
+    private static string GetHierarchyPath(Transform target)
+    {
+        if (target == null) return "NULL";
+
+        string path = target.name;
+        Transform parent = target.parent;
+        while (parent != null)
+        {
+            path = parent.name + "/" + path;
+            parent = parent.parent;
+        }
+        return path;
+    }
+
+    public static void SetGameplayInputBlocked(bool blocked, string source)
+    {
+        IsGameplayInputBlocked = blocked;
+        Debug.Log($"[PlayerInput] Gameplay input {(blocked ? "blocked" : "enabled")} by {source}.");
+    }
+
     /// <summary>
     /// 每帧采集输入 → 写 ControlCommand。
     /// 移动用 GetAxisRaw（WASD 世界空间方向），按钮用 GetMouseButtonDown/GetKeyDown。
@@ -50,6 +129,7 @@ public class PlayerController : MonoBehaviour, IController
     public void Tick(in ActorContext ctx, ref ControlCommand cmd)
     {
         cmd = ControlCommand.Empty;
+        if (IsGameplayInputBlocked) return;
 
         // 移动（WASD，映射到世界空间）
         float h = Input.GetAxisRaw("Horizontal");
