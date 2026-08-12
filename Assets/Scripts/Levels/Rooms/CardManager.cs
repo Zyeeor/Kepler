@@ -225,8 +225,8 @@ public class CardManager : MonoBehaviour
     public bool TryGetUnlockedAbilityParameter(EnemyAbility ability, string key, out float value)
     {
         value = 0f;
-        if (ability == null || string.IsNullOrWhiteSpace(key)) return false;
-        foreach (CardData card in allCards)
+        if (ability == null || string.IsNullOrWhiteSpace(key) || cardLibrary == null || cardLibrary.cards == null) return false;
+        foreach (CardData card in cardLibrary.cards)
         {
             if (card == null || !IsEffectUnlocked(card.effectId) || !DoesCardTargetAbility(card, ability) || card.abilityParameters == null) continue;
             foreach (CardAbilityParameter parameter in card.abilityParameters)
