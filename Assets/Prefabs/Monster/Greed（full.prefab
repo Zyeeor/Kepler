@@ -49,10 +49,12 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 10
+  drawHitboxes: 0
   cooldown: 0
   abilityTags: []
   appliedEffectTags: []
@@ -67,6 +69,7 @@ MonoBehaviour:
   detectRange: 8
   homingSpeed: 20
   launchInterval: 0.3
+  aimTurnSpeed: 720
   homingTurnRate: 720
   homingCurveStrength: 0.757
   damageMultiplier: 1
@@ -198,10 +201,12 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 5
+  drawHitboxes: 0
   cooldown: 1
   abilityTags: []
   appliedEffectTags: []
@@ -477,10 +482,12 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0
+  drawHitboxes: 0
   cooldown: 0
   abilityTags: []
   appliedEffectTags: []
@@ -1685,12 +1692,13 @@ MonoBehaviour:
   displayName: Lust
   maxTenacity: 150
   collisionDamage: 10
-  detectionRadius: 6
-  aiAttackRange: 5
-  aiMinRange: 2
   attackSpeed: 1
-  basicCastTime: 0.5
-  skillCastTime: 10
+  aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
+  aiConfigId: Greed
+  detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
+  basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
+  skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
+  rangeCircleSegments: 64
   bodyColor: {r: 1, g: 0.90337205, b: 0.45098042, a: 1}
   weakenedColor: {r: 1, g: 0.89349395, b: 0.41176474, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -1699,6 +1707,7 @@ MonoBehaviour:
   flashDuration: 0.1
   isWeakened: 0
   isDowned: 0
+  suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
   corpsePossessionWindow: 5

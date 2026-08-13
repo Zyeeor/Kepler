@@ -81,6 +81,9 @@ public abstract class EnemyAbility : MonoBehaviour
 
     /// <summary>Cooldown in seconds. 0 = no cooldown. Only meaningful for BasicAttack / Skill / Mobility.</summary>
     public float cooldown = 0f;
+    [Header("Cooldown Debug")]
+    [Tooltip("Log cooldown trigger/blocked events for this ability (for verifying AI attack cadence).")]
+    public bool debugLogCooldown = false;
 
     [Header("Attack Behavior Tags")]
     [Tooltip("Stable identity tags for this attack behavior. Cards use these tags to target an ability without depending on its display name.")]
@@ -186,10 +189,11 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Returns true if this ability can be triggered right now.</summary>
     public virtual bool CanTrigger()
     {
-        if (currentCooldown > 0f || owner == null || owner.isDowned) return false;
+        if (currentCooldown > 0f || owner == null || owner.isDowned)
+            return false;
 
         CombatAbilityComponent combat = owner.Combat;
-        string reason;
+        string reason = string.Empty;
         return combat == null || combat.CanActivate(this, requiredTags, out reason);
     }
 
@@ -199,6 +203,8 @@ public abstract class EnemyAbility : MonoBehaviour
         if (!TryBeginActivationEffect()) return;
 
         currentCooldown = EffectiveCooldown;
+        if (debugLogCooldown)
+            Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)
             SpawnVfx();
         else

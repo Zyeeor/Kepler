@@ -22,7 +22,7 @@ public enum CommandButtons : ushort
 /// </summary>
 public struct ControlCommand
 {
-    public Vector3 MoveDirection;   // World-space XZ, normalized; meaningless when HasMove=false
+    public Vector3 MoveDirection;   // World-space XZ. Player 输入恒归一化；AI 可能产出非归一化（模长 0.7~1.3 作速度乘数，见 BTAction_MoveToPlayer）。HasMove=false 时无意义
     public Vector3 AimPoint;        // Ground aim point; meaningless when HasAim=false
     public bool HasMove;
     public bool HasAim;

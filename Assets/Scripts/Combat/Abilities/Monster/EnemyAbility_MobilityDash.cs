@@ -27,8 +27,18 @@ public class EnemyAbility_MobilityDash : EnemyAbility
     private IEnumerator DashRoutine()
     {
         Vector3 direction = owner.transform.forward;
-        if (PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f)
+        // AI 态（未被附身）：朝索敌目标冲刺，避免被玩家输入方向污染；
+        // 玩家态：朝当前移动输入方向冲刺。
+        if (owner is MonsterActor monster && !monster.IsPlayerControlled && monster.targetPlayer != null)
+        {
+            Vector3 toTarget = monster.targetPlayer.position - monster.transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.0001f) direction = toTarget;
+        }
+        else if (PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f)
+        {
             direction = PlayerController.CurrentMoveDirection;
+        }
         direction.y = 0f;
         if (direction.sqrMagnitude < 0.0001f) yield break;
 
@@ -65,6 +75,7 @@ public class EnemyAbility_MobilityDash : EnemyAbility
     public override void ResetForOwnerReuse()
     {
         if (owner != null) owner.IsAbilityFacingLocked = false;
+        StopAllCoroutines(); // 终止尸体消失/池回收时仍在滑尾的冲刺协程
         base.ResetForOwnerReuse();
     }
 }
