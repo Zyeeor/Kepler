@@ -1,8 +1,10 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>Pride mobility: charge along the current move direction and damage enemies along the path.
-/// Build Pride.ChargeEmpowered increases ChargeDistance; damage scales 0~100% with the distance bonus.
+/// <summary>
+/// Pride mobility: hold Space to charge, release to dash along move direction.
+/// Charge ratio (0~1 over maxChargeTime) adds 0~100% distance and damage.
+/// Build Pride.ChargeEmpowered raises base distance via ChargeDistance.
 /// </summary>
 public class EnemyAbility_PrideChargeStrike : EnemyAbility
 {
@@ -11,31 +13,83 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
     public float hitRadius = 0.8f;
     public float landingRadius = 1.5f;
     public float damageMultiplier = 1f;
+    [Tooltip("Hold duration that reaches the full +100% distance/damage bonus.")]
+    public float maxChargeTime = 2f;
+
+    private bool isCharging;
+    private bool isDashing;
+    private float chargeTimer;
 
     private void OnEnable()
     {
         type = AbilityType.Mobility;
         abilityName = "一刀斩";
         cooldown = cooldown <= 0f ? 2f : cooldown;
+        if (maxChargeTime <= 0f) maxChargeTime = 2f;
         if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.ChargeStrike", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.ChargeStrike");
     }
 
-    protected override void OnTrigger()
+    /// <summary>Possessed play is hold/release driven in Update; edge Trigger is for AI only.</summary>
+    public override bool CanTrigger()
     {
-        StartCoroutine(ChargeRoutine());
+        if (!base.CanTrigger()) return false;
+        if (owner != null && owner.isPossessed) return false;
+        return true;
     }
 
-    private IEnumerator ChargeRoutine()
+    protected override void OnTrigger()
+    {
+        // AI / non-possessed: immediate dash with no hold bonus.
+        if (isDashing) return;
+        StartCoroutine(DashRoutine(0f));
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+        if (owner == null || !owner.isPossessed || isDashing) return;
+        if (PlayerController.IsGameplayInputBlocked || Time.timeScale == 0f)
+        {
+            if (isCharging) CancelCharge(applyCooldown: false);
+            return;
+        }
+
+        bool holding = Input.GetKey(KeyCode.Space);
+        if (holding)
+        {
+            if (!isCharging)
+            {
+                if (currentCooldown > 0f || owner.isDowned) return;
+                if (!TryBeginActivationEffect()) return;
+                isCharging = true;
+                chargeTimer = 0f;
+                owner.PayAbilityHpCost(this);
+            }
+
+            chargeTimer = Mathf.Min(chargeTimer + AbilityDeltaTime, Mathf.Max(0.01f, maxChargeTime));
+        }
+        else if (isCharging)
+        {
+            float held = chargeTimer;
+            isCharging = false;
+            currentCooldown = EffectiveCooldown;
+            StartCoroutine(DashRoutine(held));
+        }
+    }
+
+    private IEnumerator DashRoutine(float chargeTime)
     {
         if (owner == null)
         {
             CleanupChargeVfx();
+            EndActivationEffect();
             yield break;
         }
 
-        // Charge along current move input (same as shared MobilityDash); fall back to facing.
+        isDashing = true;
+
         Vector3 direction = owner.transform.forward;
         if (owner.isPossessed && PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f)
             direction = PlayerController.CurrentMoveDirection;
@@ -43,14 +97,15 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         if (direction.sqrMagnitude < 0.0001f) direction = owner.transform.forward;
         direction.Normalize();
 
-        // Keep slash/trail VFX glued to the body so it does not linger in world space.
+        // Slash/trail VFX starts with the dash, not the hold windup.
+        SpawnVfx();
         if (activeVfx != null)
             activeVfx.transform.SetParent(owner.transform, true);
 
-        float baseDistance = Mathf.Max(0.01f, chargeDistance);
-        float distance = GetCardParameter("ChargeDistance", chargeDistance);
-        float distanceBonus = Mathf.Clamp01((distance - baseDistance) / baseDistance); // 0~100%
-        float strikeDamage = damage * damageMultiplier * (1f + distanceBonus);
+        float baseDistance = Mathf.Max(0.01f, GetCardParameter("ChargeDistance", chargeDistance));
+        float chargeRatio = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, maxChargeTime)); // 0~100%
+        float distance = baseDistance * (1f + chargeRatio);
+        float strikeDamage = damage * damageMultiplier * (1f + chargeRatio);
 
         float moved = 0f;
         owner.IsAbilityFacingLocked = true;
@@ -64,6 +119,7 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
             moved += step;
             yield return null;
         }
+
         if (owner != null)
         {
             DamageEnemiesInSphere(owner.transform.position, landingRadius, strikeDamage);
@@ -71,6 +127,16 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         }
 
         CleanupChargeVfx();
+        EndActivationEffect();
+        isDashing = false;
+    }
+
+    private void CancelCharge(bool applyCooldown)
+    {
+        if (!isCharging) return;
+        isCharging = false;
+        chargeTimer = 0f;
+        if (applyCooldown) currentCooldown = EffectiveCooldown;
         EndActivationEffect();
     }
 
@@ -83,6 +149,9 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
 
     protected override void OnDisable()
     {
+        isCharging = false;
+        isDashing = false;
+        chargeTimer = 0f;
         if (owner != null) owner.IsAbilityFacingLocked = false;
         CleanupChargeVfx();
         base.OnDisable();
@@ -90,6 +159,9 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
 
     public override void ResetForOwnerReuse()
     {
+        isCharging = false;
+        isDashing = false;
+        chargeTimer = 0f;
         if (owner != null) owner.IsAbilityFacingLocked = false;
         CleanupChargeVfx();
         base.ResetForOwnerReuse();
