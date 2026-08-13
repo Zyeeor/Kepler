@@ -16,9 +16,18 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
     [Tooltip("Hold duration that reaches the full +100% distance/damage bonus.")]
     public float maxChargeTime = 2f;
 
+    [Header("VFX - Charge Hold")]
+    [Tooltip("Self VFX while charging / dashing. Destroyed when the dash ends (or charge is cancelled).")]
+    public GameObject chargeVfxPrefab;
+    [Tooltip("Local position offset relative to the owner.")]
+    public Vector3 chargeVfxPositionOffset = Vector3.zero;
+    [Tooltip("Local euler offset relative to the owner.")]
+    public Vector3 chargeVfxRotationOffset = Vector3.zero;
+
     private bool isCharging;
     private bool isDashing;
     private float chargeTimer;
+    private GameObject chargeVfxInstance;
 
     private void OnEnable()
     {
@@ -66,6 +75,7 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
                 isCharging = true;
                 chargeTimer = 0f;
                 owner.PayAbilityHpCost(this);
+                SpawnChargeHoldVfx();
             }
 
             chargeTimer = Mathf.Min(chargeTimer + AbilityDeltaTime, Mathf.Max(0.01f, maxChargeTime));
@@ -83,12 +93,17 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
     {
         if (owner == null)
         {
-            CleanupChargeVfx();
+            CleanupDashVfx();
+            CleanupChargeHoldVfx();
             EndActivationEffect();
             yield break;
         }
 
         isDashing = true;
+
+        // AI path has no hold; still show self VFX for the dash duration if configured.
+        if (chargeVfxInstance == null)
+            SpawnChargeHoldVfx();
 
         Vector3 direction = owner.transform.forward;
         if (owner.isPossessed && PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f)
@@ -126,9 +141,21 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
             owner.IsAbilityFacingLocked = false;
         }
 
-        CleanupChargeVfx();
+        CleanupDashVfx();
+        CleanupChargeHoldVfx();
         EndActivationEffect();
         isDashing = false;
+    }
+
+    private void SpawnChargeHoldVfx()
+    {
+        if (chargeVfxInstance != null || chargeVfxPrefab == null || owner == null) return;
+
+        Vector3 pos = owner.transform.position + owner.transform.TransformDirection(chargeVfxPositionOffset);
+        Quaternion rot = owner.transform.rotation * Quaternion.Euler(chargeVfxRotationOffset);
+        chargeVfxInstance = SpawnVfxTracked(chargeVfxPrefab, pos, rot);
+        if (chargeVfxInstance != null)
+            chargeVfxInstance.transform.SetParent(owner.transform, true);
     }
 
     private void CancelCharge(bool applyCooldown)
@@ -137,14 +164,22 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         isCharging = false;
         chargeTimer = 0f;
         if (applyCooldown) currentCooldown = EffectiveCooldown;
+        CleanupChargeHoldVfx();
         EndActivationEffect();
     }
 
-    private void CleanupChargeVfx()
+    private void CleanupDashVfx()
     {
         if (activeVfx == null) return;
         Destroy(activeVfx);
         activeVfx = null;
+    }
+
+    private void CleanupChargeHoldVfx()
+    {
+        if (chargeVfxInstance == null) return;
+        Destroy(chargeVfxInstance);
+        chargeVfxInstance = null;
     }
 
     protected override void OnDisable()
@@ -153,7 +188,8 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         isDashing = false;
         chargeTimer = 0f;
         if (owner != null) owner.IsAbilityFacingLocked = false;
-        CleanupChargeVfx();
+        CleanupDashVfx();
+        CleanupChargeHoldVfx();
         base.OnDisable();
     }
 
@@ -163,7 +199,8 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         isDashing = false;
         chargeTimer = 0f;
         if (owner != null) owner.IsAbilityFacingLocked = false;
-        CleanupChargeVfx();
+        CleanupDashVfx();
+        CleanupChargeHoldVfx();
         base.ResetForOwnerReuse();
     }
 }

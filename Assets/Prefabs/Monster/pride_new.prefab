@@ -3808,6 +3808,10 @@ MonoBehaviour:
   landingRadius: 1.5
   damageMultiplier: 1
   maxChargeTime: 2
+  chargeVfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
+    type: 3}
+  chargeVfxPositionOffset: {x: 0, y: 0, z: 0}
+  chargeVfxRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &8680161257192645168
 GameObject:
   m_ObjectHideFlags: 0
@@ -3961,7 +3965,8 @@ TrailRenderer:
   m_MaskInteraction: 0
   m_Autodestruct: 0
   m_Emitting: 1
-  m_ApplyActiveColorSpace: 1--- !u!1 &8799517795252620229
+  m_ApplyActiveColorSpace: 1
+--- !u!1 &8799517795252620229
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
