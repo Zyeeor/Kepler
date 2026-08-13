@@ -2512,7 +2512,6 @@ RectTransform:
   m_Children:
   - {fileID: 1780735749}
   - {fileID: 342066981}
-  - {fileID: 1361398535}
   - {fileID: 1170007485}
   m_Father: {fileID: 786004066}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3401,7 +3400,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'continue
+  m_text: 'Toggle View
 
 '
   m_isRightToLeft: 0
@@ -4104,12 +4103,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -4151,6 +4150,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 421427832}
+  - {fileID: 1361398535}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -6234,10 +6234,10 @@ RectTransform:
   - {fileID: 96047808}
   m_Father: {fileID: 421427832}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 580, y: -549}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1170007486
 MonoBehaviour:
@@ -6637,7 +6637,7 @@ GameObject:
   - component: {fileID: 1361398537}
   - component: {fileID: 1361398536}
   m_Layer: 0
-  m_Name: continue (1)
+  m_Name: ToggleView
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6656,11 +6656,11 @@ RectTransform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 581324107}
-  m_Father: {fileID: 421427832}
+  m_Father: {fileID: 786004066}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -4, y: -458}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 57.4}
   m_SizeDelta: {x: 200, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1361398536
@@ -8681,7 +8681,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1200, y: 1000}
+  m_SizeDelta: {x: 1600, y: 1000}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1780735750
 MonoBehaviour:
@@ -8787,8 +8787,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 596ef72ef54416340923ab54d3c29fde, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardLibrary: {fileID: 0}
-  gameplayTagCatalog: {fileID: 0}
+  cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
+  gameplayTagCatalog: {fileID: 11400000, guid: f16753855c04a438eb9ae4fe1c54da4d, type: 2}
   maxRerolls: 3
   maxSelects: 1
   currentPicks:
@@ -10897,12 +10897,12 @@ PrefabInstance:
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 50
+      value: 1036.037
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -50
+      value: -479.86823
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
