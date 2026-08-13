@@ -1733,6 +1733,7 @@ MonoBehaviour:
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Pride_new
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -3582,11 +3583,11 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: Pride.Pierce
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride02
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -4017,9 +4018,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: Pride.BlinkSwordQi
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride.BlinkCountPlusTwo
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
