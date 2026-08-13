@@ -2643,7 +2643,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6343973506259650978
 Transform:
   m_ObjectHideFlags: 0
@@ -3627,8 +3627,8 @@ MonoBehaviour:
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
   pride01MaxRange: 20
   pride02SpreadAngle: 20
-  pierceVfxPrefab: {fileID: 0}
-  pierceVfxDuration: 1
+  pierceVfxPrefab: {fileID: 4797775238236629471, guid: eb1315b188c70674182af9986dcae542,
+    type: 3}
   pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
   pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
   pierceDamageMultiplier: 2
@@ -3831,7 +3831,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6952629588072338995
 Transform:
   m_ObjectHideFlags: 0
@@ -4045,8 +4045,8 @@ MonoBehaviour:
   passThroughDuration: 0.08
   untargetableEffect: {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   hideOwnerMeshes: 1
-  activationDisplayA: {fileID: 0}
-  activationDisplayB: {fileID: 0}
+  activationDisplayA: {fileID: 8680161257192645168}
+  activationDisplayB: {fileID: 5117285898771160820}
 --- !u!1 &8863776375583877577
 GameObject:
   m_ObjectHideFlags: 0
