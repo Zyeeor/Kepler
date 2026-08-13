@@ -138,22 +138,24 @@ public class EnemyAbility_TKDagger : EnemyAbility
     {
         if (owner.isPossessed)
         {
-            // Target nearest enemy
             Enemy best = null;
             float bestDist = float.MaxValue;
+            Vector3 ownerPos = owner.transform.position;
             foreach (var e in FindObjectsOfType<Enemy>())
             {
                 if (!owner.CanDamage(e)) continue;
-                float d = Vector3.Distance(owner.transform.position, e.transform.position);
+                float d = Vector3.Distance(ownerPos, e.transform.position);
                 if (d <= detectRange && d < bestDist) { bestDist = d; best = e; }
             }
             return best != null ? best.transform : null;
         }
         else
         {
-            // Target player
             if (owner.targetPlayer != null)
-                return owner.targetPlayer;
+            {
+                float d = Vector3.Distance(owner.transform.position, owner.targetPlayer.position);
+                if (d <= detectRange) return owner.targetPlayer;
+            }
             return null;
         }
     }

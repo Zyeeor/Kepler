@@ -7,6 +7,8 @@ using UnityEngine;
 /// Each segment: approach to strike point → settle damage/VFX → short pass-through.
 /// Approach + pass-through durations sum to blinkInterval.
 /// Owner stays untargetable for the whole chain.
+/// AI 态（未附身）时对灵魂玩家穿梭打击，目标为 owner.targetPlayer；
+/// 附身态每段后重选最近的另一个敌人（无其他敌人则继续打击同一目标）。
 /// </summary>
 public class EnemyAbility_PrideBlinkChain : EnemyAbility
 {
@@ -29,6 +31,12 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     [Tooltip("Hide mesh/skinned renderers while blinking so only Effect afterimage VFX remains.")]
     public bool hideOwnerMeshes = true;
 
+    [Header("Activation Display")]
+    [Tooltip("First display object on the enemy body. It is shown while this ability is active.")]
+    public GameObject activationDisplayA;
+    [Tooltip("Second display object on the enemy body. It is shown while this ability is active.")]
+    public GameObject activationDisplayB;
+
     private readonly List<Renderer> _hiddenRenderers = new List<Renderer>();
 
     private void OnEnable()
@@ -39,12 +47,16 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.BlinkChain", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.BlinkChain");
+        SetActivationDisplays(false);
     }
 
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        return FindNearestTarget(owner.transform.position, null) != null;
+        // 附身态：穿梭斩打最近的敌对怪；AI 态：对灵魂玩家穿梭打击。
+        return owner.isPossessed
+            ? FindNearestTarget(owner.transform.position, null) != null
+            : owner.targetPlayer != null;
     }
 
     protected override void OnTrigger()
@@ -60,6 +72,15 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
             yield break;
         }
 
+        if (owner.isPossessed)
+            yield return BlinkRoutineVsEnemies();
+        else
+            yield return BlinkRoutineVsPlayer();
+    }
+
+    /// <summary>附身态：穿梭斩依次打击最近的敌对怪（原逻辑）。</summary>
+    private IEnumerator BlinkRoutineVsEnemies()
+    {
         Enemy currentTarget = FindNearestTarget(owner.transform.position, null);
         if (currentTarget == null)
         {
@@ -70,6 +91,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (untargetableEffect != null)
             owner.Combat.ApplyEffect(untargetableEffect, owner.Combat, abilityTags, out _);
 
+        SetActivationDisplays(true);
         if (hideOwnerMeshes) HideOwnerMeshes();
         owner.IsAbilityFacingLocked = true;
 
@@ -131,7 +153,62 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         }
 
         RestoreOwnerMeshes();
+        SetActivationDisplays(false);
         EndActivationEffect();
+    }
+
+    /// <summary>AI 态：穿梭斩对灵魂玩家打击（目标为 owner.targetPlayer，而非怪物）。</summary>
+    private IEnumerator BlinkRoutineVsPlayer()
+    {
+        Transform player = owner.targetPlayer;
+        if (player == null)
+        {
+            EndActivationEffect();
+            yield break;
+        }
+
+        if (untargetableEffect != null)
+            owner.Combat.ApplyEffect(untargetableEffect, owner.Combat, abilityTags, out _);
+
+        SetActivationDisplays(true);
+        if (hideOwnerMeshes) HideOwnerMeshes();
+        owner.IsAbilityFacingLocked = true;
+
+        int strikes = Mathf.Max(1, Mathf.RoundToInt(GetCardParameter("BlinkCount", blinkCount)));
+        for (int i = 0; i < strikes && owner != null && player != null; i++)
+        {
+            Vector3 from = owner.transform.position;
+            Vector3 to = player.position;
+            Vector3 direction = to - from;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+                direction = owner.transform.forward;
+            direction.Normalize();
+
+            owner.transform.position = to - direction * arrivalOffset;
+            owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+
+            PlayerHealth ph = player.GetComponent<PlayerHealth>();
+            if (ph != null) DealDamageToPlayer(ph, damage * damageMultiplier);
+
+            yield return AbilityWait(blinkInterval);
+        }
+
+        if (owner != null)
+        {
+            owner.IsAbilityFacingLocked = false;
+            if (untargetableEffect != null) owner.Combat.RemoveEffect(untargetableEffect);
+        }
+
+        RestoreOwnerMeshes();
+        SetActivationDisplays(false);
+        EndActivationEffect();
+    }
+
+    private void SetActivationDisplays(bool visible)
+    {
+        if (activationDisplayA != null) activationDisplayA.SetActive(visible);
+        if (activationDisplayB != null) activationDisplayB.SetActive(visible);
     }
 
     private IEnumerator MoveOwnerOverTime(Vector3 start, Vector3 end, float duration)
@@ -232,6 +309,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (owner != null && owner.Combat != null && untargetableEffect != null)
             owner.Combat.RemoveEffect(untargetableEffect);
         RestoreOwnerMeshes();
+        SetActivationDisplays(false);
         base.OnDisable();
     }
 
@@ -241,6 +319,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (owner != null && owner.Combat != null && untargetableEffect != null)
             owner.Combat.RemoveEffect(untargetableEffect);
         RestoreOwnerMeshes();
+        SetActivationDisplays(false);
         base.ResetForOwnerReuse();
     }
 }

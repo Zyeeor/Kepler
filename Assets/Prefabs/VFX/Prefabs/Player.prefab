@@ -10535,25 +10535,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
-  type: 0
+  type: 1
   vfxPrefab: {fileID: 2060418090655630911, guid: 4fb7673fa1cb7e34ea16f350b1e1fba9,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 90, z: 0}
-  damage: 20
+  damage: 50
   cooldown: 1
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
-  blockedTags:
-  - State.Action.Fight
-  grantedTags:
-  - State.Action.Fight
   activationEffect: {fileID: 0}
   shakeOnHit: 1
-  shakeForce: 0.25
+  shakeForce: 1
   hitStopOnHit: 1
   hitStopDuration: 0.07
   slashRange: 3.5
@@ -10609,6 +10605,8 @@ GameObject:
   - component: {fileID: 1025113241247231900}
   - component: {fileID: 6900587697003508178}
   - component: {fileID: 2575371082769056}
+  - component: {fileID: 3162179642722458772}
+  - component: {fileID: 477096510868814234}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -10667,26 +10665,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d567da4d75b6c92408ecc3cb790ed48f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soulMaxHealth: 300
-  currentHealth: 200
+  soulMaxHealth: 1000
+  currentHealth: 100
   healthDecayPercent: 0.02
   decayInterval: 1
   healthSlider: {fileID: 0}
   sliderFillImage: {fileID: 0}
   healthGradient:
     serializedVersion: 2
-    key0: {r: 0.7924528, g: 0.3563545, b: 0.3563545, a: 1}
-    key1: {r: 1, g: 0.9566514, b: 0.45597476, a: 1}
-    key2: {r: 0.76415086, g: 1, b: 0.76415086, a: 0}
-    key3: {r: 0, g: 0, b: 0, a: 0}
+    key0: {r: 0.99371064, g: 0.27186412, b: 0.27186412, a: 1}
+    key1: {r: 1, g: 0.8011936, b: 0.4433961, a: 1}
+    key2: {r: 1, g: 0.97915417, b: 0.73658437, a: 0}
+    key3: {r: 1, g: 1, b: 1, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
     key6: {r: 0, g: 0, b: 0, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
-    ctime1: 16384
-    ctime2: 32768
-    ctime3: 0
+    ctime1: 17990
+    ctime2: 35595
+    ctime3: 46389
     ctime4: 0
     ctime5: 0
     ctime6: 0
@@ -10701,7 +10699,7 @@ MonoBehaviour:
     atime7: 0
     m_Mode: 0
     m_ColorSpace: -1
-    m_NumColorKeys: 3
+    m_NumColorKeys: 4
     m_NumAlphaKeys: 2
   dangerPanel: {fileID: 0}
   dangerPanelGroup: {fileID: 0}
@@ -10725,7 +10723,7 @@ MonoBehaviour:
   totalDamageAmp: 0
   burnVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
     type: 3}
-  baseMoveSpeed: 0
+  baseMoveSpeed: 5
   passiveIconParent: {fileID: 0}
   prideIconPrefab: {fileID: 4563893726970356341, guid: d40d824d40ac8b54388a82f429499e75,
     type: 3}
@@ -10758,6 +10756,46 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3162179642722458772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6619887426231394227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99faf6cc31d06e748bfb78f7e7b3daa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  enableGlobalClickLogs: 1
+  globalClickLogRaycastLimit: 8
+--- !u!114 &477096510868814234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6619887426231394227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 554b117179bbd7e41988a78ec5a421a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 0
+  acceleration: 30
+  deceleration: 25
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  maxHealth: 0
+  currentHealth: 0
+  stats: {fileID: 0}
+  combat: {fileID: 0}
+  possessYOffset: 0.5
 --- !u!1 &6785086658669047551
 GameObject:
   m_ObjectHideFlags: 0
@@ -10884,10 +10922,6 @@ MonoBehaviour:
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
-  blockedTags:
-  - State.Action.Fight
-  grantedTags:
-  - State.Action.Fight
   activationEffect: {fileID: 0}
   shakeOnHit: 0
   shakeForce: 1
@@ -11161,7 +11195,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}
       propertyPath: m_ConstrainProportionsScale
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -5286228966989335772, guid: 7b46288537b94f044865117876c83c1a,
         type: 3}

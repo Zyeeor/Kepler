@@ -400,12 +400,13 @@ MonoBehaviour:
   displayName: Sloth
   maxTenacity: 150
   collisionDamage: 30
-  detectionRadius: 10
-  aiAttackRange: 3
-  aiMinRange: 2
   attackSpeed: 1
-  basicCastTime: 0.5
-  skillCastTime: 10
+  aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
+  aiConfigId: SwordShield
+  detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
+  basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
+  skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
+  rangeCircleSegments: 64
   bodyColor: {r: 0.43081754, g: 1, b: 0.49079517, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.0034412616, g: 0.36477977, b: 0.10066073, a: 1}
@@ -414,6 +415,7 @@ MonoBehaviour:
   flashDuration: 0.1
   isWeakened: 0
   isDowned: 0
+  suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
   corpsePossessionWindow: 5
@@ -428,6 +430,7 @@ MonoBehaviour:
   skillAbilities:
   - ability: {fileID: 0}
     hpCost: 5
+  mobilityAbilities: []
   passiveAbilities:
   - {fileID: 0}
   currentTenacity: 0
@@ -437,7 +440,6 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
-  rb: {fileID: 0}
 --- !u!136 &2478857331383844277
 CapsuleCollider:
   m_ObjectHideFlags: 0

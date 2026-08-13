@@ -1,0 +1,66 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-08-07T00:32:58",
+  "material_source_mode": "shader",
+  "material_source_path": "Assets/Art folder/Shader/JKPC/ShaderFiles/Map/JKPC_Map_Standard.shader",
+  "material_update_policy": "preserve_existing",
+  "shader_slots": [
+    "_AO=_MetallicGlossMap",
+    "_BC=_NormalMap",
+    "_G=_MetallicGlossMap",
+    "_M=_MetallicGlossMap",
+    "_MRA=_MetallicGlossMap",
+    "_N=_NormalMap",
+    "_R=_MetallicGlossMap"
+  ],
+  "mesh_folder": "Assets/Art folder/Scene_Mesh",
+  "material_folder": "Assets/Art folder/Scene_Mesh",
+  "texture_folder": "Assets/Art folder/Scene_Mesh",
+  "assets": [
+    {
+      "asset_name": "Rage_Build_BoosDoor_01",
+      "meshes": [
+        {
+          "name": "Rage_Build_BoosDoor_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Rage_Build_BoosDoor_01.fbx",
+          "source_material": "Mat_Rage_Build_BoosDoor_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_Rage_Build_BoosDoor_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01.mat",
+          "meshes": [
+            "Rage_Build_BoosDoor_01"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_M",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_M.png",
+              "srgb": false,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_R",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_Rage_Build_BoosDoor_01_R.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

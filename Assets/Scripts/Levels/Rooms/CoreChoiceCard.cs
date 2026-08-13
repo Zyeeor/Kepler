@@ -51,6 +51,12 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         {
             Debug.Log($"[CoreChoiceCard] Reroll clicked: index={Index}, card='{cardText?.text}', rerolled={IsRerolled}");
             if (IsRerolled) return;
+            // 无可刷新候选时不进入刷新（不置 IsRerolled，保持卡片可点）
+            if (CardManager.Instance != null && !CardManager.Instance.HasRerollCandidates())
+            {
+                Debug.Log($"[CoreChoiceCard] Reroll skipped: no candidates left, index={Index}");
+                return;
+            }
             IsRerolled = true;
             RefreshUI();
             onReroll?.Invoke(Index);

@@ -89,18 +89,36 @@ public class CardManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 刷新候选池：EnumeratePool 排除本会话已出现的卡。
+    /// 供 HasRerollCandidates（前置检查）与 DrawOneReroll（实际抽取）共用。
+    /// </summary>
+    private List<CardData> GetRerollCandidates()
+    {
+        var available = new List<CardData>();
+        foreach (var card in EnumeratePool())
+            if (!shownThisSession.Contains(card.effectId))   // session exclusion
+                available.Add(card);
+        return available;
+    }
+
+    /// <summary>是否还有可刷新的候选卡（不扣次数、不改状态；供 UI 刷新前检查）。</summary>
+    public bool HasRerollCandidates()
+    {
+        if (rerollsUsed >= maxRerolls) return false;
+        return GetRerollCandidates().Count > 0;
+    }
+
+    /// <summary>
     /// Reroll slotIndex 槽位：返回新卡并更新 currentPicks[slotIndex]（会话排除已出现卡）。
     /// </summary>
     public CardData DrawOneReroll(int slotIndex)
     {
         if (rerollsUsed >= maxRerolls) return null;
-        rerollsUsed++;
 
-        var available = new List<CardData>();
-        foreach (var card in EnumeratePool())
-            if (!shownThisSession.Contains(card.effectId))   // session exclusion
-                available.Add(card);
-        if (available.Count == 0) return null;
+        var available = GetRerollCandidates();
+        if (available.Count == 0) return null;               // 无候选不扣次数
+
+        rerollsUsed++;
 
         var picked = available[UnityEngine.Random.Range(0, available.Count)];
         shownThisSession.Add(picked.effectId);
