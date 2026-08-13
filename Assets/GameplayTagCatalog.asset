@@ -21,7 +21,17 @@ MonoBehaviour:
   - Effect.Defense.Untargetable
   - State.Defense.DamageImmune
   - State.Defense.Untargetable
+  - Ability.Monster.Sloth.Launch
+  - Ability.Monster.Sloth.ChargeShot
+  - Ability.Monster.Sloth.Drone
+  - Ability.Summon.Bolt
+  - Effect.Combat.SlothBlastHit
+  - Effect.Combat.SlothDroneShot
+  - Effect.Combat.SlothLanding
   effectDefinitions:
   - {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   - {fileID: 11400000, guid: fbfb59adaa30c448eade1b236543e4ea, type: 2}
   - {fileID: 11400000, guid: 50f5c4657e60487a9dc102e7305dcbd2, type: 2}
+  - {fileID: 11400000, guid: 4498697b849af4619a30e5dc08ca21d6, type: 2}
+  - {fileID: 11400000, guid: ebe9e8f842a9f4053aeb56efc067b64f, type: 2}
+  - {fileID: 11400000, guid: 584d7c7b8edf245c7ad7bb2f8ab60ed2, type: 2}

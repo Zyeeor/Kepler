@@ -282,7 +282,7 @@ public class MonsterActor : Actor
         else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
     }
 
-    void Start()
+    protected virtual void Start()
     {
         // After child OnEnable has stamped AbilityType, only inject shared dash when no custom Mobility exists.
         if (!HasCustomMobilityAbility() && GetComponent<EnemyAbility_MobilityDash>() == null)
@@ -528,10 +528,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float basicCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
+                        TakeDamage(basicCost);
                     }
                     any = true;
                 }
@@ -544,10 +545,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float skillCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
+                        TakeDamage(skillCost);
                     }
                     any = true;
                 }
@@ -560,10 +562,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float mobilityCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
+                        TakeDamage(mobilityCost);
                     }
                     any = true;
                 }
@@ -627,6 +630,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
             }
         }
+        cost *= a.GetHpCostMultiplier();
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
@@ -651,7 +655,7 @@ public class MonsterActor : Actor
         }
     }
 
-    public void TakeDamage(float amount)
+    public virtual void TakeDamage(float amount)
     {
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsUntargetable(this) || IsDamageImmune(this)) return;
@@ -847,7 +851,7 @@ public class MonsterActor : Actor
         hitStateEndsAt = Time.time + hitStateDuration;
     }
 
-    private void Die()
+    protected virtual void Die()
     {
         isDowned = true;
         isPossessed = false;
@@ -1066,7 +1070,7 @@ public class MonsterActor : Actor
         }
     }
 
-    void FlashDamage()
+    protected void FlashDamage()
     {
         if (meshRenderer != null) StartCoroutine(FlashRoutine());
     }

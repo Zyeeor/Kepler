@@ -125,3 +125,50 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+  - cardName: "\u843D\u5730\u7206\u70B8"
+    effectId: Sloth.LandingBlast
+    image: {fileID: 0}
+    description: Landing explosion on hop.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Launch
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u84C4\u529B\u6563\u5C04"
+    effectId: Sloth.Scatter
+    image: {fileID: 0}
+    description: On enemy hit, scatter fragments that ignore the first target. Count
+      scales with charge time.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.ChargeShot
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u5E03\u7F6E\u5730\u96F7"
+    effectId: Sloth.LandingMine
+    image: {fileID: 0}
+    description: Place a mine at the takeoff point before jumping. Other monsters
+      trigger an explosion.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Launch
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u65E0\u4EBA\u673A\u7ECF\u6D4E"
+    effectId: Sloth.DroneEconomy
+    image: {fileID: 0}
+    description: Drone HP cost -50%, lifetime +10%.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Drone
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u65E0\u4EBA\u673A\u6B7B\u4EA1\u7206\u70B8"
+    effectId: Sloth.DroneDeathBlast
+    image: {fileID: 0}
+    description: Drone explodes toward enemies on death.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Drone
+    grantedEffectTags: []
+    abilityParameters: []

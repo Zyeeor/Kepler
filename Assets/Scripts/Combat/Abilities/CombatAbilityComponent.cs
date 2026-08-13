@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Small actor-local combat coordinator inspired by GAS, intentionally limited for this project:
-/// owns Tags, grants/removes timed Effects, gates ability activation, and exposes common combat modifiers.
-/// It does not own input, animation graphs, replication, prediction, or a generic attribute framework.
+/// Actor-local combat coordinator: owns Tags, grants/removes timed Effects, and gates ability activation.
+/// Damage stays on Abilities. Effects carry Tags, duration, stacks, and target VFX.
 /// </summary>
 [DisallowMultipleComponent]
 public class CombatAbilityComponent : MonoBehaviour
@@ -115,7 +114,7 @@ public class CombatAbilityComponent : MonoBehaviour
         if (FindActiveAbility(ability) != null) return true;
         if (activationEffect == null) return true;
 
-        if (!CanApplyEffect(activationEffect, this, sourceTags, out reason))
+        if (!CanApplyEffect(activationEffect, out reason))
         {
             OnAbilityRejected?.Invoke(reason);
             return false;
@@ -159,7 +158,7 @@ public class CombatAbilityComponent : MonoBehaviour
 
     public bool ApplyEffect(GameplayEffectDefinition definition, CombatAbilityComponent source, IEnumerable<string> sourceTags, out string reason)
     {
-        if (!CanApplyEffect(definition, source, sourceTags, out reason))
+        if (!CanApplyEffect(definition, out reason))
         {
             if (definition != null) OnEffectRejected?.Invoke(definition, reason);
             return false;
@@ -191,7 +190,7 @@ public class CombatAbilityComponent : MonoBehaviour
         return true;
     }
 
-    public bool CanApplyEffect(GameplayEffectDefinition definition, CombatAbilityComponent source, IEnumerable<string> sourceTags, out string reason)
+    public bool CanApplyEffect(GameplayEffectDefinition definition, out string reason)
     {
         reason = string.Empty;
         if (definition == null)
@@ -200,33 +199,9 @@ public class CombatAbilityComponent : MonoBehaviour
             return false;
         }
 
-        if (!tags.HasAll(definition.requiredTargetTags))
-        {
-            reason = "Target is missing required Gameplay Tag";
-            return false;
-        }
-
-        if (tags.HasAny(definition.blockedTargetTags))
-        {
-            reason = "Target Gameplay Tag blocks this Effect";
-            return false;
-        }
-
         if (IsEffectBlockedByTargetRule(definition))
         {
             reason = "Target immunity Gameplay Tag blocks this Effect";
-            return false;
-        }
-
-        if (!HasAllSourceTags(source, sourceTags, definition.requiredSourceTags))
-        {
-            reason = "Source is missing required Gameplay Tag";
-            return false;
-        }
-
-        if (HasAnySourceTags(source, sourceTags, definition.blockedSourceTags))
-        {
-            reason = "Source Gameplay Tag blocks this Effect";
             return false;
         }
 
@@ -249,17 +224,17 @@ public class CombatAbilityComponent : MonoBehaviour
 
     public float ModifyMoveSpeed(float value)
     {
-        return value * GetModifier(GameplayEffectModifierType.MoveSpeedMultiplier);
+        return value;
     }
 
     public float ModifyOutgoingDamage(float value)
     {
-        return value * GetModifier(GameplayEffectModifierType.OutgoingDamageMultiplier);
+        return value;
     }
 
     public float ModifyIncomingDamage(float value)
     {
-        return value * GetModifier(GameplayEffectModifierType.IncomingDamageMultiplier);
+        return value;
     }
 
     private void Update()
@@ -294,7 +269,6 @@ public class CombatAbilityComponent : MonoBehaviour
         };
         activeEffects.Add(effect);
         AddEffectTags(effect, definition);
-        SpawnOneShotVfx(definition.applyVfxPrefab, definition);
         return effect;
     }
 
@@ -306,7 +280,6 @@ public class CombatAbilityComponent : MonoBehaviour
         if (effect.vfxInstance != null) Destroy(effect.vfxInstance);
         foreach (GameObject instance in effect.attachedVfx)
             if (instance != null) Destroy(instance);
-        SpawnOneShotVfx(effect.definition != null ? effect.definition.expireVfxPrefab : null, effect.definition);
         activeEffects.Remove(effect);
         OnEffectExpired?.Invoke(effect.definition);
     }
@@ -330,33 +303,6 @@ public class CombatAbilityComponent : MonoBehaviour
         return false;
     }
 
-    private static bool HasAllSourceTags(CombatAbilityComponent source, IEnumerable<string> sourceTags, IEnumerable<string> requiredTags)
-    {
-        if (requiredTags == null) return true;
-        foreach (string requiredTag in requiredTags)
-        {
-            if (string.IsNullOrWhiteSpace(requiredTag)) continue;
-            if (!SourceHasTag(source, sourceTags, requiredTag)) return false;
-        }
-        return true;
-    }
-
-    private static bool HasAnySourceTags(CombatAbilityComponent source, IEnumerable<string> sourceTags, IEnumerable<string> queryTags)
-    {
-        if (queryTags == null) return false;
-        foreach (string queryTag in queryTags)
-        {
-            if (SourceHasTag(source, sourceTags, queryTag)) return true;
-        }
-        return false;
-    }
-
-    private static bool SourceHasTag(CombatAbilityComponent source, IEnumerable<string> sourceTags, string queryTag)
-    {
-        if (source != null && source.Tags.HasTag(queryTag)) return true;
-        return GameplayTagUtility.HasAny(sourceTags, new[] { queryTag });
-    }
-
     private GameObject SpawnEffectVfx(GameplayEffectDefinition definition)
     {
         if (definition == null || definition.activeVfxPrefab == null) return null;
@@ -364,16 +310,6 @@ public class CombatAbilityComponent : MonoBehaviour
         GameObject instance = Instantiate(definition.activeVfxPrefab, transform.position, transform.rotation);
         if (definition.parentVfxToTarget) instance.transform.SetParent(transform, true);
         return instance;
-    }
-
-    private void SpawnOneShotVfx(GameObject prefab, GameplayEffectDefinition definition)
-    {
-        if (prefab == null) return;
-        GameObject instance = Instantiate(prefab, transform.position, transform.rotation);
-        foreach (ParticleSystem particle in instance.GetComponentsInChildren<ParticleSystem>())
-            particle.Play(true);
-        if (definition != null && definition.oneShotVfxDuration > 0f)
-            Destroy(instance, definition.oneShotVfxDuration);
     }
 
     private ActiveAbility FindActiveAbility(Component source)
@@ -398,22 +334,5 @@ public class CombatAbilityComponent : MonoBehaviour
     private float GetExpiry(GameplayEffectDefinition definition)
     {
         return definition.duration > 0f ? Time.time + definition.duration : -1f;
-    }
-
-    private float GetModifier(GameplayEffectModifierType type)
-    {
-        float result = 1f;
-        for (int i = 0; i < activeEffects.Count; i++)
-        {
-            ActiveEffect effect = activeEffects[i];
-            if (effect.definition == null || effect.definition.modifiers == null) continue;
-
-            foreach (GameplayEffectModifier modifier in effect.definition.modifiers)
-            {
-                if (modifier == null || modifier.type != type) continue;
-                result *= Mathf.Pow(Mathf.Max(0f, modifier.multiplier), effect.stacks);
-            }
-        }
-        return result;
     }
 }
