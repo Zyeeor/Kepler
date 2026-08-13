@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>Pride mobility: charge forward and damage enemies along the travelled path.
+/// <summary>Pride mobility: charge along the current move direction and damage enemies along the path.
 /// Build Pride.ChargeEmpowered increases ChargeDistance; damage scales 0~100% with the distance bonus.
 /// </summary>
 public class EnemyAbility_PrideChargeStrike : EnemyAbility
@@ -29,9 +29,23 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
 
     private IEnumerator ChargeRoutine()
     {
-        if (owner == null) yield break;
+        if (owner == null)
+        {
+            CleanupChargeVfx();
+            yield break;
+        }
+
+        // Charge along current move input (same as shared MobilityDash); fall back to facing.
         Vector3 direction = owner.transform.forward;
-        if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection)) direction = aimDirection;
+        if (owner.isPossessed && PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f)
+            direction = PlayerController.CurrentMoveDirection;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) direction = owner.transform.forward;
+        direction.Normalize();
+
+        // Keep slash/trail VFX glued to the body so it does not linger in world space.
+        if (activeVfx != null)
+            activeVfx.transform.SetParent(owner.transform, true);
 
         float baseDistance = Mathf.Max(0.01f, chargeDistance);
         float distance = GetCardParameter("ChargeDistance", chargeDistance);
@@ -55,12 +69,29 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
             DamageEnemiesInSphere(owner.transform.position, landingRadius, strikeDamage);
             owner.IsAbilityFacingLocked = false;
         }
+
+        CleanupChargeVfx();
         EndActivationEffect();
+    }
+
+    private void CleanupChargeVfx()
+    {
+        if (activeVfx == null) return;
+        Destroy(activeVfx);
+        activeVfx = null;
     }
 
     protected override void OnDisable()
     {
         if (owner != null) owner.IsAbilityFacingLocked = false;
+        CleanupChargeVfx();
         base.OnDisable();
+    }
+
+    public override void ResetForOwnerReuse()
+    {
+        if (owner != null) owner.IsAbilityFacingLocked = false;
+        CleanupChargeVfx();
+        base.ResetForOwnerReuse();
     }
 }

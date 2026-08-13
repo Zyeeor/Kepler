@@ -1762,6 +1762,7 @@ MonoBehaviour:
     hpCost: 20
   mobilityAbilities:
   - ability: {fileID: 4463328988514514210}
+    hpCost: 5
   passiveAbilities:
   - {fileID: 4154635185568438722}
   currentTenacity: 0
@@ -3778,8 +3779,10 @@ MonoBehaviour:
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
   pride01MaxRange: 20
   pride02SpreadAngle: 20
-  pierceXAngle: 45
-  pierceXRange: 4
+  pierceVfxPrefab: {fileID: 0}
+  pierceVfxDuration: 1
+  pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
+  pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
   pierceDamageMultiplier: 2
 --- !u!1 &8305497005758189896
 GameObject:

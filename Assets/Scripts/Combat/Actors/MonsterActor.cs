@@ -52,6 +52,8 @@ public class MonsterActor : Actor
     public class MobilityAbilityEntry
     {
         public EnemyAbility ability;
+        [Tooltip("HP cost paid by the possessed enemy when the player triggers this ability. 0 = free.")]
+        public float hpCost;
     }
 
 
@@ -76,7 +78,7 @@ public class MonsterActor : Actor
     public float skillCastTime = 10f;
 
     [Header("Ability HP Costs (consumed when possessed player uses)")]
-    // HP cost is now set directly on each Basic/Skill ability entry below.
+    // HP cost is set on each Basic / Skill / Mobility ability entry below.
 
     [Header("Visual")]
     public Color bodyColor = Color.red;
@@ -395,6 +397,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
+                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    {
+                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
+                        TakeDamage(entry.hpCost);
+                    }
                     any = true;
                 }
             }
@@ -432,6 +439,13 @@ public class MonsterActor : Actor
         if (cost <= 0f)
         {
             foreach (var entry in skillAbilities)
+            {
+                if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
+            }
+        }
+        if (cost <= 0f)
+        {
+            foreach (var entry in mobilityAbilities)
             {
                 if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
             }
@@ -992,7 +1006,7 @@ public class MonsterActor : Actor
                 Name = e.ability.abilityName,
                 CooldownRemaining = Mathf.Max(0f, e.ability.CurrentCooldown),
                 CooldownTotal = e.ability.cooldown,
-                HpCost = 0f,
+                HpCost = e.hpCost,
             });
         }
     }

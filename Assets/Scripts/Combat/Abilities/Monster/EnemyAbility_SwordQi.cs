@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// Builds:
 /// - Pride01: ranged max range
 /// - Pride02: 3-way spread
-/// - Pride.Pierce: pierce enemies, X-pattern follow-up, double damage
+/// - Pride.Pierce: pierce enemies, double damage; pierce look is a designer VFX slot
 /// </summary>
 public class EnemyAbility_SwordQi : EnemyAbility
 {
@@ -62,11 +62,15 @@ public class EnemyAbility_SwordQi : EnemyAbility
     public float pride02SpreadAngle = 15f;
 
     [Header("Upgrade - Pride.Pierce")]
-    [Tooltip("Pride.Pierce: X-pattern diagonal angle from the pierce axis.")]
-    public float pierceXAngle = 45f;
-    [Tooltip("Pride.Pierce: travel distance of each X arm.")]
-    public float pierceXRange = 4f;
-    [Tooltip("Pride.Pierce: damage multiplier applied to the main blade and X arms.")]
+    [Tooltip("Pride.Pierce: designer VFX spawned once on first pierce hit (or at max range if nothing was hit).")]
+    public GameObject pierceVfxPrefab;
+    [Tooltip("Auto-destroy duration for pierceVfxPrefab. <=0 keeps it until owner death tracker cleans up.")]
+    public float pierceVfxDuration = 1f;
+    [Tooltip("World-space position offset for the pierce VFX.")]
+    public Vector3 pierceVfxPositionOffset = Vector3.zero;
+    [Tooltip("Rotation offset for the pierce VFX relative to the travel direction.")]
+    public Vector3 pierceVfxRotationOffset = Vector3.zero;
+    [Tooltip("Pride.Pierce: damage multiplier applied to the main blade.")]
     public float pierceDamageMultiplier = 2f;
 
     private void OnEnable()
@@ -94,7 +98,9 @@ public class EnemyAbility_SwordQi : EnemyAbility
         StartCoroutine(SwordQiRoutine());
     }
 
-    /// <summary>Fire an immediate sword-qi burst in a world direction (no windup). Used by BlinkChain build.</summary>
+    /// <summary>Fire an immediate sword-qi burst in a world direction (no windup). Used by BlinkChain build.
+    /// Respects Pride02 spread and Pride01 range; pierce X look is not auto-fired from blink bursts.
+    /// </summary>
     public void FireDirectedBurst(Vector3 worldDirection, float overrideDamage = -1f)
     {
         if (owner == null) return;
@@ -105,16 +111,49 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
         float effectiveMaxRange = IsUpgradeUnlocked("Pride01") ? pride01MaxRange : maxRange;
         float shotDamage = overrideDamage > 0f ? overrideDamage : GetShotDamage();
-        StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, spawnXOnPierce: false));
+
+        if (IsUpgradeUnlocked("Pride02"))
+        {
+            StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+            Vector3 left = Quaternion.Euler(0f, -pride02SpreadAngle, 0f) * forward;
+            StartCoroutine(LaunchProjectile(left, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+            Vector3 right = Quaternion.Euler(0f, pride02SpreadAngle, 0f) * forward;
+            StartCoroutine(LaunchProjectile(right, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+        }
+        else
+        {
+            StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+        }
     }
 
     IEnumerator SwordQiRoutine()
     {
-        if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
+        // Capture mouse aim once for facing + fire center. Do not use transform.forward at fire time:
+        // projectileDelay unlocks facing, so the body may already have turned away from the cursor.
+        Vector3 fireDirection = owner.transform.forward;
+        Vector3 aimDirection = fireDirection;
+        bool hadMouseAim = owner.isPossessed && TryGetPossessedMouseDirection(out aimDirection);
+        if (hadMouseAim)
+        {
+            fireDirection = aimDirection;
             yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
+        }
 
         if (projectileDelay > 0f)
+        {
+            // Keep facing locked through windup so the body stays on the aim axis.
+            if (owner != null) owner.IsAbilityFacingLocked = true;
             yield return AbilityWait(projectileDelay);
+            if (owner != null) owner.IsAbilityFacingLocked = false;
+        }
+
+        // Prefer a fresh mouse sample at fire time; fall back to the capture from trigger.
+        if (owner != null && owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 fireAim))
+            fireDirection = fireAim;
+        fireDirection.y = 0f;
+        if (fireDirection.sqrMagnitude < 0.0001f)
+            fireDirection = owner != null ? owner.transform.forward : Vector3.forward;
+        fireDirection.Normalize();
 
         float effectiveMaxRange = maxRange;
         if (IsUpgradeUnlocked("Pride01"))
@@ -126,16 +165,15 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
         if (pride02)
         {
-            Vector3 baseForward = owner.transform.forward;
-            StartCoroutine(LaunchProjectile(baseForward, effectiveMaxRange, shotDamage, pierce));
-            Vector3 left = Quaternion.Euler(0, -pride02SpreadAngle, 0) * baseForward;
+            StartCoroutine(LaunchProjectile(fireDirection, effectiveMaxRange, shotDamage, pierce));
+            Vector3 left = Quaternion.Euler(0, -pride02SpreadAngle, 0) * fireDirection;
             StartCoroutine(LaunchProjectile(left, effectiveMaxRange, shotDamage, pierce));
-            Vector3 right = Quaternion.Euler(0, pride02SpreadAngle, 0) * baseForward;
+            Vector3 right = Quaternion.Euler(0, pride02SpreadAngle, 0) * fireDirection;
             StartCoroutine(LaunchProjectile(right, effectiveMaxRange, shotDamage, pierce));
         }
         else
         {
-            StartCoroutine(LaunchProjectile(owner.transform.forward, effectiveMaxRange, shotDamage, pierce));
+            StartCoroutine(LaunchProjectile(fireDirection, effectiveMaxRange, shotDamage, pierce));
         }
     }
 
@@ -147,14 +185,14 @@ public class EnemyAbility_SwordQi : EnemyAbility
         return shotDamage;
     }
 
-    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange, float shotDamage, bool spawnXOnPierce)
+    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange, float shotDamage, bool spawnPierceVfx)
     {
         Vector3 origin = owner.transform.position;
         Vector3 currentPos = origin + forward * 1f;
         float traveled = 0f;
         bool pierce = IsUpgradeUnlocked("Pride.Pierce");
         var hitIds = new HashSet<int>();
-        bool spawnedX = false;
+        bool spawnedPierceLook = false;
 
         GameObject projVfx = null;
         if (projectileVfxPrefab != null)
@@ -213,10 +251,10 @@ public class EnemyAbility_SwordQi : EnemyAbility
             {
                 if (pierce)
                 {
-                    if (spawnXOnPierce && !spawnedX)
+                    if (spawnPierceVfx && !spawnedPierceLook)
                     {
-                        spawnedX = true;
-                        SpawnXPattern(hitPos, forward, shotDamage);
+                        spawnedPierceLook = true;
+                        SpawnPierceVfx(hitPos, forward);
                     }
                     // Keep traveling through targets.
                 }
@@ -234,22 +272,22 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (projVfx != null) Destroy(projVfx);
         if (!pierce)
             DoExplosion(currentPos, shotDamage);
-        else if (spawnXOnPierce && !spawnedX)
-            SpawnXPattern(currentPos, forward, shotDamage);
+        else if (spawnPierceVfx && !spawnedPierceLook)
+            SpawnPierceVfx(currentPos, forward);
     }
 
-    private void SpawnXPattern(Vector3 origin, Vector3 axis, float shotDamage)
+    private void SpawnPierceVfx(Vector3 origin, Vector3 axis)
     {
+        if (pierceVfxPrefab == null) return;
+
         Vector3 forward = axis;
         forward.y = 0f;
         if (forward.sqrMagnitude < 0.0001f) forward = owner != null ? owner.transform.forward : Vector3.forward;
         forward.Normalize();
 
-        Vector3 armA = Quaternion.Euler(0f, pierceXAngle, 0f) * forward;
-        Vector3 armB = Quaternion.Euler(0f, -pierceXAngle, 0f) * forward;
-        StartCoroutine(LaunchProjectile(armA, pierceXRange, shotDamage, spawnXOnPierce: false));
-        StartCoroutine(LaunchProjectile(armB, pierceXRange, shotDamage, spawnXOnPierce: false));
-        DoExplosion(origin, shotDamage);
+        Vector3 pos = origin + pierceVfxPositionOffset;
+        Quaternion rot = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(pierceVfxRotationOffset);
+        SpawnVfxTracked(pierceVfxPrefab, pos, rot, pierceVfxDuration);
     }
 
     void DoExplosion(Vector3 center, float shotDamage)
