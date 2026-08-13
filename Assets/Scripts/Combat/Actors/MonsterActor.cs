@@ -65,17 +65,73 @@ public class MonsterActor : Actor
     // 注：moveSpeed / maxHealth / currentHealth 由 Actor 基类提供（同名同类型，prefab 序列化值按字段名映射到基类字段，无损）
     [Tooltip("Base collision damage when touching the player. Individual ability damage is configured on each EnemyAbility.")]
     public float collisionDamage = 30f;
-    public float detectionRadius = 8f;
-    [Tooltip("AI will attempt basic attacks when within this range of the player.")]
-    public float aiAttackRange = 3f;
-    [Tooltip("AI will stop moving closer when within this distance of the player.")]
-    public float aiMinRange = 0f;
-    [Tooltip("Attack speed multiplier. 1.0 = normal speed. Higher = faster attack cooldown.")]
+    [Tooltip("Attack speed multiplier. 1.0 = normal speed. Higher = faster attack cooldown. Also used by possessed player combat.")]
     public float attackSpeed = 1.0f;
-    [Tooltip("AI cast time: seconds between basic attack attempts (before cooldown).")]
-    public float basicCastTime = 0.5f;
-    [Tooltip("AI cast time: seconds between skill attempts (before cooldown).")]
-    public float skillCastTime = 10f;
+
+    [Header("AI Config (unified library)")]
+    [Tooltip("AI 配置库资产（单文件，同 CardLibrary 模式，位于 Assets/Configs/）。")]
+    public MonsterAIConfig aiConfig;
+    [Tooltip("在配置库中按 id 查找 AI 配置条目。为空或未命中时使用默认值。")]
+    public string aiConfigId;
+
+    /// <summary>当前生效的 AI 配置条目（库未命中/未配置时回退共享默认条目）。</summary>
+    public MonsterAIConfigEntry AiConfig
+    {
+        get
+        {
+            if (aiConfig != null && !string.IsNullOrEmpty(aiConfigId))
+            {
+                var entry = aiConfig.Get(aiConfigId);
+                if (entry != null) return entry;
+            }
+            return MonsterAIConfig.DefaultEntry;
+        }
+    }
+
+    // 以下 AI 参数已统一收口到 MonsterAIConfig（Assets/Configs/AI/），只读属性转发便于代码访问。
+    /// <summary>索敌半径（AI 配置）。</summary>
+    public float detectionRadius => AiConfig.detectionRadius;
+    /// <summary>普攻范围（AI 配置，与技能范围相互独立）。</summary>
+    public float basicAttackRange => AiConfig.basicAttackRange;
+    /// <summary>技能范围（AI 配置，与普攻范围相互独立）。</summary>
+    public float skillAttackRange => AiConfig.skillAttackRange;
+    /// <summary>AI 停步距离（AI 配置）。</summary>
+    public float aiMinRange => AiConfig.aiMinRange;
+    /// <summary>攻击迟疑度（AI 配置，0~1）。</summary>
+    public float attackEagerness => AiConfig.attackEagerness;
+    /// <summary>决策节拍最小间隔（AI 配置）。</summary>
+    public float decisionIntervalMin => AiConfig.decisionIntervalMin;
+    /// <summary>决策节拍最大间隔（AI 配置）。</summary>
+    public float decisionIntervalMax => AiConfig.decisionIntervalMax;
+    /// <summary>攻击范围内技能优先概率（AI 配置）。</summary>
+    public float skillPriority => AiConfig.skillPriority;
+    /// <summary>追击时触发位移技能的概率（AI 配置）。</summary>
+    public float aiMobilityChance => AiConfig.aiMobilityChance;
+    /// <summary>追击随机走位概率（AI 配置）。</summary>
+    public float strafeChance => AiConfig.strafeChance;
+    /// <summary>走位刷新间隔下限（AI 配置）。</summary>
+    public float strafeIntervalMin => AiConfig.strafeIntervalMin;
+    /// <summary>走位刷新间隔上限（AI 配置）。</summary>
+    public float strafeIntervalMax => AiConfig.strafeIntervalMax;
+    /// <summary>侧移分量强度（AI 配置）。</summary>
+    public float strafeStrength => AiConfig.strafeStrength;
+    /// <summary>追击速度抖动下限（AI 配置）。</summary>
+    public float moveSpeedJitterMin => AiConfig.moveSpeedJitterMin;
+    /// <summary>追击速度抖动上限（AI 配置）。</summary>
+    public float moveSpeedJitterMax => AiConfig.moveSpeedJitterMax;
+    /// <summary>调试圆环开关（AI 配置，是否可视化索敌/普攻/技能范围）。</summary>
+    public bool showDebugRanges => forceDebugRanges || AiConfig.showDebugRanges;
+
+    [Header("Debug Ranges (visible in Game view)")]
+    [Tooltip("运行时强制开启调试圆环（调试脚本刷怪时置 true，不污染配置资产）。")]
+    public bool forceDebugRanges = false;
+    [Tooltip("索敌范围圆环颜色。")]
+    public Color detectRangeColor = new Color(1f, 0.75f, 0.1f, 0.9f);
+    [Tooltip("普攻范围圆环颜色。")]
+    public Color basicRangeColor = new Color(1f, 0.15f, 0.15f, 0.9f);
+    [Tooltip("技能范围圆环颜色。")]
+    public Color skillRangeColor = new Color(0.15f, 0.4f, 1f, 0.9f);
+    [Range(16, 128)] public int rangeCircleSegments = 64;
 
     [Header("Ability HP Costs (consumed when possessed player uses)")]
     // HP cost is set on each Basic / Skill / Mobility ability entry below.
@@ -115,6 +171,17 @@ public class MonsterActor : Actor
     private Quaternion initialLocalRotation;
     private Animator bodyAnimator;
     private AnimatorUpdateMode originalAnimatorUpdateMode;
+    private LineRenderer detectRangeRing;
+    private LineRenderer basicRangeRing;
+    private LineRenderer skillRangeRing;
+    private static Material rangeRingMaterial; // 所有怪共享一个圆环材质
+    private const string DetectRingObjectName = "__DebugDetectRing";
+    private const string BasicRingObjectName = "__DebugBasicRing";
+    private const string SkillRingObjectName = "__DebugSkillRing";
+    private float lastDetectRingRadius = -1f;
+    private float lastBasicRingRadius = -1f;
+    private float lastSkillRingRadius = -1f;
+    private int lastRingSegments = -1;
 
     [Header("UI")]
     public Slider healthSlider;
@@ -215,7 +282,7 @@ public class MonsterActor : Actor
         else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
     }
 
-    void Start()
+    protected virtual void Start()
     {
         // After child OnEnable has stamped AbilityType, only inject shared dash when no custom Mobility exists.
         if (!HasCustomMobilityAbility() && GetComponent<EnemyAbility_MobilityDash>() == null)
@@ -227,10 +294,18 @@ public class MonsterActor : Actor
         Physics.IgnoreLayerCollision(8, 8, true);
         Physics.IgnoreLayerCollision(8, 9, true);
 
-        var p = GameObject.FindGameObjectWithTag("Player");
-        targetPlayer = p != null ? p.transform : null;
+        RefreshPlayerTarget();
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(ShowHealthBars);
         UpdateHealthUI();
+    }
+
+    /// <summary>
+    /// 统一索敌目标查找：Start / ResetForSpawn / AIController 共用（避免多处散落的 FindGameObjectWithTag）。
+    /// </summary>
+    public void RefreshPlayerTarget()
+    {
+        var p = GameObject.FindGameObjectWithTag("Player");
+        targetPlayer = p != null ? p.transform : null;
     }
 
     bool BasicListContains(EnemyAbility a)
@@ -346,6 +421,94 @@ public class MonsterActor : Actor
         transform.position = targetPos;
     }
 
+    /// <summary>
+    /// 游戏视图调试：用 LineRenderer 圆环可视化索敌/攻击距离（随怪移动）。
+    /// 显示条件：Inspector 勾选 showDebugRanges，且怪处于可作战的 AI 态（未附身/未倒地/未消失）。
+    /// 池化复用：Return 时整物体 SetActive(false) 自动隐藏，Spawn 后本方法按勾选状态自动恢复。
+    /// </summary>
+    void UpdateDebugRanges()
+    {
+        bool show = showDebugRanges && !isPossessed && !isDowned
+                    && Body != BodyState.Fading && Body != BodyState.Despawned;
+        if (!show)
+        {
+            if (detectRangeRing != null) detectRangeRing.gameObject.SetActive(false);
+            if (basicRangeRing != null) basicRangeRing.gameObject.SetActive(false);
+            if (skillRangeRing != null) skillRangeRing.gameObject.SetActive(false);
+            return;
+        }
+        RefreshRangeRing(ref detectRangeRing, DetectRingObjectName, detectionRadius, detectRangeColor, ref lastDetectRingRadius);
+        RefreshRangeRing(ref basicRangeRing, BasicRingObjectName, basicAttackRange, basicRangeColor, ref lastBasicRingRadius);
+        RefreshRangeRing(ref skillRangeRing, SkillRingObjectName, skillAttackRange, skillRangeColor, ref lastSkillRingRadius);
+    }
+
+    /// <summary>
+    /// 刷新单个圆环：半径 ≤ 0 时隐藏；懒创建子物体 LineRenderer。
+    /// 顶点用本地坐标（随父物体移动），半径/段数不变时零每帧开销；颜色变化才重写。
+    /// </summary>
+    void RefreshRangeRing(ref LineRenderer ring, string objectName, float radius, Color color, ref float lastRadius)
+    {
+        if (radius <= 0.01f)
+        {
+            if (ring != null) ring.gameObject.SetActive(false);
+            return;
+        }
+        if (ring == null) ring = CreateRangeRing(objectName, color);
+        ring.gameObject.SetActive(true);
+
+        if (Mathf.Abs(lastRadius - radius) > 0.001f || lastRingSegments != rangeCircleSegments)
+        {
+            // 本地坐标 + 父链缩放补偿：顶点最终会乘 lossyScale 到世界空间，
+            // 怪物 prefab 根物体 scale 可能 ≠1（如 pride=3.5），不补偿则圆环显示被放大。
+            Vector3 lossy = transform.lossyScale;
+            float sx = Mathf.Max(0.0001f, lossy.x);
+            float sy = Mathf.Max(0.0001f, lossy.y);
+            float sz = Mathf.Max(0.0001f, lossy.z);
+            ring.positionCount = rangeCircleSegments + 1;
+            // 本地坐标：以 (0, 0.05, 0) 为圆心（抬高避免与地面 z-fighting），随父物体移动
+            for (int i = 0; i <= rangeCircleSegments; i++)
+            {
+                float angle = i * (360f / rangeCircleSegments) * Mathf.Deg2Rad;
+                Vector3 p = new Vector3(Mathf.Cos(angle), 0.05f, Mathf.Sin(angle)) * radius;
+                p.x /= sx; p.y /= sy; p.z /= sz;
+                ring.SetPosition(i, p);
+            }
+            lastRadius = radius;
+            lastRingSegments = rangeCircleSegments;
+        }
+        if (ring.startColor != color)
+        {
+            ring.startColor = color;
+            ring.endColor = color;
+        }
+    }
+
+    /// <summary>懒创建（或复用已存在子物体上的）LineRenderer 圆环。</summary>
+    LineRenderer CreateRangeRing(string objectName, Color color)
+    {
+        Transform ringTransform = transform.Find(objectName);
+        GameObject ringObject = ringTransform != null ? ringTransform.gameObject : new GameObject(objectName);
+        if (ringTransform == null) ringObject.transform.SetParent(transform, false);
+
+        LineRenderer line = ringObject.GetComponent<LineRenderer>();
+        if (line == null) line = ringObject.AddComponent<LineRenderer>();
+        if (rangeRingMaterial == null) rangeRingMaterial = new Material(Shader.Find("Sprites/Default"));
+        line.sharedMaterial = rangeRingMaterial;
+        line.useWorldSpace = false; // 本地坐标：随父物体移动，无需每帧重写顶点
+        line.loop = false;
+        line.positionCount = rangeCircleSegments + 1;
+        // 线宽同样受父链缩放影响，除以 lossyScale 使世界空间显示恒为 0.06
+        float scaleComp = Mathf.Max(0.0001f, transform.lossyScale.x);
+        line.startWidth = 0.06f / scaleComp;
+        line.endWidth = 0.06f / scaleComp;
+        line.startColor = color;
+        line.endColor = color;
+        line.numCapVertices = 4;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        return line;
+    }
+
     void UpdateAnimatorSpeed()
     {
         var anim = GetComponent<Animator>();
@@ -365,10 +528,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float basicCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
+                        TakeDamage(basicCost);
                     }
                     any = true;
                 }
@@ -381,10 +545,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float skillCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
+                        TakeDamage(skillCost);
                     }
                     any = true;
                 }
@@ -397,16 +562,31 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float mobilityCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
+                        TakeDamage(mobilityCost);
                     }
                     any = true;
                 }
             }
         }
         return any;
+    }
+
+    /// <summary>
+    /// AI 攻击前面向索敌目标：把 transform.forward 转正到玩家方向（仅水平面）。
+    /// 用于修正 AI 追击走位（侧移/对峙 ±90°）导致的攻击方向偏移。
+    /// </summary>
+    void FaceAttackTarget()
+    {
+        Transform target = targetPlayer;
+        if (target == null) return;
+        Vector3 toTarget = target.position - transform.position;
+        toTarget.y = 0f;
+        if (toTarget.sqrMagnitude > 0.0001f)
+            transform.rotation = Quaternion.LookRotation(toTarget, Vector3.up);
     }
 
     public void PlayerTriggerBasicAttack()
@@ -450,6 +630,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
             }
         }
+        cost *= a.GetHpCostMultiplier();
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
@@ -459,6 +640,7 @@ public class MonsterActor : Actor
 
     void LateUpdate()
     {
+        UpdateDebugRanges();
         // Animator speed always updates (even when downed/possessed)
         UpdateAnimatorSpeed();
 
@@ -473,7 +655,7 @@ public class MonsterActor : Actor
         }
     }
 
-    public void TakeDamage(float amount)
+    public virtual void TakeDamage(float amount)
     {
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsUntargetable(this) || IsDamageImmune(this)) return;
@@ -669,7 +851,7 @@ public class MonsterActor : Actor
         hitStateEndsAt = Time.time + hitStateDuration;
     }
 
-    private void Die()
+    protected virtual void Die()
     {
         isDowned = true;
         isPossessed = false;
@@ -766,7 +948,7 @@ public class MonsterActor : Actor
         Animator animator = GetComponent<Animator>();
         if (animator != null) animator.SetBool("IsDowned", false);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
-        targetPlayer = GameObject.FindGameObjectWithTag("Player")?.transform;
+        RefreshPlayerTarget();
         SetController(GetComponent<AIController>());
         UpdateHealthUI();
     }
@@ -888,7 +1070,7 @@ public class MonsterActor : Actor
         }
     }
 
-    void FlashDamage()
+    protected void FlashDamage()
     {
         if (meshRenderer != null) StartCoroutine(FlashRoutine());
     }
@@ -945,11 +1127,17 @@ public class MonsterActor : Actor
 
         if (!IsPlayerControlled)
         {
+            // AI 态：攻击方向依赖 transform.forward，但 AI 追击走位（侧移/对峙 ±90°）会让 forward 偏离玩家。
+            // 触发攻击前先面向索敌目标，保证剑气/冲锋/斩击沿玩家方向打出，不受走位朝向污染。
+            if ((cmd.Pressed & (CommandButtons.Basic | CommandButtons.Skill1 | CommandButtons.Mobility)) != 0)
+                FaceAttackTarget();
+
             if ((cmd.Pressed & CommandButtons.Skill1) != 0 && TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill))
             {
                 AIController ai = Controller as AIController;
                 if (ai != null) ai.NotifySkillTriggered();
             }
+            if ((cmd.Pressed & CommandButtons.Mobility) != 0) PlayerTriggerMobility();
             return;
         }
 

@@ -1730,12 +1730,14 @@ MonoBehaviour:
   displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
   maxTenacity: 150
   collisionDamage: 0
-  detectionRadius: 5
-  aiAttackRange: 4
-  aiMinRange: 3
   attackSpeed: 1
-  basicCastTime: 2
-  skillCastTime: 5
+  aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
+  aiConfigId: Pride_new
+  forceDebugRanges: 0
+  detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
+  basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
+  skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
+  rangeCircleSegments: 64
   bodyColor: {r: 0.44968545, g: 0.9802124, b: 1, a: 1}
   weakenedColor: {r: 1, g: 0.70712787, b: 0.41194963, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -2642,7 +2644,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6343973506259650978
 Transform:
   m_ObjectHideFlags: 0
@@ -3581,11 +3583,11 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: Pride.Pierce
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride02
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -3596,6 +3598,7 @@ MonoBehaviour:
   damage: 20
   drawHitboxes: 0
   cooldown: 1
+  debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.SwordQi
   appliedEffectTags: []
@@ -3625,8 +3628,8 @@ MonoBehaviour:
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
   pride01MaxRange: 20
   pride02SpreadAngle: 20
-  pierceVfxPrefab: {fileID: 0}
-  pierceVfxDuration: 1
+  pierceVfxPrefab: {fileID: 4797775238236629471, guid: eb1315b188c70674182af9986dcae542,
+    type: 3}
   pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
   pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
   pierceDamageMultiplier: 2
@@ -3797,6 +3800,7 @@ MonoBehaviour:
   damage: 20
   drawHitboxes: 0
   cooldown: 2
+  debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.ChargeStrike
   appliedEffectTags: []
@@ -3807,6 +3811,11 @@ MonoBehaviour:
   hitRadius: 0.8
   landingRadius: 1.5
   damageMultiplier: 1
+  maxChargeTime: 2
+  chargeVfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
+    type: 3}
+  chargeVfxPositionOffset: {x: 0, y: 0, z: 0}
+  chargeVfxRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &8680161257192645168
 GameObject:
   m_ObjectHideFlags: 0
@@ -3823,7 +3832,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6952629588072338995
 Transform:
   m_ObjectHideFlags: 0
@@ -4009,9 +4018,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: Pride.BlinkSwordQi
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride.BlinkCountPlusTwo
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
@@ -4021,6 +4030,7 @@ MonoBehaviour:
   damage: 5
   drawHitboxes: 0
   cooldown: 1.5
+  debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.BlinkChain
   appliedEffectTags:
@@ -4032,8 +4042,12 @@ MonoBehaviour:
   blinkInterval: 0.25
   arrivalOffset: 0.6
   damageMultiplier: 1
+  passThroughDistance: 2
+  passThroughDuration: 0.08
   untargetableEffect: {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   hideOwnerMeshes: 1
+  activationDisplayA: {fileID: 8680161257192645168}
+  activationDisplayB: {fileID: 5117285898771160820}
 --- !u!1 &8863776375583877577
 GameObject:
   m_ObjectHideFlags: 0
@@ -4090,6 +4104,7 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []

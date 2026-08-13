@@ -62,13 +62,11 @@ public class EnemyAbility_SwordQi : EnemyAbility
     public float pride02SpreadAngle = 15f;
 
     [Header("Upgrade - Pride.Pierce")]
-    [Tooltip("Pride.Pierce: designer VFX spawned once on first pierce hit (or at max range if nothing was hit).")]
+    [Tooltip("Pride.Pierce: replacement projectile VFX prefab used while piercing is unlocked.")]
     public GameObject pierceVfxPrefab;
-    [Tooltip("Auto-destroy duration for pierceVfxPrefab. <=0 keeps it until owner death tracker cleans up.")]
-    public float pierceVfxDuration = 1f;
-    [Tooltip("World-space position offset for the pierce VFX.")]
+    [Tooltip("Local position offset for the replacement projectile VFX.")]
     public Vector3 pierceVfxPositionOffset = Vector3.zero;
-    [Tooltip("Rotation offset for the pierce VFX relative to the travel direction.")]
+    [Tooltip("Rotation offset for the replacement projectile VFX relative to travel direction.")]
     public Vector3 pierceVfxRotationOffset = Vector3.zero;
     [Tooltip("Pride.Pierce: damage multiplier applied to the main blade.")]
     public float pierceDamageMultiplier = 2f;
@@ -101,7 +99,8 @@ public class EnemyAbility_SwordQi : EnemyAbility
     /// <summary>Fire an immediate sword-qi burst in a world direction (no windup). Used by BlinkChain build.
     /// Respects Pride02 spread and Pride01 range; pierce X look is not auto-fired from blink bursts.
     /// </summary>
-    public void FireDirectedBurst(Vector3 worldDirection, float overrideDamage = -1f)
+    /// <param name="ignoreEnemy">Optional enemy that must not absorb this blade (e.g. the blink slash target).</param>
+    public void FireDirectedBurst(Vector3 worldDirection, float overrideDamage = -1f, Enemy ignoreEnemy = null)
     {
         if (owner == null) return;
         Vector3 forward = worldDirection;
@@ -112,17 +111,18 @@ public class EnemyAbility_SwordQi : EnemyAbility
         float effectiveMaxRange = IsUpgradeUnlocked("Pride01") ? pride01MaxRange : maxRange;
         float shotDamage = overrideDamage > 0f ? overrideDamage : GetShotDamage();
 
+        bool pierce = IsUpgradeUnlocked("Pride.Pierce");
         if (IsUpgradeUnlocked("Pride02"))
         {
-            StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+            StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, pierce, ignoreEnemy));
             Vector3 left = Quaternion.Euler(0f, -pride02SpreadAngle, 0f) * forward;
-            StartCoroutine(LaunchProjectile(left, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+            StartCoroutine(LaunchProjectile(left, effectiveMaxRange, shotDamage, pierce, ignoreEnemy));
             Vector3 right = Quaternion.Euler(0f, pride02SpreadAngle, 0f) * forward;
-            StartCoroutine(LaunchProjectile(right, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+            StartCoroutine(LaunchProjectile(right, effectiveMaxRange, shotDamage, pierce, ignoreEnemy));
         }
         else
         {
-            StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, spawnPierceVfx: false));
+            StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, pierce, ignoreEnemy));
         }
     }
 
@@ -185,21 +185,24 @@ public class EnemyAbility_SwordQi : EnemyAbility
         return shotDamage;
     }
 
-    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange, float shotDamage, bool spawnPierceVfx)
+    IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange, float shotDamage, bool pierce, Enemy ignoreEnemy = null)
     {
         Vector3 origin = owner.transform.position;
         Vector3 currentPos = origin + forward * 1f;
         float traveled = 0f;
-        bool pierce = IsUpgradeUnlocked("Pride.Pierce");
         var hitIds = new HashSet<int>();
-        bool spawnedPierceLook = false;
+        if (ignoreEnemy != null)
+            hitIds.Add(ignoreEnemy.GetInstanceID());
 
         GameObject projVfx = null;
-        if (projectileVfxPrefab != null)
+        GameObject projectilePrefabToUse = pierce && pierceVfxPrefab != null ? pierceVfxPrefab : projectileVfxPrefab;
+        Vector3 projectilePositionOffset = pierce ? pierceVfxPositionOffset : projectileVfxPositionOffset;
+        Vector3 projectileRotationOffset = pierce ? pierceVfxRotationOffset : projectileVfxRotationOffset;
+        if (projectilePrefabToUse != null)
         {
-            Vector3 spawnPos = currentPos + owner.transform.TransformDirection(projectileVfxPositionOffset);
-            Quaternion projRot = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(projectileVfxRotationOffset);
-            projVfx = SpawnVfxTracked(projectileVfxPrefab, spawnPos, projRot);
+            Vector3 spawnPos = currentPos + owner.transform.TransformDirection(projectilePositionOffset);
+            Quaternion projRot = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(projectileRotationOffset);
+            projVfx = SpawnVfxTracked(projectilePrefabToUse, spawnPos, projRot);
             projVfx.transform.localScale *= projectileVfxScale;
         }
 
@@ -228,6 +231,8 @@ public class EnemyAbility_SwordQi : EnemyAbility
             foreach (var h in hits)
             {
                 var enemy = h.GetComponentInParent<Enemy>();
+                if (enemy != null && ignoreEnemy != null && enemy == ignoreEnemy)
+                    continue;
                 if (owner.CanDamage(enemy))
                 {
                     int id = enemy.GetInstanceID();
@@ -251,17 +256,12 @@ public class EnemyAbility_SwordQi : EnemyAbility
             {
                 if (pierce)
                 {
-                    if (spawnPierceVfx && !spawnedPierceLook)
-                    {
-                        spawnedPierceLook = true;
-                        SpawnPierceVfx(hitPos, forward);
-                    }
-                    // Keep traveling through targets.
+                    // Keep traveling through targets with the replacement projectile VFX.
                 }
                 else
                 {
                     if (projVfx != null) Destroy(projVfx);
-                    DoExplosion(hitPos, shotDamage);
+                    DoExplosion(hitPos, shotDamage, ignoreEnemy);
                     yield break;
                 }
             }
@@ -271,26 +271,10 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
         if (projVfx != null) Destroy(projVfx);
         if (!pierce)
-            DoExplosion(currentPos, shotDamage);
-        else if (spawnPierceVfx && !spawnedPierceLook)
-            SpawnPierceVfx(currentPos, forward);
+            DoExplosion(currentPos, shotDamage, ignoreEnemy);
     }
 
-    private void SpawnPierceVfx(Vector3 origin, Vector3 axis)
-    {
-        if (pierceVfxPrefab == null) return;
-
-        Vector3 forward = axis;
-        forward.y = 0f;
-        if (forward.sqrMagnitude < 0.0001f) forward = owner != null ? owner.transform.forward : Vector3.forward;
-        forward.Normalize();
-
-        Vector3 pos = origin + pierceVfxPositionOffset;
-        Quaternion rot = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(pierceVfxRotationOffset);
-        SpawnVfxTracked(pierceVfxPrefab, pos, rot, pierceVfxDuration);
-    }
-
-    void DoExplosion(Vector3 center, float shotDamage)
+    void DoExplosion(Vector3 center, float shotDamage, Enemy ignoreEnemy = null)
     {
         if (explosionVfxPrefab != null)
         {
@@ -309,6 +293,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         foreach (var h in hits)
         {
             var enemy = h.GetComponentInParent<Enemy>();
+            if (enemy != null && ignoreEnemy != null && enemy == ignoreEnemy) continue;
             if (owner.CanDamage(enemy))
             {
                 float dmg = shotDamage * blastDamageMultiplier;

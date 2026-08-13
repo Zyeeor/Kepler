@@ -28,3 +28,6 @@ MonoBehaviour:
   - displayName: Lust
     prefab: {fileID: 3744361111654940414, guid: cae47f41d68c4e74781786e6cd22b1e9,
       type: 3}
+  - displayName: Sloth_new
+    prefab: {fileID: 3923155230589149752, guid: db85ea08bfd4b473f911b8e1cd9e477f,
+      type: 3}

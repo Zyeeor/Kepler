@@ -1,33 +1,13 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum GameplayEffectStackPolicy
 {
     RefreshDuration,
     AddStack,
     Replace
-}
-
-public enum GameplayEffectModifierType
-{
-    MoveSpeedMultiplier,
-    OutgoingDamageMultiplier,
-    IncomingDamageMultiplier
-}
-
-public enum GameplayEffectVfxLifetime
-{
-    FixedDuration,
-    EffectLifetime
-}
-
-[Serializable]
-public class GameplayEffectModifier
-{
-    public GameplayEffectModifierType type;
-    [Tooltip("Multiplier per stack. 0.5 means half value; 1.2 means 20% more value.")]
-    [Min(0f)] public float multiplier = 1f;
 }
 
 /// <summary>
@@ -44,8 +24,8 @@ public class GameplayEffectBlockRule
 }
 
 /// <summary>
-/// Lightweight, data-driven combat effect. Effects have a stable identity Tag, grant state Tags,
-/// optionally modify scalar values, and may be rejected by source/target Tag requirements.
+/// Combat settlement payload applied on hit (melee or projectile).
+/// Identity Tag + duration + granted Tags + target VFX. Damage stays on the Ability.
 /// </summary>
 [CreateAssetMenu(fileName = "GameplayEffect", menuName = "Possession/Combat/Gameplay Effect")]
 public class GameplayEffectDefinition : ScriptableObject
@@ -61,53 +41,27 @@ public class GameplayEffectDefinition : ScriptableObject
     [Min(1)] public int maxStacks = 1;
     public GameplayEffectStackPolicy stackPolicy = GameplayEffectStackPolicy.RefreshDuration;
 
-    [Header("Application Requirements")]
-    [Tooltip("The target must own all listed tags before this Effect can apply. Empty means any target.")]
-    public List<string> requiredTargetTags = new List<string>();
-    [Tooltip("The Effect is rejected when the target owns any matching tag. Example: State.Immunity.Burning.")]
-    public List<string> blockedTargetTags = new List<string>();
-    [Tooltip("The source attack must own all listed tags before this Effect can apply. Empty means any source.")]
-    public List<string> requiredSourceTags = new List<string>();
-    [Tooltip("The Effect is rejected when the source attack owns any matching tag.")]
-    public List<string> blockedSourceTags = new List<string>();
-
     [Header("Granted Tags")]
-    [Tooltip("Example: State.Control.Stunned, State.Control.Rooted, State.Debuff.Burning. The Effect identity Tag is also active while applied.")]
+    [Tooltip("Example: State.Control.Stunned, State.Defense.Untargetable. The Effect identity Tag is also active while applied.")]
     public List<string> grantedTags = new List<string>();
-
-    [Header("Optional Numeric Modifiers")]
-    public List<GameplayEffectModifier> modifiers = new List<GameplayEffectModifier>();
 
     [Header("Optional Periodic Trigger")]
     [Tooltip("Seconds between periodic callbacks. Values <= 0 disable periodic behavior.")]
     public float periodicInterval;
 
-    [Header("Optional VFX")]
-    [Tooltip("Spawned once while this effect is active. Leave empty when the effect has no persistent visual.")]
+    [Header("Target VFX")]
+    [Tooltip("Spawned on the target while this effect is active. Used for persistent visuals such as afterimage.")]
     public GameObject activeVfxPrefab;
     public bool parentVfxToTarget = true;
-    [Tooltip("Played once when the Effect is successfully applied.")]
-    public GameObject applyVfxPrefab;
-    [Tooltip("Played once when the Effect expires or is removed.")]
-    public GameObject expireVfxPrefab;
-    [Min(0f)] public float oneShotVfxDuration = 2f;
-    [Header("Attack VFX")]
-    [Tooltip("Spawned on the source weapon or configured ability anchor when this Effect is applied by an attack.")]
-    public GameObject weaponVfxPrefab;
-    [Tooltip("Spawned at the target hit point when this Effect is applied by an attack.")]
+    [Tooltip("Played on the target when this Effect is applied by a hit.")]
     public GameObject hitVfxPrefab;
-    public GameplayEffectVfxLifetime weaponVfxLifetime = GameplayEffectVfxLifetime.FixedDuration;
-    public GameplayEffectVfxLifetime hitVfxLifetime = GameplayEffectVfxLifetime.FixedDuration;
-    [Min(0f)] public float attackVfxDuration = 1f;
+    [FormerlySerializedAs("attackVfxDuration")]
+    [Min(0f)] public float hitVfxDuration = 1f;
 
     private void OnValidate()
     {
         maxStacks = Mathf.Max(1, maxStacks);
         effectTag = GameplayTagUtility.Normalize(effectTag);
-        NormalizeTags(requiredTargetTags);
-        NormalizeTags(blockedTargetTags);
-        NormalizeTags(requiredSourceTags);
-        NormalizeTags(blockedSourceTags);
         NormalizeTags(grantedTags);
     }
 
