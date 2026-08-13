@@ -101,46 +101,49 @@ namespace CopyMaterial.Editor
                 {
 
                 }
-
-                for (int i = 0; i < Materials.Length; i++)
+                if(Materials != null)
                 {
-                    GUILayout.BeginHorizontal();
-                    if (Materials[i] != null) //可能数组里有null
+                    for (int i = 0; i < Materials.Length; i++)
                     {
-                        if (material.GetInstanceID() ==
-                            MeshRenderer.sharedMaterials[i].GetInstanceID()) //材质球只显示自己的框
+                        GUILayout.BeginHorizontal();
+                        if (Materials[i] != null) //可能数组里有null
                         {
-                            Undo.RecordObject(MeshRenderer, "CopyAndUse"); //设置可撤销
-                            Materials[i] = (Material)EditorGUILayout.ObjectField(MeshRenderer.sharedMaterials[i],
-                                typeof(Material), true, GUILayout.MaxWidth(100)); //材质选取框 可被赋值
-                            index = EditorGUILayout.Popup(index, PaseFavoritePathExtension.stringName.ToArray(), GUILayout.MaxWidth(150)); //下拉选框
-                            var tempColor = GUI.color;
-                            GUI.color = Color.green;
-                            if (material.hideFlags != HideFlags.NotEditable)
+                            if (material.GetInstanceID() ==
+                                MeshRenderer.sharedMaterials[i].GetInstanceID()) //材质球只显示自己的框
                             {
-                                if (GUILayout.Button(Language.LanguageString[3])) //复制材质并引用
+                                Undo.RecordObject(MeshRenderer, "CopyAndUse"); //设置可撤销
+                                Materials[i] = (Material)EditorGUILayout.ObjectField(MeshRenderer.sharedMaterials[i],
+                                    typeof(Material), true, GUILayout.MaxWidth(100)); //材质选取框 可被赋值
+                                index = EditorGUILayout.Popup(index, PaseFavoritePathExtension.stringName.ToArray(), GUILayout.MaxWidth(150)); //下拉选框
+                                var tempColor = GUI.color;
+                                GUI.color = Color.green;
+                                if (material.hideFlags != HideFlags.NotEditable)
                                 {
-                                    EditorPrefs.SetString("CopyMaterialKey1", PaseFavoritePathExtension.stringPath[index]);
-                                    // LastPath =FolderPaths[index];//最后一次使用路径
-                                    Materials[i] = Copy.CopyAsset(MeshRenderer.sharedMaterials[i],
-                                       PaseFavoritePathExtension.stringPath[index]) as Material;
+                                    if (GUILayout.Button(Language.LanguageString[3])) //复制材质并引用
+                                    {
+                                        EditorPrefs.SetString("CopyMaterialKey1", PaseFavoritePathExtension.stringPath[index]);
+                                        // LastPath =FolderPaths[index];//最后一次使用路径
+                                        Materials[i] = Copy.CopyAsset(MeshRenderer.sharedMaterials[i],
+                                           PaseFavoritePathExtension.stringPath[index]) as Material;
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                if (GUILayout.Button(Language.LanguageString[5])) //不可编辑的默认材质球 复制临时 材质并引用
+                                else
                                 {
-                                    EditorPrefs.SetString("CopyMaterialKey1", PaseFavoritePathExtension.stringPath[index]);
-                                    Materials[i] = Copy.CopyAsset(TempMaterial,
-                                      PaseFavoritePathExtension.stringPath[index]) as Material;
+                                    if (GUILayout.Button(Language.LanguageString[5])) //不可编辑的默认材质球 复制临时 材质并引用
+                                    {
+                                        EditorPrefs.SetString("CopyMaterialKey1", PaseFavoritePathExtension.stringPath[index]);
+                                        Materials[i] = Copy.CopyAsset(TempMaterial,
+                                          PaseFavoritePathExtension.stringPath[index]) as Material;
+                                    }
                                 }
+                                GUI.color = tempColor;
                             }
-                            GUI.color = tempColor;
                         }
-                    }
 
-                    GUILayout.EndHorizontal();
+                        GUILayout.EndHorizontal();
+                    }
                 }
+                
 
                 MeshRenderer.sharedMaterials = Materials; //最后将新的数组赋值回renderer的material数组
             }
