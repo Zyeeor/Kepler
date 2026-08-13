@@ -3,18 +3,27 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Pride Q: blink between enemies for several strikes.
-/// Owner stays untargetable for the whole chain; each strike damages via DealDamageTo
-/// (appliedEffectTags drive hit VFX). After each hit, retarget the nearest other enemy
-/// near the current target, or keep striking the same target when alone.
+/// Pride Q: dash between enemies for several strikes (not teleport).
+/// Each segment: approach to strike point → settle damage/VFX → short pass-through.
+/// Approach + pass-through durations sum to blinkInterval.
+/// Owner stays untargetable for the whole chain.
 /// </summary>
 public class EnemyAbility_PrideBlinkChain : EnemyAbility
 {
     public float searchRange = 8f;
     public int blinkCount = 4;
+    [Tooltip("Total duration of one strike segment (approach + pass-through).")]
     public float blinkInterval = 0.25f;
+    [Tooltip("Stop this far before the target center when settling the slash.")]
     public float arrivalOffset = 0.6f;
     public float damageMultiplier = 1f;
+
+    [Header("Pass-Through")]
+    [Tooltip("Extra travel past the strike point along the blink direction.")]
+    public float passThroughDistance = 1.2f;
+    [Tooltip("Duration of the pass-through phase. Approach uses blinkInterval - this.")]
+    public float passThroughDuration = 0.08f;
+
     [Tooltip("Self Effect while blinking. Grant State.Defense.Untargetable; put afterimage/trail on activeVfxPrefab.")]
     public GameplayEffectDefinition untargetableEffect;
     [Tooltip("Hide mesh/skinned renderers while blinking so only Effect afterimage VFX remains.")]
@@ -72,6 +81,9 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         if (hideOwnerMeshes) HideOwnerMeshes();
         owner.IsAbilityFacingLocked = true;
 
+        float passDuration = Mathf.Clamp(passThroughDuration, 0f, Mathf.Max(0f, blinkInterval - 0.01f));
+        float approachDuration = Mathf.Max(0.01f, blinkInterval - passDuration);
+
         int strikes = Mathf.Max(1, Mathf.RoundToInt(GetCardParameter("BlinkCount", blinkCount)));
         for (int i = 0; i < strikes && owner != null; i++)
         {
@@ -82,28 +94,41 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
             }
 
             Vector3 from = owner.transform.position;
-            Vector3 to = currentTarget.transform.position;
-            Vector3 direction = to - from;
+            Vector3 targetPos = currentTarget.transform.position;
+            Vector3 direction = targetPos - from;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f)
                 direction = owner.transform.forward;
             direction.Normalize();
 
-            owner.transform.position = to - direction * arrivalOffset;
+            Vector3 strikePos = targetPos - direction * arrivalOffset;
+            strikePos.y = from.y;
+            Vector3 passEnd = strikePos + direction * Mathf.Max(0f, passThroughDistance);
+            passEnd.y = from.y;
+
             owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
 
-            DealDamageTo(currentTarget, damage * damageMultiplier);
+            // (1) Dash into the strike point, then settle damage / hit VFX / optional sword qi.
+            yield return MoveOwnerOverTime(from, strikePos, approachDuration);
+            if (owner == null) break;
+
+            if (currentTarget != null && !currentTarget.isDowned)
+                DealDamageTo(currentTarget, damage * damageMultiplier);
 
             if (IsUpgradeUnlocked("Pride.BlinkSwordQi"))
             {
                 EnemyAbility_SwordQi swordQi = owner.GetComponentInChildren<EnemyAbility_SwordQi>(true);
-                if (swordQi != null) swordQi.FireDirectedBurst(direction, damage);
+                // Blade must not be absorbed by the enemy just slashed.
+                if (swordQi != null) swordQi.FireDirectedBurst(direction, damage, currentTarget);
             }
 
-            Enemy next = FindNearestTarget(currentTarget.transform.position, currentTarget);
+            Enemy next = FindNearestTarget(
+                currentTarget != null ? currentTarget.transform.position : owner.transform.position,
+                currentTarget);
             currentTarget = next != null ? next : currentTarget;
 
-            yield return AbilityWait(blinkInterval);
+            // (2) Short pass-through to sell moving through the target.
+            yield return MoveOwnerOverTime(strikePos, passEnd, passDuration);
         }
 
         if (owner != null)
@@ -121,6 +146,27 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     {
         if (activationDisplayA != null) activationDisplayA.SetActive(visible);
         if (activationDisplayB != null) activationDisplayB.SetActive(visible);
+    }
+
+    private IEnumerator MoveOwnerOverTime(Vector3 start, Vector3 end, float duration)
+    {
+        if (owner == null) yield break;
+        if (duration <= 0.0001f)
+        {
+            owner.transform.position = end;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (owner != null && elapsed < duration)
+        {
+            elapsed += AbilityDeltaTime;
+            float u = Mathf.Clamp01(elapsed / duration);
+            owner.transform.position = Vector3.Lerp(start, end, u);
+            yield return null;
+        }
+
+        if (owner != null) owner.transform.position = end;
     }
 
     private Enemy FindNearestTarget(Vector3 origin, Enemy exclude)

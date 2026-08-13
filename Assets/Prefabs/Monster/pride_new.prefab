@@ -4037,6 +4037,8 @@ MonoBehaviour:
   blinkInterval: 0.25
   arrivalOffset: 0.6
   damageMultiplier: 1
+  passThroughDistance: 2
+  passThroughDuration: 0.08
   untargetableEffect: {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   hideOwnerMeshes: 1
 --- !u!1 &8863776375583877577
