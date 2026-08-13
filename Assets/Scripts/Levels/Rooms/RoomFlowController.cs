@@ -38,7 +38,23 @@ public class RoomFlowController : MonoBehaviour
 
         waveManager.Initialize(currentTemplate, currentRoom);
         waveManager.OnAllWavesComplete += OnAllWavesCompleteHandler;
+        waveManager.OnWaveCompleted += OnWaveCompletedHandler;   // 每波打完触发选卡（单选）
         waveManager.StartWaves();
+    }
+
+    /// <summary>
+    /// 每波打完自动触发选卡（单选）。
+    /// 延迟由 WaveManager 统一处理（choiceUIDelay，默认 2s，弹卡前缓冲看清战果）。
+    /// 选卡暂停（timeScale=0）会阻塞波次协程（WaitForSeconds 受 timeScale 影响），
+    /// 玩家选完恢复后下一波自动开始。
+    /// </summary>
+    void OnWaveCompletedHandler(int waveIndex)
+    {
+        Debug.Log($"[RoomFlow] Wave {waveIndex} completed → trigger choice UI (single pick)");
+        if (CoreChoiceUI.Instance != null)
+            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: false);
+        else
+            Debug.LogWarning("[RoomFlow] CoreChoiceUI.Instance is null — cannot show choice UI");
     }
 
     public void CompleteRoom()
@@ -99,6 +115,9 @@ public class RoomFlowController : MonoBehaviour
     void OnDestroy()
     {
         if (waveManager != null)
+        {
             waveManager.OnAllWavesComplete -= OnAllWavesCompleteHandler;
+            waveManager.OnWaveCompleted -= OnWaveCompletedHandler;
+        }
     }
 }
