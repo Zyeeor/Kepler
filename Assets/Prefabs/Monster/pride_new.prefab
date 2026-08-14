@@ -2826,7 +2826,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.57547164, g: 0.6925827, b: 1, a: 0}
+      key0: {r: 0.6901961, g: 0.85901064, b: 1, a: 0}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -3678,7 +3678,7 @@ MonoBehaviour:
   weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0.9, z: 0}
-  vfxDelay: 0.25
+  vfxDelay: 0.3
   vfxRotationOffset: {x: -170, y: 90, z: 0}
   damage: 20
   drawHitboxes: 0
@@ -3689,7 +3689,7 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
-  maxRange: 4
+  maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
   projectileWidth: 1.5
@@ -3701,13 +3701,12 @@ MonoBehaviour:
     m_Bits: 512
   animTrigger: SwordQi
   aimTurnSpeed: 720
-  projectileVfxPrefab: {fileID: 2219822320261532438, guid: 5e0e67c74cc6fd24b888654b974f04ee,
+  projectileVfxPrefab: {fileID: 821419318031468683, guid: 8cb5727277cbb5945905182571d0a5de,
     type: 3}
   projectileVfxScale: 1
   projectileVfxPositionOffset: {x: 0, y: 1.2, z: 1}
   projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
-  explosionVfxPrefab: {fileID: 1035977224672214417, guid: 5a4d3bae36010574d8ca01fbeedee3ec,
-    type: 3}
+  explosionVfxPrefab: {fileID: 0}
   explosionVfxDuration: 0.5
   explosionVfxPositionOffset: {x: 0, y: 0, z: 0}
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
@@ -4016,7 +4015,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.57547164, g: 0.6925827, b: 1, a: 0}
+      key0: {r: 0.6901961, g: 0.85901064, b: 1, a: 0}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
