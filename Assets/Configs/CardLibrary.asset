@@ -15,7 +15,7 @@ MonoBehaviour:
   cards:
   - cardName: "\u5251\u6C14\u7A7F\u900F"
     effectId: Pride.Pierce
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Sword Qi pierces, X follow-up, double damage.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -24,7 +24,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
     effectId: Pride02
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Fires three Sword Qi blades in a spread.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -33,7 +33,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
     effectId: Pride01
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Sword Qi becomes long-range.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -42,7 +42,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u84C4\u529B\u7A81\u8FDB"
     effectId: Pride.ChargeEmpowered
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Charge farther; damage scales up to +100%.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -53,7 +53,7 @@ MonoBehaviour:
       value: 10
   - cardName: "\u7A7F\u68AD\u9644\u52A0\u6C14\u5203"
     effectId: Pride.BlinkSwordQi
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Each blink also fires Sword Qi along blink direction.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -62,7 +62,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u7A7F\u68AD+2"
     effectId: Pride.BlinkCountPlusTwo
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Blink Chain strikes 6 times.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -127,7 +127,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u843D\u5730\u7206\u70B8"
     effectId: Sloth.LandingBlast
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: Landing explosion on hop.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -136,7 +136,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u84C4\u529B\u6563\u5C04"
     effectId: Sloth.Scatter
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: On enemy hit, scatter fragments that ignore the first target. Count
       scales with charge time.
     abilityPrefab: {fileID: 0}
@@ -146,7 +146,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u5E03\u7F6E\u5730\u96F7"
     effectId: Sloth.LandingMine
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: Place a mine at the takeoff point before jumping. Other monsters
       trigger an explosion.
     abilityPrefab: {fileID: 0}
@@ -156,7 +156,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u65E0\u4EBA\u673A\u7ECF\u6D4E"
     effectId: Sloth.DroneEconomy
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: Drone HP cost -50%, lifetime +10%.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -165,7 +165,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u65E0\u4EBA\u673A\u6B7B\u4EA1\u7206\u70B8"
     effectId: Sloth.DroneDeathBlast
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: Drone explodes toward enemies on death.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:

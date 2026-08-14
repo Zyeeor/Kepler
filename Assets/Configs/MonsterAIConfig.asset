@@ -69,21 +69,21 @@ MonoBehaviour:
     showDebugRanges: 1
   - id: Pride_new
     detectionRadius: 15
-    basicAttackRange: 4
-    skillAttackRange: 6
+    basicAttackRange: 6
+    skillAttackRange: 3
     aiMinRange: 3
-    attackEagerness: 0.6
+    attackEagerness: 0.21
     decisionIntervalMin: 0.12
     decisionIntervalMax: 0.4
     skillPriority: 0.6
     aiMobilityChance: 0.3
-    chaseDuration: 0
+    chaseDuration: 1
     strafeChance: 0.4
     strafeIntervalMin: 0.3
     strafeIntervalMax: 0.9
     strafeStrength: 0.45
-    moveSpeedJitterMin: 0.7
-    moveSpeedJitterMax: 1.3
+    moveSpeedJitterMin: 0.5
+    moveSpeedJitterMax: 0.9
     showDebugRanges: 1
   - id: Sloth
     detectionRadius: 15
