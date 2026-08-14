@@ -1034,6 +1034,7 @@ Transform:
   - {fileID: 6240802779470137039}
   - {fileID: 7211694873834702418}
   - {fileID: 8159881647401772904}
+  - {fileID: 2407912368899548843}
   - {fileID: 1896984365522949595}
   m_Father: {fileID: 2604072077845893213}
   m_LocalEulerAnglesHint: {x: 0, y: -263.421, z: 0}
@@ -1100,6 +1101,89 @@ MeshRenderer:
   m_Materials:
   - {fileID: 2100000, guid: d466edacb999c6846ba1e86f41ca896f, type: 2}
   - {fileID: 2100000, guid: c8d3a460253f25047a7a92f4875ff288, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2837339765036519572
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2407912368899548843}
+  - component: {fileID: 1425392142194684740}
+  - component: {fileID: 1785386590776125864}
+  m_Layer: 0
+  m_Name: Box019 (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2407912368899548843
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2837339765036519572}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0.004, y: 0.011, z: 0.333}
+  m_LocalScale: {x: 1.8, y: 1.137033, z: 1.8}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 3254293299598757157}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &1425392142194684740
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2837339765036519572}
+  m_Mesh: {fileID: 3557879054105070054, guid: ab2d4a71a022b5d40ad242862c16cb6e, type: 3}
+--- !u!23 &1785386590776125864
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2837339765036519572}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 8067be85a1225264e87154f261a5e190, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1733,6 +1817,7 @@ MonoBehaviour:
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Pride_new
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -2741,7 +2826,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.216981, g: 0.9490974, b: 1, a: 0}
+      key0: {r: 0.57547164, g: 0.6925827, b: 1, a: 0}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -3582,14 +3667,15 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: Pride.Pierce
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride02
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0.9, z: 0}
   vfxDelay: 0.25
@@ -3615,9 +3701,9 @@ MonoBehaviour:
     m_Bits: 512
   animTrigger: SwordQi
   aimTurnSpeed: 720
-  projectileVfxPrefab: {fileID: 6111486948785554852, guid: f7967f33aeac15f48a3732e3fd3ac36c,
+  projectileVfxPrefab: {fileID: 2219822320261532438, guid: 5e0e67c74cc6fd24b888654b974f04ee,
     type: 3}
-  projectileVfxScale: 0.5
+  projectileVfxScale: 1
   projectileVfxPositionOffset: {x: 0, y: 1.2, z: 1}
   projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
   explosionVfxPrefab: {fileID: 1035977224672214417, guid: 5a4d3bae36010574d8ca01fbeedee3ec,
@@ -3627,10 +3713,10 @@ MonoBehaviour:
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
   pride01MaxRange: 20
   pride02SpreadAngle: 20
-  pierceVfxPrefab: {fileID: 4797775238236629471, guid: eb1315b188c70674182af9986dcae542,
+  pierceVfxPrefab: {fileID: 7478006030143991211, guid: 2088839dd24009a4db10df10661ad160,
     type: 3}
   pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
-  pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
+  pierceVfxRotationOffset: {x: 0, y: 0, z: 45}
   pierceDamageMultiplier: 2
 --- !u!1 &8305497005758189896
 GameObject:
@@ -3792,6 +3878,7 @@ MonoBehaviour:
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 1, z: -3}
   vfxDelay: 0
@@ -3929,7 +4016,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.216981, g: 0.9490974, b: 1, a: 0}
+      key0: {r: 0.57547164, g: 0.6925827, b: 1, a: 0}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -4017,11 +4104,12 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: Pride.BlinkSwordQi
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride.BlinkCountPlusTwo
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 1, z: 0}
   vfxDelay: 0
@@ -4096,6 +4184,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
