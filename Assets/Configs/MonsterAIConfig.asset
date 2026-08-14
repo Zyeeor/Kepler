@@ -66,7 +66,7 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
-    showDebugRanges: 1
+    showDebugRanges: 0
   - id: Pride_new
     detectionRadius: 15
     basicAttackRange: 5

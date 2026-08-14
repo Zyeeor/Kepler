@@ -1833,6 +1833,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -3667,11 +3668,11 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: Pride.Pierce
-    unlocked: 1
+    unlocked: 0
   - effectId: Pride02
-    unlocked: 1
+    unlocked: 0
   - effectId: Pride01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -3682,7 +3683,7 @@ MonoBehaviour:
   vfxRotationOffset: {x: -170, y: 90, z: 0}
   damage: 20
   drawHitboxes: 0
-  cooldown: 1
+  cooldown: 0.5
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.SwordQi
@@ -4103,9 +4104,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: Pride.BlinkSwordQi
-    unlocked: 1
+    unlocked: 0
   - effectId: Pride.BlinkCountPlusTwo
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -4115,7 +4116,7 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 5
   drawHitboxes: 0
-  cooldown: 1.5
+  cooldown: 8
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.BlinkChain

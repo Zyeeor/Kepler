@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69bcb16963c74f04cb9bc8bb3ff97cf9, type: 3}
+  m_Name: Region_Ruins
+  m_EditorClassIdentifier: 
+  id: ruins
+  type: 1
+  theme: "\u9057\u8FF9"
+  themeCenter: 0.65
+  chunkPool:
+  - {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}

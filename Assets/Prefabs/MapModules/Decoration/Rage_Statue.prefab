@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &882326379345131488
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -9.94
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.47038892
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.47038892
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.5279529
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5279529
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 96.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      propertyPath: m_Name
+      value: Rage_Statue
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9431c6c890a9ec0438732bc2e1872678,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8764034294914782999}
+  m_SourcePrefab: {fileID: 100100000, guid: 9431c6c890a9ec0438732bc2e1872678, type: 3}
+--- !u!1 &72003697380395697 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9431c6c890a9ec0438732bc2e1872678,
+    type: 3}
+  m_PrefabInstance: {fileID: 882326379345131488}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8764034294914782999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72003697380395697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4789a9c5769e849a0ae0d1f23c993a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrainKind: 2
+  isWalkable: 1
+  markerType: 0
+  displayName: 

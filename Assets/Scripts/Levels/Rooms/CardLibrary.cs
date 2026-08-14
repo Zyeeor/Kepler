@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// 卡池资产：1 个 SO 资产 = 整个卡池（设计文档 §2.2 / §4）。
+/// 卡池资产：1 个 SO 资产 = 整个卡池。
 /// 把卡池从场景内联（CardManager.allCards）抽离为独立资产，便于配置/修改/复用。
 /// OnValidate 编辑期查重，重复 effectId 给出警告。
 /// </summary>

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ef18dbc6f4f0dd4f9a9fb4d5cc6eb89, type: 3}
+  m_Name: MonsterWaveDef
+  m_EditorClassIdentifier: 
+  id: wave_pride_test
+  baseCount: 1
+  threatValue: 1
+  bodySupply: 1
+  spawnWeight: 0.1
+  monsters:
+  - prefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
+      type: 3}
+    count: 1
+  - prefab: {fileID: 3923155230589149752, guid: db85ea08bfd4b473f911b8e1cd9e477f,
+      type: 3}
+    count: 1
+  statMult:
+    health: 1
+    damage: 1
+    moveSpeed: 1
