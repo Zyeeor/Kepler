@@ -370,6 +370,8 @@ public class PossessionManager : MonoBehaviour
         {
             soul.SetPossessionFlight(false);
             soul.SetSuppressed(true);
+            if (target is Enemy enemy && enemy.soulAnchorPoint != null)
+                soul.AttachToPossessionAnchor(enemy.soulAnchorPoint);
             if (soul.Combat != null) soul.Combat.AddLooseTags(this, new[] { "State.Possession.Active", "State.Soul.Suppressed" });
         }
         else if (PlayerHealth.Instance != null)
@@ -406,6 +408,7 @@ public class PossessionManager : MonoBehaviour
 
         if (soul != null)
         {
+            soul.DetachFromPossessionAnchor();
             soul.SetSuppressed(false);
             if (oldBody != null) soul.transform.position = oldBody.transform.position + Vector3.up * possessYOffset;
             if (soul.Combat != null) soul.Combat.RemoveLooseTags(this);
@@ -435,6 +438,7 @@ public class PossessionManager : MonoBehaviour
 
         if (soul != null)
         {
+            soul.DetachFromPossessionAnchor();
             soul.SetPossessionPosition(oldBody != null ? oldBody.transform.position : soul.transform.position, possessYOffset);
             soul.SetPossessionFlight(false);
             soul.SetSuppressed(false);

@@ -100,7 +100,7 @@ MonoBehaviour:
     moveDeceleration: 12
     turnSpeed: 540
     turnAcceleration: 1440
-    showDebugRanges: 1
+    showDebugRanges: 0
   - id: Sloth
     detectionRadius: 15
     basicAttackRange: 5

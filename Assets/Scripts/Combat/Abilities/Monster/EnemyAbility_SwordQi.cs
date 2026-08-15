@@ -37,6 +37,11 @@ public class EnemyAbility_SwordQi : EnemyAbility
     [Tooltip("Possessed owner turn speed before firing toward the mouse aim.")]
     public float aimTurnSpeed = 720f;
 
+    [Header("Activation Display")]
+    [Tooltip("Display object on the enemy body. Shown while Sword Qi is active, then hidden when the cast ends.")]
+    public GameObject activationDisplay;
+
+
     [Header("VFX - Projectile")]
     public GameObject projectileVfxPrefab;  // the flying sword qi VFX
     public float projectileVfxScale = 1f;
@@ -79,6 +84,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.SwordQi", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.SwordQi");
+        SetActivationDisplay(false);
     }
 
     public override bool CanTrigger()
@@ -91,9 +97,15 @@ public class EnemyAbility_SwordQi : EnemyAbility
     protected override void OnTrigger()
     {
         if (owner == null) return;
+        SetActivationDisplay(true);
         var anim = owner.GetComponent<Animator>();
         if (anim != null) anim.SetTrigger("Skill");
         StartCoroutine(SwordQiRoutine());
+    }
+
+    private void SetActivationDisplay(bool visible)
+    {
+        if (activationDisplay != null) activationDisplay.SetActive(visible);
     }
 
     /// <summary>Fire an immediate sword-qi burst in a world direction (no windup). Used by BlinkChain build.
@@ -175,6 +187,8 @@ public class EnemyAbility_SwordQi : EnemyAbility
         {
             StartCoroutine(LaunchProjectile(fireDirection, effectiveMaxRange, shotDamage, pierce));
         }
+
+        SetActivationDisplay(false);
     }
 
     private float GetShotDamage()
