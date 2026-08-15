@@ -686,11 +686,9 @@ PR会自动更新。
 
 # 31. Canonical当前注意事项
 
-在正式中心策划案完成并经过Design Intake前：
+Canonical v1.1 已正式导入并作为当前 Design Truth。
 
-> 不允许Agent从旧Demo代码反推并创建新的正式玩法Canonical。
-
-旧实现是参考，不是自动真源。
+旧 Demo、CSV 与 Modules 是 Historical / Implementation Reference，不得覆盖 Canonical。Agent 不得从旧实现反推并静默创建新的正式玩法 Canonical。
 
 ---
 
@@ -698,11 +696,12 @@ PR会自动更新。
 
 Legacy Audit机制和模板存在，不代表旧Demo审计已经完成。
 
-后续顺序：
+当前后续顺序：
 
 ```text
-中心策划Production Draft
-→ Canonical更新
+Authority Sync
+→ Review / Merge
+→ Micro Delta Inventory（如 Repository Fact 有变化）
 → Legacy Audit
 → Keep / Refactor / Salvage / Retire / Unknown
 → 人工确认

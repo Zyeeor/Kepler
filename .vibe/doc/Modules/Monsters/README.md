@@ -1,5 +1,9 @@
 # Monsters 模块索引
 
+> [!IMPORTANT]
+> **Authority status: HISTORICAL / IMPLEMENTATION REFERENCE**
+> 本文件保留历史设计、工程实现和开发状态信息，不再是当前 Design Truth。与 `.vibe/doc/Canonical/**` 冲突时，以 Canonical 为准。Legacy Audit 完成前，文件内旧规格不得自动视为当前开发 Requirement。
+
 > 细分需求由 `monster-dev-pipeline` 阶段 A 生成；工程落地走阶段 B。  
 > 源表：`项目全量表 - 怪物设计（新）.csv`
 

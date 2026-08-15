@@ -91,10 +91,6 @@ Repository 当前实现只能回答：
 
 记录本轮最终Owner Decision、五轴Closure与入仓Gate；它是审计证据，不高于01–03的设计真源。
 
-## `REPOSITORY_IMPORT_MANIFEST.md`
-
-提供部署侧建议目录、读取顺序与旧文档保留规则。
-
 ---
 
 # 4. 当前完成状态
