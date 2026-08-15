@@ -13,33 +13,19 @@ MonoBehaviour:
   m_Name: ChunkDef
   m_EditorClassIdentifier: 
   id: chunk_test
-  templateEntries:
-  - layout: {fileID: 11400000, guid: 892d092e6a0431445aeffebfb1958b8e, type: 2}
-    mustGenerate: 1
-    maxCount: 0
-    weight: 2
-  - layout: {fileID: 11400000, guid: 70ae2771560ace749807da5b9c25358c, type: 2}
-    mustGenerate: 1
-    maxCount: 0
-    weight: 2
-  - layout: {fileID: 11400000, guid: 13cbbcc02fea4934c9e24d42214e7554, type: 2}
-    mustGenerate: 1
-    maxCount: 0
-    weight: 2
+  templateEntries: []
   templateWeight: 0.512
   normalTiles:
-  - {fileID: 5996389147103876371, guid: d0752a3272197ed499e3ff64997d3244, type: 3}
-  - {fileID: 8316053632295240323, guid: 84da66e549a56a248916948fd15b812b, type: 3}
-  - {fileID: 3909039639000577622, guid: c68a6bbfb86bbea4a982c79fc06842de, type: 3}
-  - {fileID: 3909039639000577622, guid: 7c8ac3e7eeab51941be36646b92dd76b, type: 3}
-  - {fileID: 3909039639000577622, guid: 65045f8eef486024fb9b7b96acc4413f, type: 3}
-  - {fileID: 3909039639000577622, guid: c2ddca1404cfa904f839942cc1194cfc, type: 3}
+  - {fileID: 1891706088245170632, guid: 182a60b71271da144991ddd9cab6589a, type: 3}
+  - {fileID: 2898380885021715338, guid: 681037e680563f34fa477926b1450484, type: 3}
+  - {fileID: 3196925563032784384, guid: 01f00c3a586f6824d8da506c0a5cfe10, type: 3}
   triggerTiles:
-  - {fileID: 2745582488241574783, guid: ed4cc710e5ddf904c9edff3d0c111fd3, type: 3}
-  - {fileID: 3585965018659656240, guid: 325ec9d50f686c844a70fdea3c7b3818, type: 3}
+  - {fileID: 666978414410227392, guid: 35b25cfff689ed345a1866bdb4058c40, type: 3}
+  - {fileID: 2898380885021715338, guid: 6633367d5e9b9074abb71617699479d2, type: 3}
   decorationTiles:
-  - {fileID: 7108445822797828291, guid: 0c01d37872342bb4db04e6b9c0c642d6, type: 3}
-  - {fileID: 72003697380395697, guid: 95c6f8dc0628cfb40b472b2a6d4dad39, type: 3}
+  - {fileID: 5758130742685393213, guid: 29441edd9c539b943a3ddeeae892dfac, type: 3}
+  - {fileID: 3042886899210024984, guid: 87f079730cae25647b475a50cc0173b1, type: 3}
+  - {fileID: 2807723042670611009, guid: c3d9c392172a2cd429f702ecd6d62516, type: 3}
   triggerPatterns:
   - shape: 2
     weight: 1
@@ -52,25 +38,12 @@ MonoBehaviour:
     weight: 1
   minPatternsPerChunk: 1
   maxPatternsPerChunk: 4
-  roadTiles:
-  - {fileID: 5996389147103876371, guid: d0752a3272197ed499e3ff64997d3244, type: 3}
-  plazaTiles:
-  - {fileID: 5996389147103876371, guid: d0752a3272197ed499e3ff64997d3244, type: 3}
-  - {fileID: 8316053632295240323, guid: 84da66e549a56a248916948fd15b812b, type: 3}
-  - {fileID: 3909039639000577622, guid: c68a6bbfb86bbea4a982c79fc06842de, type: 3}
-  - {fileID: 3909039639000577622, guid: 7c8ac3e7eeab51941be36646b92dd76b, type: 3}
-  - {fileID: 3909039639000577622, guid: 65045f8eef486024fb9b7b96acc4413f, type: 3}
-  - {fileID: 3909039639000577622, guid: c2ddca1404cfa904f839942cc1194cfc, type: 3}
-  fillTiles:
-  - {fileID: 5996389147103876371, guid: d0752a3272197ed499e3ff64997d3244, type: 3}
-  - {fileID: 8316053632295240323, guid: 84da66e549a56a248916948fd15b812b, type: 3}
-  - {fileID: 3909039639000577622, guid: c68a6bbfb86bbea4a982c79fc06842de, type: 3}
-  - {fileID: 3909039639000577622, guid: 7c8ac3e7eeab51941be36646b92dd76b, type: 3}
-  - {fileID: 3909039639000577622, guid: 65045f8eef486024fb9b7b96acc4413f, type: 3}
-  - {fileID: 3909039639000577622, guid: c2ddca1404cfa904f839942cc1194cfc, type: 3}
+  roadTiles: []
+  plazaTiles: []
+  fillTiles: []
   roadChance: 0.5
   plazaCount: 1
-  groundSpreadChance: 0.92
+  groundSpreadChance: 0.793
   waveTable:
   - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
   preferredNeighbors: []

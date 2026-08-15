@@ -1065,9 +1065,9 @@ Transform:
   m_GameObject: {fileID: 2800422760279785372}
   serializedVersion: 2
   m_LocalRotation: {x: -0.4246091, y: 0.5654264, z: 0.42460904, w: 0.5654266}
-  m_LocalPosition: {x: 0.004662592, y: 0.019337155, z: 0.0030998485}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.003, y: 0.029, z: 0.003}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 7813748111483280125}
   m_LocalEulerAnglesHint: {x: -73.81, y: 90, z: 0}
@@ -1263,7 +1263,7 @@ Transform:
   m_GameObject: {fileID: 2913140342874028718}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0, y: 0.09618444, z: 0.0000000042043555}
+  m_LocalPosition: {x: -0, y: 0.126, z: 0.0000000042043555}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1655,7 +1655,7 @@ Transform:
   m_GameObject: {fileID: 3419645408455150391}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0, y: 0.133755, z: 0.0000000058466165}
+  m_LocalPosition: {x: -0, y: 0.199, z: 0.0000000058466165}
   m_LocalScale: {x: 1, y: 0.665903, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3668,11 +3668,11 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: Pride.Pierce
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride02
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -4104,9 +4104,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: Pride.BlinkSwordQi
-    unlocked: 0
+    unlocked: 1
   - effectId: Pride.BlinkCountPlusTwo
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -4116,7 +4116,7 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 5
   drawHitboxes: 0
-  cooldown: 8
+  cooldown: 1
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.BlinkChain

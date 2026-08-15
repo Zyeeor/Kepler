@@ -54,6 +54,16 @@ public class MonsterAIConfigEntry
     public float moveSpeedJitterMin = 0.7f;
     public float moveSpeedJitterMax = 1.3f;
 
+    [Header("AI Movement Smoothing")]
+    [Tooltip("AI 加速到目标移动速度的速率（单位/秒²）。")]
+    public float moveAcceleration = 20f;
+    [Tooltip("AI 停止或改变走位时的减速速率（单位/秒²）。")]
+    public float moveDeceleration = 28f;
+    [Tooltip("AI 最大转向速度（度/秒）。")]
+    public float turnSpeed = 540f;
+    [Tooltip("AI 转向速度达到最大值的加速度（度/秒²）。")]
+    public float turnAcceleration = 1440f;
+
     [Header("调试可视化")]
     [Tooltip("在游戏视图中用圆环可视化索敌/普攻/技能范围（Play 模式可见，运行中可勾选/取消）。")]
     public bool showDebugRanges = false;
@@ -113,6 +123,8 @@ public class MonsterAIConfig : ScriptableObject
                 Debug.LogWarning($"[MonsterAIConfig] {e.id}: strafeIntervalMin({e.strafeIntervalMin}) > strafeIntervalMax({e.strafeIntervalMax})。", this);
             if (e.moveSpeedJitterMin > e.moveSpeedJitterMax)
                 Debug.LogWarning($"[MonsterAIConfig] {e.id}: moveSpeedJitterMin({e.moveSpeedJitterMin}) > moveSpeedJitterMax({e.moveSpeedJitterMax})。", this);
+            if (e.moveAcceleration < 0f || e.moveDeceleration < 0f || e.turnSpeed < 0f || e.turnAcceleration < 0f)
+                Debug.LogWarning($"[MonsterAIConfig] {e.id}: movement smoothing values must be non-negative.", this);
         }
     }
 #endif

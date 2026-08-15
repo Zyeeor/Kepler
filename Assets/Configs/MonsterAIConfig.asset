@@ -30,6 +30,10 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 0
   - id: Envy
     detectionRadius: 15
@@ -48,6 +52,10 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 0
   - id: Pride
     detectionRadius: 15
@@ -66,6 +74,10 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 0
   - id: Pride_new
     detectionRadius: 15
@@ -78,12 +90,16 @@ MonoBehaviour:
     skillPriority: 0.6
     aiMobilityChance: 0.3
     chaseDuration: 1
-    strafeChance: 0.514
+    strafeChance: 0.221
     strafeIntervalMin: 0.3
     strafeIntervalMax: 0.9
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.5
     moveSpeedJitterMax: 0.9
+    moveAcceleration: 10
+    moveDeceleration: 12
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 1
   - id: Sloth
     detectionRadius: 15
@@ -102,6 +118,10 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 0
   - id: Wrath
     detectionRadius: 15
@@ -120,6 +140,10 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 0
   - id: SwordShield
     detectionRadius: 15
@@ -138,4 +162,8 @@ MonoBehaviour:
     strafeStrength: 0.45
     moveSpeedJitterMin: 0.7
     moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
     showDebugRanges: 0

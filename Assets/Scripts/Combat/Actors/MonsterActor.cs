@@ -119,6 +119,14 @@ public class MonsterActor : Actor
     public float moveSpeedJitterMin => AiConfig.moveSpeedJitterMin;
     /// <summary>追击速度抖动上限（AI 配置）。</summary>
     public float moveSpeedJitterMax => AiConfig.moveSpeedJitterMax;
+    /// <summary>AI 移动加速度（AI 配置）。</summary>
+    public float aiMoveAcceleration => AiConfig.moveAcceleration;
+    /// <summary>AI 移动减速度（AI 配置）。</summary>
+    public float aiMoveDeceleration => AiConfig.moveDeceleration;
+    /// <summary>AI 最大转向速度（AI 配置）。</summary>
+    public float aiTurnSpeed => AiConfig.turnSpeed;
+    /// <summary>AI 转向加速度（AI 配置）。</summary>
+    public float aiTurnAcceleration => AiConfig.turnAcceleration;
     /// <summary>调试圆环开关（AI 配置，是否可视化索敌/普攻/技能范围）。</summary>
     public bool showDebugRanges => forceDebugRanges || AiConfig.showDebugRanges;
 
@@ -219,6 +227,8 @@ public class MonsterActor : Actor
     private Color originalColor;
     private Vector3 lastFramePosition;
     private Vector3 possessVelocity; // 附身玩家态加速度平滑
+    private Vector3 aiVelocity; // AI 态加速度平滑
+    private float aiCurrentTurnSpeed; // AI 态角速度平滑
     public bool IsAbilityFacingLocked { get; set; }
 
     /// <summary>追击目标（Actor.Update 填充 ActorContext.PlayerTarget；AIController 使用）。</summary>
@@ -352,6 +362,8 @@ public class MonsterActor : Actor
         if (IsMovementBlocked)
         {
             possessVelocity = Vector3.zero;
+            aiVelocity = Vector3.zero;
+            aiCurrentTurnSpeed = 0f;
             return;
         }
 
@@ -393,13 +405,33 @@ public class MonsterActor : Actor
             return;
         }
 
-        // AI 态：匀速
-        if (!cmd.HasMove || cmd.MoveDirection.sqrMagnitude < 0.0001f) return;
-        Vector3 aiDir = cmd.MoveDirection;
+        // AI 态：以速度和角速度加速/减速，避免决策刷新时抽动。
+        Vector3 aiDir = cmd.HasMove ? cmd.MoveDirection : Vector3.zero;
         aiDir.y = 0f;
-        float aiMoveSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
-        MoveWithSpherecast(aiDir * aiMoveSpeed * Time.deltaTime);
-        transform.rotation = Quaternion.LookRotation(aiDir, Vector3.up);
+        float directionMagnitude = Mathf.Clamp01(aiDir.magnitude);
+        Vector3 targetVelocity = Vector3.zero;
+
+        if (directionMagnitude > 0.0001f)
+        {
+            Vector3 targetDirection = aiDir.normalized;
+            float aiMoveSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+            targetVelocity = targetDirection * aiMoveSpeed * directionMagnitude;
+
+            if (!IsAbilityFacingLocked)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+                aiCurrentTurnSpeed = Mathf.MoveTowards(aiCurrentTurnSpeed, aiTurnSpeed, aiTurnAcceleration * Time.deltaTime);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, aiCurrentTurnSpeed * Time.deltaTime);
+            }
+        }
+        else
+        {
+            aiCurrentTurnSpeed = Mathf.MoveTowards(aiCurrentTurnSpeed, 0f, aiTurnAcceleration * Time.deltaTime);
+        }
+
+        float velocityChange = targetVelocity.sqrMagnitude > aiVelocity.sqrMagnitude ? aiMoveAcceleration : aiMoveDeceleration;
+        aiVelocity = Vector3.MoveTowards(aiVelocity, targetVelocity, velocityChange * Time.deltaTime);
+        MoveWithSpherecast(aiVelocity * Time.deltaTime);
     }
 
     /// <summary>SphereCast 预检测后的Transform移动（AI与玩家共用）。</summary>
@@ -916,6 +948,8 @@ public class MonsterActor : Actor
         currentHealth = maxHealth;
         currentTenacity = maxTenacity;
         possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         SetAbilityComponentsEnabled(true);
         CancelAbilityRuntimeState();
         gameObject.tag = "Enemy";
@@ -938,6 +972,8 @@ public class MonsterActor : Actor
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
         possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
