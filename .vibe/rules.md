@@ -27,6 +27,8 @@
 
 当 Agent 需要**自主设计**（架构选型、模块拆分、新功能方案、数据结构 / 接口定义、玩法机制、流程编排等任何不在用户指令中已明确给出实现细节的设计行为）时，必须先参考：
 
+1.5.0 **Possession Canonical Authority（强制）**：涉及《Possession》设计、玩法、内容或表现时，首先读取 `.vibe/doc/Canonical/00_CANONICAL_INDEX.md`，再按任务范围读取相关 Canonical。`.vibe/doc/Modules/**`、CSV、Legacy 文档与旧 Demo 仅作为 Historical / Implementation Reference。与 Canonical 冲突时，以 Canonical 为准；Agent 必须报告冲突并停止把旧规则作为当前 Requirement 使用。
+
 1.5.1 **项目总设计案**：`<项目根>/.vibe/doc/` 文件夹下与项目整体方案相关的文档（如 `项目设计.md`、`总体架构.md`、`Design.md`、`Architecture.md` 等，按实际命名读取）。  
 1.5.2 **对应模块设计文档**：`<项目根>/.vibe/doc/` 下与当前任务模块对应的设计文档（如 `Modules/Combat.md`、`Systems/Inventory.md` 等）。  
 1.5.3 **查找策略**：
@@ -108,6 +110,10 @@
   - 不绕过 hook（`--no-verify` 禁用）；
   - 不签别人名（不伪造 author / committer）。  
 6.3 LFS：若项目启用 LFS（存在 `.gitattributes` 中 `filter=lfs`），新增大文件需确认是否走 LFS。
+
+6.4 **Monster Development Fast Path（窄范围例外）**：仅当 Agent 正在执行 `.vibe/shared-skills/monster-dev-pipeline/SKILL.md` Stage C，且用户明确说出“提交<怪物>”“提交所有怪物”或语义等价的提交触发语时，该指令才视为对 Stage C 当前完整流程的明确授权，包括 scoped commit、push 当前工作分支、同步 `origin/main`、安全冲突处理、merge 到 `main`、push `origin/main` 与返回原工作分支。此例外是 Owner-approved Monster Development Fast Path，不是整个 Repository 的默认 Git 流程，也不放宽 force push、不可逆操作、越界暂存或高风险冲突停止规则。
+
+该例外不得用于 Canonical、`.vibe/rules.md`、`AGENTS.md`、`Packages/`、`ProjectSettings/`、高风险 Shared Original、无法安全判断的 Unity YAML 冲突、跨系统大型架构修改或任何非 Monster 任务；这些内容继续服从项目通用工作流与明确的人类确认。
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: monster-dev-pipeline
 description: >-
-  Possession 七宗罪怪物流水线：①Canonical + CSV/Modules→细分开发需求.md；②细分需求→工程落地；③用户说「提交xx怪物/所有怪物」时
+  Possession 七宗罪怪物流水线：①CSV→细分开发需求.md；②细分需求→工程落地；③用户说「提交xx怪物/所有怪物」时
   按怪物范围 commit&push 当前分支、合入 origin/main、再推 main。策划改表、落地、验收、提交时使用。
 ---
 
@@ -9,27 +9,18 @@ description: >-
 
 本 skill 是后续怪物开发的**唯一流程入口**。根目录旧的 `怪物技能配置指南.md` 视为历史副产物，**不要依赖它**；测试指南应在落地阶段按本 skill 生成/更新。
 
-## Authority 与输入
+权威输入：
 
-本 skill 是 **Owner-approved Monster Development Workflow**，但不是独立的 Design Authority。
 
-| 输入 | 路径 | 定位 |
-|---|---|---|
-| 项目规则 | `.vibe/rules.md` | 最高操作约束 |
-| Canonical 索引 | `.vibe/doc/Canonical/00_CANONICAL_INDEX.md` | 正式 Design Authority 入口 |
-| 相关 Canonical | `.vibe/doc/Canonical/**` | 按当前怪物 / Card / 系统范围读取的正式设计输入 |
-| 策划总表 | `项目全量表 - 怪物设计（新）.csv` | Structured Engineering Input / Historical Reference |
-| 模块总览 | `.vibe/doc/项目设计.md` | Authority 与导航入口 |
-| 怪物细分需求 | `.vibe/doc/Modules/Monsters/<中文名>.md` | Implementation Tracking / Historical Reference |
-| 参考实现（已完成范例） | `pride_new`、`sloth_new` | Repository implementation fact |
+| 输入          | 路径                                    |
+| ----------- | ------------------------------------- |
+| 项目规则        | `.vibe/rules.md`                      |
+| 策划总表        | `项目全量表 - 怪物设计（新）.csv`                 |
+| 模块总览        | `.vibe/doc/项目设计.md`                   |
+| 怪物细分需求      | `.vibe/doc/Modules/Monsters/<中文名>.md` |
+| 参考实现（已完成范例） | `pride_new`、`sloth_new`               |
 
-Authority compatibility：
 
-- CSV / Module 与 Canonical 一致时，可继续作为结构化工程输入；
-- Prefab 路径、Ability 类、Effect ID、VFX、资源 / 开发 / 测试状态、Cheat 与 AI 配置可继续作为工程字段；
-- CSV / Module 与 Canonical 的 Gameplay / Content Design 冲突时，立即 `STOP` 并报告；
-- 冲突时 Canonical 胜，不得以“最新 CSV”或旧 Module 覆盖 Canonical；
-- Legacy 差异保留为证据，后续处置留给 Legacy Audit。
 输出：
 
 
@@ -76,7 +67,7 @@ Authority compatibility：
 ## 阶段总览
 
 ```text
-读取相关 Canonical + 策划 / 工程 CSV
+策划改 CSV
     │
     ▼
 【阶段 A】按本 skill 生成/更新 细分开发需求.md
@@ -120,13 +111,9 @@ Authority compatibility：
 
 1. `.vibe/rules.md`
 2. 本 skill
-3. `.vibe/doc/项目设计.md`
-4. `.vibe/doc/Canonical/00_CANONICAL_INDEX.md`
-5. 按目标怪物、Card 与相关系统读取对应 Canonical（至少核对 `01_DESIGN_CANONICAL.md` 与 `02_CONTENT_CANONICAL.md` 的相关章节）
-6. 最新 `项目全量表 - 怪物设计（新）.csv`，作为结构化工程输入与历史证据
-7. 若已存在 `.vibe/doc/Modules/Monsters/<怪物>.md`，将其作为 Implementation Tracking / Historical Reference **增量更新**，不要无故抹掉已填的资源名 / 策划答复 / 工程路径
+3. 最新 `项目全量表 - 怪物设计（新）.csv`
+4. 若已存在 `.vibe/doc/Modules/Monsters/<怪物>.md`，**增量更新**，不要无故抹掉已填的资源名 / 策划答复 / 工程路径
 
-若 CSV / Module 的 Gameplay 或 Content 规格与 Canonical 冲突，停止生成当前 Requirement，列出冲突并等待人类处理；不得自行选择旧版本。
 
 
 ## A.2 解析 CSV 规则
@@ -333,7 +320,7 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 | 散射何时触发   | 超时爆炸也散射吗？           | 怠惰：仅主弹命中敌人；碎片忽略首目标    |
 | 召唤物寿命到   | 直接 Destroy 还是先「死亡」？ | 怠惰死亡炸：先脱离跟随再俯冲，炸完再销毁  |
 | 主人死后召唤物  | 活？死？继续攻击？           | 必须写进开放问题，禁止猜测         |
-| 旧词条过时    | CSV 删了的词条是否废弃？      | 先核对 Canonical；冲突时停止并以 Canonical 为准，CSV / 旧实现保留为 Legacy Evidence |
+| 旧词条过时    | CSV 删了的词条是否废弃？      | 以最新 CSV 为准，旧实现要标「待对齐」 |
 
 
 ---
@@ -341,8 +328,6 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 
 
 # 阶段 B — 细分需求.md → 工程落地
-
-> Stage B 的既有 Unity Monster Engineering 步骤完整保留。进入本阶段前，设计输入必须已经通过 Stage A Authority Compatibility 检查。
 
 
 
@@ -519,9 +504,6 @@ Card effectId: <Sin>.<CardName>   # 例 Pride.Pierce / Sloth.LandingMine
 > 本阶段是用户**明确口述提交指令**时的授权流程。平时仍遵守 `.vibe/rules.md`：未说「提交…」则不 `commit` / `push`。  
 > 用户说出下方触发语 = 授权完成本节全部步骤（含 push 当前分支与 push `main`）。
 
-> **Authority scope：** Stage C 是 Owner-approved Monster Development Fast Path，不是整个 Repository 的默认 Git 流程。其现有触发语和固定操作步骤保持不变。
->
-> 此 Fast Path 不适用于 Canonical、`.vibe/rules.md`、`AGENTS.md`、`Packages/`、`ProjectSettings/`、高风险 Shared Original、无法安全判断的 Unity YAML 冲突、跨系统大型架构修改或非 Monster 任务；这些内容继续服从项目通用工作流或明确的人类确认。
 ## C.0 触发语（语义匹配，不要求一字不差）
 
 | 用户说 | 范围 |
