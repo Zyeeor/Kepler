@@ -11269,9 +11269,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d567da4d75b6c92408ecc3cb790ed48f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soulMaxHealth: 1000
+  soulMaxHealth: 100
   currentHealth: 100
-  healthDecayPercent: 0.02
+  healthDecayPercent: 0
   decayInterval: 1
   healthSlider: {fileID: 0}
   sliderFillImage: {fileID: 0}

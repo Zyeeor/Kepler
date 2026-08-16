@@ -1810,7 +1810,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
-  maxHealth: 100
+  maxHealth: 80
   currentHealth: 20
   displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
   maxTenacity: 150
@@ -3882,19 +3882,19 @@ MonoBehaviour:
   projectileSpeed: 40
   projectileDelay: 0.3
   projectileWidth: 1.5
-  projectileHeight: 2
+  projectileHeight: 3
   blastRadius: 2
   blastDamageMultiplier: 0.7
   targetMask:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 256
   animTrigger: SwordQi
   aimTurnSpeed: 720
   activationDisplay: {fileID: 7594598634421289436}
   projectileVfxPrefab: {fileID: 821419318031468683, guid: 8cb5727277cbb5945905182571d0a5de,
     type: 3}
   projectileVfxScale: 1
-  projectileVfxPositionOffset: {x: 0, y: 1.2, z: 1}
+  projectileVfxPositionOffset: {x: 0, y: 1, z: 1}
   projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
   explosionVfxPrefab: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19,
     type: 3}
@@ -4075,7 +4075,7 @@ MonoBehaviour:
   vfxRotationOffset: {x: -20, y: -90, z: 0}
   damage: 20
   drawHitboxes: 0
-  cooldown: 2
+  cooldown: 1
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.ChargeStrike
@@ -4083,7 +4083,7 @@ MonoBehaviour:
   requiredTags: []
   activationEffect: {fileID: 0}
   chargeDistance: 5
-  chargeSpeed: 24
+  chargeSpeed: 60
   hitRadius: 0.8
   landingRadius: 1.5
   damageMultiplier: 1
@@ -4304,9 +4304,9 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 1, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 5
+  damage: 10
   drawHitboxes: 0
-  cooldown: 1
+  cooldown: 2
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.BlinkChain

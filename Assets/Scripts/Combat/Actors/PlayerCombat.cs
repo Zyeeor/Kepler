@@ -39,23 +39,17 @@ public class PlayerCombat : MonoBehaviour
             basicAbilities.Add(ability);
     }
 
-    /// <summary>Get direction from player to mouse cursor on ground plane.</summary>
+    /// <summary>Get direction from player to the mouse projection on this player's Y-height plane.</summary>
     public Vector3 GetMouseAimDirection()
     {
         if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera == null) return transform.forward;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        Vector3 targetPoint;
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f)) targetPoint = hit.point;
-        else
-        {
-            Plane plane = new Plane(Vector3.up, Vector3.zero);
-            if (!plane.Raycast(ray, out float distance)) return transform.forward;
-            targetPoint = ray.GetPoint(distance);
-        }
+        Plane plane = new Plane(Vector3.up, new Vector3(0f, transform.position.y, 0f));
+        if (!plane.Raycast(ray, out float distance)) return transform.forward;
 
-        Vector3 direction = targetPoint - transform.position;
+        Vector3 direction = ray.GetPoint(distance) - transform.position;
         direction.y = 0f;
         return direction.sqrMagnitude > 0.01f ? direction.normalized : transform.forward;
     }

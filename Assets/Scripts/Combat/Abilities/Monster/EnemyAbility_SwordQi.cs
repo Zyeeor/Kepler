@@ -244,6 +244,8 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
             foreach (var h in hits)
             {
+                if (IsOwnerCollider(h)) continue;
+
                 var enemy = h.GetComponentInParent<Enemy>();
                 if (enemy != null && ignoreEnemy != null && enemy == ignoreEnemy)
                     continue;
@@ -253,16 +255,18 @@ public class EnemyAbility_SwordQi : EnemyAbility
                     if (!hitIds.Add(id)) continue;
                     DealDamageTo(enemy, shotDamage);
                     hitSomething = true;
-                    hitPos = enemy.transform.position;
+                    hitPos = h.ClosestPoint(currentPos);
+                    if (pierce) SpawnExplosionVfx(hitPos);
                 }
                 var ph = h.GetComponentInParent<PlayerHealth>();
-                if (ph != null)
+                if (ph != null && owner.CanDamageSoul())
                 {
                     int id = ph.GetInstanceID();
                     if (!hitIds.Add(id)) continue;
                     DealDamageToPlayer(ph, shotDamage);
                     hitSomething = true;
-                    hitPos = ph.transform.position;
+                    hitPos = h.ClosestPoint(currentPos);
+                    if (pierce) SpawnExplosionVfx(hitPos);
                 }
             }
 
@@ -290,22 +294,15 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
     void DoExplosion(Vector3 center, float shotDamage, Enemy ignoreEnemy = null)
     {
-        if (explosionVfxPrefab != null)
-        {
-            Vector3 expPos = center + explosionVfxPositionOffset;
-            Quaternion expRot = Quaternion.Euler(explosionVfxRotationOffset);
-            SpawnVfxTracked(explosionVfxPrefab, expPos, expRot, explosionVfxDuration);
-        }
-        else
-        {
-            Debug.LogWarning("[SwordQi] explosionVfxPrefab is NULL — assign one in the Inspector");
-        }
+        SpawnExplosionVfx(center);
 
         int layerMask = owner.isPossessed ? ~0 : targetMask;
         Collider[] hits = Physics.OverlapSphere(center, blastRadius, layerMask, QueryTriggerInteraction.Collide);
         CombatHitboxDebug.DrawSphere(drawHitboxes, center, blastRadius);
         foreach (var h in hits)
         {
+            if (IsOwnerCollider(h)) continue;
+
             var enemy = h.GetComponentInParent<Enemy>();
             if (enemy != null && ignoreEnemy != null && enemy == ignoreEnemy) continue;
             if (owner.CanDamage(enemy))
@@ -314,11 +311,31 @@ public class EnemyAbility_SwordQi : EnemyAbility
                 DealDamageTo(enemy, dmg);
             }
             var ph = h.GetComponentInParent<PlayerHealth>();
-            if (ph != null)
+            if (ph != null && owner.CanDamageSoul())
             {
                 DealDamageToPlayer(ph, shotDamage * blastDamageMultiplier);
             }
         }
+    }
+
+    private bool IsOwnerCollider(Collider collider)
+    {
+        return collider == null || owner == null ||
+               collider.transform.IsChildOf(owner.transform) ||
+               owner.transform.IsChildOf(collider.transform);
+    }
+
+    private void SpawnExplosionVfx(Vector3 center)
+    {
+        if (explosionVfxPrefab == null)
+        {
+            Debug.LogWarning("[SwordQi] explosionVfxPrefab is NULL — assign one in the Inspector");
+            return;
+        }
+
+        Vector3 expPos = center + explosionVfxPositionOffset;
+        Quaternion expRot = Quaternion.Euler(explosionVfxRotationOffset);
+        SpawnVfxTracked(explosionVfxPrefab, expPos, expRot, explosionVfxDuration);
     }
 
     void OnDrawGizmosSelected()

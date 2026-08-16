@@ -2603,7 +2603,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &421427832
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6798,7 +6798,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1361398535
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11025,6 +11025,31 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6277000609511922072, guid: 7576bcb0b248840af8e004111454a76e,
+        type: 3}
+      propertyPath: upgrades.Array.data[0].unlocked
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6277000609511922072, guid: 7576bcb0b248840af8e004111454a76e,
+        type: 3}
+      propertyPath: upgrades.Array.data[1].unlocked
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6277000609511922072, guid: 7576bcb0b248840af8e004111454a76e,
+        type: 3}
+      propertyPath: upgrades.Array.data[2].unlocked
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8237373967934383766, guid: 7576bcb0b248840af8e004111454a76e,
+        type: 3}
+      propertyPath: upgrades.Array.data[0].unlocked
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8237373967934383766, guid: 7576bcb0b248840af8e004111454a76e,
+        type: 3}
+      propertyPath: upgrades.Array.data[1].unlocked
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11079,7 +11104,7 @@ PrefabInstance:
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
@@ -11089,7 +11114,7 @@ PrefabInstance:
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
@@ -11139,12 +11164,12 @@ PrefabInstance:
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 959.9032
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -519.5545
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
@@ -11326,11 +11351,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 115289617319743308, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
-        type: 3}
-      propertyPath: m_Parameters.widthCurve.m_Curve.Array.data[2].time
-      value: 0.7565155
-      objectReference: {fileID: 0}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: dangerPanel

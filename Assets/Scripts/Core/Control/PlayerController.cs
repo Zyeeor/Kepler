@@ -149,7 +149,7 @@ public class PlayerController : MonoBehaviour, IController
             CurrentMoveDirection = dir;
         }
 
-        // 瞄准（鼠标在地面平面的投影）
+        // 瞄准（鼠标在当前控制角色 Y 高度平面的投影）
         Vector3 aim;
         if (TryGetAimPoint(out aim))
         {
@@ -179,25 +179,18 @@ public class PlayerController : MonoBehaviour, IController
         return mainCamera.ScreenPointToRay(Input.mousePosition);
     }
 
-    /// <summary>瞄准点：鼠标在地面平面的投影。</summary>
+    /// <summary>瞄准点：鼠标射线与当前玩家控制角色 Y 高度平面的交点，不受地形高度或碰撞体影响。</summary>
     public bool TryGetAimPoint(out Vector3 aimPoint)
     {
         aimPoint = Vector3.zero;
         if (mainCamera == null) { mainCamera = Camera.main; if (mainCamera == null) return false; }
+
+        float aimPlaneY = _attached != null ? _attached.transform.position.y : self.position.y;
+        Plane plane = new Plane(Vector3.up, new Vector3(0f, aimPlaneY, 0f));
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, 100f, groundLayer))
-        {
-            aimPoint = hit.point;
-            return true;
-        }
-        Plane plane = new Plane(Vector3.up, Vector3.zero);
-        float dist;
-        if (plane.Raycast(ray, out dist))
-        {
-            aimPoint = ray.GetPoint(dist);
-            return true;
-        }
-        return false;
+        if (!plane.Raycast(ray, out float distance)) return false;
+
+        aimPoint = ray.GetPoint(distance);
+        return true;
     }
 }
