@@ -1,8 +1,8 @@
 # 00_CANONICAL_INDEX — Repository-Ready v1.1
 
 **Project:** Possession<br>
-**Date:** 2026-08-15<br>
-**Package Status:** `REPOSITORY-READY DESIGN CANONICAL v1.1`<br>
+**Date:** 2026-08-17<br>
+**Package Status:** `REPOSITORY-READY DESIGN CANONICAL v1.1 + OWNER DELTA 2026-08-17`<br>
 **Repository Fact Snapshot:** `EXTERNAL / REFRESH SEPARATELY`<br>
 **Core boundary:** `Repository Fact ≠ Design Truth`
 
@@ -61,7 +61,7 @@ Repository 当前实现只能回答：
 
 `CANONICAL / CURRENT CONTENT BASELINE`
 
-负责七宗罪Roster、21个基础技能、82张Card注册表、Card作用域、Type Growth / Global Slot、固定起始傲慢Body、Encounter / Spawn、Elite、Terrain、Tutorial等Content基线。
+负责七宗罪Roster、21个基础技能、79张Card注册表、Card作用域、Type Growth / Global Slot、固定起始傲慢Body、Encounter / Spawn、Elite、Terrain、Tutorial等Content基线。
 
 ## `03_PRESENTATION_CANONICAL.md`
 
@@ -73,7 +73,7 @@ Repository 当前实现只能回答：
 
 `OWNER REVIEW PASSED / CURRENT CARD CONTENT TRUTH`
 
-负责82张Card完整逐卡字段、明暗文案、机制、Stack、人工删除历史，以及当前Basic / Global / Type Growth规则。
+负责79张Card完整逐卡字段、明暗文案、机制、Stack、人工删除历史，以及当前Basic / Global / Type Growth规则。
 
 ## `Content/Encounter_CardOffer_Baseline_v1.0.md`
 
@@ -100,7 +100,7 @@ Repository 当前实现只能回答：
 | Rules | `CLOSED` | 无核心规则阻塞 |
 | Monster Core | `CARD-READY / CLOSED` | 七只Roster与三槽稳定 |
 | Starting Carrier | `CONFIRMED` | 开场Soul被分配进傲慢Carrier；玩家首个可操作Body固定傲慢 |
-| Card Content | `OWNER REVIEW PASSED` | 82张当前真源完成 |
+| Card Content | `OWNER REVIEW PASSED` | 79张当前真源完成；色欲已按2026-08-17 Owner决策更新为7张 |
 | Card Timing | `CONFIRMED` | 删除Opening Card；W1–7后各1次，W8后连续2次，共9次 |
 | Card Scope | `CONFIRMED` | Basic / Global作用普通Enemy + Possessed；Elite完全排除当前Run Card层 |
 | World / Narrative | `R03.1 INTEGRATED` | 核心主题、Reveal、First Clear已收口；深层Ontology故意Open |
@@ -124,6 +124,10 @@ Repository 当前实现只能回答：
 8. 9张Basic Universal全部`Stack Max = 1`。
 9. Final约5分钟继续作为Playable测试Baseline，不冻结最终时长。
 10. 全项目叙事型玩家文本需要Mythic/System两套资产；同一Gameplay事实保持“一事两译，机制唯一”，默认不同时并排显示。
+11. 色欲牌池由旧10张替换为7张：`LU-M03`, `LU-M05`, `LU-S05`, `LU-A03`, `LU-S06`, `LU-A04`, `LU-TG01`；`LU-TG01`保留Type Growth身份并改名为“欲潮不息”。
+12. `LU-S05`确认为“同一次色欲Special中，被牵引目标相互碰撞时爆炸”，不重复解锁基础Special已有的牵引能力。
+13. 色欲6张非Type Growth卡的精确伤害、半径、延迟、扩散时间和伤害隔离宽限为首轮`TUNABLE / PLAYABLE` Baseline。
+14. `LU-TG01`提高色欲Body基础移速，并使Movement / Attack / Special三槽冷却统一减少30%；冷却缩减为Owner确认值，基础移速增幅留待Playable调校，且不缩短前摇、后摇或敌人最低预警。
 
 ---
 

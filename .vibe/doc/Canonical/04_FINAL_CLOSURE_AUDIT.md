@@ -2,7 +2,8 @@
 
 **Project:** Possession<br>
 **Date:** 2026-08-15<br>
-**Status:** `FINAL PRE-IMPORT CLOSURE / GO`
+**Status:** `FINAL PRE-IMPORT CLOSURE / GO`<br>
+**Historical snapshot note:** 本审计保留2026-08-15入仓时的82张Card结论；当前牌池已被2026-08-17 Owner Lust Card Delta更新为79张，其中色欲保留并重写`LU-TG01`，现状以`00_CANONICAL_INDEX.md`、`02_CONTENT_CANONICAL.md`与逐卡真源为准。
 
 ---
 
