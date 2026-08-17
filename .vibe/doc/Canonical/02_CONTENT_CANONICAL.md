@@ -1,9 +1,9 @@
 # 02_CONTENT_CANONICAL — v1.1
 
 **Project:** Possession<br>
-**Date:** 2026-08-15<br>
+**Date:** 2026-08-17<br>
 **Status:** `CANONICAL / CURRENT CONTENT BASELINE`<br>
-**Primary sources integrated:** Seven Sins Monster Production Baseline v1.0；Card System v1.1 Owner Review Passed；R03.1；Design Canonical v1.0。
+**Primary sources integrated:** Seven Sins Monster Production Baseline v1.0；Card System v1.1 Owner Review Passed；R03.1；Design Canonical v1.0；2026-08-17 Owner-approved Lust Card Update。
 
 ---
 
@@ -282,7 +282,7 @@ Monster额外初始化：
 
 当前牌池：
 
-> **82张**
+> **79张**
 
 | 分类 | 数量 |
 |---|---:|
@@ -294,12 +294,12 @@ Monster额外初始化：
 | Envy | 8 |
 | Wrath | 9 |
 | Greed | 12 |
-| Lust | 10 |
+| Lust | 7 |
 
 其中：
 
-- 七罪Monster-Type + Type Growth：66张；
-- Type Growth：7张，每Sin 1张；
+- 七罪Monster-Type + Type Growth：63张；
+- Type Growth：7张；每Sin 1张；
 - 当前无稀有度系统。
 
 详细逐卡真源：
@@ -416,19 +416,16 @@ Monster额外初始化：
 | `GR-S04` | 贪神庇护 | Special基础强化；Stack 1 | 1 |
 | `GR-TG01` | 万手疆域 | 类型成长；Stack 1 | 1 |
 
-## 色欲｜10张
+## 色欲｜7张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
-| `LU-A01` | 誓约回路 | Attack路径质变；Stack 1 | 1 |
-| `LU-A02` | 群魂系带 | Attack+Link叠层；Stack 2 | 2 |
-| `LU-M01` | 不毁之契 | Movement叠层；Stack 2 | 2 |
-| `LU-M02` | 双印圣约 | Movement核心质变；Stack 1 | 1 |
-| `LU-M03` | 背离之罚 | Movement终点质变；Stack 1 | 1 |
-| `LU-S01` | 远誓召回 | Special叠层；Stack 2 | 2 |
-| `LU-S02` | 不可抗拒的誓约 | Special叠层；Stack 2 | 2 |
-| `LU-S03` | 誓印神罚 | Special终点质变；Stack 1 | 1 |
-| `LU-S04` | 契约见证者 | Special Summon质变；Stack 1 | 1 |
-| `LU-TG01` | 远誓之域 | 类型成长；Stack 1 | 1 |
+| `LU-M03` | 背离之罚 | Movement换位爆炸；Stack 1 | 1 |
+| `LU-M05` | 同欲之影 | Movement→Attack模仿联动；Stack 1 | 1 |
+| `LU-S05` | 同欲相噬 | Special牵引碰撞爆炸；Stack 1 | 1 |
+| `LU-A03` | 欲痕殉爆 | Attack+Link死亡爆炸；Stack 1 | 1 |
+| `LU-S06` | 无害之拥 | Special牵引期间伤害屏蔽；Stack 1 | 1 |
+| `LU-A04` | 色欲潮汐 | Attack环形扩散质变；Stack 1 | 1 |
+| `LU-TG01` | 欲潮不息 | Type Growth：Body移速 + 三槽冷却减少30%；Stack 1 | 1 |
 
 
 # 7. Card内容规则
@@ -460,11 +457,12 @@ Elite不读取。
 当前采用显式方案：
 
 - 旧“拿普通Sin卡后后台自动加基础属性”取消；
-- 每Sin恰好1张；
+- 当前共7张；每Sin恰好1张；
 - Stack Max = 1；
 - 一次取得即完整生效；
 - 约2个直观非伤害维度；
-- 单轴低于对应基础通用Card；
+- 单轴原则上低于对应基础通用Card；`LU-TG01`三槽冷却减少30%为Owner确认的当前例外轴，Body基础移速增幅仍低于`UB-B01`；
+- `LU-TG01`不缩短技能前摇、后摇或敌人最低预警时间；
 - 对应Sin普通Enemy与Possessed同源生效；
 - 取得后对应Sin `Investment +1`。
 
@@ -694,13 +692,13 @@ Opening Cinematic / CG
 
 - Monster HP / Damage；
 - Body Cost；
-- CD / Reload；
+- CD / Reload（`LU-TG01`三槽冷却减少30%除外，该值为Owner当前确认）；
 - 各种持续 / 距离 / Pull量；
 - Envy Record比例与上限；
 - Greed初始魔手；
 - Sloth Drone上限；
 - 实例预算；
-- Type Growth具体增幅；
+- Type Growth具体增幅（`LU-TG01`的Body基础移速增幅仍待调校）；
 - Global Reflection资格 / 安全限制；
 - Global 3–4张组合强度；
 - Encounter精确数值；

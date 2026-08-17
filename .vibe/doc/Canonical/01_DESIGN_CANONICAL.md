@@ -693,12 +693,13 @@ Elite被玩家Possess后也保持这一例外，只保留自己的External Histo
 
 Type Growth：
 
-- 每Sin 1张；
+- 每Sin 1张；色欲保留`LU-TG01`，当前Type Growth共7张；
 - Stack Max = 1；
 - 约2个直观非伤害基础维度；
 - 不新增复杂资源；
 - 不隐藏加HP / Damage；
-- 单轴强度低于对应基础通用Card；
+- 单轴强度原则上低于对应基础通用Card；`LU-TG01`三槽冷却减少30%是Owner明确确认的当前例外轴，基础移速增幅仍须低于`UB-B01`；
+- `LU-TG01`不缩短技能前摇、后摇或敌人最低预警时间；
 - Enemy与Possessed同源。
 
 ## 17.3 Global Slot质变
