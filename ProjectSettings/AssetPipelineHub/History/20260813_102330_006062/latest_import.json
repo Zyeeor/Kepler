@@ -1,0 +1,60 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-08-12T19:09:47",
+  "material_source_mode": "material",
+  "material_source_path": "Assets/Art folder/Scene_Mesh/Brick_01.mat",
+  "material_update_policy": "preserve_existing",
+  "shader_slots": [
+    "_AO=_OcclusionMap",
+    "_BC=_BaseMap",
+    "_G=_MetallicGlossMap",
+    "_M=_MetallicGlossMap",
+    "_MRA=_MetallicGlossMap",
+    "_N=_NormalMap",
+    "_R=_MetallicGlossMap"
+  ],
+  "mesh_folder": "Assets/Art folder/Scene_Mesh",
+  "material_folder": "Assets/Art folder/Scene_Mesh",
+  "texture_folder": "Assets/Art folder/Scene_Mesh",
+  "assets": [
+    {
+      "asset_name": "stone_01",
+      "meshes": [
+        {
+          "name": "stone_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/stone_01.fbx",
+          "source_material": "Mat_stone_01"
+        }
+      ],
+      "materials": [
+        {
+          "name": "Mat_stone_01",
+          "asset_path": "Assets/Art folder/Scene_Mesh/Mat_stone_01.mat",
+          "meshes": [
+            "stone_01"
+          ],
+          "textures": [
+            {
+              "type": "_BC",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_stone_01_BC.png",
+              "srgb": true,
+              "unity_type": "Default"
+            },
+            {
+              "type": "_N",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_stone_01_N.png",
+              "srgb": true,
+              "unity_type": "NormalMap"
+            },
+            {
+              "type": "_MRA",
+              "asset_path": "Assets/Art folder/Scene_Mesh/Mat_stone_01_MRA.png",
+              "srgb": false,
+              "unity_type": "Default"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
