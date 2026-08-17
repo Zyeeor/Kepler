@@ -78,6 +78,20 @@ public class CameraDirector : MonoBehaviour
     {
         Instance = this;
         EnsureRig();
+        EnsureCombatEffectManager();
+    }
+
+    private static void EnsureCombatEffectManager()
+    {
+        if (CombatEffectManager.Instance != null)
+            return;
+        if (FindFirstObjectByType<CombatEffectManager>() != null)
+            return;
+
+        // Boot on the camera so combat scenes get hit feedback without manual wiring.
+        CameraDirector director = Instance;
+        if (director != null)
+            director.gameObject.AddComponent<CombatEffectManager>();
     }
 
     void Start()
@@ -139,8 +153,24 @@ public class CameraDirector : MonoBehaviour
     /// <summary>Trigger a screen shake. force scales the configured impulse strength.</summary>
     public void Shake(float force)
     {
-        if (_impulseSource != null)
-            _impulseSource.GenerateImpulseWithForce(force);
+        Shake(force, 0f);
+    }
+
+    /// <summary>
+    /// Trigger a screen shake. When <paramref name="duration"/> &gt; 0, temporarily overrides impulse duration.
+    /// </summary>
+    public void Shake(float force, float duration)
+    {
+        if (_impulseSource == null) return;
+
+        float previousDuration = _impulseSource.ImpulseDefinition.ImpulseDuration;
+        if (duration > 0f)
+            _impulseSource.ImpulseDefinition.ImpulseDuration = duration;
+
+        _impulseSource.GenerateImpulseWithForce(force);
+
+        if (duration > 0f)
+            _impulseSource.ImpulseDefinition.ImpulseDuration = previousDuration;
     }
 
     /// <summary>Trigger a screen shake in a specific world-space direction/magnitude.</summary>
@@ -150,17 +180,26 @@ public class CameraDirector : MonoBehaviour
             _impulseSource.GenerateImpulseWithVelocity(velocity);
     }
 
-    /// <summary>Freeze time for the given unscaled duration, then restore.</summary>
+    /// <summary>Scale Time.timeScale for the given unscaled duration, then restore.</summary>
     public void HitStop(float duration)
+    {
+        HitStop(duration, hitStopTimeScale);
+    }
+
+    /// <summary>
+    /// Scale Time.timeScale for the given unscaled duration, then restore.
+    /// Prefer Animator-only hit-stop via CombatEffectManager unless useGlobalTimeScale is required.
+    /// </summary>
+    public void HitStop(float duration, float timeScale)
     {
         if (!isActiveAndEnabled || duration <= 0f) return;
         if (_hitStopRoutine != null) StopCoroutine(_hitStopRoutine);
-        _hitStopRoutine = StartCoroutine(HitStopRoutine(duration));
+        _hitStopRoutine = StartCoroutine(HitStopRoutine(duration, timeScale));
     }
 
     // ---- Internal ---------------------------------------------------------
 
-    private IEnumerator HitStopRoutine(float duration)
+    private IEnumerator HitStopRoutine(float duration, float timeScale)
     {
         // Don't fight a full pause (menu / death / bullet-time controlled elsewhere).
         float restore = Time.timeScale;
@@ -170,11 +209,11 @@ public class CameraDirector : MonoBehaviour
             yield break;
         }
 
-        Time.timeScale = hitStopTimeScale;
+        Time.timeScale = timeScale;
         yield return new WaitForSecondsRealtime(duration);
 
         // Only restore if no other system took over the time scale meanwhile.
-        if (Mathf.Approximately(Time.timeScale, hitStopTimeScale))
+        if (Mathf.Approximately(Time.timeScale, timeScale))
             Time.timeScale = restore;
         _hitStopRoutine = null;
     }

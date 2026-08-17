@@ -3878,6 +3878,27 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
@@ -4082,6 +4103,27 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   chargeDistance: 5
   chargeSpeed: 60
   hitRadius: 0.8
@@ -4314,6 +4356,27 @@ MonoBehaviour:
   - Effect.Combat.PrideBlinkHit
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 1
+    postProcessEffectName: BlackFlash
+    postProcessDuration: 3
+    overridePostProcessParams: 0
+    stepFactor: 0.416
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 3
+    shakeDuration: 1
+    hitStopOnHit: 1
+    hitStopDuration: 1
+    hitStopScale: 0.166
+    useGlobalTimeScale: 0
   searchRange: 8
   blinkCount: 4
   blinkInterval: 0.25
@@ -4387,6 +4450,27 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0

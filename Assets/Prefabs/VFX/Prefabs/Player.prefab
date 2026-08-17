@@ -11152,10 +11152,27 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
-  shakeOnHit: 1
-  shakeForce: 1
-  hitStopOnHit: 1
-  hitStopDuration: 0.07
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 1
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0.07
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   slashRange: 3.5
   slashAngle: 90
   slashEffectPrefab: {fileID: 0}
@@ -11610,10 +11627,27 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
-  shakeOnHit: 0
-  shakeForce: 1
-  hitStopOnHit: 0
-  hitStopDuration: 0.07
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 0
+    shakeForce: 1
+    shakeDuration: 0
+    hitStopOnHit: 0
+    hitStopDuration: 0.07
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   projectilePrefab: {fileID: 4416080445347060711, guid: 0a6aa35eeb2241a43befc4ccae423907,
     type: 3}
   projectileSpeed: 12

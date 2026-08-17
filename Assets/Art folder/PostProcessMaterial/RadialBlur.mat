@@ -7,12 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: "\u9ED1\u95EA"
+  m_Name: RadialBlur
   m_Shader: {fileID: 4800000, guid: 5b739e600ec1b0449b3375ab46404917, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _COLORSTYLE_BLACKWHITEFLASH
+  - _COLORSTYLE_NORMAL
   m_InvalidKeywords:
   - _IFBLURFACTOR_ON
   - _IFLINEUVSCALE_ON
@@ -108,11 +108,11 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlurFactor: 0
-    - _BlurFactorK: 0.282
+    - _BlurFactorK: 0.47
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _ColorStyle: 1
+    - _ColorStyle: 0
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
@@ -132,39 +132,39 @@ Material:
     - _IfVignetteScale: 1
     - _Ifzhenfu: 1
     - _Ifzhenpin: 1
-    - _LineColorScale: 2.94
+    - _LineColorScale: 0
     - _LineOffset: 0
     - _LineTilingU: 1.5
     - _LineTilingV: 8
     - _LineUVScale: 0
-    - _LineUVScaleK: 4
+    - _LineUVScaleK: 2.24
     - _LogoAR: 0
     - _LogoAlpha: 0
     - _MainAlpha: 1
-    - _MainAlphaK: 1
+    - _MainAlphaK: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RedBlueFactor: 0
-    - _RedBlueFactorK: 1.3
+    - _RedBlueFactorK: 0.18
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _Soft: 0.275
+    - _Soft: 0.5
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StepFactor: 0.6
-    - _StepFactorK: 0.5
+    - _StepFactorK: 0
     - _Surface: 0
     - _TexAR: 1
     - _TexAlpha: 0
     - _TexRotator: 0.075
     - _VignettePower: 1.5
-    - _VignettePowerK: 1.5
+    - _VignettePowerK: 1
     - _VignetteScale: 1.5
-    - _VignetteScaleK: 1.5
+    - _VignetteScaleK: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
     - _centerU: 0.5

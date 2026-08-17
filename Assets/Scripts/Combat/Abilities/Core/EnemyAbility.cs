@@ -106,6 +106,15 @@ public abstract class EnemyAbility : MonoBehaviour
     [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
+    [Header("Hit Feedback (Combat Effect Manager)")]
+    [Tooltip("Post-process / shake / hit-stop on hit. Fires for possessed (player-controlled) attacks only, once per Trigger.")]
+    public HitFeedbackParams hitFeedback = new HitFeedbackParams
+    {
+        shakeOnHit = true,
+        hitStopOnHit = true,
+        postProcessOnHit = false
+    };
+
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
     public float EffectiveCooldown
     {
@@ -121,6 +130,9 @@ public abstract class EnemyAbility : MonoBehaviour
     protected float currentCooldown;
     public float CurrentCooldown { get { return currentCooldown; } }
     protected GameObject activeVfx;
+
+    /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
+    private bool _hitFeedbackFiredThisAttack;
 
     protected virtual void Awake()
     {
@@ -212,6 +224,7 @@ public abstract class EnemyAbility : MonoBehaviour
         if (!TryBeginActivationEffect()) return;
 
         currentCooldown = EffectiveCooldown;
+        _hitFeedbackFiredThisAttack = false;
         if (debugLogCooldown)
             Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)
@@ -347,6 +360,7 @@ public abstract class EnemyAbility : MonoBehaviour
         if (target == null || owner == null) return;
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
         owner.ApplyOffensiveDamage(target, amount);
+        TryPlayHitFeedback(target != null ? target.transform : null);
         ApplyConfiguredEffectsTo(target.Combat);
     }
 
@@ -354,9 +368,25 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (player == null || owner == null || !owner.CanDamageSoul()) return;
         player.TakeDamage(amount);
+        TryPlayHitFeedback(player != null ? player.transform : null);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
         // Also trigger lifesteal for the owner enemy
         owner.OnDealtDamage(amount);
+    }
+
+    /// <summary>
+    /// Plays configured hit feedback once per Trigger while the owner is player-possessed.
+    /// AI-controlled enemies skip this to avoid camera spam.
+    /// </summary>
+    protected void TryPlayHitFeedback(Transform victim)
+    {
+        if (_hitFeedbackFiredThisAttack || hitFeedback == null || !hitFeedback.HasAnyEnabled)
+            return;
+        if (owner == null || !owner.isPossessed)
+            return;
+
+        CombatEffectManager.PlayHitFeedback(hitFeedback, owner.transform, victim);
+        _hitFeedbackFiredThisAttack = true;
     }
 
     protected void ApplyConfiguredEffectsTo(CombatAbilityComponent target)

@@ -53,17 +53,14 @@ public abstract class PlayerAbility : MonoBehaviour
     [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
-    [Header("Screen Shake")]
-    [Tooltip("Trigger a camera shake when this attack deals damage.")]
-    public bool shakeOnHit = false;
-    [Tooltip("Shake strength passed to the CameraDirector when this attack lands. 1 = default.")]
-    public float shakeForce = 1f;
-
-    [Header("Hit Stop (顿帧)")]
-    [Tooltip("Briefly freeze time when this attack deals damage, for impact feel.")]
-    public bool hitStopOnHit = false;
-    [Tooltip("Hit-stop duration in unscaled seconds passed to the CameraDirector.")]
-    public float hitStopDuration = 0.07f;
+    [Header("Hit Feedback (Combat Effect Manager)")]
+    [Tooltip("Post-process / shake / hit-stop settings played on first damage of each attack.")]
+    public HitFeedbackParams hitFeedback = new HitFeedbackParams
+    {
+        shakeOnHit = false,
+        hitStopOnHit = false,
+        postProcessOnHit = false
+    };
 
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
     public float EffectiveCooldown
@@ -178,10 +175,10 @@ public abstract class PlayerAbility : MonoBehaviour
         else
             ApplySoulBurn(target, amount);
 
-        if (!_hitFeedbackFiredThisAttack && CameraDirector.Instance != null)
+        if (!_hitFeedbackFiredThisAttack && hitFeedback != null && hitFeedback.HasAnyEnabled)
         {
-            if (shakeOnHit) CameraDirector.Instance.Shake(shakeForce);
-            if (hitStopOnHit) CameraDirector.Instance.HitStop(hitStopDuration);
+            Transform victim = target != null ? target.transform : null;
+            CombatEffectManager.PlayHitFeedback(hitFeedback, owner != null ? owner.transform : transform, victim);
             _hitFeedbackFiredThisAttack = true;
         }
         ApplyConfiguredEffectsTo(target.Combat);

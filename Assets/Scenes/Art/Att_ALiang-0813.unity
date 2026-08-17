@@ -11515,7 +11515,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1440973064119128767, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
-      propertyPath: shakeForce
+      propertyPath: hitFeedback.shakeForce
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6619887426231394227, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
