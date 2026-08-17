@@ -39,7 +39,7 @@ public class MonsterPossessionCheat : MonoBehaviour
 
     void Update()
     {
-        if (!enableCheats) return;
+        if (!enableCheats || GameManager.IsFormalFlow) return; // 正式流程屏蔽作弊
         if (PlayerController.IsGameplayInputBlocked) return;
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver) return;
 
@@ -62,7 +62,7 @@ public class MonsterPossessionCheat : MonoBehaviour
 
     void OnGUI()
     {
-        if (!enableCheats || !showOnScreenHint) return;
+        if (!enableCheats || !showOnScreenHint || GameManager.IsFormalFlow) return; // 正式流程屏蔽屏幕提示
 
         const float width = 560f;
         List<string> buildLines = BuildHintLines(out string skillLabel);

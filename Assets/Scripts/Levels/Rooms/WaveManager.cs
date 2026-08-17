@@ -74,6 +74,10 @@ public class WaveManager : MonoBehaviour
     private readonly List<MonsterActor> waveAlive = new List<MonsterActor>();
     private bool isRunning;
     private bool initialized;
+    /// <summary>读档恢复：从该波次索引的下一波开始（-1 = 新局第一波）。</summary>
+    private int resumeFromWaveIndex = -1;
+    /// <summary>读档恢复：选卡未完成标记（为 true 时先补弹该波选卡再进下一波）。</summary>
+    private bool resumePendingChoice;
 
     void Awake()
     {
@@ -95,6 +99,10 @@ public class WaveManager : MonoBehaviour
 
     IEnumerator AutoStartRoutine()
     {
+        // 兜底创建对局会话：主菜单流程已由 MainMenuController EnsureInstance；
+        // 直接 Play 场景（不经主菜单）时若无会话，存档点会被静默跳过（RunSession.Instance==null
+        // → SaveProgress 不执行 → 选卡界面退出后无存档可恢复）。此调用幂等，不影响已有会话。
+        RunSession.EnsureInstance();
         float waited = 0f;
         while (waited < autoStartTimeout)
         {
@@ -107,6 +115,36 @@ public class WaveManager : MonoBehaviour
         if (waited >= autoStartTimeout && initialized)
             yield break;
         if (!initialized) Initialize();
+
+        // 读档恢复：从会话（RunSession，主菜单[继续]时已填充）的已完成波次之后继续（跳过 grace）
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun && run.CompletedWaveIndex >= 0)
+        {
+            // 选卡未完成（选卡界面退出）：即使已完成最后一波也要补弹选卡，不能直接判结束
+            if (run.CompletedWaveIndex >= ActiveWaves.Count - 1 && !run.PendingChoice)
+            {
+                Debug.LogWarning($"[WaveManager] 存档波次 {run.CompletedWaveIndex} 已超出配置范围（共 {ActiveWaves.Count} 波），忽略读档，新开一局。");
+                run.EndRun();
+            }
+            else
+            {
+                resumeFromWaveIndex = run.CompletedWaveIndex;
+                resumePendingChoice = run.PendingChoice;
+                // 恢复玩家运行时状态（灵魂位置/HP/时间）——由会话提供，不依赖存档文件
+                var soul = FindObjectOfType<SoulActor>();
+                if (soul != null) soul.transform.position = run.SoulPosition;
+                if (PlayerHealth.Instance != null)
+                {
+                    PlayerHealth.Instance.currentHealth = run.SoulHealth;
+                    PlayerHealth.Instance.UpdateHealthUI();
+                }
+                if (GameManager.Instance != null)
+                    GameManager.Instance.soulTime = run.SoulTime;
+                RestoreBodies(run);
+                Debug.Log($"[WaveManager] 读档恢复：已完成 {resumeFromWaveIndex + 1} 波" + (resumePendingChoice ? "（选卡未完成，将补弹选卡）" : "") + "，继续对局。");
+            }
+        }
+
         Debug.Log($"[WaveManager] 无房间模式自动启动：地图已就绪（等待 {waited:F1}s），波次 {ActiveWaves.Count} 个。");
         StartWaves();
     }
@@ -176,11 +214,22 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log($"[WaveManager] WaveRoutine START: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
 
-        // Grace period
-        if (ActiveGracePeriod > 0f)
+        // Grace period（读档恢复时跳过：存档点本身就在波间，无需再次等待）
+        if (resumeFromWaveIndex < 0 && ActiveGracePeriod > 0f)
             yield return new WaitForSeconds(ActiveGracePeriod);
 
-        for (int i = 0; i < ActiveWaves.Count; i++)
+        // 读档补弹选卡：上一波已完成但选卡未完成（选卡界面退出），先补弹再进下一波
+        if (resumePendingChoice)
+        {
+            // 先恢复退出时的候选卡（保证候选与退出时一致，由存档决定而非重新随机）
+            var run = RunSession.Instance;
+            if (run != null && run.ChoicePicks.Count > 0 && CardManager.Instance != null)
+                CardManager.Instance.RestoreChoicePicks(run.ChoicePicks);
+            yield return RunChoiceStage(resumeFromWaveIndex, fireCompletionEvent: false);
+            resumePendingChoice = false;
+        }
+
+        for (int i = resumeFromWaveIndex + 1; i < ActiveWaves.Count; i++)
         {
             if (!isRunning) yield break;
 
@@ -212,33 +261,56 @@ public class WaveManager : MonoBehaviour
             EnemiesAlive = waveAlive.Count;
             Debug.Log($"[WaveManager] Wave {i} COMPLETED (mode={wave.mode}, remaining={EnemiesAlive})");
 
-            // 选卡前缓冲：先留出时间看清战果（timeScale 正常流逝），再弹选卡。
-            // 注意：必须放在弹卡之前——CoreChoiceUI.Show 会置 timeScale=0，
-            // WaitForSeconds 在 timeScale=0 时被冻结，放后面永不生效。
-            if (choiceBuffer > 0f)
-                yield return new WaitForSeconds(choiceBuffer);
-
-            // 弹选卡：房间模式由 RoomFlowController（订阅 OnWaveCompleted）触发；
-            // 无房间模式 autoShowChoiceUI 兜底自己弹（CoreChoiceUI 有防重入）。
-            OnWaveCompleted?.Invoke(i);
-            if (autoShowChoiceUI && CoreChoiceUI.Instance != null)
-                CoreChoiceUI.Instance.Show(onClosed: null, doublePick: false);
-
-            // 等待选卡会话结束再进下一波（弹卡后 timeScale=0，怪物不会在暂停期间刷出）。
-            // 用 IsDrafting 轮询而非 WaitForSeconds：不依赖 timeScale，
-            // 暂停菜单等其它 timeScale=0 场景不受影响；30s 超时兜底防死锁。
-            if (CoreChoiceUI.Instance != null)
-            {
-                float cardWaitStart = Time.realtimeSinceStartup;
-                while (CoreChoiceUI.Instance.IsDrafting
-                       && Time.realtimeSinceStartup - cardWaitStart < 30f)
-                    yield return null;
-            }
+            yield return RunChoiceStage(i);
         }
 
         AllWavesComplete = true;
         if (currentRoom != null && currentRoom.context != null)
             currentRoom.context.State = RoomState.Cleared;
+
+    /// <summary>
+    /// 弹卡阶段（波清场后执行）：
+    ///   缓冲 → 存档点①（选卡未完成）→ 弹卡 → 等待选卡会话 → 存档点②（选卡完成，覆盖①）。
+    /// 读档补弹（resumePendingChoice）复用本流程：若补弹期间再次退出，
+    /// 存档点①仍写"选卡未完成"，继续后依然补弹（自洽）。
+    /// </summary>
+    /// <param name="waveIndex">刚完成的波次索引（选卡属于该波）。</param>
+    /// <param name="fireCompletionEvent">是否触发 OnWaveCompleted（补弹时 false，避免重复通知）。</param>
+    IEnumerator RunChoiceStage(int waveIndex, bool fireCompletionEvent = true)
+    {
+        // 选卡前缓冲：先留出时间看清战果（timeScale 正常流逝），再弹选卡。
+        // 注意：必须放在弹卡之前——CoreChoiceUI.Show 会置 timeScale=0，
+        // WaitForSeconds 在 timeScale=0 时被冻结，放后面永不生效。
+        if (choiceBuffer > 0f)
+            yield return new WaitForSeconds(choiceBuffer);
+
+        // 波次间安全存档点①：清场后、弹卡前写入（选卡未完成标记）。
+        // 选卡界面退出时该标记保留，继续后补弹选卡，不跳过本波选卡。
+        if (RunSession.Instance != null) RunSession.Instance.SaveProgress(waveIndex, pendingChoice: true);
+
+        // 弹选卡：房间模式由 RoomFlowController（订阅 OnWaveCompleted）触发；
+        // 无房间模式 autoShowChoiceUI 兜底自己弹（CoreChoiceUI 有防重入）。
+        // 读档补弹（fireCompletionEvent=false）时 keepPicks=true：保留已恢复的候选（与退出时一致）。
+        if (fireCompletionEvent) OnWaveCompleted?.Invoke(waveIndex);
+        if (autoShowChoiceUI && CoreChoiceUI.Instance != null)
+            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: false, keepPicks: !fireCompletionEvent);
+
+        // 等待选卡会话结束再进下一波（弹卡后 timeScale=0，怪物不会在暂停期间刷出）。
+        // 用 IsDrafting 轮询而非 WaitForSeconds：不依赖 timeScale，
+        // 暂停菜单等其它 timeScale=0 场景不受影响；30s 超时兜底防死锁。
+        if (CoreChoiceUI.Instance != null)
+        {
+            float cardWaitStart = Time.realtimeSinceStartup;
+            while (CoreChoiceUI.Instance.IsDrafting
+                   && Time.realtimeSinceStartup - cardWaitStart < 30f)
+                yield return null;
+        }
+
+        // 存档点②：选完卡之后存档——覆盖波清场存档（补充本次选卡 + 玩家最终位置）。
+        // 恢复位置 = 本波起点（选卡结束瞬间玩家所在 = 下一波开始时玩家所在），
+        // 保证"波次中间移动位置后退出重进，回到波次开始的地方"。
+        if (RunSession.Instance != null) RunSession.Instance.SaveProgress(waveIndex, pendingChoice: false);
+    }
         Debug.Log($"[WaveManager] ALL WAVES COMPLETE for '{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}'");
         OnAllWavesComplete?.Invoke();
     }
@@ -374,6 +446,72 @@ public class WaveManager : MonoBehaviour
             if (roll <= 0f) return table[i];
         }
         return table[table.Count - 1];
+    }
+
+    // ── 读档恢复 ──
+
+    /// <summary>
+    /// 恢复附身怪与可附身尸体（读档）：按存档快照从波表解析 prefab → 直接刷出。
+    /// 尸体不经过 spawner 追踪（不算战斗怪，淡出即回池）；附身怪刷出后应用已解锁能力并直接附身。
+    /// </summary>
+    void RestoreBodies(RunSession run)
+    {
+        if (run == null) return;
+
+        // 1) 可附身尸体
+        foreach (var snap in run.Corpses)
+        {
+            var prefab = ResolveWavePrefab(snap.prefabId);
+            if (prefab == null) continue;
+            var go = MonsterPool.Instance.Spawn(prefab, snap.position, Quaternion.identity);
+            if (go == null) continue;
+            var monster = go.GetComponentInChildren<MonsterActor>(true);
+            if (monster != null)
+            {
+                monster.ApplyStreamSnapshot(0f, false, true); // downed：复用 Die() 重建尸体姿态/窗口
+                Debug.Log($"[WaveManager] 恢复尸体 '{snap.prefabId}' @ {snap.position}");
+            }
+        }
+
+        // 2) 玩家附身的怪（最后刷并附身，确保尸体已就位）
+        if (run.PossessedBody != null)
+        {
+            var prefab = ResolveWavePrefab(run.PossessedBody.prefabId);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[WaveManager] 附身怪 prefab '{run.PossessedBody.prefabId}' 无法解析，恢复为灵魂态。");
+                return;
+            }
+            var go = MonsterPool.Instance.Spawn(prefab, run.PossessedBody.position, Quaternion.identity);
+            if (go == null) return;
+            var monster = go.GetComponentInChildren<MonsterActor>(true);
+            if (monster == null) return;
+
+            monster.ApplyStreamSnapshot(run.PossessedBody.health, false, false); // 恢复血量（≥1，非倒地）
+            if (CardManager.Instance != null) CardManager.Instance.ApplyAllUnlocksTo(go);
+            if (PossessionManager.Instance != null && PossessionManager.Instance.DebugForcePossess(monster))
+                Debug.Log($"[WaveManager] 附身恢复：'{run.PossessedBody.prefabId}' @ {run.PossessedBody.position} HP={run.PossessedBody.health}");
+            else
+                Debug.LogWarning("[WaveManager] 附身恢复失败，已刷出怪但保持灵魂态。");
+        }
+    }
+
+    /// <summary>按 prefab 名在全部波的权重表内解析怪物 prefab（存档 prefabId 匹配）。</summary>
+    GameObject ResolveWavePrefab(string prefabId)
+    {
+        if (string.IsNullOrEmpty(prefabId)) return null;
+        foreach (var wave in ActiveWaves)
+        {
+            if (wave == null || wave.weightedTable == null) continue;
+            foreach (var def in wave.weightedTable)
+            {
+                if (def == null || def.monsters == null) continue;
+                foreach (var entry in def.monsters)
+                    if (entry != null && entry.prefab != null && entry.prefab.name == prefabId)
+                        return entry.prefab;
+            }
+        }
+        return null;
     }
 
     // ── 清点 ──

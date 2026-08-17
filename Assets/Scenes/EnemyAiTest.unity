@@ -2542,7 +2542,7 @@ MonoBehaviour:
     mode: 0
     weightedTable:
     - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
-    totalCount: 5
+    totalCount: 1
     duration: 10
     startTime: 0
     enemies: []
@@ -2551,7 +2551,16 @@ MonoBehaviour:
     mode: 0
     weightedTable:
     - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
-    totalCount: 20
+    totalCount: 3
+    duration: 60
+    startTime: 0
+    enemies: []
+    spawnPointGroup: 
+  - waveType: 0
+    mode: 0
+    weightedTable:
+    - {fileID: 11400000, guid: 8176bbc8127038e43bed0f65f7ac8bbb, type: 2}
+    totalCount: 5
     duration: 60
     startTime: 0
     enemies: []
@@ -8445,6 +8454,9 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 837435964}
+  useFixedSeed: 1
+  fixedSeed: 12345
+  useFormalFlow: 0
   testDoublePickOnStart: 0
 --- !u!4 &1807762708
 Transform:

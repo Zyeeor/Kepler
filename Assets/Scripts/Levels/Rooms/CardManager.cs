@@ -36,9 +36,40 @@ public class CardManager : MonoBehaviour
     private int rerollsUsed;
     private int selectsUsed;
 
+    /// <summary>本局已解锁效果（存档采集用，只读）。</summary>
+    public IReadOnlyCollection<string> UnlockedEffects => unlockedEffects;
+
     void Awake()
     {
+        // 单例防覆盖：GameManager 是 DontDestroyOnLoad 常驻对象，场景二次加载时
+        // 新实例若先 Awake 会把 Instance 覆盖为"随后被销毁的新对象"（伪 null），
+        // 导致选卡系统判定 Instance 为空而显示占位。已有实例时不覆盖。
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
+        // 恢复已解锁卡：优先从对局会话（RunSession，主菜单[继续]已填充；新局为空集）；
+        // 兼容旧路径：无会话时回退读档（EnumeratePool 自动排除已解锁）。
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun)
+        {
+            foreach (var id in run.UnlockedEffects)
+                if (!string.IsNullOrEmpty(id)) unlockedEffects.Add(id);
+            if (unlockedEffects.Count > 0)
+                Debug.Log($"[CardManager] 会话恢复已解锁效果 {unlockedEffects.Count} 个。");
+        }
+        else
+        {
+            var resume = SaveCoordinator.ResumeData;
+            if (resume != null && resume.unlockedEffects != null && resume.unlockedEffects.Count > 0)
+            {
+                foreach (var id in resume.unlockedEffects)
+                    if (!string.IsNullOrEmpty(id)) unlockedEffects.Add(id);
+                Debug.Log($"[CardManager] 读档恢复已解锁效果 {unlockedEffects.Count} 个。");
+            }
+        }
     }
 
     public bool TryGetGameplayEffect(string effectTag, out GameplayEffectDefinition definition)
@@ -86,6 +117,31 @@ public class CardManager : MonoBehaviour
             currentPicks[i] = i < available.Count ? available[i] : null;
             if (currentPicks[i] != null) shownThisSession.Add(currentPicks[i].effectId);
         }
+    }
+
+    /// <summary>
+    /// 恢复选卡候选（读档补弹用）：直接把存档的候选卡还原到 currentPicks，
+    /// 保证"选卡界面退出 → 继续"后候选与退出时一致（随机由存档决定，不重新抽）。
+    /// </summary>
+    public void RestoreChoicePicks(List<string> effectIds)
+    {
+        if (effectIds == null || effectIds.Count == 0) return;
+        rerollsUsed = 0;
+        selectsUsed = 0;
+        shownThisSession.Clear();
+        var pool = new List<CardData>();
+        foreach (var c in EnumeratePool())
+            pool.Add(c);
+
+        currentPicks = new CardData[Mathf.Max(effectIds.Count, currentPicks != null ? currentPicks.Length : 3)];
+        for (int i = 0; i < effectIds.Count; i++)
+        {
+            var id = effectIds[i];
+            var found = pool.Find(c => c != null && c.effectId == id);
+            currentPicks[i] = found;
+            if (found != null) shownThisSession.Add(found.effectId);
+        }
+        Debug.Log($"[CardManager] 恢复选卡候选 {effectIds.Count} 张（与退出时一致）。");
     }
 
     /// <summary>
@@ -175,6 +231,9 @@ public class CardManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(effectId) || unlockedEffects.Contains(effectId)) return;
         unlockedEffects.Add(effectId);
+        // 同步到对局会话：选卡后存档点（SaveProgress）会把新卡一并落盘
+        if (RunSession.Instance != null && !RunSession.Instance.UnlockedEffects.Contains(effectId))
+            RunSession.Instance.UnlockedEffects.Add(effectId);
 
         CardData data = FindCard(effectId);
         if (data == null) return;

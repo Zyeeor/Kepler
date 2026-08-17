@@ -20,6 +20,16 @@ public class GameManager : MonoBehaviour
     [Header("GameOver UI")]
     public GameObject gameOverPanel;
 
+    [Header("World Seed（地图种子）")]
+    [Tooltip("是否使用固定种子：开启后新对局使用固定Seed（便于复现特定地图/调试）；关闭则每局随机。")]
+    public bool useFixedSeed = false;
+    [Tooltip("固定种子值（仅 useFixedSeed=true 时生效）。")]
+    public uint fixedSeed = 12345;
+
+    [Header("Flow（流程）")]
+    [Tooltip("正式流程开关：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；同时屏蔽调试显示（F2 面板/作弊提示/刷怪面板）。关闭则直接进入当前场景（调试模式）。")]
+    public bool useFormalFlow = false;
+
     [Header("Test")]
     [Tooltip("测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）。")]
     public bool testDoublePickOnStart = true;
@@ -32,6 +42,9 @@ public class GameManager : MonoBehaviour
         GameOver
     }
     
+    /// <summary>正式流程（屏蔽调试显示/先进主菜单）。供调试组件查询：调试组件在 Update/OnGUI 开头检查并跳过。</summary>
+    public static bool IsFormalFlow => Instance != null && Instance.useFormalFlow;
+
     void Awake()
     {
         if (Instance == null)
@@ -39,6 +52,15 @@ public class GameManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
+
+            // 正式流程：游戏启动先进主菜单（而非直接进入对局场景）。
+            // 注意仅在首次创建时跳转——主菜单点"开始/继续"二次进入对局场景时
+            // Instance 已存在（DDOL 保留），不会重新跳转。
+            if (useFormalFlow && SceneManager.GetActiveScene().name != "MainMenu")
+            {
+                Debug.Log("[GameManager] 正式流程：启动先进主菜单。");
+                SceneManager.LoadScene("MainMenu");
+            }
         }
         else
         {
@@ -49,8 +71,9 @@ public class GameManager : MonoBehaviour
     
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log($"GameManager: Scene loaded - {scene.name}, resetting state");
-        ResetGame();
+        // 对局状态归 RunSession 管（新局/继续/重开由会话决定初始值），
+        // 本层只负责系统级常驻，不再无条件重置（否则"返回主菜单再进入"会清空进度）。
+        Debug.Log($"GameManager: Scene loaded - {scene.name}");
     }
     
     void Start()

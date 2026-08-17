@@ -12,6 +12,8 @@ public class MainMenuController : MonoBehaviour
     [Header("Main Menu Buttons")]
     public Button startGameButton;
     public TMP_Text startGameButtonText;
+    [Tooltip("继续按钮：存在存档时可点（无存档自动置灰）。点击后加载 battleSceneName 并恢复波次间存档。")]
+    public Button continueGameButton;
     public Button settingsButton;
     public TMP_Text settingsButtonText;
     public Button quitGameButton;
@@ -37,6 +39,13 @@ public class MainMenuController : MonoBehaviour
 
         if (startGameButton != null)
             startGameButton.onClick.AddListener(OnStartGame);
+
+        // 继续按钮：有存档才可点（每帧监听存档文件状态）
+        if (continueGameButton != null)
+        {
+            continueGameButton.onClick.AddListener(OnContinueGame);
+            continueGameButton.interactable = SaveCoordinator.HasSaveFile;
+        }
 
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettings);
@@ -64,8 +73,34 @@ public class MainMenuController : MonoBehaviour
 
     public void OnStartGame()
     {
+        // 已有存档时先确认：开始新游戏会覆盖原存档
+        if (SaveCoordinator.HasSaveFile && confirmDialog != null)
+        {
+            Debug.Log("MainMenu: OnStartGame - save exists, showing confirm");
+            if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+            subPanelOpened = true;
+            confirmDialog.Show("Start New Game", "Starting a new game will overwrite your saved progress. Continue?", OnStartNewGameConfirmed, OnDialogCancel);
+        }
+        else
+        {
+            OnStartNewGameConfirmed();
+        }
+    }
+
+    private void OnStartNewGameConfirmed()
+    {
         Debug.Log("MainMenu: Starting game - loading: " + battleSceneName);
+        // 新游戏：开启新对局会话（随机种子 + 清旧存档），场景对象据此初始化
+        RunSession.EnsureInstance().BeginNewRun();
         SceneManager.LoadScene(battleSceneName);
+    }
+
+    public void OnContinueGame()
+    {
+        Debug.Log("MainMenu: Continuing game - loading: " + battleSceneName);
+        // 继续：读档恢复会话（失败则留在主菜单，按钮已按有无存档置灰）
+        if (RunSession.EnsureInstance().LoadFromSave())
+            SceneManager.LoadScene(battleSceneName);
     }
 
     public void OnSettings()

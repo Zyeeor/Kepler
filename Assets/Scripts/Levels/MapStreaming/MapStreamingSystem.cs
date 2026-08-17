@@ -189,6 +189,13 @@ public class MapStreamingSystem : MonoBehaviour
             return;
         }
         Instance = this;
+        // 地图种子：对局会话优先（RunSession 新局=随机种子 / 继续=读档种子，Chunk 流送懒生成，此处置于最早）
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun)
+        {
+            worldSeed = run.WorldSeed;
+            Debug.Log($"[MapStreamingSystem] 会话世界种子 {worldSeed}（新局/继续统一由会话提供）。");
+        }
         // 坐标换算经 transform（支持整体平移/旋转），但不支持非均匀缩放：
         // 视觉解析式 bounds 校正假设父链 localScale = 1（ChunkVisualizer.PlaceBlock），缩放会致视觉错位。
         if (transform.lossyScale != Vector3.one)

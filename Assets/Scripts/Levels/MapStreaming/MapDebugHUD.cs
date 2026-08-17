@@ -38,9 +38,25 @@ public class MapDebugHUD : MonoBehaviour
     bool systemReady;
     float nextRefreshTime;
 
-    /// <summary>运行时自动创建：场景无实例时补一个（默认关闭，不影响正式场景）。</summary>
+    /// <summary>
+    /// 运行时确保实例存在：启动首场景（AfterSceneLoad）创建一次；
+    /// 之后每次场景加载（如主菜单 → 对局）原实例已随场景销毁，需重新确保——
+    /// 否则从主菜单进入对局后 F2 调试 HUD 失效。
+    /// </summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureInstance()
+    {
+        EnsureInScene();
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedEnsure;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedEnsure;
+    }
+
+    static void OnSceneLoadedEnsure(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        EnsureInScene();
+    }
+
+    static void EnsureInScene()
     {
         if (instance == null)
             new GameObject(nameof(MapDebugHUD)).AddComponent<MapDebugHUD>();
@@ -138,6 +154,7 @@ public class MapDebugHUD : MonoBehaviour
 
     void Update()
     {
+        if (GameManager.IsFormalFlow) return; // 正式流程屏蔽调试 HUD
         if (Input.GetKeyDown(toggleKey))
         {
             showHud = !showHud;
@@ -189,7 +206,7 @@ public class MapDebugHUD : MonoBehaviour
 
     void OnGUI()
     {
-        if (!showHud || !Application.isPlaying) return;
+        if (!showHud || !Application.isPlaying || GameManager.IsFormalFlow) return; // 正式流程屏蔽
 
         const float w = 264f;
         const float lineH = 18f;
