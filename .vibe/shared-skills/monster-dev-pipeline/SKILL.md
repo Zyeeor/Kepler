@@ -1,8 +1,9 @@
 ---
 name: monster-dev-pipeline
 description: >-
-  Possession 七宗罪怪物流水线：①Canonical + CSV/Modules→细分开发需求.md；②细分需求→工程落地；③用户说「提交xx怪物/所有怪物」时
-  按怪物范围 commit&push 当前分支、合入 origin/main、再推 main。策划改表、落地、验收、提交时使用。
+  Possession 七宗罪怪物流水线：①Canonical 怪物/卡牌描述→细分开发需求.md；②细分需求→工程落地；③用户说「提交xx怪物/所有怪物」时
+  按怪物范围 commit&push 当前分支、合入 origin/main、再推 main。策划改 Canonical、落地、验收、提交时使用。
+  不依赖「项目全量表 - 怪物设计（新）.csv」。
 ---
 
 # 怪物开发流水线（monster-dev-pipeline）
@@ -17,19 +18,26 @@ description: >-
 |---|---|---|
 | 项目规则 | `.vibe/rules.md` | 最高操作约束 |
 | Canonical 索引 | `.vibe/doc/Canonical/00_CANONICAL_INDEX.md` | 正式 Design Authority 入口 |
-| 相关 Canonical | `.vibe/doc/Canonical/**` | 按当前怪物 / Card / 系统范围读取的正式设计输入 |
-| 策划总表 | `项目全量表 - 怪物设计（新）.csv` | Structured Engineering Input / Historical Reference |
+| Design Canonical | `.vibe/doc/Canonical/01_DESIGN_CANONICAL.md` | 三槽合同、Possession、跨身生命周期等规则 |
+| Content Canonical | `.vibe/doc/Canonical/02_CONTENT_CANONICAL.md` | **怪物策划主源**：Roster、21 基础技能、Card 注册表摘要 |
+| Presentation Canonical | `.vibe/doc/Canonical/03_PRESENTATION_CANONICAL.md` | 视觉合同、Telegraph、VFX/表现基线 |
+| Card 逐卡真源 | `.vibe/doc/Canonical/Content/Card_System_Current_Truth_v1.1.md` | 该怪 Monster-Type / Type Growth 逐卡字段 |
 | 模块总览 | `.vibe/doc/项目设计.md` | Authority 与导航入口 |
-| 怪物细分需求 | `.vibe/doc/Modules/Monsters/<中文名>.md` | Implementation Tracking / Historical Reference |
+| 怪物细分需求 | `.vibe/doc/Modules/Monsters/<中文名>.md` | Implementation Tracking（工程路径 / 资源 / 状态），**不是策划真源** |
 | 参考实现（已完成范例） | `pride_new`、`sloth_new` | Repository implementation fact |
+
+**明确排除为设计输入**（除非 Owner 当次明文点名，且仅作 Legacy Evidence）：
+
+- `项目全量表 - 怪物设计（新）.csv`
+- 根目录 / 仓库内其它怪物 Excel、旧 Modules 玩法文案、旧 Demo 行为
 
 Authority compatibility：
 
-- CSV / Module 与 Canonical 一致时，可继续作为结构化工程输入；
-- Prefab 路径、Ability 类、Effect ID、VFX、资源 / 开发 / 测试状态、Cheat 与 AI 配置可继续作为工程字段；
-- CSV / Module 与 Canonical 的 Gameplay / Content Design 冲突时，立即 `STOP` 并报告；
-- 冲突时 Canonical 胜，不得以“最新 CSV”或旧 Module 覆盖 Canonical；
-- Legacy 差异保留为证据，后续处置留给 Legacy Audit。
+- **策划需求只读 Canonical**；不得用 CSV / 旧 Module / 旧 Demo 补写或覆盖 Gameplay / Content / Presentation 规格；
+- Prefab 路径、Ability 类、Effect ID、VFX、资源 / 开发 / 测试状态、Cheat 与 AI 配置继续写在细分需求.md，作为工程字段；
+- 现有细分需求.md / 工程实现与 Canonical 的 Gameplay / Content Design 冲突时，立即 `STOP` 并报告；
+- 冲突时 Canonical 胜；旧 CSV / Module / 实现仅保留为 Legacy Evidence，不得当作当前 Requirement。
+
 输出：
 
 
@@ -49,25 +57,45 @@ Authority compatibility：
 
 ## 状态枚举（强制，全文统一）
 
-每一项（怪物总览、技能、词条、资源行）必须使用且仅使用：
+每一项必须使用且仅使用下列状态（或表格允许的 `—`）：
 
 
 | 状态        | 含义                                                                |
 | --------- | ----------------------------------------------------------------- |
-| `策划未明确`   | CSV/策划文案为空、自相矛盾、或关键规则无法唯一解释；**不得实现**，只能写「待策划填写」问题                 |
-| `待开发`     | 策划已写清，工程尚未做                                                       |
-| `已开发但没资源` | 逻辑/Prefab 已可玩，但正式美术资源缺失；CSV「制作中」= 此状态。可暂用占位 VFX，必须在资源栏写清占位名与「待替换」 |
-| `已完成`     | 逻辑 + 正式资源都齐，可验收通过                                                 |
+| `策划未明确`   | Canonical 关键规则为空、自相矛盾、或无法唯一解释；**不得实现**，只能写「待策划填写」问题（需回写 Canonical / Owner 决策） |
+| `待开发`     | Canonical 已写清行为规格，工程尚未做                                                       |
+| `已开发但没资源` | 逻辑已可玩，**且该项声明了必需的正式美术资源**，但资源仍缺失 / 占位；可暂用占位，必须在资源栏写清占位名与「待替换」 |
+| `已完成`     | 该项工程已落地；若声明了必需资源则正式资源也已挂上；**无资源依赖的纯逻辑项，代码就绪即 `已完成`** |
+| `—`        | 不适用（参考旧 Prefab、纯文档字段、无工程交付物等） |
 
 
-判定优先级：
+### 资源依赖门禁（强制，防滥用 `已开发但没资源`）
 
-1. 技能详情 / 词条 / 关键数值任一关键字段空 → `策划未明确`
-2. 有设计、无代码 → `待开发`
-3. 有代码、资源列为空或写「制作中」或仍是占位 → `已开发但没资源`
-4. 代码与正式资源都齐 → `已完成`
+`已开发但没资源` **只**用于「该项显式需要美术交付物」的情况。判定前先问：
 
-怪物级总状态 = 各槽位/词条/关键资源的**最差状态**（策划未明确 < 待开发 < 已开发但没资源 < 已完成，取最左）。
+> 没有正式模型 / VFX / 动画 / UI 资产，该项是否仍算设计与工程验收通过？
+
+- **是（无资源依赖）** → 代码就绪即标 `已完成`。典型：英文 id、Cheat 条目、移速/血量数值、Possession 初始化、纯参数 Card（距离↑、移速↑、回血、斩杀阈值、Stack 行为分支）、无独立特效诉求的词条。
+- **否（有资源依赖）** → 在该技能 / 词条下建**资源行**；逻辑就绪但资源占位 → 该**资源行**与**依赖它的技能/词条**标 `已开发但没资源`；资源正式挂上 → 再升 `已完成`。
+- **禁止**：因同怪其它技能缺资源，而把无关的纯逻辑 Card / 基础属性 / Cheat 一并标成 `已开发但没资源`。
+- **禁止**：技能未声明任何资源行时，仅因「手感还能再美化」就标 `已开发但没资源`；未声明的美化诉求应进开放问题或资源表，而不是污染状态列。
+- 词条找茬「需要独立特效吗？」若答案为否 → 该词条**无**资源行，落地后 `已完成`。
+
+### 分项判定优先级
+
+1. 关键规格在 Canonical 无法唯一解释 → `策划未明确`
+2. Canonical 已写清、无代码 → `待开发`
+3. 有代码，且该项（或其资源表）仍有未完成的**已声明必需资源** → `已开发但没资源`
+4. 有代码，且无未完成的已声明必需资源 → `已完成`
+
+**数值说明**：Canonical 将 Exact Numbers 标为 `TUNABLE / PLAYABLE` 时，**不**因此标 `策划未明确`，也**不**因此标 `已开发但没资源`；可落地首轮可玩数值并备注 `TUNABLE`。
+
+### 怪物级总状态
+
+取各**技能槽**、**有交付物的词条/卡**、**已声明的关键资源行**的最差状态（`策划未明确` < `待开发` < `已开发但没资源` < `已完成`）。
+
+- 纯文档字段（情绪文案等）与 `—` 行**不参与**最差聚合。
+- 因此：小猫模型 / 巨口 VFX 仍缺时，怪物总状态可以是 `已开发但没资源`；但已落地的纯逻辑卡应仍为 `已完成`，不得被总状态反向改写。
 
 ---
 
@@ -76,12 +104,12 @@ Authority compatibility：
 ## 阶段总览
 
 ```text
-读取相关 Canonical + 策划 / 工程 CSV
+读取相关 Canonical（怪物 / 卡牌 / 规则 / 表现）
     │
     ▼
 【阶段 A】按本 skill 生成/更新 细分开发需求.md
     │  （找茬、留空、资源占位、状态）
-    │  策划填空 → 状态从「策划未明确」推进
+    │  Canonical 补齐或 Owner 决策 → 状态从「策划未明确」推进
     ▼
 【阶段 B】按细分需求.md 工程落地
     │  （脚本 / Effect / Tag / Card / Prefab / Cheat）
@@ -95,23 +123,23 @@ Authority compatibility：
 
 用户日常用法：
 
-1. 策划改 CSV → 对 Agent 说：「按 monster-dev-pipeline 阶段 A，更新某某怪物细分需求」
-2. 策划填完空 → 「按阶段 B，落地某某怪物」
-3. 只补资源 → 「按细分需求把某某资源行从已开发但没资源改为已完成」
+1. Canonical 有怪物/卡牌改动 → 对 Agent 说：「按 monster-dev-pipeline 阶段 A，更新某某怪物细分需求」
+2. 开放问题已由 Owner / Canonical 收口 → 「按阶段 B，落地某某怪物」
+3. 只补资源 → 「按细分需求把某某**已声明**资源行从已开发但没资源改为已完成」（无资源依赖项不要标此状态）
 4. 要入库 → 「提交傲慢」/「提交怠惰-机械之灵」/「提交所有怪物」（走阶段 C）
 
 ---
 
 
 
-# 阶段 A — 策划案 → 细分开发需求.md
+# 阶段 A — Canonical → 细分开发需求.md
 
 
 
 ## A.0 何时执行
 
-- 新建怪物
-- CSV 有任何改动
+- 新建怪物（Canonical Roster 新增或首次落地）
+- 相关 Canonical 有任何改动（尤其 `02` 技能 / Roster、`Content/Card_System_Current_Truth_*`、`01` 三槽与生命周期、`03` 表现合同）
 - 用户要求「按流程 skill 刷新细分需求」
 
 
@@ -121,34 +149,40 @@ Authority compatibility：
 1. `.vibe/rules.md`
 2. 本 skill
 3. `.vibe/doc/项目设计.md`
-4. `.vibe/doc/Canonical/00_CANONICAL_INDEX.md`
-5. 按目标怪物、Card 与相关系统读取对应 Canonical（至少核对 `01_DESIGN_CANONICAL.md` 与 `02_CONTENT_CANONICAL.md` 的相关章节）
-6. 最新 `项目全量表 - 怪物设计（新）.csv`，作为结构化工程输入与历史证据
-7. 若已存在 `.vibe/doc/Modules/Monsters/<怪物>.md`，将其作为 Implementation Tracking / Historical Reference **增量更新**，不要无故抹掉已填的资源名 / 策划答复 / 工程路径
+4. `.vibe/doc/Canonical/00_CANONICAL_INDEX.md`（确认 Authority Order 与本轮 Owner Decisions）
+5. `.vibe/doc/Canonical/01_DESIGN_CANONICAL.md`（至少：输入与三槽、Possession 初始化、跨身生命周期、与当前怪相关的 Interaction）
+6. `.vibe/doc/Canonical/02_CONTENT_CANONICAL.md`：
+   - §2 基础 Monster Roster（该怪行）
+   - §3 该怪三槽基础技能 + Enemy 行为基线
+   - §4 Possession 初始化（若影响该怪）
+   - §5–6 该怪 Card 注册表摘要
+7. `.vibe/doc/Canonical/Content/Card_System_Current_Truth_v1.1.md` 中该怪全部逐卡字段（含已删除卡：确认不得补回）
+8. `.vibe/doc/Canonical/03_PRESENTATION_CANONICAL.md` 中 Monster 视觉合同、Telegraph、与该怪相关的表现条款
+9. 若已存在 `.vibe/doc/Modules/Monsters/<怪物>.md`，将其作为 Implementation Tracking **增量更新**，不要无故抹掉已填的资源名 / 工程路径 / 验收记录；但其中与 Canonical 冲突的**玩法文案必须按 Canonical 改正**，不得保留 CSV/旧文案为“当前需求”
 
-若 CSV / Module 的 Gameplay 或 Content 规格与 Canonical 冲突，停止生成当前 Requirement，列出冲突并等待人类处理；不得自行选择旧版本。
-
-
-## A.2 解析 CSV 规则
-
-CSV 是宽表：同一怪物跨多行。按「怪物名称」非空行开始一个怪物块，直到下一个非空怪物名。
-
-每个怪物块必须抽出：
-
-
-| 字段                  | 来源列                            |
-| ------------------- | ------------------------------ |
-| 显示名                 | 怪物名称(暂时)                       |
-| 移速 / 血量             | 基础属性                           |
-| 情绪 / 特点 / 体貌        | 对应列                            |
-| 模型状态                | 角色模型初步状态                       |
-| 三槽技能                | 技能列含 位移/普攻/技能（及 space/左键/Q 标注） |
-| 技能详情 / CD / 耗血 / 伤害 | 同行及续行                          |
-| 词条                  | 卡牌Build词条（可多行挂在同一技能下）          |
-| 资源与资源状态             | 需要特效资源 + 其状态列                  |
+若现有 Module / 工程实现的 Gameplay 或 Content 规格与 Canonical 冲突，停止生成当前 Requirement，列出冲突并等待人类处理；不得自行选择旧版本，也不得回读 CSV 裁决。
 
 
-空白怪物行（只有空的 位移/普攻/技能 骨架）→ **跳过，不生成文件**。
+## A.2 解析 Canonical 规则（取代旧 CSV 宽表）
+
+策划字段**只**从 Canonical 抽取。按目标怪（Sin / 中文名）组装一块「怪物内容包」：
+
+| 字段 | Canonical 来源 |
+|---|---|
+| 显示名 / Sin / Action Grammar / 战斗岗位 / Possessed 快速价值 | `02` §2 Roster 行 |
+| 三槽技能名 + 行为规格 | `02` §3 该怪 `Movement` / `Attack` / `Special` 条目 |
+| Enemy AI 行为基线 | `02` §3 该怪「Enemy行为基线」 |
+| 跨身 / Possession / 三槽合同 | `01` 相关章节 + `02` §4 |
+| 词条 / 卡牌 Build | `02` Card 注册表 + `Content/Card_System_Current_Truth_v1.1.md` 逐卡 |
+| 表现 / Telegraph / 资源诉求 | `03` Monster 视觉合同、Telegraph、VFX 最低语言；以及技能文案中已写明的前兆 / 危险区等 |
+
+抽取约束：
+
+- Roster 未列出的基础怪 → **不生成**；本 Demo Canonical 不新增第 8 只基础怪；
+- 三槽缺任一槽正式规格 → 该槽 `策划未明确`，不得用旧 CSV / 旧 Module 补全；
+- Card 以 Canonical 注册表与 Current Truth 为准；人工删除卡**不保留、不改造、不为覆盖率补回**；
+- Exact Numbers 未给出 → 标 `TUNABLE`，可进阶段 B 用首轮可玩值，**不要**为此阻塞或回读 CSV；
+- 行为规则冲突或缺失 → `策划未明确` + 开放问题（答案应推动 Canonical / Owner，而不是改 CSV）。
 
 命名建议（工程英文 id，写入细分需求「工程标识」）：
 
@@ -169,58 +203,62 @@ CSV 是宽表：同一怪物跨多行。按「怪物名称」非空行开始一�
 
 ## A.3 「找茬」强制清单（每技能 / 每词条都要过）
 
-Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明确` 并留「待策划填写」空位。至少覆盖：
+Agent 必须主动对每一项提问；**Canonical 答不上来的**写成 `策划未明确` 并留「待策划填写」空位。至少覆盖：
 
 ### 通用
 
-- [ ] 触发输入：左键 / Space / Q / 被动？按住还是点按？松手结算还是按下即放？
+- [ ] 触发输入：左键 / Space / Q / 被动？按住还是点按？松手结算还是按下即放？（对照 `01` 三槽合同 + `02` 技能条文）
 - [ ] 目标：最近 / 瞄准方向 / 最高血量 / 范围内全部 / 无目标是否可放？
-- [ ] 数值：伤害、CD、耗血、时长、半径、段数 — 缺一标未明确
+- [ ] 数值：伤害、CD、耗血、时长、半径、段数 — 缺精确值标 `TUNABLE`；缺行为规则标 `策划未明确`
 - [ ] 与位移/飞行/变身叠加：能否打断？共享 CD？
-- [ ] 附身 vs AI：行为是否一致？召唤物跟谁？
-- [ ] 死亡/离身：被动「离开后持续 10 秒」是否对本技能生效？残留物怎么处理？
+- [ ] 附身 vs AI：行为是否一致？（对照 `02` Enemy 行为基线）召唤物跟谁？
+- [ ] 死亡/离身/换身：被动与残留物按 `01` 跨身生命周期 + 该怪 `02` 条文处理
 - [ ] Tag / effectId 命名是否已定？
+- [ ] Telegraph：高危险动作是否满足 `03` 方向/范围/时机/落点要求？
 
 
 
-### 位移
+### Movement
 
-- [ ] 纯位移还是位移+伤害？
-- [ ] 前摇 / 无敌 / 不可选中？
+- [ ] 纯位移还是位移+伤害 / 派生物？
+- [ ] 前摇 / 无敌 / 不可选中？（Canonical 写明「不基础无敌」则禁止擅自加）
 - [ ] 落点判定、撞墙、撞敌？
 
 
 
-### 普攻
+### Attack
 
-- [ ] 近战盒 / 弹道 / 持续射线？
-- [ ] 蓄力曲线？最小/最大伤害？
+- [ ] 近战盒 / 弹道 / 持续射线 / 地面危险区？
+- [ ] 蓄力曲线？最小/最大档？（Canonical 有蓄力语义则必须问清档位是否 TUNABLE）
 - [ ] 命中特效挂自己还是挂敌人？
 
 
 
-### Q / 召唤 / 残留物
+### Special / 召唤 / 残留物
 
 - [ ] 召唤物寿命到期是「直接销毁」还是「先死亡表现再销毁」？
 - [ ] 召唤物死亡：爆炸？回血？变残影？
-- [ ] 主人死亡后召唤物：立刻死 / 继续活 / 叛变？
+- [ ] 主人死亡 / 换身后召唤物：立刻死 / 继续活 / 按自身寿命？（优先信 `02` 已写条款，如怠惰木灵）
 - [ ] 场上数量上限？
 
 
 
-### 词条
+### 词条（Card）
 
 - [ ] 是改参数（`abilityParameters`）还是改行为分支（`IsUpgradeUnlocked`）？
-- [ ] 与其它词条是否叠加？互斥？
+- [ ] 与其它词条是否叠加？互斥？Stack Max 以 Card Truth 为准
 - [ ] 需要独立特效吗？
+- [ ] 已删除卡是否仍残留在工程 / 细分需求中？（有则列入清理项，不得当需求）
 
 
 
 ### 资源
 
-- [ ] 每一句美术描述拆成独立资源行
+- [ ] 仅当该项**确实需要**独立美术交付物时，才拆资源行（勿为空美化义务造行）
 - [ ] 每行必须有：`资源用途`、`资源名称（可空）`、`状态`
-- [ ] CSV 写「制作中」→ 状态=`已开发但没资源`，资源名称可填占位或留空
+- [ ] 阶段 A：资源名称可空，状态可先空或 `待开发`
+- [ ] 阶段 B 后：已声明资源仍占位 → **仅该资源行**（及直接依赖它的技能/词条）=`已开发但没资源`；无资源行的纯逻辑项不得套此状态
+- [ ] 找茬「需要独立特效吗？」答否 → 不建资源行，词条落地后直接 `已完成`
 
 
 
@@ -231,9 +269,10 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 ```markdown
 # <怪物中文名> — 细分开发需求
 
-> 来源：`项目全量表 - 怪物设计（新）.csv`  
+> 来源：`.vibe/doc/Canonical/`（`02_CONTENT_CANONICAL.md` 该怪章节 + 相关 `01`/`03` + `Content/Card_System_Current_Truth_v1.1.md`）  
 > 生成/更新：按 `.vibe/shared-skills/monster-dev-pipeline/SKILL.md` 阶段 A  
-> 怪物总状态：`<状态>`
+> 怪物总状态：`<状态>`  
+> 不作为来源：`项目全量表 - 怪物设计（新）.csv` 及旧 Modules 玩法文案
 
 ## 0. 工程标识
 
@@ -247,19 +286,19 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 
 ## 1. 基础属性
 
-| 项 | 策划值 | 工程字段 | 状态 | 备注 |
+| 项 | Canonical / TUNABLE 值 | 工程字段 | 状态 | 备注 |
 |---|---|---|---|---|
-| 移速 | | MonsterActor / Enemy moveSpeed | | |
-| 血量 | | maxHealth | | |
-| 情绪 / 特点 / 体貌 | | — | | 美术向 |
+| 移速 | | MonsterActor / Enemy moveSpeed | | TUNABLE 可填首轮值 |
+| 血量 / 玩家耐久相关 | | maxHealth 等 | | 对照 `01` Body 耐久合同 |
+| Action Grammar / 岗位 / 快速价值 | | — | | 来自 `02` Roster |
 
 ## 2. 技能总表
 
 | 槽位 | 技能名 | Ability 类（建议/已有） | abilityTags | CD | 耗血 | 伤害 | 状态 |
 |---|---|---|---|---|---|---|---|
-| Passive / 位移 | | | Ability.Monster.<Sin>.<Skill> | | | | |
-| LMB / 普攻 | | | | | | | |
-| Q / 技能 | | | | | | | |
+| Space / Movement | | | Ability.Monster.<Sin>.<Skill> | TUNABLE | | | |
+| LMB / Attack | | | | | | | |
+| Q / Special | | | | | | | |
 | Passive | | | | | | | |
 
 ## 3. 技能明细
@@ -267,34 +306,36 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 ### 3.x <槽位> — <技能名>
 
 - **状态**：
-- **策划原文**：
+- **Canonical 原文**（摘录 `02` 要点，勿抄 CSV）：
 - **行为规格**（点按/蓄力/目标/段数/无敌等）：
-- **数值**：
+- **数值**（缺省标 TUNABLE）：
+- **Enemy 行为基线**（若适用）：
 - **Ability 脚本**：
 - **自身 Effect / 命中 Effect**：
+- **Telegraph / 表现诉求**（对照 `03`）：
 - **资源表**：
 
 | 资源用途 | 资源名称 | 状态 | 备注 |
 |---|---|---|---|
 | | （待填） | | |
 
-- **待策划填写**：
+- **待策划填写**（须回 Canonical / Owner，禁止用 CSV 填坑）：
   1. …
 
 ### 词条
 
-| 词条名 | effectId | 解锁行为 | 参数 key/value | 资源名称 | 状态 | 待策划填写 |
-|---|---|---|---|---|---|---|
-| | | | | （待填） | | |
+| 词条名 | effectId / CardId | 解锁行为 | 参数 key/value | Stack | 资源名称 | 状态 | 待策划填写 |
+|---|---|---|---|---|---|---|---|
+| | | | | | 无独立特效则填「无」 | 无资源依赖且已落地→已完成 | |
 
 ## 4. 卡牌 / Catalog 清单
 
-| effectId | targetAbilityTags | 参数 | CardLibrary | upgrades 槽 | 状态 |
+| CardId / effectId | targetAbilityTags | 参数 | CardLibrary | upgrades 槽 | 状态 |
 |---|---|---|---|---|---|
 
 ## 5. 开放问题汇总（策划填空区）
 
-| ID | 问题 | 答案（策划填） | 影响项 | 状态 |
+| ID | 问题 | 答案（Owner / Canonical） | 影响项 | 状态 |
 |---|---|---|---|---|
 | Q1 | | | | 策划未明确 |
 
@@ -313,11 +354,12 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 
 ## A.5 阶段 A 完成标准
 
-- 每个 CSV 已命名怪物都有对应 md（或已声明跳过原因）
-- 空技能/空词条 → `策划未明确` + 开放问题
+- Canonical Roster 中目标怪（或「所有怪物」范围内的每只）都有对应 md（或已声明跳过原因）
+- 行为规则空缺 → `策划未明确` + 开放问题；纯数值空缺 → `TUNABLE`，不阻塞
 - 有设计无工程 → `待开发`
 - 更新 `.vibe/doc/Modules/Monsters/README.md` 总表状态
 - **不写代码**
+- **未**把 CSV / 旧 Module 玩法文案写回为当前需求
 
 
 
@@ -332,8 +374,8 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 | 地雷何时生成   | 起飞前还是落地后？           | 怠惰：起飞前、起飞点            |
 | 散射何时触发   | 超时爆炸也散射吗？           | 怠惰：仅主弹命中敌人；碎片忽略首目标    |
 | 召唤物寿命到   | 直接 Destroy 还是先「死亡」？ | 怠惰死亡炸：先脱离跟随再俯冲，炸完再销毁  |
-| 主人死后召唤物  | 活？死？继续攻击？           | 必须写进开放问题，禁止猜测         |
-| 旧词条过时    | CSV 删了的词条是否废弃？      | 先核对 Canonical；冲突时停止并以 Canonical 为准，CSV / 旧实现保留为 Legacy Evidence |
+| 主人死后召唤物  | 活？死？继续攻击？           | 优先信 `02`（木灵换身后按寿命继续）；未写明则开放问题，禁止猜测 |
+| 旧词条过时    | 工程里还有但 Canonical 已删？ | 以 Canonical / Card Truth 为准；旧卡与旧实现保留为 Legacy Evidence，不得当需求 |
 
 
 ---
@@ -342,15 +384,15 @@ Agent 必须主动对每一项提问；CSV 答不上来的写成 `策划未明�
 
 # 阶段 B — 细分需求.md → 工程落地
 
-> Stage B 的既有 Unity Monster Engineering 步骤完整保留。进入本阶段前，设计输入必须已经通过 Stage A Authority Compatibility 检查。
+> Stage B 的既有 Unity Monster Engineering 步骤完整保留。进入本阶段前，设计输入必须已经通过 Stage A Authority Compatibility 检查（Canonical 为唯一策划真源）。
 
 
 
 ## B.0 前置门禁
 
 1. 读 `.vibe/rules.md` + 本 skill + 目标怪物细分需求.md
-2. 若仍有**阻塞性** `策划未明确`（无默认值就无法实现）→ **停止并列出问题**，禁止靠猜落地
-3. 非阻塞未明确项可保留，但不得假装 `已完成`
+2. 若仍有**阻塞性** `策划未明确`（无默认值就无法实现）→ **停止并列出问题**，禁止靠猜落地；禁止回读 CSV 填坑
+3. 非阻塞未明确项与 `TUNABLE` 数值可保留，但不得假装 `已完成`
 4. 改 Prefab / 场景前 `git status`；不改 `Packages/manifest.json`、`ProjectSettings/`（除非用户明确放行）
 5. 不改 Shared Original 旧怪 `*(full)`；只建/改 `*_new`
 
@@ -443,7 +485,8 @@ targetAbilityTags: Ability.Monster.Sin.Skill
 abilityParameters: [{ key: Foo, value: N }]
 ```
 
-Ability `upgrades` 必须包含同名 `effectId`。
+Ability `upgrades` 必须包含同名 `effectId`。  
+卡牌内容以 Canonical Card Truth 为准，不得按已删除卡或旧 CSV 词条补回。
 
 ### Step 6 — 测试入口
 
@@ -469,8 +512,12 @@ Ability `upgrades` 必须包含同名 `effectId`。
 
 ### Step 8 — 回写细分需求状态
 
-- 逻辑完成但资源仍空/制作中 → `已开发但没资源`，资源名称填占位 prefab  
-- 正式资源挂上 → `已完成`  
+按「资源依赖门禁」分项回写，禁止整表刷成同一状态：
+
+- 无资源依赖的项（id / Cheat / 数值 / 纯逻辑 Card 等）：代码就绪 → `已完成`
+- 有已声明资源行：逻辑完成但资源占位 → 资源行与依赖该项的技能/词条 → `已开发但没资源`（占位名写清）
+- 正式资源挂上 → 对应行升 `已完成`
+- 怪物总状态按最差聚合规则重算（缺资源的技能可拉低总状态；不得回头改写无关纯逻辑行）
 - 更新 Monsters `README.md` 总表
 
 
@@ -505,7 +552,7 @@ Card effectId: <Sin>.<CardName>   # 例 Pride.Pierce / Sloth.LandingMine
 
 ## B.4 阶段 B 完成标准
 
-- 细分需求 §6 检查清单全勾（资源允许仍为「已开发但没资源」）  
+- 细分需求 §6 检查清单全勾（允许个别**已声明资源行**仍为「已开发但没资源」；纯逻辑项应为「已完成」）  
 - 无阻塞性 `策划未明确` 被偷偷实现  
 - 测试指南可独立交给他人验收  
 - 未改旧 `*(full)`，未动 Packages/ProjectSettings（除非获准）
@@ -564,10 +611,11 @@ Card effectId: <Sin>.<CardName>   # 例 Pride.Pierce / Sloth.LandingMine
 
 不要纳入单怪提交（除非用户明确说带上）：
 
-- `.DS_Store`、本地 Excel/CSV 策划源表（除非用户点名）
+- `.DS_Store`、本地 Excel/CSV 策划源表（含 `项目全量表 - 怪物设计（新）.csv`，除非用户点名）
 - `Packages/packages-lock.json`、`Packages/manifest.json`、`Packages/com.quaza.unitymcp/`
 - `ProjectSettings/`、`Library/`、其它怪物的 prefab/脚本/文档
 - 与怪物无关的重构 / 工具改动
+- Canonical 文件（Stage C Fast Path **默认不提交** Canonical；Canonical 变更走独立 Owner 流程）
 
 拿不准某文件是否属于该怪 → **列出路径问用户**，不要擅自扩大范围。
 
@@ -583,7 +631,7 @@ Stage 所有与怪物流水线/实现相关的改动，包括但不限于：
 - `Assets/Combat/Effects/**` 中怪物 Effect
 - `Assets/Configs/CardLibrary.asset`、`MonsterCheatCatalog.asset`、`MonsterAIConfig.asset`、`Assets/GameplayTagCatalog.asset`、相关测试场景
 
-仍排除：`.DS_Store`、未点名的策划 xlsx/csv、`Packages/**`（含 lock / unitymcp）、`ProjectSettings/`、明显非怪物改动。
+仍排除：`.DS_Store`、未点名的策划 xlsx/csv（含怪物全量表）、`Packages/**`（含 lock / unitymcp）、`ProjectSettings/`、Canonical（除非用户当次明确要求）、明显非怪物改动。
 
 ## C.4 Commit message
 
@@ -617,8 +665,9 @@ Push `main` 若被保护分支/权限拦截：把错误原文给用户，不要�
 
 | 用户说                                 | 执行                     |
 | ----------------------------------- | ---------------------- |
-| 「按怪物流程 / monster-dev-pipeline 刷新需求」 | 仅阶段 A                  |
-| 「根据 CSV 生成细分需求」                     | 仅阶段 A                  |
+| 「按怪物流程 / monster-dev-pipeline 刷新需求」 | 仅阶段 A（只读 Canonical）     |
+| 「根据 Canonical 生成/更新细分需求」           | 仅阶段 A                  |
+| 「根据 CSV 生成细分需求」                     | **拒绝**：提示已改用 Canonical，改走上一行 |
 | 「按细分需求落地某某怪」                        | 阶段 B                   |
 | 「补某某特效资源并改状态」                       | 改 Prefab 引用 + 回写 md 状态 |
 | 「生成/更新测试指南」                         | B.Step 7               |
