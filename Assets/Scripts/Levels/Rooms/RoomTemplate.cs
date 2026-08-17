@@ -10,6 +10,13 @@ public enum RoomType { Combat, Boss, Reward, Start }
 public enum RoomState { Loading, Ready, Combat, Cleared, ExitPhase, Completed }
 public enum WaveType { Normal, Elite, Boss }
 
+/// <summary>
+/// 波次模式：
+/// CountKill = 数量波：刷满 totalCount 只后不再补，玩家清完触发选卡；
+/// Timed = 时间波：持续 duration 秒，时间到即结算触发选卡。
+/// </summary>
+public enum WaveMode { CountKill, Timed }
+
 [Serializable]
 public class EnemySpawnEntry
 {
@@ -25,10 +32,20 @@ public class EnemySpawnEntry
 public class WaveConfig
 {
     public WaveType waveType = WaveType.Normal;
+    [Tooltip("波次模式：CountKill=数量波（刷满 totalCount 清完过波）；Timed=时间波（撑满 duration 过波）。")]
+    public WaveMode mode = WaveMode.CountKill;
+    [Tooltip("怪物权重表：本波按 spawnWeight 抽取刷怪（与地图刷怪同款 MonsterWaveDef）。每波可配置不同组成。")]
+    public List<MonsterWaveDef> weightedTable = new List<MonsterWaveDef>();
+    [Tooltip("数量波：本波刷怪总数，刷满后不再补充；玩家清完场上本波怪触发选卡。")]
+    [Min(1)] public int totalCount = 20;
+    [Tooltip("时间波：本波时长（秒）。时间到即结算（触发选卡），剩余在场怪按回收策略处理。")]
+    [Min(1f)] public float duration = 60f;
     [Tooltip("Seconds before this wave starts (relative to room start).")]
     public float startTime;
+    // 旧字段保留（兼容既有序列化数据）；新波次逻辑改用 weightedTable，以下不再使用。
+    [Tooltip("[已废弃] 旧房间直刷敌人列表，新波次逻辑不再使用。")]
     public List<EnemySpawnEntry> enemies = new List<EnemySpawnEntry>();
-    [Tooltip("Optional spawn point group name on the RoomInstance (empty = random around room center).")]
+    [Tooltip("[已废弃] 旧房间刷怪点组，新波次逻辑不再使用。")]
     public string spawnPointGroup;
 }
 

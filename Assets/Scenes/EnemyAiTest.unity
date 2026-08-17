@@ -992,7 +992,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &146584552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2504,6 +2504,76 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 387885043}
   m_CullTransparentMesh: 1
+--- !u!1 &396728508
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 396728510}
+  - component: {fileID: 396728509}
+  m_Layer: 0
+  m_Name: WaveManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &396728509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396728508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3d08547a5962d84fa624eeef2517a55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnInterval: 0.5
+  choiceBuffer: 2
+  autoShowChoiceUI: 1
+  recycleRemainingOnTimeUp: 1
+  waves:
+  - waveType: 0
+    mode: 0
+    weightedTable:
+    - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
+    totalCount: 5
+    duration: 10
+    startTime: 0
+    enemies: []
+    spawnPointGroup: 
+  - waveType: 0
+    mode: 0
+    weightedTable:
+    - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
+    totalCount: 20
+    duration: 60
+    startTime: 0
+    enemies: []
+    spawnPointGroup: 
+  gracePeriod: 2
+  autoStart: 1
+  autoStartTimeout: 30
+--- !u!4 &396728510
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396728508}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &399063970
 GameObject:
   m_ObjectHideFlags: 0
@@ -5481,6 +5551,7 @@ RectTransform:
   - {fileID: 1731005098}
   - {fileID: 153670389}
   - {fileID: 241136891}
+  - {fileID: 2061281664}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -8533,46 +8604,6 @@ MonoBehaviour:
   decayInterval: 1
   bulletTimeScale: 0.2
   bulletTimeDuration: 2
---- !u!114 &1915881205
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1915881197}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 554b117179bbd7e41988a78ec5a421a3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 0
-  acceleration: 60
-  deceleration: 100
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  maxHealth: 0
-  currentHealth: 0
-  stats: {fileID: 0}
-  combat: {fileID: 0}
-  possessYOffset: 0.5
---- !u!114 &1915881206
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1915881197}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 99faf6cc31d06e748bfb78f7e7b3daa4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  enableGlobalClickLogs: 1
-  globalClickLogRaycastLimit: 8
 --- !u!1 &1934480728
 GameObject:
   m_ObjectHideFlags: 0
@@ -8732,20 +8763,14 @@ MonoBehaviour:
   radiusD: 80
   chunkSize: 8
   tileSize: 2
+  boundaryChunkExtent: 8
+  boundaryCenterOverride: {fileID: 0}
   worldSeed: 12345
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   regionTable: []
   regionCellSize: 2
   regionNeighborWeight: 2
   tickInterval: 0.2
-  activatePerFrame: 2
-  pausePerFrame: 5
-  instantiatePerFrame: 2
-  preparePerFrame: 4
-  unloadScenePerFrame: 2
-  serializePerFrame: 2
-  unloadFullPerFrame: 4
-  timeBudgetMs: 4
   showGizmos: 1
   logStateChanges: 1
 --- !u!4 &1950834436
@@ -8776,6 +8801,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 30
+  enableChunkStaticSpawns: 0
   maxWavesPerChunk: 2
   scatterRadius: 3
   minSpawnDistanceToPlayer: 20
@@ -8798,9 +8824,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e38e7087889dd14da6b269801e2a70d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showDefaultGround: 0
-  defaultGroundModule: {fileID: 0}
-  defaultGroundSink: 0.02
   ensureBlockerColliders: 0
   showDebug: 1
   logBuilds: 1
@@ -9069,6 +9092,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3d08547a5962d84fa624eeef2517a55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawnInterval: 0.5
+  choiceBuffer: 2
+  autoShowChoiceUI: 1
+  recycleRemainingOnTimeUp: 1
+  waves: []
+  gracePeriod: 2
+  autoStart: 1
+  autoStartTimeout: 30
 --- !u!1 &1995385385
 GameObject:
   m_ObjectHideFlags: 0
@@ -9491,6 +9522,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2037825378}
   m_CullTransparentMesh: 1
+--- !u!1 &2061281663
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2061281664}
+  - component: {fileID: 2061281665}
+  m_Layer: 0
+  m_Name: WaveTimer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2061281664
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2061281663}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1096202202}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2061281665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2061281663}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 097b246ad663a954a8e7442c4da5ab96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  warnThreshold: 10
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  warnColor: {r: 1, g: 0.35, b: 0.3, a: 1}
+  yOffset: -40
+  fontSize: 44
 --- !u!1 &2064786314
 GameObject:
   m_ObjectHideFlags: 0
@@ -10616,14 +10696,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6619887426231394227, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1915881206}
-    - targetCorrespondingSourceObject: {fileID: 6619887426231394227, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1915881205}
-    - targetCorrespondingSourceObject: {fileID: 6619887426231394227, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1915881204}
   m_SourcePrefab: {fileID: 100100000, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5, type: 3}
 --- !u!1660057539 &9223372036854775807
@@ -10645,3 +10717,4 @@ SceneRoots:
   - {fileID: 499935253}
   - {fileID: 146584553}
   - {fileID: 1950834436}
+  - {fileID: 396728510}
