@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 流送任务类型。枚举声明顺序即 JobKind 优先级（Activate 最高，UnloadFull 最低，）。
+/// 流送任务类型。枚举声明顺序即 JobKind 优先级（Activate 最高，UnloadFull 最低）。
 /// </summary>
 public enum JobKind
 {
@@ -17,14 +17,14 @@ public enum JobKind
     Prepare = 3,
     /// <summary>离开 B：卸载场景对象，保留逻辑数据 → Prepared。</summary>
     UnloadScene = 4,
-    /// <summary>离开 D：保存 ChunkState 内存快照（Phase 3 落实体）。</summary>
+    /// <summary>离开 D：保存 ChunkState 内存快照（Phase 3 已实装）。</summary>
     Serialize = 5,
     /// <summary>离开 D：回收对象池 → Unloaded（优先级最低）。</summary>
     UnloadFull = 6,
 }
 
 /// <summary>
-/// 流送任务：入队时记录目标 Chunk 与玩家距离（同级内空间排序用，）。
+/// 流送任务：入队时记录目标 Chunk 与玩家距离（同级内空间排序用）。
 /// </summary>
 public struct MapStreamingJob
 {
@@ -37,10 +37,10 @@ public struct MapStreamingJob
 /// <summary>
 /// 地图流送系统（单例）：四级范围（A/B/C/D）Diff + 任务队列 + 每帧预算驱动 Chunk 状态机。
 /// Phase 1 骨架：范围判定/任务调度/状态机闭环可运行；
-/// Phase 3 已接入：ChunkState 内存快照库（States，）与 PinRegistry（Pins，）——
+/// Phase 3 已接入：ChunkState 内存快照库（States）与 PinRegistry（Pins）——
 /// 被 Pin 的 Chunk 离开 D 不卸载，解 Pin 且仍在 D 外时补发回收；
 /// 怪物快照/恢复由 MonsterSpawner 监听状态切换驱动。
-/// 真实 Tile 模板生成、场景实例化、NavMesh 为后续 Phase（见各 TODO）。
+/// Tile 生成（随机+模板混合）与场景实例化（ChunkVisualizer）已实装；NavMesh 烘焙为后续 Phase（见各 TODO）。
 /// </summary>
 public class MapStreamingSystem : MonoBehaviour
 {
@@ -51,7 +51,7 @@ public class MapStreamingSystem : MonoBehaviour
     [Tooltip("可选：手动指定玩家 Transform；为空时自动查找 PlayerController.Instance / tag=Player。")]
     public Transform playerOverride;
 
-    [Header("四级流送范围（米，）——不变量：D > C（卸载滞后区）")]
+    [Header("四级流送范围（米）——不变量：D > C（卸载滞后区）")]
     [Tooltip("A 可视范围：完整模拟（AI/事件/战斗）。")]
     public float radiusA = 25f;
     [Tooltip("B 缓冲范围：实例化场景对象，AI 待机待命。")]
@@ -67,10 +67,16 @@ public class MapStreamingSystem : MonoBehaviour
     [Tooltip("每 Tile 世界尺寸（米），默认 2。")]
     [Min(0.01f)] public float tileSize = 2f;
 
-    [Header("世界种子（：Chunk 生成与 WorldPlan 区域解析共用）")]
+    [Header("地图边界（矩形：以出生点为中心，四周各扩展 N 个 Chunk）")]
+    [Tooltip("边界半径（Chunk 数）：以出生点为中心，四周各扩展 N 个 Chunk 才允许生成。0 或负数 = 无边界（全图无限生成）。")]
+    [Min(0)] public int boundaryChunkExtent = 8;
+    [Tooltip("边界中心（出生点）覆盖：为空时取系统 Awake 时玩家位置；地图本地坐标基准（支持旋转）。")]
+    public Transform boundaryCenterOverride;
+
+    [Header("世界种子（Chunk 生成与 WorldPlan 区域解析共用）")]
     [Tooltip("单局种子。ChunkSeed = Hash(coord, worldSeed)，生成顺序无关。")]
     public uint worldSeed = 12345;
-    [Tooltip("默认 Chunk 模板：WorldPlan 接入前所有 Chunk 共用；为空时占位生成器仅写 isWalkable 快照。")]
+    [Tooltip("默认 Chunk 模板：WorldPlan 接入前所有 Chunk 共用；为空时 Tile 生成退化为纯随机（池内 prefab，可走性以 TileVisual 为准）。")]
     public ChunkDef defaultChunkDef;
 
     [Header("WorldPlan（宏观区域；空 = 全部用 defaultChunkDef）")]
@@ -85,24 +91,29 @@ public class MapStreamingSystem : MonoBehaviour
     [Tooltip("范围集合重算间隔（秒）。事件触发（跨 Chunk 边界）留 TODO。")]
     [Min(0.02f)] public float tickInterval = 0.2f;
 
-    [Header("每帧预算：个数上限 + 时间片兜底，两者取先触发者")]
-    [Tooltip("Activate 每帧上限。")]
-    [Min(1)] public int activatePerFrame = 2;
-    [Tooltip("Pause 每帧上限。")]
-    [Min(1)] public int pausePerFrame = 5;
-    [Tooltip("Instantiate 每帧上限（最贵）。")]
-    [Min(1)] public int instantiatePerFrame = 2;
-    [Tooltip("Prepare 每帧上限。")]
-    [Min(1)] public int preparePerFrame = 4;
-    [Tooltip("UnloadScene 每帧上限。")]
-    [Min(1)] public int unloadScenePerFrame = 2;
-    [Tooltip("Serialize 每帧上限。")]
-    [Min(1)] public int serializePerFrame = 2;
-    [Tooltip("UnloadFull 每帧上限。")]
-    [Min(1)] public int unloadFullPerFrame = 4;
-    [Tooltip("流送队列单帧时间片预算（毫秒，）：超时立即停止出队，剩余任务顺延下帧。" +
-             "个数预算防\"量\"，时间片防\"单价失控\"（如 Instantiate 遇复杂 Chunk），两者取先触发者。0 = 关闭时间片，仅按个数预算。")]
-    [Min(0f)] public float timeBudgetMs = 4f;
+    // ── 每帧预算（已内化为代码常量：个数上限 + 时间片兜底，两者取先触发者） ──
+    // 数值依据（2026-08-17 实测日志）：玩家以游戏内最快速度（约 60m/s）直线移动 1.5s 窗口内，
+    // Instantiate 17 个 / UnloadScene 15 / Serialize 15 / UnloadFull 16 / Activate 12 / Pause 10，
+    // 即每类每秒约 10-12 个；且 0.2s Tick 在跨 Chunk 边界瞬间一次性入队 4-6 个同类任务。
+    // 预算取峰值 1.5-2 倍余量（掉帧 30FPS 时仍能 2-3 帧内消化），保证视觉缺口延迟 < 100ms。
+    // 时间片：单个 Instantiate 实测约 1.5ms（64 Tile + 刷怪），8ms ≈ 5 个 Instantiate 或 20+ 轻量任务。
+    /// <summary>Activate（进入 A，激活怪物 AI）每帧上限。</summary>
+    public const int kActivatePerFrame = 4;
+    /// <summary>Pause（离开 A，休眠怪物 AI）每帧上限。</summary>
+    public const int kPausePerFrame = 6;
+    /// <summary>Instantiate（Prepared→Active 前的视觉/刷怪，最贵）每帧上限。</summary>
+    public const int kInstantiatePerFrame = 4;
+    /// <summary>Prepare（None/Unloaded→Prepared，轻量查表）每帧上限；链式前置，须 ≥ Instantiate 2 倍。</summary>
+    public const int kPreparePerFrame = 8;
+    /// <summary>UnloadScene（离开 B，销毁视觉）每帧上限。</summary>
+    public const int kUnloadScenePerFrame = 4;
+    /// <summary>Serialize（离开 D，写怪物快照）每帧上限。</summary>
+    public const int kSerializePerFrame = 4;
+    /// <summary>UnloadFull（离开 D，回收运行时）每帧上限。</summary>
+    public const int kUnloadFullPerFrame = 6;
+    /// <summary>流送队列单帧时间片预算（毫秒）：超时立即停止出队，剩余任务顺延下帧。
+    /// 个数预算防"量"，时间片防"单价失控"（如 Instantiate 遇复杂 Chunk），两者取先触发者。</summary>
+    public const float kTimeBudgetMs = 8f;
 
     [Header("调试")]
     [Tooltip("Scene 视图绘制 A/B/C/D 范围圆 + Chunk 状态色块。")]
@@ -129,9 +140,11 @@ public class MapStreamingSystem : MonoBehaviour
     public int QueuedJobCount => jobQueue.Count;
     /// <summary>本帧已执行的 Job 数（ProcessJobQueue 每帧重置）。</summary>
     public int JobsExecutedThisFrame { get; private set; }
-    /// <summary>本帧任务队列总耗时（毫秒，含排序/过期校验；timeBudgetMs = 0 未计时恒为 0）。</summary>
+    /// <summary>本帧任务队列总耗时（毫秒，含排序/过期校验）。</summary>
     public float LastFrameQueueMs { get; private set; }
-    /// <summary>本帧是否因时间片耗尽提前停止出队（剩余顺延，）。</summary>
+    /// <summary>时间片预算常量（毫秒），供调试 HUD 显示。</summary>
+    public static float TimeBudgetMs => kTimeBudgetMs;
+    /// <summary>本帧是否因时间片耗尽提前停止出队（剩余任务顺延下帧）。</summary>
     public bool TimeSliceExceeded { get; private set; }
     /// <summary>A/B/C/D 当前集合 Chunk 数。</summary>
     public int RangeACount => currentA.Count;
@@ -163,6 +176,10 @@ public class MapStreamingSystem : MonoBehaviour
     float nextTickTime;
     Transform playerFallback;
 
+    // ── 地图边界（矩形，chunk 坐标范围；boundaryChunkExtent ≤ 0 时不启用）──
+    bool boundaryEnabled;
+    ChunkCoord boundaryMin, boundaryMax;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -176,6 +193,37 @@ public class MapStreamingSystem : MonoBehaviour
         // 视觉解析式 bounds 校正假设父链 localScale = 1（ChunkVisualizer.PlaceBlock），缩放会致视觉错位。
         if (transform.lossyScale != Vector3.one)
             Debug.LogWarning($"[MapStreamingSystem] 本物体含缩放 {transform.lossyScale}：地图支持平移/旋转，不支持非均匀缩放（视觉 bounds 校正会失真）。建议缩放保持 1。", this);
+
+        InitBoundary();
+    }
+
+    /// <summary>
+    /// 边界初始化：出生点（boundaryCenterOverride 或玩家当前位置）转地图本地 → chunk 坐标 → ±boundaryChunkExtent 定范围。
+    /// 早于首次 Tick：出生点必须在边界内（玩家出生即中心）。
+    /// </summary>
+    void InitBoundary()
+    {
+        if (boundaryChunkExtent <= 0)
+        {
+            boundaryEnabled = false;
+            return;
+        }
+        boundaryEnabled = true;
+        Vector3 centerWorld = boundaryCenterOverride != null
+            ? boundaryCenterOverride.position
+            : GetPlayerPosition();
+        ChunkCoord c = ChunkFromLocal(WorldToMapLocal(centerWorld));
+        boundaryMin = new ChunkCoord(c.x - boundaryChunkExtent, c.y - boundaryChunkExtent);
+        boundaryMax = new ChunkCoord(c.x + boundaryChunkExtent, c.y + boundaryChunkExtent);
+        Debug.Log($"[MapStreamingSystem] 地图边界启用：中心 chunk({c.x},{c.y}) ± {boundaryChunkExtent} → [{boundaryMin.x},{boundaryMax.x}]×[{boundaryMin.y},{boundaryMax.y}]", this);
+    }
+
+    /// <summary>边界判定：chunk 是否在矩形边界内（未启用恒 true）。</summary>
+    public bool IsInsideBoundary(ChunkCoord c)
+    {
+        if (!boundaryEnabled) return true;
+        return c.x >= boundaryMin.x && c.x <= boundaryMax.x
+            && c.y >= boundaryMin.y && c.y <= boundaryMax.y;
     }
 
     void OnDestroy(){
@@ -247,9 +295,12 @@ public class MapStreamingSystem : MonoBehaviour
         // TODO(Phase 1 后续): 相机视锥与地面相交覆盖的 Chunk 集合，替换半径近似
         var set = ChunksInRadius(player, radiusA);
         var playerChunk = ChunkFromLocal(player);
-        set.Add(playerChunk);
+        if (IsInsideBoundary(playerChunk)) set.Add(playerChunk);          // 玩家格保底（边界外不生成）
         foreach (var dir in ChunkCoord.AllDirections)
-            set.Add(playerChunk.Neighbor(dir));
+        {
+            var n = playerChunk.Neighbor(dir);
+            if (IsInsideBoundary(n)) set.Add(n);
+        }
         return set;
     }
 
@@ -266,6 +317,9 @@ public class MapStreamingSystem : MonoBehaviour
         for (int y = minY; y <= maxY; y++)
         {
             var c = new ChunkCoord(x, y);
+            // 边界外 Chunk 一律不进入任何范围集合：不 Prepare/Instantiate/Activate，
+            // chunk 与怪物均不生成（A/B/C/D 全走本函数，一处拦截全覆盖）。
+            if (!IsInsideBoundary(c)) continue;
             if (Vector3.Distance(ChunkLocalCenter(c), player) <= radius) set.Add(c);
         }
         return set;
@@ -304,7 +358,7 @@ public class MapStreamingSystem : MonoBehaviour
     /// <summary>
     /// 按两级排序（JobKind 优先级 → 距离近优先）执行队列，受每帧个数预算 + 时间片预算约束。
     /// 个数预算防"量"，时间片防"单价失控"（如 Instantiate 遇复杂 Chunk），两者取先触发者；
-    /// timeBudgetMs = 0 关闭时间片仅按个数预算。预算耗尽的未执行任务原地压缩顺延下帧。
+    /// 时间片预算为常量 kTimeBudgetMs（8ms，恒启用）。预算耗尽的未执行任务原地压缩顺延下帧。
     /// TODO(Phase 4 后续): 空间优先级加"玩家所在 > 前进方向"权重。
     /// </summary>
     void ProcessJobQueue(){
@@ -318,7 +372,7 @@ public class MapStreamingSystem : MonoBehaviour
         // 每帧已执行计数（按 JobKind 索引）；正序遍历保证同 Kind 内距离近者优先，
         // 原地压缩保留"未过期但预算耗尽"的任务顺延到下帧
         Span<int> executed = stackalloc int[7];
-        bool timed = timeBudgetMs > 0f;
+        bool timed = kTimeBudgetMs > 0f;
         // 不用 using System.Diagnostics（避免 Debug 二义性），全限定名引用 Stopwatch
         var stopwatch = timed ? System.Diagnostics.Stopwatch.StartNew() : null;
         int write = 0, read = 0;
@@ -339,7 +393,7 @@ public class MapStreamingSystem : MonoBehaviour
                 continue;
             }
             // 时间片兜底：超时立即停止出队，剩余任务（含尚未做过期校验的）整体顺延下帧
-            if (timed && stopwatch.Elapsed.TotalMilliseconds >= timeBudgetMs)
+            if (timed && stopwatch.Elapsed.TotalMilliseconds >= kTimeBudgetMs)
             {
                 TimeSliceExceeded = true;
                 break;
@@ -368,13 +422,13 @@ public class MapStreamingSystem : MonoBehaviour
     {
         switch (kind)
         {
-            case JobKind.Activate: return activatePerFrame;
-            case JobKind.Pause: return pausePerFrame;
-            case JobKind.Instantiate: return instantiatePerFrame;
-            case JobKind.Prepare: return preparePerFrame;
-            case JobKind.UnloadScene: return unloadScenePerFrame;
-            case JobKind.Serialize: return serializePerFrame;
-            case JobKind.UnloadFull: return unloadFullPerFrame;
+            case JobKind.Activate: return kActivatePerFrame;
+            case JobKind.Pause: return kPausePerFrame;
+            case JobKind.Instantiate: return kInstantiatePerFrame;
+            case JobKind.Prepare: return kPreparePerFrame;
+            case JobKind.UnloadScene: return kUnloadScenePerFrame;
+            case JobKind.Serialize: return kSerializePerFrame;
+            case JobKind.UnloadFull: return kUnloadFullPerFrame;
             default: return 1;
         }
     }
@@ -446,19 +500,19 @@ public class MapStreamingSystem : MonoBehaviour
         }
     }
 
-    // ── Job 实现（Phase 1 占位；真实行为见各 TODO） ──
+    // ── Job 实现 ──
 
     /// <summary>
-    /// Prepare（进 C）：生成 TileData 网格 + 出入口校验（≥2 可通行邻接边，）。
-    /// 邻接未知视为未校验但暂不报错（邻居后续生成时被边界签名强制约束， 签名本身留 TODO）。
+    /// Prepare（进 C）：生成 TileData 网格 + 出入口校验（≥2 可通行邻接边）。
+    /// 邻接未知视为未校验但暂不报错（邻居后续生成时被边界签名强制约束，签名机制本身留 TODO）。
     /// 校验失败重摇最多 3 次，仍失败走全 Normal 安全兜底。
-    /// 注：Tile 级方块地形方案下边沿恒 Normal 四边恒开，校验恒一次通过（结构保留给未来真实生成器）。
+    /// 注：随机路径下边沿恒 Normal 四边恒开，校验通常一次通过；模板布局下边沿可走性由策划保证（见 GenerateTilesPlaceholder）。
     /// </summary>
     void Prepare(ChunkCoord coord)
     {
         var chunk = GetOrCreateChunk(coord);
 
-        const int maxRetries = 3; // 
+        const int maxRetries = 3;
         for (int attempt = 0; attempt <= maxRetries; attempt++)
         {
             uint seed = ChunkSeed(coord, attempt);
@@ -483,7 +537,7 @@ public class MapStreamingSystem : MonoBehaviour
     void Instantiate(ChunkCoord coord)
     {
         if (!registry.TryGetValue(coord, out var chunk)) return;
-        // 怪物刷出 / ChunkState 快照恢复由 MonsterSpawner 监听状态切换驱动（，本方法不直接处理）
+        // 怪物刷出 / ChunkState 快照恢复由 MonsterSpawner 监听状态切换驱动（本方法不直接处理）
         // TODO(Phase 2+ 远期): 视觉层若改共享 Tilemap / 合并静态网格，在此接管实例化
         // TODO(Phase 4): 该 Chunk 包围盒 NavMeshSurface.UpdateNavMesh 异步局部烘焙
         chunk.TransitionTo(ChunkStreamState.Dormant);
@@ -493,7 +547,7 @@ public class MapStreamingSystem : MonoBehaviour
     void Activate(ChunkCoord coord)
     {
         if (!registry.TryGetValue(coord, out var chunk)) return;
-        // 怪物 AI 激活由 MonsterSpawner 监听状态切换驱动（aiActiveOverride = true，）；
+        // 怪物 AI 激活由 MonsterSpawner 监听状态切换驱动（aiActiveOverride = true）；
         // 事件 / 动画粒子恢复 TODO(Phase 2 后续)
         if (chunk.TransitionTo(ChunkStreamState.Active))
         {
@@ -506,7 +560,7 @@ public class MapStreamingSystem : MonoBehaviour
     void Pause(ChunkCoord coord)
     {
         if (!registry.TryGetValue(coord, out var chunk)) return;
-        // AI 降频休眠由 MonsterSpawner 监听状态切换驱动（aiActiveOverride = false，AIController 0.5s/tick，）；
+        // 怪物 AI 休眠由 MonsterSpawner 监听状态切换驱动（aiActiveOverride = false）；
         // 暂停动画/粒子 TODO(Phase 2 后续)
         if (chunk.TransitionTo(ChunkStreamState.Dormant) && logStateChanges)
             Debug.Log($"[MapStreamingSystem] {coord} → Dormant（离开 A）");
@@ -517,7 +571,7 @@ public class MapStreamingSystem : MonoBehaviour
     {
         if (!registry.TryGetValue(coord, out var chunk)) return;
         // TODO(Phase 2 后续): 卸载场景对象（Tilemap 清除 / 网格回池）
-        // 怪物快照进 ChunkState + 实例回 MonsterPool 由 MonsterSpawner 监听状态切换驱动（，Phase 3 已实装）
+        // 怪物快照进 ChunkState + 实例回 MonsterPool 由 MonsterSpawner 监听状态切换驱动（Phase 3 已实装）
         // TODO(Phase 4): 同包围盒 NavMeshSurface.UpdateNavMesh 移除局部 NavMesh
         if (chunk.TransitionTo(ChunkStreamState.Prepared) && logStateChanges)
             Debug.Log($"[MapStreamingSystem] {coord} → Prepared（离开 B）");
@@ -601,7 +655,7 @@ public class MapStreamingSystem : MonoBehaviour
     /// Tile 生成薄封装（逻辑迁移至 ChunkTileGenerator，职责分离）：
     /// 单一「随机 + 模板融合」模式，模板分配经全局 ChunkTemplateAllocator 协调（确定性 + 全局约束复用）。
     /// 返回 Chunk 实际开放边（随机路径边沿全 Normal 四边恒开；模板按布局边沿可走性，连通由策划负责）。
-    /// TODO(Phase 1 后续): 真实生成器必须满足边界签名（Hash(coord, dir, seed) 决定边沿开口模式）。
+    /// TODO(Phase 1 后续): 生成器须满足边界签名（Hash(coord, dir, seed) 决定边沿开口模式）。
     /// </summary>
     List<ChunkDirection> GenerateTilesPlaceholder(ChunkRuntime chunk, uint seed)
     {
@@ -744,6 +798,21 @@ public class MapStreamingSystem : MonoBehaviour
         DrawRangeCircle(player, radiusC, new Color(1f, 0.9f, 0.2f, 0.9f));   // C 黄
         DrawRangeCircle(player, radiusD, new Color(1f, 0.3f, 0.3f, 0.9f));   // D 红
 
+        // 地图边界矩形（边界外不生成 chunk/怪物）
+        if (boundaryEnabled)
+        {
+            float chunkWorld = chunkSize * tileSize;
+            Vector3 min = ChunkLocalOrigin(boundaryMin);
+            Vector3 max = ChunkLocalOrigin(new ChunkCoord(boundaryMax.x + 1, boundaryMax.y + 1));
+            Vector3 c0 = new Vector3(min.x, 0.1f, min.z);
+            Vector3 c1 = new Vector3(max.x, 0.1f, min.z);
+            Vector3 c2 = new Vector3(max.x, 0.1f, max.z);
+            Vector3 c3 = new Vector3(min.x, 0.1f, max.z);
+            Gizmos.color = new Color(1f, 1f, 1f, 0.8f);
+            Gizmos.DrawLine(c0, c1); Gizmos.DrawLine(c1, c2);
+            Gizmos.DrawLine(c2, c3); Gizmos.DrawLine(c3, c0);
+        }
+
         if (!Application.isPlaying) return;
         foreach (var kv in registry)
         {
@@ -756,7 +825,7 @@ public class MapStreamingSystem : MonoBehaviour
             Gizmos.DrawWireCube(center + Vector3.up * 0.05f, new Vector3(size, 0.1f, size));
         }
 
-        // 被 Pin Chunk 紫色线框（：Pin 泄漏可视化监控）
+        // 被 Pin Chunk 紫色线框（Pin 泄漏可视化监控）
         foreach (var c in pinRegistry.PinnedCoords)
         {
             Gizmos.color = new Color(0.8f, 0.2f, 1f, 0.9f);
