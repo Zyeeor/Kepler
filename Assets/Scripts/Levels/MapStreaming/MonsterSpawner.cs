@@ -35,6 +35,10 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("在场怪物上限（Active + Dormant）。满时不再刷怪，已刷的不回收（等自然脱战/击杀）。")]
     [Min(1)] public int maxCombatMonsters = 30;
 
+    [Header("波次模式")]
+    [Tooltip("地图静态怪：false = 波次玩法，Chunk 进 B 不再按 waveTable 刷静态怪，场上所有怪物由 WaveManager 波次逻辑驱动（波次怪永不休眠、不随 Chunk 回收/写快照）。")]
+    public bool enableChunkStaticSpawns = false;
+
     [Header("刷怪")]
     [Tooltip("单个 Chunk 刷怪波次上限；无 MarkerLayer 刷怪 Tile 时的占位刷怪点数也取此值。")]
     [Min(1)] public int maxWavesPerChunk = 2;
@@ -79,11 +83,13 @@ public class MonsterSpawner : MonoBehaviour
     readonly List<MonsterActor> offscreenCombat = new List<MonsterActor>();
     readonly Dictionary<MonsterActor, float> outOfViewSince = new Dictionary<MonsterActor, float>();
 
-    /// <summary>追踪信息：归属 Chunk + 来源 prefab。</summary>
+    /// <summary>追踪信息：归属 Chunk + 来源 prefab + 是否波次怪。</summary>
     struct TrackedInfo
     {
         public ChunkCoord homeChunk;
         public GameObject prefab;
+        /// <summary>波次怪：永不随 Chunk 休眠/回收/写快照，退场由 WaveManager 波次系统裁决。</summary>
+        public bool isWaveMonster;
     }
     readonly Dictionary<MonsterActor, TrackedInfo> trackInfoByMonster = new Dictionary<MonsterActor, TrackedInfo>();
 
@@ -198,6 +204,7 @@ public class MonsterSpawner : MonoBehaviour
     /// </summary>
     void SpawnOrRestoreChunkMonsters(ChunkRuntime chunk)
     {
+        if (!enableChunkStaticSpawns) return; // 波次模式：地图不刷静态怪，场上所有怪物由 WaveManager 波次逻辑驱动
         var system = MapStreamingSystem.Instance;
         if (system != null && system.States.TryGet(chunk.Coord, out var state) && state.spawnedWaveIds.Count > 0)
         {
@@ -479,6 +486,87 @@ public class MonsterSpawner : MonoBehaviour
         return center;
     }
 
+    // ── 波次玩法刷怪 API（WaveManager 驱动；与地图静态怪共用追踪/配额/回收体系） ──
+
+    /// <summary>
+    /// 波次刷怪：在玩家周围 B 带内寻找合法位置（距离/视野/地形校验）并刷出 1 只怪。
+    /// AI 直接激活（不等 Chunk 进 A）；计入全场配额与追踪，死亡/回收由框架统一处理。
+    /// </summary>
+    /// <param name="prefab">怪物 prefab（须挂 MonsterActor）。</param>
+    /// <param name="pos">刷怪世界坐标（由 TryGetWaveSpawnPosition 提供，或调用方自行保证合法）。</param>
+    /// <returns>刷出的 MonsterActor；配额满 / prefab 无效 / 无 Actor 时返回 null。</returns>
+    public MonsterActor SpawnWaveMonster(GameObject prefab, Vector3 pos)
+    {
+        if (prefab == null || TrackedMonsterCount >= maxCombatMonsters) return null;
+        var system = MapStreamingSystem.Instance;
+        ChunkCoord home = system != null ? system.WorldToChunk(pos) : default;
+
+        GameObject go = MonsterPool.Instance.Spawn(prefab, pos, Quaternion.identity);
+        if (go == null) return null;
+        var monster = go.GetComponentInChildren<MonsterActor>(true);
+        if (monster == null)
+        {
+            Debug.LogWarning($"[MonsterSpawner] 波次刷怪 prefab '{prefab.name}' 无 MonsterActor，已销毁跳过。");
+            Destroy(go);
+            return null;
+        }
+        monster.aiActiveOverride = true; // 波次怪直接激活索敌，且永不休眠（SetChunkAIActive 跳过波次怪）
+        Track(home, monster, prefab, isWaveMonster: true); // 不随 Chunk 回收/写快照，退场由波次系统裁决
+        OnMonsterSpawned?.Invoke(monster, home);
+        if (logSpawns)
+            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}）。");
+        return monster;
+    }
+
+    /// <summary>
+    /// 波次刷怪点查找：玩家周围 [minSpawnDistanceToPlayer, maxSpawnDistanceToPlayer] 环形带内
+    /// 随机采样，要求落在已加载 Chunk（Registry 有条目、Tiles 就绪）的可走 Tile 上且不在相机视野内。
+    /// </summary>
+    public bool TryGetWaveSpawnPosition(out Vector3 pos)
+    {
+        pos = default;
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return false;
+        Vector3 player = GetPlayerPosition();
+        var cam = GetMainCamera();
+        for (int i = 0; i < 16; i++)
+        {
+            float angle = UnityEngine.Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float r = UnityEngine.Random.Range(minSpawnDistanceToPlayer, maxSpawnDistanceToPlayer);
+            Vector3 c = player + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
+            if (!system.Registry.TryGetValue(system.WorldToChunk(c), out var chunk) || chunk == null || chunk.Tiles == null)
+                continue; // 该点归属 Chunk 未加载：跳过（地图边界外同样落此分支）
+            if (cam != null)
+            {
+                Vector3 vp = cam.WorldToViewportPoint(c);
+                if (vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f)
+                    continue; // 视野内：不在玩家面前刷
+            }
+            if (!IsWalkable(chunk, c)) continue;
+            pos = c;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 回收单只波次怪（时间波结算清场用）：摘除追踪/配额计数后回池，不写 Chunk 快照
+    /// （波次怪与地图静态怪分离，清场即永久退场，不会在快照恢复时重现）。
+    /// </summary>
+    public void RecycleWaveMonster(MonsterActor monster)
+    {
+        if (monster == null) return;
+        ChunkCoord home = default;
+        if (trackInfoByMonster.TryGetValue(monster, out var info))
+        {
+            home = info.homeChunk;
+            if (trackedByChunk.TryGetValue(home, out var list)) list.Remove(monster);
+            Untrack(monster);
+        }
+        MonsterPool.Instance.Return(monster);
+        OnMonsterRecycled?.Invoke(monster, home);
+    }
+
     /// <summary>世界坐标是否落在该 Chunk 的可走 Tile 上（经系统坐标换算，支持地图旋转）。</summary>
     bool IsWalkable(ChunkRuntime chunk, Vector3 worldPos)
     {
@@ -499,6 +587,7 @@ public class MonsterSpawner : MonoBehaviour
             var m = list[i];
             if (m == null) continue;
             if (!active && m.isPossessed) continue; // 附身中的怪永不休眠
+            if (trackInfoByMonster.TryGetValue(m, out var ti) && ti.isWaveMonster) continue; // 波次怪永不休眠（波次系统固定激活）
             if (m.aiActiveOverride == active) continue;
             m.aiActiveOverride = active;
             changed++;
@@ -555,9 +644,10 @@ public class MonsterSpawner : MonoBehaviour
                 else TrackedMonsterCount--;
                 continue;
             }
-            if (m.isPossessed)
+            bool isWave = trackInfoByMonster.TryGetValue(m, out var info) && info.isWaveMonster;
+            if (m.isPossessed || isWave)
             {
-                survivors.Add(m);
+                survivors.Add(m); // 附身中的怪 / 波次怪：跳过并继续追踪（波次怪不随 Chunk 回收与写快照，退场由波次系统裁决）
                 continue;
             }
             if (Vector3.Distance(m.transform.position, player) < minSpawnDistanceToPlayer)
@@ -568,7 +658,6 @@ public class MonsterSpawner : MonoBehaviour
 
             if (state != null)
             {
-                trackInfoByMonster.TryGetValue(m, out var info);
                 if (m.isDowned || m.Body == MonsterActor.BodyState.Fading)
                 {
                     // 尸体快照：本批重建（仅记录，恢复留 TODO）
@@ -649,6 +738,7 @@ public class MonsterSpawner : MonoBehaviour
         {
             var m = kv.Key;
             if (m == null || !m.gameObject.activeInHierarchy) continue;
+            if (kv.Value.isWaveMonster) continue; // 波次怪不脱战回收（退场由波次系统裁决，避免跑路清空数量波）
             if (m.isPossessed || m.isDowned) continue; // 附身身体 Pin 保护；倒地尸体走 Chunk 回收路径
             if (m.Body == MonsterActor.BodyState.Fading || m.Body == MonsterActor.BodyState.Despawned) continue;
             if (m.aiActiveOverride && m.playerDetected) continue; // 仍在交战（激活且已索敌）
@@ -684,6 +774,7 @@ public class MonsterSpawner : MonoBehaviour
     {
         if (body == null) return;
         if (!trackInfoByMonster.TryGetValue(body, out var info)) return;
+        if (info.isWaveMonster) return; // 波次怪的身体不属于 Chunk 静态供给，不计数
         var system = MapStreamingSystem.Instance;
         if (system == null) return;
         int consumed = ++system.States.GetOrCreate(info.homeChunk).bodySupplyConsumed;
@@ -693,6 +784,9 @@ public class MonsterSpawner : MonoBehaviour
     // ── 追踪与配额 ──
 
     void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab)
+        => Track(coord, monster, prefab, isWaveMonster: false);
+
+    void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab, bool isWaveMonster)
     {
         if (!trackedByChunk.TryGetValue(coord, out var list))
         {
@@ -700,7 +794,7 @@ public class MonsterSpawner : MonoBehaviour
             trackedByChunk.Add(coord, list);
         }
         list.Add(monster);
-        trackInfoByMonster[monster] = new TrackedInfo { homeChunk = coord, prefab = prefab };
+        trackInfoByMonster[monster] = new TrackedInfo { homeChunk = coord, prefab = prefab, isWaveMonster = isWaveMonster };
         TrackedMonsterCount++;
     }
 

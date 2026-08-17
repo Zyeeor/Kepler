@@ -167,7 +167,7 @@ public class MapDebugHUD : MonoBehaviour
         queuedJobs = system.QueuedJobCount;
         jobsExecuted = system.JobsExecutedThisFrame;
         queueMs = system.LastFrameQueueMs;
-        timeBudget = system.timeBudgetMs;
+        timeBudget = MapStreamingSystem.TimeBudgetMs;
         timeSliceExceeded = system.TimeSliceExceeded;
         pinCount = system.Pins.PinnedChunkCount;
         snapshotCount = system.States.Count;
