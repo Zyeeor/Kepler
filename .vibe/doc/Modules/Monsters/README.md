@@ -3,7 +3,7 @@
 > **Authority status: IMPLEMENTATION TRACKING / HISTORICAL REFERENCE**  
 > Design Authority：`.vibe/doc/Canonical/**`（冲突时 Canonical 胜）。  
 > 本目录为 monster-dev-pipeline 阶段 A 产出的工程追踪文档，不是独立 Design Truth。  
-> 2026-08-17：需求合并刷新；CSV 与 Canonical 冲突项已按 Canonical 重写，旧 CSV 规格进各文件 Appendix。
+> 2026-08-17 下午：按最新 CSV 增量刷新；冲突项仍 Canonical 优先，旧 CSV 规格进各文件 Appendix。
 
 > 细分需求由 `monster-dev-pipeline` 阶段 A 生成；工程落地走阶段 B。  
 > 结构化工程输入：`项目全量表 - 怪物设计（新）.csv`  
@@ -23,9 +23,9 @@
 | 怪物 | 英文 id | Prefab | 总状态 | Canonical 对齐 | 细分需求 |
 |---|---|---|---|---|---|
 | 主角-灵魂体 | soul | （现有灵魂） | 策划未明确 | Soul **无**战斗技能；开场进傲慢 | [主角-灵魂体.md](./主角-灵魂体.md) |
-| 傲慢-终刃绝影 | pride | `pride_new` | 已开发但没资源 | 三槽已对齐；Card 待迁 `PR-*` | [傲慢-终刃绝影.md](./傲慢-终刃绝影.md) |
-| 怠惰-机械之灵 | sloth | `sloth_new` | 已开发但没资源 | 三槽已对齐；Card 待迁 `SL-*` | [怠惰-机械之灵.md](./怠惰-机械之灵.md) |
-| 暴食-魔猫 | gluttony | `gluttony_new`（待建） | 待开发 | 三槽+`GL-*` 已合并 | [暴食-魔猫.md](./暴食-魔猫.md) |
+| 傲慢-终刃绝影 | pride | `pride_new` | 已完成 | 三槽+资源 CSV 已齐；Card 待迁 `PR-*` | [傲慢-终刃绝影.md](./傲慢-终刃绝影.md) |
+| 怠惰-机械之灵 | sloth | `sloth_new` | 已开发但没资源 | 三槽已对齐；CSV 无血量行；Card 待迁 `SL-*` | [怠惰-机械之灵.md](./怠惰-机械之灵.md) |
+| 暴食-魔猫 | gluttony | `gluttony_new` | 已开发但没资源 | 三槽+`GL-*` 已落地；VFX/小猫模型占位 | [暴食-魔猫.md](./暴食-魔猫.md) |
 | 嫉妒-激光异形 | envy | `envy_new`（待建） | 待开发 | 已按 Canonical 重写（弃最高血/旧标记） | [嫉妒-激光异形.md](./嫉妒-激光异形.md) |
 | 愤怒-链狱冥兽 | wrath | `wrath_new`（待建） | 待开发 | 已按 Canonical 重写（路径伤降为 Card） | [愤怒-链狱冥兽.md](./愤怒-链狱冥兽.md) |
 | 贪婪-万手藏主 | greed | `greed_new`（待建） | 待开发 | 已按 Canonical 重写（库存+正面 Guard） | [贪婪-万手藏主.md](./贪婪-万手藏主.md) |
@@ -41,5 +41,17 @@
 | CSV 保留 | 移速、血量、CD/耗血等 TUNABLE 初值；模型与 VFX「制作中」状态；外观描述 |
 | 硬冲突已吸收 | 嫉妒目标与 Record；色欲基础 Q；贪婪 Guard/魔手；愤怒钩索路径伤；Soul 气波 |
 | 已落地怪 | 傲慢 / 怠惰保留工程路径与旧 effectId，另附 Canonical Card 对齐表与缺口 |
+
+## 下午增量（同日 CSV 再刷）
+
+| 项 | 变更 |
+|---|---|
+| 灵魂体 | 移速参考 15→16 |
+| 傲慢 | CSV 资源列多行「已完成」→ 总状态升为 `已完成`（`PR-*` 对齐仍开放） |
+| 怠惰 | 注明最新 CSV **无血量行**；工程暂用 140 |
+| 暴食 | 小猫移速初值与 CSV 对齐为 +100% |
+| 贪婪 | 魔手侧翼弧线 / 路径预览写入工程备注（非 Content 规则） |
+| 色欲 | Q 数值列已空 → 去掉「耗血 80」归因；Appendix 增补新 Legacy 词条 |
+| 嫉妒 / 愤怒 | 核对无增量 |
 
 阶段 B 前：待开发怪以各文件 §3–§4 Canonical 规格为准；勿再实现 Appendix 中的 Legacy 行。

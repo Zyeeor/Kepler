@@ -167,3 +167,25 @@ MonoBehaviour:
     turnSpeed: 540
     turnAcceleration: 1440
     showDebugRanges: 0
+  - id: Gluttony_new
+    detectionRadius: 15
+    basicAttackRange: 8
+    skillAttackRange: 3.5
+    aiMinRange: 1.5
+    attackEagerness: 0.75
+    decisionIntervalMin: 0.12
+    decisionIntervalMax: 0.4
+    skillPriority: 0.55
+    aiMobilityChance: 0.45
+    chaseDuration: 1
+    strafeChance: 0.35
+    strafeIntervalMin: 0.3
+    strafeIntervalMax: 0.9
+    strafeStrength: 0.4
+    moveSpeedJitterMin: 0.7
+    moveSpeedJitterMax: 1.2
+    moveAcceleration: 16
+    moveDeceleration: 22
+    turnSpeed: 540
+    turnAcceleration: 1440
+    showDebugRanges: 0
