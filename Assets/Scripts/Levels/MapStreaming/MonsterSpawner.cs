@@ -79,6 +79,25 @@ public class MonsterSpawner : MonoBehaviour
     /// <summary>当前在场怪物总数（Active + Dormant，含未回收的倒地尸体）。</summary>
     public int TrackedMonsterCount { get; private set; }
 
+    /// <summary>
+    /// 收集当前在场可交互的活怪（未销毁、未附身、未倒地），供指引 UI 等外部系统使用。
+    /// </summary>
+    public void CollectAliveMonsters(List<MonsterActor> buffer)
+    {
+        buffer.Clear();
+        foreach (var kv in trackedByChunk)
+        {
+            var list = kv.Value;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var m = list[i];
+                if (m == null || !m.gameObject.activeInHierarchy) continue;
+                if (m.isPossessed || m.isDowned) continue; // 附身身体/倒地尸体不算可指引目标
+                buffer.Add(m);
+            }
+        }
+    }
+
     readonly Dictionary<ChunkCoord, List<MonsterActor>> trackedByChunk = new Dictionary<ChunkCoord, List<MonsterActor>>();
     readonly List<MonsterActor> offscreenCombat = new List<MonsterActor>();
     readonly Dictionary<MonsterActor, float> outOfViewSince = new Dictionary<MonsterActor, float>();
@@ -930,13 +949,10 @@ public class MonsterSpawner : MonoBehaviour
     }
 
     void OnGUI(){
-        if (!showDebugHud || !Application.isPlaying) return;
+        if (!showDebugHud || !Application.isPlaying || GameManager.IsFormalFlow) return; // 正式流程屏蔽刷怪面板
 
-        var system = MapStreamingSystem.Instance;
-        GUI.Box(new Rect(Screen.width - 250f, 10f, 240f, 94f), "MonsterSpawner");
-        GUI.Label(new Rect(Screen.width - 242f, 32f, 224f, 18f), $"在场 {TrackedMonsterCount}/{maxCombatMonsters}（Active+Dormant）");
-        GUI.Label(new Rect(Screen.width - 242f, 50f, 224f, 18f), $"战斗怪 {CombatMonsterCount}（提示阈值 ≤{edgeIndicatorMaxCombat}）");
-        GUI.Label(new Rect(Screen.width - 242f, 68f, 224f, 18f), $"视野外提示 {offscreenCombat.Count} 只");
-        GUI.Label(new Rect(Screen.width - 242f, 86f, 224f, 18f), $"快照 {(system != null ? system.States.Count : 0)} Chunk / Pin {(system != null ? system.Pins.PinnedChunkCount : 0)}");
+        GUI.Box(new Rect(Screen.width - 250f, 10f, 240f, 58f), "MonsterSpawner");
+        GUI.Label(new Rect(Screen.width - 242f, 32f, 224f, 18f), $"剩怪 {TrackedMonsterCount} 只（在场，含休眠）");
+        GUI.Label(new Rect(Screen.width - 242f, 50f, 224f, 18f), $"视野外提示 {offscreenCombat.Count} 只");
     }
 }

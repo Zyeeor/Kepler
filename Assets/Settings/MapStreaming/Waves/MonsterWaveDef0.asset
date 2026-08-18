@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2ef18dbc6f4f0dd4f9a9fb4d5cc6eb89, type: 3}
-  m_Name: MonsterWaveDef
+  m_Name: MonsterWaveDef0
   m_EditorClassIdentifier: 
   id: wave_pride_test
   baseCount: 1
   threatValue: 1
   bodySupply: 1
-  spawnWeight: 0.1
+  spawnWeight: 1
   monsters:
   - prefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
       type: 3}

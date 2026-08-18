@@ -162,7 +162,9 @@ public class UIManager : MonoBehaviour
 
     public void OnRestartClicked()
     {
-        Debug.Log("UIManager: Restart clicked - reloading scene");
+        Debug.Log("UIManager: Restart clicked - ending run, reloading scene");
+        // 重开 = 结束当前对局（清内存态+清存档），再重载场景开始新局
+        RunSession.EnsureInstance().EndRun();
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
@@ -313,7 +315,7 @@ public class UIManager : MonoBehaviour
         {
             if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
             confirmOpenedFromPause = true;
-            confirmDialog.Show("Return to Menu", "Are you sure? Current progress will be lost.", OnReturnToMenuConfirmed, null);
+            confirmDialog.Show("Return to Menu", "Return to menu? Progress is saved at each wave clear and can be continued from the main menu.", OnReturnToMenuConfirmed, null);
             Debug.Log("UIManager: ConfirmDialog.Show called. IsVisible=" + confirmDialog.IsVisible());
         }
         else
