@@ -64,6 +64,29 @@ MonoBehaviour:
   - Effect.Combat.SlothDroneShot
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   projectilePrefab: {fileID: 1455237202425575238, guid: f521ce0cedbf59d4db85b8a31772ea43,
     type: 3}
   projectileSpeed: 16
@@ -84,6 +107,7 @@ GameObject:
   - component: {fileID: 2188491413448739384}
   - component: {fileID: 504355548628258862}
   - component: {fileID: 7092940905146936659}
+  - component: {fileID: 5172934693774179922}
   m_Layer: 0
   m_Name: sloth_drone
   m_TagString: Untagged
@@ -222,6 +246,22 @@ MonoBehaviour:
   maxHealth: 20
   currentHealth: 20
   displayName: "\u6728\u7075"
+  enemyStats:
+    maxHealth: 20
+    moveSpeed: 8
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 1
+    collisionDamage: 0
+    attackSpeed: 1
+  possessedStats:
+    maxHealth: 20
+    moveSpeed: 8
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 1
+    collisionDamage: 0
+    attackSpeed: 1
   maxTenacity: 1
   collisionDamage: 0
   attackSpeed: 1
@@ -243,6 +283,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -262,14 +303,37 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 0}
   summoner: {fileID: 0}
   followDistance: 2.2
   followHeight: 2.4
   followLerp: 8
   lifetime: 4
   explodeOnDeath: 0
+  kamikazeTriggerDistance: 1.5
   deathExplosionRadius: 3
   deathExplosionDamage: 20
+  kamikazeSpeed: 14
   deathExplosionVfx: {fileID: 2300246185322642342, guid: 246a270cf8f1398448444807fe41d3b8,
     type: 3}
+  deathExplosionVfxDuration: 1
   autoAttackInterval: 0.5
+--- !u!114 &5172934693774179922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6114247635342975564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1

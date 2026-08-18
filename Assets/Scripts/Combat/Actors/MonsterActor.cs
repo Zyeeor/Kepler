@@ -60,7 +60,13 @@ public class MonsterActor : Actor
     [Header("Identity")]
     public string displayName = "Enemy";
 
-    [Header("Stats (configured on prefab)")]
+    [Header("Dual Stats (Enemy vs Possessed)")]
+    [Tooltip("Stats while AI-controlled (enemy). Runtime Actor fields are filled from the active block.")]
+    public MonsterStatBlock enemyStats;
+    [Tooltip("Stats while player-possessed. Applied in OnPossessed().")]
+    public MonsterStatBlock possessedStats;
+
+    [Header("Runtime Stats (driven by active Dual Stat block)")]
     public float maxTenacity = 200f;
     // 注：moveSpeed / maxHealth / currentHealth 由 Actor 基类提供（同名同类型，prefab 序列化值按字段名映射到基类字段，无损）
     [Tooltip("Base collision damage when touching the player. Individual ability damage is configured on each EnemyAbility.")]
@@ -174,6 +180,7 @@ public class MonsterActor : Actor
     private Renderer[] bodyRenderers;
     private BoxCollider corpsePossessionCollider;
     private MaterialPropertyBlock corpseFadeBlock;
+    private ActorVisualFx visualFx;
     private const string CorpseColliderObjectName = "__PossessionCorpseCollider";
     private const float CorpseColliderPadding = 0.35f;
     private const float MinimumCorpseColliderSize = 1.25f;
@@ -252,11 +259,15 @@ public class MonsterActor : Actor
         initialLocalPosition = transform.localPosition;
         initialLocalRotation = transform.localRotation;
         corpseFadeBlock = new MaterialPropertyBlock();
-        currentHealth = maxHealth;
-        currentTenacity = maxTenacity;
+        EnsureDualStatsMigrated();
+        ApplyStatBlock(enemyStats, refillVitals: true);
         originalColor = bodyColor;
-        if (meshRenderer != null) meshRenderer.material.color = originalColor;
         bodyRenderers = GetComponentsInChildren<Renderer>(true);
+        visualFx = GetComponent<ActorVisualFx>();
+        if (visualFx == null) visualFx = gameObject.AddComponent<ActorVisualFx>();
+        visualFx.RefreshRenderers();
+        visualFx.SetDissolve(1f);
+        visualFx.SetPossessionHighlight(false);
 
         var found = GetComponentsInChildren<EnemyAbility>(true);
         passiveAbilities.Clear();
@@ -731,6 +742,27 @@ public class MonsterActor : Actor
         }
     }
 
+    /// <summary>
+    /// Environmental / tile hazard damage. Works on Active and Downed bodies (spike enter on corpses).
+    /// Does not apply tenacity / weaken flow for downed corpses.
+    /// </summary>
+    public void TakeEnvironmentalDamage(float amount)
+    {
+        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        if (IsDamageImmune(this)) return;
+        if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
+        if (amount <= 0f) return;
+
+        if (isDowned || Body == BodyState.Downed)
+        {
+            // Corpse: edge-trigger feedback only (HP already 0).
+            FlashDamage();
+            return;
+        }
+
+        TakeDamage(amount);
+    }
+
     public void OnDealtDamage(float amount)
     {
         // Enemy-specific lifesteal passive (e.g. from prefab)
@@ -840,7 +872,7 @@ public class MonsterActor : Actor
 
     void BecomeWeakened(){
         isWeakened = true;
-        if (meshRenderer != null) meshRenderer.material.color = weakenedColor;
+        // Keep authored materials; do not recolor the whole mesh.
     }
 
     public void OnPossessed(){
@@ -857,14 +889,18 @@ public class MonsterActor : Actor
         gameObject.tag = "Player";
         if (bodyAnimator != null) bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
         isPossessionReserved = false;
+        EnsureDualStatsMigrated();
+        ApplyStatBlock(possessedStats.HasConfiguredHealth ? possessedStats : enemyStats, refillVitals: true);
         SetRendererFade(1f);
-        if (meshRenderer != null) meshRenderer.material.color = possessedColor;
+        if (visualFx != null)
+        {
+            visualFx.SetDissolve(1f);
+            visualFx.SetPossessionHighlight(true);
+        }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = true;
         foreach (Collider collider in GetComponentsInChildren<Collider>()) collider.enabled = true;
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(false);
-        currentHealth = maxHealth;
-        currentTenacity = maxTenacity;
         UpdateHealthUI();
 
         Animator animator = GetActiveAnimator();
@@ -875,6 +911,9 @@ public class MonsterActor : Actor
         isPossessed = false;
         gameObject.tag = "Enemy";
         if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
+        if (visualFx != null) visualFx.SetPossessionHighlight(false);
+        // Cheat immortality must not linger on bodies left as normal enemies.
+        ClearCheatDefenseEffects();
     }
 
     private void EnterHitState(){
@@ -893,7 +932,7 @@ public class MonsterActor : Actor
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
-        if (meshRenderer != null) meshRenderer.material.color = downedColor;
+        // Keep authored materials on corpse; dissolve FX handles fading later.
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
 
@@ -909,6 +948,7 @@ public class MonsterActor : Actor
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
+        if (visualFx != null) visualFx.SetPossessionHighlight(false);
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
@@ -953,7 +993,7 @@ public class MonsterActor : Actor
         isWeakened = false;
         isDowned = false;
         isPossessed = false;
-        suppressPossessionDrain = false;
+        ClearCheatDefenseEffects();
         isPossessionReserved = false;
         playerDetected = false;
         aiActiveOverride = true; // 池复用默认激活；流送场景由 MonsterSpawner 刷出后按 Chunk 状态改写
@@ -971,7 +1011,11 @@ public class MonsterActor : Actor
         SetRendererFade(1f);
         transform.localPosition = initialLocalPosition;
         transform.localRotation = initialLocalRotation;
-        if (meshRenderer != null) meshRenderer.material.color = bodyColor;
+        if (visualFx != null)
+        {
+            visualFx.SetDissolve(1f);
+            visualFx.SetPossessionHighlight(false);
+        }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true)) renderer.enabled = true;
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
@@ -1099,6 +1143,12 @@ public class MonsterActor : Actor
 
     private void SetRendererFade(float fade)
     {
+        if (visualFx != null)
+        {
+            visualFx.SetDissolve(fade);
+            return;
+        }
+
         if (bodyRenderers == null || bodyRenderers.Length == 0)
             bodyRenderers = GetComponentsInChildren<Renderer>(true);
         if (corpseFadeBlock == null) corpseFadeBlock = new MaterialPropertyBlock();
@@ -1110,15 +1160,38 @@ public class MonsterActor : Actor
             for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
             {
                 Material material = materials[materialIndex];
-                if (material == null || !material.HasProperty("_CorpseFade")) continue;
+                if (material == null) continue;
                 renderer.GetPropertyBlock(corpseFadeBlock, materialIndex);
-                corpseFadeBlock.SetFloat("_CorpseFade", fade);
+                if (material.HasProperty("_CorpseFade"))
+                    corpseFadeBlock.SetFloat("_CorpseFade", fade);
+                if (material.HasProperty("_DissolveAmount"))
+                    corpseFadeBlock.SetFloat("_DissolveAmount", 1f - fade);
+                if (material.HasProperty("_BaseColor"))
+                {
+                    Color c = material.GetColor("_BaseColor");
+                    c.a = fade;
+                    corpseFadeBlock.SetColor("_BaseColor", c);
+                }
+                else if (material.HasProperty("_Color"))
+                {
+                    Color c = material.GetColor("_Color");
+                    c.a = fade;
+                    corpseFadeBlock.SetColor("_Color", c);
+                }
                 renderer.SetPropertyBlock(corpseFadeBlock, materialIndex);
             }
         }
     }
 
-    protected void FlashDamage(){
+    protected void FlashDamage()
+    {
+        if (visualFx != null)
+        {
+            visualFx.hitFlashColor = flashColor;
+            visualFx.hitFlashDuration = flashDuration;
+            visualFx.PlayHitFlash();
+            return;
+        }
         if (meshRenderer != null) StartCoroutine(FlashRoutine());
     }
 
@@ -1132,6 +1205,60 @@ public class MonsterActor : Actor
         else if (isPossessed) meshRenderer.material.color = possessedColor;
         else meshRenderer.material.color = bodyColor;
     }
+
+    private void ClearCheatDefenseEffects()
+    {
+        suppressPossessionDrain = false;
+        if (Combat != null)
+            Combat.RemoveEffectsWithTag("Effect.Defense.DamageImmune");
+    }
+
+    private void EnsureDualStatsMigrated()
+    {
+        if (enemyStats.HasConfiguredHealth) return;
+        MonsterStatBlock captured = MonsterStatBlock.FromRuntime(
+            maxHealth, moveSpeed, acceleration, deceleration, maxTenacity, collisionDamage, attackSpeed);
+        enemyStats = captured;
+        if (!possessedStats.HasConfiguredHealth)
+            possessedStats = captured;
+    }
+
+    private void ApplyStatBlock(MonsterStatBlock block, bool refillVitals)
+    {
+        if (!block.HasConfiguredHealth) return;
+        maxHealth = block.maxHealth;
+        moveSpeed = block.moveSpeed;
+        acceleration = block.acceleration;
+        deceleration = block.deceleration;
+        maxTenacity = block.maxTenacity;
+        collisionDamage = block.collisionDamage;
+        attackSpeed = block.attackSpeed > 0f ? block.attackSpeed : 1f;
+        if (refillVitals)
+        {
+            currentHealth = maxHealth;
+            currentTenacity = maxTenacity;
+        }
+        else
+        {
+            currentHealth = Mathf.Min(currentHealth, maxHealth);
+            currentTenacity = Mathf.Min(currentTenacity, maxTenacity);
+        }
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // Keep dual blocks in sync when designers still tweak legacy runtime fields in prefabs
+        // that have never authored dual blocks.
+        if (!Application.isPlaying && !enemyStats.HasConfiguredHealth && maxHealth > 0f)
+        {
+            enemyStats = MonsterStatBlock.FromRuntime(
+                maxHealth, moveSpeed, acceleration, deceleration, maxTenacity, collisionDamage, attackSpeed);
+            if (!possessedStats.HasConfiguredHealth)
+                possessedStats = enemyStats;
+        }
+    }
+#endif
 
     public void UpdateHealthUI(){
         if (healthSlider != null)

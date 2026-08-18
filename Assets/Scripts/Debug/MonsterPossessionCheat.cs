@@ -179,13 +179,7 @@ public class MonsterPossessionCheat : MonoBehaviour
             return;
         }
 
-        if (despawnPreviousCheatBody && lastCheatBody != null &&
-            PossessionManager.Instance.CurrentBody != lastCheatBody &&
-            lastCheatBody.gameObject.activeInHierarchy)
-        {
-            lastCheatBody.BeginDisappearing();
-            lastCheatBody = null;
-        }
+        MonsterActor previousCheatBody = lastCheatBody;
 
         Vector3 spawnPos = ResolveSpawnPosition();
         GameObject go = MonsterPool.Instance.Spawn(entry.prefab, spawnPos, Quaternion.identity);
@@ -213,6 +207,16 @@ public class MonsterPossessionCheat : MonoBehaviour
         }
 
         if (immortalCheatBodies) ApplyDamageImmune(monster);
+        else ClearDamageImmune(monster);
+
+        // Always strip immortality from the previous cheat body, then despawn if requested.
+        if (previousCheatBody != null && previousCheatBody != monster)
+        {
+            ClearDamageImmune(previousCheatBody);
+            previousCheatBody.suppressPossessionDrain = false;
+            if (despawnPreviousCheatBody && previousCheatBody.gameObject.activeInHierarchy)
+                previousCheatBody.BeginDisappearing();
+        }
 
         lastCheatBody = monster;
         string label = !string.IsNullOrEmpty(entry.displayName) ? entry.displayName : monster.displayName;
@@ -234,6 +238,17 @@ public class MonsterPossessionCheat : MonoBehaviour
 
         if (!combat.ApplyEffect(damageImmuneEffect))
             Debug.LogWarning("[MonsterPossessionCheat] Failed to apply DamageImmune effect.");
+    }
+
+    private void ClearDamageImmune(MonsterActor monster)
+    {
+        if (monster == null) return;
+        monster.suppressPossessionDrain = false;
+        CombatAbilityComponent combat = monster.Combat;
+        if (combat == null) combat = monster.GetComponentInChildren<CombatAbilityComponent>(true);
+        if (combat == null) return;
+        if (damageImmuneEffect != null) combat.RemoveEffect(damageImmuneEffect);
+        combat.RemoveEffectsWithTag("Effect.Defense.DamageImmune");
     }
 
     private void EnsureDamageImmuneEffect()

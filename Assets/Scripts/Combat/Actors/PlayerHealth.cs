@@ -34,6 +34,7 @@ public class PlayerHealth : MonoBehaviour
     private MonoBehaviour[] soulComponents;
     private Renderer[] soulRenderers;
     private Collider[] soulColliders;
+    private ActorVisualFx visualFx;
 
     void Awake()
     {
@@ -42,6 +43,9 @@ public class PlayerHealth : MonoBehaviour
         soulComponents = GetComponents<MonoBehaviour>();
         soulRenderers = GetComponentsInChildren<Renderer>(true);
         soulColliders = GetComponentsInChildren<Collider>(true);
+        visualFx = GetComponent<ActorVisualFx>();
+        if (visualFx == null) visualFx = gameObject.AddComponent<ActorVisualFx>();
+        visualFx.RefreshRenderers();
     }
 
     void Start()
@@ -62,7 +66,7 @@ public class PlayerHealth : MonoBehaviour
         {
             decayTimer -= decayInterval;
             float decayAmount = soulMaxHealth * healthDecayPercent;
-            TakeDamage(decayAmount);
+            TakeDamage(decayAmount, playHitFlash: false);
         }
     }
 
@@ -82,11 +86,13 @@ public class PlayerHealth : MonoBehaviour
 
     // ── 附身 HUD 已迁至 PossessionManager（Show/Hide 统一走 PossessionHUD.Instance） ──
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, bool playHitFlash = true)
     {
         var combatState = GetComponent<CombatAbilityComponent>();
         if (combatState != null) amount = combatState.ModifyIncomingDamage(amount);
+        if (amount <= 0f) return;
         currentHealth -= amount;
+        if (playHitFlash && visualFx != null) visualFx.PlayHitFlash();
         if (currentHealth <= 0) { currentHealth = 0; Die(); }
         UpdateHealthUI();
     }

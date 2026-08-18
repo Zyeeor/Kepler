@@ -9,6 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8687786789944472551}
+  - component: {fileID: 4829196049729240094}
+  - component: {fileID: 2325147398441918470}
+  - component: {fileID: 4282341533252485584}
+  - component: {fileID: 538293160330501787}
   m_Layer: 0
   m_Name: lava1
   m_TagString: Untagged
@@ -32,6 +36,98 @@ Transform:
   - {fileID: 2542481309990434556}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
+--- !u!114 &4829196049729240094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3138969978686984857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4789a9c5769e849a0ae0d1f23c993a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrainKind: 1
+  isWalkable: 1
+  markerType: 0
+  displayName: 
+--- !u!114 &2325147398441918470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3138969978686984857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b79dbbb676cc46c4973a0312e174cb49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  kind: 3
+  effect: {fileID: 11400000, guid: e4a85b5677854006a36471953c906584, type: 2}
+  detectionCenter: {x: 0, y: 1, z: 0}
+  detectionSize: {x: 1.25, y: 2.5, z: 1.25}
+  detectionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  overlapBufferSize: 32
+  moveSpeedMultiplier: 1
+  spikeDamage: 25
+  lavaBaseDamagePerStack: 5
+  lavaStackInterval: 0.5
+  lavaMaxStacks: 5
+  lavaEffectDuration: 3
+  lavaFireVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
+    type: 3}
+--- !u!65 &4282341533252485584
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3138969978686984857}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.25, y: 2.5, z: 1.25}
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!54 &538293160330501787
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3138969978686984857}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 126
+  m_CollisionDetection: 0
 --- !u!1001 &2648692976723808535
 PrefabInstance:
   m_ObjectHideFlags: 0

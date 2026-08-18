@@ -49,6 +49,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -56,10 +57,34 @@ MonoBehaviour:
   damage: 10
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   daggerPrefab: {fileID: 8044316912354738735, guid: 06fd062bc6d8bf746ac0a5d44d3cd5e3,
     type: 3}
   maxDaggers: 5
@@ -201,6 +226,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -208,10 +234,34 @@ MonoBehaviour:
   damage: 5
   drawHitboxes: 0
   cooldown: 1
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   bladePrefab: {fileID: 8044316912354738735, guid: 806b81d0ef6dbf44e8fcf5810e55f8e9,
     type: 3}
   bladeCount: 3
@@ -482,6 +532,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -489,10 +540,34 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0
@@ -507,6 +582,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4202068629033295698}
+  - component: {fileID: 6608380789566169632}
   m_Layer: 0
   m_Name: "Greed\uFF08full"
   m_TagString: Enemy
@@ -530,6 +606,25 @@ Transform:
   - {fileID: 5417715533104391790}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6608380789566169632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3744361111654940414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &3797659131636598871
 GameObject:
   m_ObjectHideFlags: 0
@@ -1612,6 +1707,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1110057771355198035}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6197286182919823447}
   m_SourcePrefab: {fileID: 100100000, guid: 7280f001c5bd96f49b2f9cb7d2ef841c, type: 3}
 --- !u!4 &540367488077252346 stripped
 Transform:
@@ -1690,11 +1789,28 @@ MonoBehaviour:
   maxHealth: 50
   currentHealth: 20
   displayName: Lust
+  enemyStats:
+    maxHealth: 50
+    moveSpeed: 3
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 10
+    attackSpeed: 1
+  possessedStats:
+    maxHealth: 50
+    moveSpeed: 3
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 10
+    attackSpeed: 1
   maxTenacity: 150
   collisionDamage: 10
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Greed
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -1710,6 +1826,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -1732,6 +1849,26 @@ MonoBehaviour:
   weaponDescription: "\u6FC0\u5149\u592A\u5200"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 0}
+--- !u!114 &6197286182919823447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4639911848492006612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!4 &5417715533104391790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,

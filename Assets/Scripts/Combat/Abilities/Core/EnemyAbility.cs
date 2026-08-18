@@ -106,6 +106,12 @@ public abstract class EnemyAbility : MonoBehaviour
     [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
+    [Header("Audio (Combat Audio Manager)")]
+    [Tooltip("Named clip played when this ability Triggers (cast). Empty = silent.")]
+    public string castAudioName;
+    [Tooltip("Named clip played on first hit settle of an attack. Empty = silent.")]
+    public string hitAudioName;
+
     [Header("Hit Feedback (Combat Effect Manager)")]
     [Tooltip("Post-process / shake / hit-stop on hit. Fires for possessed (player-controlled) attacks only, once per Trigger.")]
     public HitFeedbackParams hitFeedback = new HitFeedbackParams
@@ -133,6 +139,7 @@ public abstract class EnemyAbility : MonoBehaviour
 
     /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
     private bool _hitFeedbackFiredThisAttack;
+    private bool _hitAudioFiredThisAttack;
 
     protected virtual void Awake()
     {
@@ -225,6 +232,9 @@ public abstract class EnemyAbility : MonoBehaviour
 
         currentCooldown = EffectiveCooldown;
         _hitFeedbackFiredThisAttack = false;
+        _hitAudioFiredThisAttack = false;
+        if (!string.IsNullOrWhiteSpace(castAudioName))
+            CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
         if (debugLogCooldown)
             Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)
@@ -380,6 +390,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// </summary>
     protected void TryPlayHitFeedback(Transform victim)
     {
+        TryPlayHitAudio(victim);
         if (_hitFeedbackFiredThisAttack || hitFeedback == null || !hitFeedback.HasAnyEnabled)
             return;
         if (owner == null || !owner.isPossessed)
@@ -387,6 +398,18 @@ public abstract class EnemyAbility : MonoBehaviour
 
         CombatEffectManager.PlayHitFeedback(hitFeedback, owner.transform, victim);
         _hitFeedbackFiredThisAttack = true;
+    }
+
+    protected void TryPlayHitAudio(Transform victim)
+    {
+        if (_hitAudioFiredThisAttack || string.IsNullOrWhiteSpace(hitAudioName))
+            return;
+        // Play for possessed body skills and soul-routed hits; skip AI spam.
+        if (owner == null || !owner.isPossessed)
+            return;
+        Vector3 pos = victim != null ? victim.position : owner.transform.position;
+        CombatAudioManager.Play(hitAudioName, pos);
+        _hitAudioFiredThisAttack = true;
     }
 
     protected void ApplyConfiguredEffectsTo(CombatAbilityComponent target)

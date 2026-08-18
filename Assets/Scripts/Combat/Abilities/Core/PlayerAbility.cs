@@ -53,6 +53,12 @@ public abstract class PlayerAbility : MonoBehaviour
     [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
+    [Header("Audio (Combat Audio Manager)")]
+    [Tooltip("Named clip played when this ability Triggers (cast). Empty = silent.")]
+    public string castAudioName;
+    [Tooltip("Named clip played on first hit settle of an attack. Empty = silent.")]
+    public string hitAudioName;
+
     [Header("Hit Feedback (Combat Effect Manager)")]
     [Tooltip("Post-process / shake / hit-stop settings played on first damage of each attack.")]
     public HitFeedbackParams hitFeedback = new HitFeedbackParams
@@ -80,6 +86,7 @@ public abstract class PlayerAbility : MonoBehaviour
 
     /// <summary>Ensures screen shake / hit-stop fire at most once per attack, even for multi-hit attacks.</summary>
     private bool _hitFeedbackFiredThisAttack;
+    private bool _hitAudioFiredThisAttack;
 
     protected virtual void Awake()
     {
@@ -115,6 +122,9 @@ public abstract class PlayerAbility : MonoBehaviour
 
         currentCooldown = EffectiveCooldown;
         _hitFeedbackFiredThisAttack = false;
+        _hitAudioFiredThisAttack = false;
+        if (!string.IsNullOrWhiteSpace(castAudioName))
+            CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
         if (vfxDelay <= 0f)
             SpawnVfx();
         else
@@ -180,6 +190,11 @@ public abstract class PlayerAbility : MonoBehaviour
             Transform victim = target != null ? target.transform : null;
             CombatEffectManager.PlayHitFeedback(hitFeedback, owner != null ? owner.transform : transform, victim);
             _hitFeedbackFiredThisAttack = true;
+        }
+        if (!_hitAudioFiredThisAttack && !string.IsNullOrWhiteSpace(hitAudioName))
+        {
+            CombatAudioManager.Play(hitAudioName, target != null ? target.transform.position : transform.position);
+            _hitAudioFiredThisAttack = true;
         }
         ApplyConfiguredEffectsTo(target.Combat);
         if (owner != null) owner.OnDealtDamage(amount);

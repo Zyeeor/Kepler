@@ -102,6 +102,29 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   windupDuration: 0.25
   launchDistance: 5
   jumpHeight: 2.4
@@ -184,6 +207,29 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   dronePrefab: {fileID: 6114247635342975564, guid: 7cb74f0d689f64bfbb41a3d25ad27b0b,
     type: 3}
   droneLifetime: 4
@@ -262,6 +308,29 @@ MonoBehaviour:
   - Effect.Combat.SlothBlastHit
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   projectilePrefab: {fileID: 1455237202425575238, guid: f521ce0cedbf59d4db85b8a31772ea43,
     type: 3}
   projectileWidth: 1.5
@@ -510,6 +579,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1926690822376994281}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3656019775401696253}
   m_SourcePrefab: {fileID: 100100000, guid: 7280f001c5bd96f49b2f9cb7d2ef841c, type: 3}
 --- !u!4 &2523456146469920929 stripped
 Transform:
@@ -661,6 +734,22 @@ MonoBehaviour:
   maxHealth: 140
   currentHealth: 140
   displayName: "\u6020\u60F0-\u673A\u68B0\u4E4B\u7075"
+  enemyStats:
+    maxHealth: 140
+    moveSpeed: 4
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 0
+    attackSpeed: 1
+  possessedStats:
+    maxHealth: 140
+    moveSpeed: 4
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 0
+    attackSpeed: 1
   maxTenacity: 150
   collisionDamage: 0
   attackSpeed: 1
@@ -682,6 +771,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -706,6 +796,7 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 0}
 --- !u!136 &2478857331383844277
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -764,6 +855,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47d5e0003e93ccd489ed977f06761210, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3656019775401696253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3923155230589149752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!4 &4411847898468923522 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,

@@ -137,6 +137,7 @@ MonoBehaviour:
   vfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -144,10 +145,34 @@ MonoBehaviour:
   damage: 10
   drawHitboxes: 0
   cooldown: 1
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   hookPrefab: {fileID: 6882116249847192011, guid: 4de7fd93eb409ef4794ce6f391c2b958,
     type: 3}
   hookSpeed: 30
@@ -219,6 +244,7 @@ MonoBehaviour:
   vfxPrefab: {fileID: 1472619153967987273, guid: 9087dfa702d5f2f4e93ad38be639ebbe,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0.5}
   vfxDelay: 0.5
@@ -226,10 +252,34 @@ MonoBehaviour:
   damage: 20
   drawHitboxes: 0
   cooldown: 1
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   slashRange: 4
   slashAngle: 360
   slashEffectPrefab: {fileID: 0}
@@ -585,6 +635,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2606274025504633017}
+  - component: {fileID: 9040086081430543745}
   m_Layer: 0
   m_Name: Wrath(full)
   m_TagString: Enemy
@@ -608,6 +659,25 @@ Transform:
   - {fileID: 6381022695023645885}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9040086081430543745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3551598183782676372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &3674330693683559912
 GameObject:
   m_ObjectHideFlags: 0
@@ -1484,6 +1554,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -1491,10 +1562,34 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 1
   burnBonusPercent: 0
@@ -2290,6 +2385,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2801650306909517586}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3a8f0afb95527744fbed5e019f5a3f2d,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8123445761022683065}
   m_SourcePrefab: {fileID: 100100000, guid: 3a8f0afb95527744fbed5e019f5a3f2d, type: 3}
 --- !u!1 &6036550807038938631 stripped
 GameObject:
@@ -2339,11 +2438,28 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 20
   displayName: Wrath
+  enemyStats:
+    maxHealth: 100
+    moveSpeed: 2
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 30
+    attackSpeed: 1
+  possessedStats:
+    maxHealth: 100
+    moveSpeed: 2
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 30
+    attackSpeed: 1
   maxTenacity: 150
   collisionDamage: 30
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Wrath
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -2359,6 +2475,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -2381,6 +2498,7 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 0}
 --- !u!136 &2801650306909517586
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2404,6 +2522,25 @@ CapsuleCollider:
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.25, z: -0.1}
+--- !u!114 &8123445761022683065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6036550807038938631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!4 &6381022695023645885 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3a8f0afb95527744fbed5e019f5a3f2d,

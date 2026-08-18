@@ -11152,6 +11152,8 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
   hitFeedback:
     postProcessOnHit: 0
     postProcessEffectName: 
@@ -11228,6 +11230,7 @@ GameObject:
   - component: {fileID: 2575371082769056}
   - component: {fileID: 3162179642722458772}
   - component: {fileID: 477096510868814234}
+  - component: {fileID: 7668934807647666515}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -11417,6 +11420,25 @@ MonoBehaviour:
   stats: {fileID: 1025113241247231900}
   combat: {fileID: 920952039045924966}
   possessYOffset: 0.5
+--- !u!114 &7668934807647666515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6619887426231394227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &6785086658669047551
 GameObject:
   m_ObjectHideFlags: 0
@@ -11627,6 +11649,8 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
   hitFeedback:
     postProcessOnHit: 0
     postProcessEffectName: 
