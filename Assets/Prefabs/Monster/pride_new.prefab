@@ -3082,7 +3082,7 @@ Transform:
   m_GameObject: {fileID: 6112803955079431774}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.001, y: 0.01, z: 0}
+  m_LocalPosition: {x: 0.01, y: -0.0519, z: -0.0024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3879,12 +3879,12 @@ MonoBehaviour:
   requiredTags: []
   activationEffect: {fileID: 0}
   hitFeedback:
-    postProcessOnHit: 0
-    postProcessEffectName: 
+    postProcessOnHit: 1
+    postProcessEffectName: BlackFlash
     postProcessDuration: 0
     overridePostProcessParams: 0
     stepFactor: 0.5
-    mainAlpha: 1
+    mainAlpha: 0.339
     blurFactor: 0
     lineUVScale: 0
     chromatic: 0
@@ -4362,7 +4362,7 @@ MonoBehaviour:
     postProcessDuration: 3
     overridePostProcessParams: 0
     stepFactor: 0.416
-    mainAlpha: 1
+    mainAlpha: 0.72
     blurFactor: 0
     lineUVScale: 0
     chromatic: 0

@@ -539,11 +539,26 @@ public class MonsterActor : Actor
     }
 
     void UpdateAnimatorSpeed(){
-        var anim = GetComponent<Animator>();
+        var anim = GetActiveAnimator();
         if (anim == null) return;
         float speed = Vector3.Distance(transform.position, lastFramePosition) / Mathf.Max(Time.deltaTime, 0.0001f);
         lastFramePosition = transform.position;
         anim.SetFloat("Speed", speed);
+    }
+
+    /// <summary>
+    /// Resolves the Animator that gameplay code (attack triggers, IsDowned, Speed, etc.) should drive.
+    /// Most monsters carry a single Animator on the root (cached as bodyAnimator in Awake).
+    /// Some monsters instead swap between multiple body-model children, each with its own
+    /// Animator + Controller (different skeleton/avatar per model) toggled active/inactive
+    /// — e.g. Gluttony's normal vs small-cat form. This falls back to the currently active
+    /// child's Animator so trigger code stays uniform ("Basic"/"Skill"/"IsDowned"/"Speed")
+    /// across every monster prefab regardless of where the Animator physically lives.
+    /// </summary>
+    public Animator GetActiveAnimator()
+    {
+        if (bodyAnimator != null) return bodyAnimator;
+        return GetComponentInChildren<Animator>(false);
     }
 
     bool TryTriggerAbilitiesOfType(EnemyAbility.AbilityType t)
@@ -852,7 +867,7 @@ public class MonsterActor : Actor
         currentTenacity = maxTenacity;
         UpdateHealthUI();
 
-        Animator animator = GetComponent<Animator>();
+        Animator animator = GetActiveAnimator();
         if (animator != null) animator.SetBool("IsDowned", false);
     }
 
@@ -882,7 +897,7 @@ public class MonsterActor : Actor
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
 
-        Animator animator = GetComponent<Animator>();
+        Animator animator = GetActiveAnimator();
         if (animator != null) animator.SetBool("IsDowned", true);
 
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
@@ -960,7 +975,7 @@ public class MonsterActor : Actor
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true)) renderer.enabled = true;
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
-        Animator animator = GetComponent<Animator>();
+        Animator animator = GetActiveAnimator();
         if (animator != null) animator.SetBool("IsDowned", false);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
         RefreshPlayerTarget();

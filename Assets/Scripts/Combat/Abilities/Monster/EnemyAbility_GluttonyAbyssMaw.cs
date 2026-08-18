@@ -41,6 +41,8 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
     protected override void OnTrigger()
     {
         if (owner == null) return;
+        var anim = owner.GetActiveAnimator();
+        if (anim != null) anim.SetTrigger("Basic");
         CacheOwnerState();
         if (!TryResolveAimPoint(out Vector3 aimPoint))
         {

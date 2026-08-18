@@ -19,6 +19,12 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
     [Tooltip("Permanent body move-speed mult when GL-TG01 is unlocked.")]
     public float glTg01MoveSpeedBonus = 1.15f;
 
+    [Header("Model Swap")]
+    [Tooltip("Default body model, pre-placed as a child of this enemy, with its own Animator + Controller (must expose the same param names as every other monster: \"Basic\"/\"Skill\"/\"IsDowned\"/\"Speed\"). Hidden while small-cat form is active.")]
+    public GameObject normalModelRoot;
+    [Tooltip("Small-cat body model, pre-placed as a child of this enemy, with its own Animator + Controller (different skeleton, so it needs a separate Animator from the normal model; must expose the same param names). Shown only while small-cat form is active.")]
+    public GameObject smallCatModelRoot;
+
     private GluttonyBodyState _state;
     private Coroutine _formRoutine;
     private bool _formActive;
@@ -35,6 +41,7 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Gluttony.SmallCat", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Gluttony.SmallCat");
+        SetModelSwap(false);
     }
 
     private void Start()
@@ -97,6 +104,7 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
 
         owner.transform.localScale = _baseScale * Mathf.Max(0.05f, scaleMultiplier);
         owner.moveSpeed = _baseMoveSpeed * speedMult * Tg01Mult();
+        SetModelSwap(true);
     }
 
     private void ExitForm()
@@ -104,9 +112,19 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
         if (!_formActive) return;
         _formActive = false;
         _state?.SetSmallCatActive(false);
+        SetModelSwap(false);
         if (owner == null) return;
         owner.transform.localScale = _baseScale;
         owner.moveSpeed = _baseMoveSpeed * Tg01Mult();
+    }
+
+    private void SetModelSwap(bool catActive)
+    {
+        // Each model child carries its own Animator + Controller (different skeleton per
+        // form), so switching forms is a plain SetActive — no controller swap needed.
+        // Enemy.GetActiveAnimator() picks up whichever child is active for "Basic"/"Skill"/etc.
+        if (normalModelRoot != null) normalModelRoot.SetActive(!catActive);
+        if (smallCatModelRoot != null) smallCatModelRoot.SetActive(catActive);
     }
 
     private float Tg01Mult()

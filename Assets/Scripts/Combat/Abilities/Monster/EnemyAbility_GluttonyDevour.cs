@@ -36,6 +36,9 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             return;
         }
 
+        var anim = owner.GetActiveAnimator();
+        if (anim != null) anim.SetTrigger("Skill");
+
         CacheOwnerState();
         _state?.CancelSmallCat();
 

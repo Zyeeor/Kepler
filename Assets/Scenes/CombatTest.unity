@@ -9246,6 +9246,9 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 837435964}
+  useFixedSeed: 0
+  fixedSeed: 12345
+  useFormalFlow: 0
   testDoublePickOnStart: 1
 --- !u!4 &1807762708
 Transform:
@@ -11733,3 +11736,4 @@ SceneRoots:
   - {fileID: 438339684}
   - {fileID: 279481502}
   - {fileID: 7820048846540688239}
+  - {fileID: 1264099610}
