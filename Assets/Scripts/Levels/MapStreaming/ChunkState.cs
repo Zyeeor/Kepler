@@ -30,7 +30,7 @@ public class MonsterSnapshot
 
 /// <summary>
 /// 尸体快照：尸体是否被搜刮 / 是否已被用作附身材料。
-/// Phase 3 仅记录（回收倒地怪时写入），恢复留 TODO（MonsterSpawner.RestoreChunkMonsters）。
+/// Phase 3 仅记录（回收倒地怪时写入），恢复留 TODO（地图静态怪模式移除后暂无消费方）。
 /// </summary>
 [Serializable]
 public class CorpseSnapshot
@@ -41,7 +41,7 @@ public class CorpseSnapshot
     public Vector3 position;
     /// <summary>是否已被搜刮（搜刮系统接入后写真实值，当前恒 false）。</summary>
     public bool looted;
-    /// <summary>是否已被用作附身材料（当前由 ChunkState.bodySupplyConsumed 计数兜底，本字段占位）。</summary>
+    /// <summary>是否已被用作附身材料（占位，当前不记录）。</summary>
     public bool consumedAsBody;
 }
 
@@ -77,19 +77,15 @@ public class EventFlag
 ///
 /// monsters 生命周期不变量——语义为"当前在池、待恢复的怪物集合"：
 ///   恢复时逐只移除（配额中断保留剩余项，下次进 B 续恢复）；
-///   离开 B/D 回收时追加新鲜快照； 脱战远距离怪写回时追加。
-/// spawnedWaveIds 只增不减——重入判重键是"摇过波次"而非"还有怪"：
-///   怪物全灭的 Chunk 重入后保持空（约束 3：不得重新随机敌人/奖励/尸体状态）。
+///   离开 B/D 回收时追加新鲜快照。
+/// 2026-08-18：地图静态怪模式移除，spawnedWaveIds（波次去重）字段已删除；
+/// 怪物恢复快照（MonsterSnapshot）保留——若波次怪未来需跨 Chunk 恢复可复用。
 /// </summary>
 [Serializable]
 public class ChunkState
 {
     /// <summary>在池待恢复的怪物快照（存活怪：血量/位置/状态）。</summary>
     public List<MonsterSnapshot> monsters = new List<MonsterSnapshot>();
-    /// <summary>已刷出的波次 id 列表——重入时跳过，禁止按权重重摇（约束 3）。抽中即登记（含配额中断的波次）。</summary>
-    public List<string> spawnedWaveIds = new List<string>();
-    /// <summary>已被附身消耗的身体数——重入不重复发放。</summary>
-    public int bodySupplyConsumed;
     /// <summary>尸体记录（是否被搜刮/附身消耗）。Phase 3 仅记录不恢复。</summary>
     public List<CorpseSnapshot> corpses = new List<CorpseSnapshot>();
     /// <summary>奖励拾取记录。占位（奖励系统未接入）。</summary>

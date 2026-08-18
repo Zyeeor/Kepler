@@ -235,7 +235,7 @@ public class MapDebugHUD : MonoBehaviour
 
         var spawner = MonsterSpawner.Instance;
         if (spawner != null)
-            Label(x, ref y, w, lineH, $"在场怪 {spawner.TrackedMonsterCount}  战斗 {spawner.CombatMonsterCount}  视野外 {spawner.OffscreenCombatMonsters.Count}");
+            Label(x, ref y, w, lineH, $"在场怪 {spawner.TrackedMonsterCount}");
     }
 
     static void Label(float x, ref float y, float w, float h, string text)

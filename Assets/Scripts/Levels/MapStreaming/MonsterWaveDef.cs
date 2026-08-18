@@ -29,33 +29,29 @@ public class StatMultipliers
 }
 
 /// <summary>
-/// 怪物编队（Wave）配置：刷怪系统的配置单元。
-/// ChunkDef 持有刷怪表（List&lt;MonsterWaveDef&gt;），MonsterSpawner 按 spawnWeight 抽取；
-/// 已刷出的波次 ID 记入 ChunkState.spawnedWaveIds，重入不重摇。
+/// 怪物编队（Wave）配置：波次玩法的配置单元（"刷哪些怪"）。
+///
+/// 当前唯一使用场景：
+///   - 波次玩法：被 WaveConfig.weightedTable 引用（WaveDefEntry 包装），
+///     权重在条目上（每波独立占比），抽中后刷出 monsters 整组
+///     （数量由 WaveConfig.totalCount / duration 在 WaveManager 侧控制）。
+///
+/// 2026-08-18：地图静态怪模式已移除（原 spawnWeight/ChunkDef.waveTable/spawnedWaveIds 链路废弃）。
 /// </summary>
 [CreateAssetMenu(fileName = "MonsterWaveDef", menuName = "Kepler/Map/Monster Wave")]
 public class MonsterWaveDef : ScriptableObject
 {
-    [Tooltip("配置唯一 id。记入 ChunkState.spawnedWaveIds，用于重入去重。")]
+    [Tooltip("配置唯一 id（备用，当前波次模式不参与逻辑）。")]
     public string id;
 
-    [Header("规模")]
-    [Tooltip("基础数量：编队规模基准。")]
-    [Min(1)] public int baseCount = 4;
-    [Tooltip("威胁值：影响全场总量上限的权重。")]
-    public float threatValue = 1f;
-    [Tooltip("身体供应：每波提供多少可附身身体（附身玩法供给，消耗计入 ChunkState.bodySupplyConsumed）。")]
-    [Min(0)] public int bodySupply = 1;
-
-    [Header("刷新")]
-    [Tooltip("刷新权重：MonsterSpawner 从 ChunkDef 刷怪表抽取时的相对权重。")]
+    [Tooltip("抽取权重（备用，波次模式的占比配置在 WaveConfig.weightedTable 条目上）。")]
     [Min(0f)] public float spawnWeight = 1f;
 
     [Header("怪物组成")]
-    [Tooltip("怪物类型 + 数量。")]
+    [Tooltip("怪物类型 + 组内数量：抽中本编队时整组刷出。")]
     public List<MonsterEntry> monsters = new List<MonsterEntry>();
 
-    [Header("属性倍率")]
-    [Tooltip("作用于波内所有怪物的属性倍率。")]
+    [Header("属性倍率（暂未应用）")]
+    [Tooltip("作用于波内所有怪物的属性倍率（难度调节预留）。当前实现不应用——需先快照 prefab 基值，否则池复用倍率累积污染。")]
     public StatMultipliers statMult = new StatMultipliers();
 }

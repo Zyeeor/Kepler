@@ -118,9 +118,7 @@ public class ChunkDef : ScriptableObject
     [Tooltip("填充邻接继承概率：剩余格以该概率继承相邻填充图案，否则从 fillTiles 随机取。")]
     [Range(0f, 1f)] public float groundSpreadChance = 0.92f;
 
-    [Header("刷怪表")]
-    [Tooltip("该 Chunk 可刷的怪物编队，按 spawnWeight 抽取。")]
-    public List<MonsterWaveDef> waveTable = new List<MonsterWaveDef>();
+    // 2026-08-18 删除刷怪表（waveTable）：地图静态怪模式已移除，怪物由波次玩法（WaveManager）驱动
 
     [Header("邻接偏好")]
     [Tooltip("偏好的相邻 Chunk 模板（宏观区域排布时参考，暂未接入）。")]

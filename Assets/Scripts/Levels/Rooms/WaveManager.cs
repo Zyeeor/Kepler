@@ -8,7 +8,7 @@ using System.Collections.Generic;
 ///
 /// 波次玩法（2026-08-17 重构）：接入当前地图怪物生成框架（MonsterSpawner / MonsterPool /
 /// MonsterWaveDef 权重表），替代旧"直接 MonsterPool.Spawn + Enemy 轮询"逻辑。
-/// 两种波次模式（每波在检查器切换 WaveConfig.mode）：
+/// 波次模式为整体配置（WaveManager.waveMode / RoomTemplate.waveMode，全局统一）：
 ///   CountKill 数量波：按权重表持续补刷，累计刷满 totalCount 只后不再补；
 ///                     玩家清完场上本波怪 → 触发选卡 → 下一波。
 ///   Timed 时间波：持续补刷 duration 秒，时间到即结算（可选回收剩余在场怪）→ 选卡 → 下一波。
@@ -16,7 +16,7 @@ using System.Collections.Generic;
 /// 与地图框架的衔接：
 ///   - 波次怪经 MonsterSpawner.SpawnWaveMonster 刷出（AI 直接激活且永不休眠），计入全场配额/追踪；
 ///   - 波次怪不随 Chunk 休眠/回收/写快照（MonsterSpawner 波次怪标记），死亡/被附身即从本波清点中退场；
-///   - 地图静态怪已禁用（MonsterSpawner.enableChunkStaticSpawns=false），场上所有怪物由本系统驱动；
+///   - 场上所有怪物由本系统驱动（地图静态怪模式已于 2026-08-18 移除）；
 ///   - 时间波结算回收剩余怪（不写快照，永久退场）。
 ///
 /// 选卡衔接：波次完成 → choiceBuffer 缓冲（看清战果）→ 触发 OnWaveCompleted
@@ -49,8 +49,15 @@ public class WaveManager : MonoBehaviour
     public event Action<MonsterActor> OnWaveEnemyKilled;
 
     [Header("波次节奏")]
+    [Tooltip("怪物群系：同一编队（WaveDef 一组怪）刷出时围绕同一中心点的散射半径（米），组内怪聚集出现。")]
+    [Min(0f)] public float groupScatterRadius = 3f;
     [Tooltip("波次补刷间隔（秒）：每隔多久按权重表抽一批怪刷出。")]
     [Min(0.05f)] public float spawnInterval = 0.5f;
+    [Tooltip("开局连刷批数：第一波开始时立即连续刷 N 批（玩家附近先有怪），随后进入正常补刷节奏。0 = 关闭。")]
+    [Min(0)] public int initialBurstBatches = 2;
+    [Tooltip("在场怪修剪间隔（秒）：死亡/附身/倒地怪的摘除频率。越低清场判定越及时，越高每帧开销越小。")]
+    [Min(0.02f)] public float pruneInterval = 0.1f;
+    float nextPruneTime;
     [Tooltip("波次完成 → 下一波/选卡前的缓冲（秒），用于看清战果。选卡期间 timeScale=0 会冻结此等待。")]
     [Min(0f)] public float choiceBuffer = 2f;
     [Tooltip("波次完成时自动打开选卡弹窗（无 RoomFlowController 场景的兜底；有 RoomFlow 时其也会触发，CoreChoiceUI 有防重入）。")]
@@ -59,6 +66,8 @@ public class WaveManager : MonoBehaviour
     public bool recycleRemainingOnTimeUp = true;
 
     [Header("独立波次配置（无房间模式）")]
+    [Tooltip("无房间模式波次模式（整体）：CountKill=全部波为数量波；Timed=全部波为时间波。有 RoomTemplate 时用模板的 waveMode。")]
+    public WaveMode waveMode = WaveMode.CountKill;
     [Tooltip("无房间模式波次列表：场景没有 RoomTemplate/RoomFlowController（纯流送大地图）时，波次管理器直接使用本配置。有 RoomTemplate 时忽略。")]
     public List<WaveConfig> waves = new List<WaveConfig>();
     [Tooltip("无房间模式：首波开始前的准备时间（秒）。")]
@@ -90,8 +99,22 @@ public class WaveManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        // 编辑期校验：提示场景需挂刷怪基础设施（运行时自动补齐，此处仅告知配置者）
+        if (!Application.isPlaying && FindObjectOfType<MonsterSpawner>() == null)
+            Debug.LogWarning("[WaveManager] 场景中无 MonsterSpawner——运行时将由 WaveManager 自动创建，但建议显式挂载以便调整配额等配置。");
+    }
+#endif
+
     void Start()
     {
+        // 自举装配刷怪基础设施：只挂本组件（未挂 MonsterSpawner）也能刷出怪。
+        // 放在 Start 而非 Awake：此时场景所有 Awake 已执行完（已有实例已注册），
+        // 确保不会因创建时机抢跑而覆盖场景中已配置的 MonsterSpawner。幂等。
+        MonsterSpawner.EnsureInstance();
+
         // 无房间模式：未被 RoomFlowController 初始化时，等待地图就绪后自动启动
         if (!autoStart) return;
         StartCoroutine(AutoStartRoutine());
@@ -187,6 +210,17 @@ public class WaveManager : MonoBehaviour
     /// <summary>当前生效的首波前准备时间（房间模板优先，无房间用自身配置）。</summary>
     float ActiveGracePeriod => currentTemplate != null ? currentTemplate.gracePeriod : gracePeriod;
 
+    /// <summary>查询指定波清场后选卡是否双选（越界返回 false=单选）。</summary>
+    public bool GetWaveDoublePick(int waveIndex)
+    {
+        if (waveIndex < 0 || ActiveWaves == null || waveIndex >= ActiveWaves.Count)
+            return false;
+        return ActiveWaves[waveIndex].doublePick;
+    }
+
+    /// <summary>当前生效的整体波次模式（房间模板优先，无房间用自身配置）。</summary>
+    WaveMode ActiveWaveMode => currentTemplate != null ? currentTemplate.waveMode : waveMode;
+
     /// <summary>开始波次流程。</summary>
     public void StartWaves()
     {
@@ -238,16 +272,12 @@ public class WaveManager : MonoBehaviour
             if (currentRoom != null && currentRoom.context != null)
                 currentRoom.context.CurrentWaveIndex = i;
 
-            // 等待该波次的开始时间
-            if (wave.startTime > 0f)
-                yield return new WaitForSeconds(wave.startTime);
-
             IsWaveActive = true;
             waveAlive.Clear();
             OnWaveStarted?.Invoke(i, wave);
-            Debug.Log($"[WaveManager] Wave {i} START: mode={wave.mode}, table={wave.weightedTable?.Count}, totalCount={wave.totalCount}, duration={wave.duration}");
+            Debug.Log($"[WaveManager] Wave {i} START: mode={ActiveWaveMode}, table={wave.weightedTable?.Count}, totalCount={wave.totalCount}, duration={wave.duration}");
 
-            switch (wave.mode)
+            switch (ActiveWaveMode)
             {
                 case WaveMode.Timed:
                     yield return RunTimedWave(wave);
@@ -259,7 +289,7 @@ public class WaveManager : MonoBehaviour
 
             IsWaveActive = false;
             EnemiesAlive = waveAlive.Count;
-            Debug.Log($"[WaveManager] Wave {i} COMPLETED (mode={wave.mode}, remaining={EnemiesAlive})");
+            Debug.Log($"[WaveManager] Wave {i} COMPLETED (mode={ActiveWaveMode}, remaining={EnemiesAlive})");
 
             yield return RunChoiceStage(i);
         }
@@ -293,7 +323,7 @@ public class WaveManager : MonoBehaviour
         // 读档补弹（fireCompletionEvent=false）时 keepPicks=true：保留已恢复的候选（与退出时一致）。
         if (fireCompletionEvent) OnWaveCompleted?.Invoke(waveIndex);
         if (autoShowChoiceUI && CoreChoiceUI.Instance != null)
-            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: false, keepPicks: !fireCompletionEvent);
+            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: GetWaveDoublePick(waveIndex), keepPicks: !fireCompletionEvent);
 
         // 等待选卡会话结束再进下一波（弹卡后 timeScale=0，怪物不会在暂停期间刷出）。
         // 用 IsDrafting 轮询而非 WaitForSeconds：不依赖 timeScale，
@@ -313,6 +343,11 @@ public class WaveManager : MonoBehaviour
     }
         Debug.Log($"[WaveManager] ALL WAVES COMPLETE for '{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}'");
         OnAllWavesComplete?.Invoke();
+
+        // 无房间模式（流送大地图）：全波完成 = 整局胜利 → 弹 Result 结算面板。
+        // 房间模式由 RoomFlowController 的 OnAllWavesCompleteHandler 处理（Cleared/出口/Core），不在此弹。
+        if (currentTemplate == null && UIManager.Instance != null)
+            UIManager.Instance.ShowResult(true);
     }
 
     // ── 数量波：刷满 totalCount 不再补，清场过波 ──
@@ -325,6 +360,14 @@ public class WaveManager : MonoBehaviour
             yield break;
         }
         int spawnedTotal = 0;
+        // 开局连刷：新局第一波开始时立即刷 N 批，玩家附近先有怪（计入 spawnedTotal，不超发）
+        if (CurrentWaveIndex == 0 && resumeFromWaveIndex < 0 && initialBurstBatches > 0)
+        {
+            for (int b = 0; b < initialBurstBatches && spawnedTotal < wave.totalCount; b++)
+                spawnedTotal += SpawnBatch(wave, wave.totalCount - spawnedTotal);
+            if (spawnedTotal > 0)
+                Debug.Log($"[WaveManager] 开局连刷 {spawnedTotal} 只（burst={initialBurstBatches}）。");
+        }
         float nextSpawnTime = 0f;
         while (isRunning)
         {
@@ -362,17 +405,38 @@ public class WaveManager : MonoBehaviour
         float endTime = Time.time + wave.duration;
         TimeWaveRemaining = wave.duration;
         float nextSpawnTime = 0f;
+        int spawnedTotal = 0; // 本波累计刷出数（含已击杀/回收），用于 maxSpawnCount 上限
+        // 开局连刷：新局第一波开始时立即刷 N 批，玩家附近先有怪（计入 spawnedTotal）
+        if (CurrentWaveIndex == 0 && resumeFromWaveIndex < 0 && initialBurstBatches > 0)
+        {
+            for (int b = 0; b < initialBurstBatches; b++)
+            {
+                int quota = wave.maxSpawnCount > 0 ? Mathf.Max(0, wave.maxSpawnCount - spawnedTotal) : int.MaxValue;
+                if (quota <= 0) break;
+                int added = SpawnBatch(wave, quota);
+                if (added <= 0) break;
+                spawnedTotal += added;
+            }
+            if (spawnedTotal > 0)
+                Debug.Log($"[WaveManager] 开局连刷 {spawnedTotal} 只（burst={initialBurstBatches}）。");
+        }
         while (isRunning && Time.time < endTime)
         {
             PruneWaveAlive();
             TimeWaveRemaining = Mathf.Max(0f, endTime - Time.time); // 供 UI 倒计时显示
             if (Time.time >= nextSpawnTime)
             {
-                int added = SpawnBatch(wave, int.MaxValue);
-                if (added > 0)
+                // 剩余刷怪配额：maxSpawnCount=0 → 不限制（仅受全场配额约束）
+                int quota = wave.maxSpawnCount > 0 ? Mathf.Max(0, wave.maxSpawnCount - spawnedTotal) : int.MaxValue;
+                if (quota > 0)
                 {
-                    EnemiesAlive = waveAlive.Count;
-                    Debug.Log($"[WaveManager] Timed 补刷 +{added}：在场 {EnemiesAlive}，剩余 {TimeWaveRemaining:F1}s。");
+                    int added = SpawnBatch(wave, quota);
+                    if (added > 0)
+                    {
+                        spawnedTotal += added;
+                        EnemiesAlive = waveAlive.Count;
+                        Debug.Log($"[WaveManager] Timed 补刷 +{added}：本波累计 {spawnedTotal}（上限 {wave.maxSpawnCount}），在场 {EnemiesAlive}，剩余 {TimeWaveRemaining:F1}s。");
+                    }
                 }
                 nextSpawnTime = Time.time + spawnInterval;
             }
@@ -380,8 +444,8 @@ public class WaveManager : MonoBehaviour
         }
         TimeWaveRemaining = 0f;
 
-        // 结算：回收本波剩余在场怪（清场进入选卡）
-        PruneWaveAlive();
+        // 结算：回收本波剩余在场怪（清场进入选卡）——force 立即修剪，避免残留已死怪
+        PruneWaveAlive(force: true);
         if (recycleRemainingOnTimeUp && waveAlive.Count > 0)
         {
             var spawner = MonsterSpawner.Instance;
@@ -409,6 +473,14 @@ public class WaveManager : MonoBehaviour
         var def = PickWeighted(wave.weightedTable);
         if (def == null || def.monsters == null || def.monsters.Count == 0) return 0;
 
+        // 怪物群系：抽中编队后先取一个组中心（玩家 B 带内合法点），组内所有怪围绕中心小半径散射——
+        // 同一编队的怪聚集出现，不再每只独立环形采样散落全图。
+        if (!spawner.TryGetWaveSpawnPosition(out var center))
+        {
+            Debug.LogWarning("[WaveManager] 无合法群系中心点，本组跳过。");
+            return 0;
+        }
+
         int spawned = 0;
         for (int e = 0; e < def.monsters.Count && spawned < quota; e++)
         {
@@ -416,7 +488,8 @@ public class WaveManager : MonoBehaviour
             if (entry == null || entry.prefab == null) continue;
             for (int i = 0; i < entry.count && spawned < quota; i++)
             {
-                if (!spawner.TryGetWaveSpawnPosition(out var pos)) continue; // 无合法刷怪点：本只跳过
+                Vector2 offset = UnityEngine.Random.insideUnitCircle * groupScatterRadius;
+                Vector3 pos = center + new Vector3(offset.x, 0f, offset.y);
                 var m = spawner.SpawnWaveMonster(entry.prefab, pos);
                 if (m != null)
                 {
@@ -426,26 +499,26 @@ public class WaveManager : MonoBehaviour
             }
         }
         if (spawned > 0)
-            Debug.Log($"[WaveManager] 抽中波次 '{def.id}' 刷出 ×{spawned}。");
+            Debug.Log($"[WaveManager] 抽中波次 '{def.id}' 刷出 ×{spawned}（群系中心 {center}）。");
         return spawned;
     }
 
-    /// <summary>按 spawnWeight 权重随机抽取；权重和 ≤ 0 返回 null。</summary>
-    static MonsterWaveDef PickWeighted(List<MonsterWaveDef> table)
+    /// <summary>按条目 weight 权重随机抽取；权重和 ≤ 0 返回 null。</summary>
+    static MonsterWaveDef PickWeighted(List<WaveDefEntry> table)
     {
         float total = 0f;
         for (int i = 0; i < table.Count; i++)
-            if (table[i] != null) total += Mathf.Max(0f, table[i].spawnWeight);
+            if (table[i] != null && table[i].def != null) total += Mathf.Max(0f, table[i].weight);
         if (total <= 0f) return null;
 
         float roll = UnityEngine.Random.Range(0f, total);
         for (int i = 0; i < table.Count; i++)
         {
-            if (table[i] == null) continue;
-            roll -= Mathf.Max(0f, table[i].spawnWeight);
-            if (roll <= 0f) return table[i];
+            if (table[i] == null || table[i].def == null) continue;
+            roll -= Mathf.Max(0f, table[i].weight);
+            if (roll <= 0f) return table[i].def;
         }
-        return table[table.Count - 1];
+        return table[table.Count - 1].def;
     }
 
     // ── 读档恢复 ──
@@ -503,12 +576,13 @@ public class WaveManager : MonoBehaviour
         foreach (var wave in ActiveWaves)
         {
             if (wave == null || wave.weightedTable == null) continue;
-            foreach (var def in wave.weightedTable)
+            foreach (var entry in wave.weightedTable)
             {
+                var def = entry != null ? entry.def : null;
                 if (def == null || def.monsters == null) continue;
-                foreach (var entry in def.monsters)
-                    if (entry != null && entry.prefab != null && entry.prefab.name == prefabId)
-                        return entry.prefab;
+                foreach (var me in def.monsters)
+                    if (me != null && me.prefab != null && me.prefab.name == prefabId)
+                        return me.prefab;
             }
         }
         return null;
@@ -521,8 +595,14 @@ public class WaveManager : MonoBehaviour
     /// 波次怪已被 MonsterSpawner 标记为不随 Chunk 回收，此处保留 activeInHierarchy 兜底
     /// （手动回收/异常销毁时仍能正确清点）。
     /// </summary>
-    void PruneWaveAlive()
+    /// <summary>
+    /// 修剪失效波次怪（死亡/附身/倒地）：按 pruneInterval 低频执行（默认 0.1s），
+    /// 避免怪物多时每帧 O(n) 遍历；force=true 时立即执行（波结算前调用）。
+    /// </summary>
+    void PruneWaveAlive(bool force = false)
     {
+        if (!force && Time.unscaledTime < nextPruneTime) return;
+        nextPruneTime = Time.unscaledTime + pruneInterval;
         for (int i = waveAlive.Count - 1; i >= 0; i--)
         {
             var m = waveAlive[i];

@@ -2533,39 +2533,80 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3d08547a5962d84fa624eeef2517a55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  groupScatterRadius: 3
   spawnInterval: 0.5
+  initialBurstBatches: 2
+  pruneInterval: 0.1
   choiceBuffer: 2
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
+  waveMode: 0
   waves:
-  - waveType: 0
-    mode: 0
-    weightedTable:
-    - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
-    totalCount: 1
-    duration: 10
-    startTime: 0
-    enemies: []
-    spawnPointGroup: 
-  - waveType: 0
-    mode: 0
-    weightedTable:
-    - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
+  - weightedTable:
+    - def: {fileID: 11400000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 2}
+      weight: 1
     totalCount: 3
+    duration: 15
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: b2c3d4e5f60718293a4b5c6d7e8f90a1, type: 2}
+      weight: 1
+    totalCount: 4
+    duration: 20
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 2}
+      weight: 1
+    - def: {fileID: 11400000, guid: c3d4e5f60718293a4b5c6d7e8f90a1b2, type: 2}
+      weight: 1
+    totalCount: 6
+    duration: 25
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: b2c3d4e5f60718293a4b5c6d7e8f90a1, type: 2}
+      weight: 1
+    - def: {fileID: 11400000, guid: c3d4e5f60718293a4b5c6d7e8f90a1b2, type: 2}
+      weight: 1
+    totalCount: 8
+    duration: 30
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: d4e5f60718293a4b5c6d7e8f90a1b2c3, type: 2}
+      weight: 1
+    totalCount: 10
+    duration: 35
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: e5f60718293a4b5c6d7e8f90a1b2c3d4, type: 2}
+      weight: 1
+    totalCount: 12
+    duration: 40
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: f60718293a4b5c6d7e8f90a1b2c3d4e5, type: 2}
+      weight: 1
+    totalCount: 14
+    duration: 45
+    maxSpawnCount: 0
+    doublePick: 0
+  - weightedTable:
+    - def: {fileID: 11400000, guid: e5f60718293a4b5c6d7e8f90a1b2c3d4, type: 2}
+      weight: 1
+    - def: {fileID: 11400000, guid: f60718293a4b5c6d7e8f90a1b2c3d4e5, type: 2}
+      weight: 1
+    - def: {fileID: 11400000, guid: d4e5f60718293a4b5c6d7e8f90a1b2c3, type: 2}
+      weight: 1
+    totalCount: 16
     duration: 60
-    startTime: 0
-    enemies: []
-    spawnPointGroup: 
-  - waveType: 0
-    mode: 0
-    weightedTable:
-    - {fileID: 11400000, guid: 8176bbc8127038e43bed0f65f7ac8bbb, type: 2}
-    totalCount: 5
-    duration: 60
-    startTime: 0
-    enemies: []
-    spawnPointGroup: 
-  gracePeriod: 2
+    maxSpawnCount: 0
+    doublePick: 1
+  gracePeriod: 0
   autoStart: 1
   autoStartTimeout: 30
 --- !u!4 &396728510
@@ -7843,109 +7884,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &1688519454
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1688519456}
-  - component: {fileID: 1688519455}
-  m_Layer: 0
-  m_Name: MonsterDirection
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1688519455
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1688519454}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 890b837f12478884d9e089bf241730c4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
-    type: 3}
-  noMonsterVisibleSeconds: 5
-  pulseTravelTime: 0.5
-  pulseHoldTime: 0.5
-  pulseFadeTime: 1
-  pulseCooldown: 5
-  followPlayerAfterFire: 0
-  guideColor: {r: 3.8, g: 4.05, b: 4.6, a: 0.85}
-  brightness: 0.75
-  breatheAmount: 0.35
-  breatheSpeed: 2
-  widthCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0.025001526
-      value: 0.05256775
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.5
-      value: 0.55
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.88
-      value: 0.06
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  widthMultiplier: 3
-  heightOffset: 0.05
-  waveAmplitude: 0.2
-  waveCount: 3
-  waveSpeed: 1
---- !u!4 &1688519456
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1688519454}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1950834436}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1689243569
 GameObject:
   m_ObjectHideFlags: 0
@@ -8852,6 +8790,7 @@ GameObject:
   - component: {fileID: 1950834435}
   - component: {fileID: 1950834437}
   - component: {fileID: 1950834438}
+  - component: {fileID: 1950834439}
   m_Layer: 0
   m_Name: StreamingTest
   m_TagString: Untagged
@@ -8878,7 +8817,7 @@ MonoBehaviour:
   radiusD: 80
   chunkSize: 8
   tileSize: 2
-  boundaryChunkExtent: 8
+  boundaryChunkExtent: 6
   boundaryCenterOverride: {fileID: 0}
   worldSeed: 12345
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
@@ -8900,8 +8839,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1688519456}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 62.365, z: 0}
 --- !u!114 &1950834437
@@ -8917,13 +8855,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 30
-  enableChunkStaticSpawns: 0
-  maxWavesPerChunk: 2
-  scatterRadius: 3
-  minSpawnDistanceToPlayer: 20
-  maxSpawnDistanceToPlayer: 50
-  edgeIndicatorMaxCombat: 10
-  edgeOutOfViewSeconds: 2
+  minSpawnDistanceToPlayer: 10
+  maxSpawnDistanceToPlayer: 25
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1
@@ -8943,6 +8876,77 @@ MonoBehaviour:
   ensureBlockerColliders: 0
   showDebug: 1
   logBuilds: 1
+--- !u!114 &1950834439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1950834434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890b837f12478884d9e089bf241730c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
+    type: 3}
+  noMonsterVisibleSeconds: 5
+  pulseTravelTime: 0.5
+  pulseHoldTime: 0.5
+  pulseFadeTime: 1
+  pulseCooldown: 5
+  followPlayerAfterFire: 0
+  guideColor: {r: 3.8, g: 4.05, b: 4.6, a: 0.85}
+  brightness: 0.75
+  breatheAmount: 0.35
+  breatheSpeed: 2
+  widthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.025
+      value: 0.0526
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.55
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.88
+      value: 0.06
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  widthMultiplier: 3
+  heightOffset: 0.05
+  waveAmplitude: 0.2
+  waveCount: 3
+  waveSpeed: 1
 --- !u!1 &1951607987
 GameObject:
   m_ObjectHideFlags: 0
@@ -9208,10 +9212,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3d08547a5962d84fa624eeef2517a55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  groupScatterRadius: 3
   spawnInterval: 0.5
+  initialBurstBatches: 2
+  pruneInterval: 0.1
   choiceBuffer: 2
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
+  waveMode: 0
   waves: []
   gracePeriod: 2
   autoStart: 1
@@ -10587,7 +10595,7 @@ PrefabInstance:
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: soulMaxHealth
-      value: 10000
+      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
@@ -10597,7 +10605,7 @@ PrefabInstance:
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: healthDecayPercent
-      value: 0
+      value: 0.02
       objectReference: {fileID: 0}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
@@ -10711,7 +10719,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1440973064119128767, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
-      propertyPath: hitFeedback.shakeForce
+      propertyPath: shakeForce
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6192869199144556178, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,

@@ -4395,13 +4395,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 30
-  enableChunkStaticSpawns: 0
-  maxWavesPerChunk: 2
-  scatterRadius: 3
   minSpawnDistanceToPlayer: 20
   maxSpawnDistanceToPlayer: 50
-  edgeIndicatorMaxCombat: 10
-  edgeOutOfViewSeconds: 2
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1

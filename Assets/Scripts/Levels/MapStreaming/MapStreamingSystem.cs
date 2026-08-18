@@ -599,7 +599,7 @@ public class MapStreamingSystem : MonoBehaviour
         }
         // TODO(Phase 4+): 尸体搜刮 / 奖励拾取 / 事件进度子系统接入后在此补拍
         if (logStateChanges)
-            Debug.Log($"[MapStreamingSystem] {coord} 离开 D：ChunkState 内存快照已就位（待恢复怪 {state.monsters.Count}，尸体 {state.corpses.Count}，已刷波次 {state.spawnedWaveIds.Count}，身体消耗 {state.bodySupplyConsumed}）。");
+            Debug.Log($"[MapStreamingSystem] {coord} 离开 D：ChunkState 内存快照已就位（待恢复怪 {state.monsters.Count}，尸体 {state.corpses.Count}）。");
     }
 
     /// <summary>UnloadFull（离开 D）：回收 → Unloaded。</summary>
