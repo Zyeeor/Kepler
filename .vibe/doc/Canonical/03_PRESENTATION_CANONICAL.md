@@ -431,6 +431,16 @@ Enemy与Possessed使用同一视觉语义。
 
 Summon（如木灵）必须明确不是可Possess Corpse。
 
+暴食需要额外明确以下状态与转换：
+
+- 小猫化的约50%体型、持续状态与退出时机；
+- 深渊巨口落点、0.5秒预警与成对巨口的第二次延迟；
+- `Overfed`可获得、待消费和已消费的清晰反馈；
+- 吞噬命中Enemy后，E槽被复制Skill Ability临时替换；该技能成功使用一次后恢复吞噬；
+- 吞噬飞行攻击时的合法对象、吞噬确认与“不产生E槽复制”的区别。
+
+Enemy与Possessed暴食须共享小猫、巨口、吞噬、`Overfed`和二次咬合的核心视觉语义；临时复制E槽是玩家附身版本的明确操作便利例外。
+
 ---
 
 # 16. Telegraph
@@ -447,7 +457,7 @@ Summon（如木灵）必须明确不是可Possess Corpse。
 
 - Pride穿梭方向 / 段数；
 - Sloth蓄力炮；
-- Gluttony巨口落点；
+- Gluttony巨口落点、0.5秒生成预警与成对巨口第二次延迟；
 - Envy雷暴；
 - Wrath Pull；
 - Greed Guard方向；
@@ -517,7 +527,8 @@ Current Body：
 - Reload / CD；
 - Charge；
 - Unavailable；
-- 前置缺失。
+- 前置缺失；
+- 暴食E槽复制Skill Ability的临时名称 / 图标、一次性可用状态与恢复吞噬提示。
 
 Enemy：
 

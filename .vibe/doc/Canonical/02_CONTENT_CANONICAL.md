@@ -103,31 +103,32 @@ Enemy行为基线：
 ## Gluttony｜暴食·魔猫
 
 **Movement — 小猫化**
-- 短时缩小；
-- 高速移动；
-- 重量变轻；
+- 变为约50%体型的小猫，持续3秒；
+- 移动速度提高100%，重量变轻；
 - 不改变受击层；
-- Special启动恢复捕食形态。
+- 再次使用Movement切换回魔猫形态；
+- 使用Special也会恢复魔猫形态；
+- 普通Attack默认解除小猫化；取得`GL-M01`后，普通Attack不再解除小猫化。
 
 **Attack — 深渊巨口**
 - 指定地面位置；
 - 施放时快照；
-- 延迟后生成；
+- 0.5秒后生成；
 - 不持续追踪；
-- Enemy必须有清晰危险区。
+- Enemy与玩家版本均必须显示清晰地面危险区。
 
-**Special — 吞噬**
-- 前向重咬；
-- 命中单位获得过饱；
-- 过饱强化下一次巨口；
-- 下一次有效Attack生成时消费；
-- 换身清除；
-- 基础不吞飞行攻击；
-- 基础不复制技能。
+**Special — 吞噬 / 复制Skill Ability**
+- 魔猫形态下向前方约1米半径扇形作出巨大咬合；
+- 命中合法Enemy后获得`Overfed`；
+- `Overfed`使下一次基础吞噬变为二次咬合，触发后消费；
+- 命中Enemy时复制其`E / Skill Ability`，作为暴食E槽的临时替代；
+- 复制本身不额外消耗资源；复制技能成功使用一次后失效，E槽恢复吞噬；
+- 换身清除`Overfed`和未使用的复制Skill Ability；
+- 基础不吞飞行攻击；`GL-S03`是吞飞行攻击并获得`Overfed`的明确例外。
 
 Enemy行为基线：
 
-> 小猫态追击 / 重定位 → 在预测位置放巨口 → 近距离尝试吞噬 → 获得过饱后优先兑现巨口。
+> 小猫态追击 / 重定位 → 在预测位置放巨口 → 近距离尝试吞噬 → 获得`Overfed`后优先二次咬合；Enemy不使用玩家专属的临时复制E槽，但保留吞噬、过饱与二次咬合的核心Payload与表现语义。
 
 ---
 
@@ -268,7 +269,7 @@ Enemy行为基线：
 
 Monster额外初始化：
 
-- Gluttony：Overfed = 0；
+- Gluttony：Overfed = 0，未持有复制Skill Ability；
 - Envy：Record = 0；
 - Greed：少量初始魔手，数量Tunable；
 - Lust：无Anchor / Link；
@@ -282,7 +283,7 @@ Monster额外初始化：
 
 当前牌池：
 
-> **79张**
+> **77张**
 
 | 分类 | 数量 |
 |---|---:|
@@ -290,7 +291,7 @@ Monster额外初始化：
 | Global Slot质变 | 7 |
 | Pride | 7 |
 | Sloth | 11 |
-| Gluttony | 9 |
+| Gluttony | 7 |
 | Envy | 8 |
 | Wrath | 9 |
 | Greed | 12 |
@@ -298,8 +299,8 @@ Monster额外初始化：
 
 其中：
 
-- 七罪Monster-Type + Type Growth：63张；
-- Type Growth：7张；每Sin 1张；
+- 七罪Monster-Type + Type Growth：61张；
+- Type Growth：6张；Gluttony是当前无Type Growth的Owner确认例外；
 - 当前无稀有度系统。
 
 详细逐卡真源：
@@ -362,18 +363,16 @@ Monster额外初始化：
 | `SL-S03` | 侍从圣武 | Special专属成长；Stack 1 | 1 |
 | `SL-TG01` | 沉眠遗命 | 类型成长；Stack 1 | 1 |
 
-## 暴食｜9张
+## 暴食｜7张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
-| `GL-A01` | 群口圣宴 | Attack数量质变；Stack 1 | 1 |
-| `GL-A02` | 猎步圣餐 | Movement→Attack联动；Stack 1 | 1 |
+| `GL-M01` | 饥神猎步 | Movement基础强化 + Attack形态例外；Stack 1 | 1 |
+| `GL-A01` | 群口圣宴 | Overfed→Attack成对巨口；Stack 1 | 1 |
+| `GL-A02` | 猎步圣餐 | Movement→Attack成对巨口；Stack 1 | 1 |
 | `GL-A03` | 远方圣餐 | Attack基础强化；Stack 1 | 1 |
-| `GL-M01` | 饥神猎步 | Movement基础强化；Stack 1 | 1 |
-| `GL-S01` | 鲜血圣餐 | Special高风险资源转化；Stack 1 | 1 |
-| `GL-S02` | 最后一餐 | Special条件质变；Stack 1 | 1 |
+| `GL-S01` | 鲜血圣餐 | Special首次吞噬耐久回复；Stack 1 | 1 |
+| `GL-S02` | 最后一餐 | Special条件处决；Stack 1 | 1 |
 | `GL-S03` | 万物皆食 | Special高阶Interaction；Stack 1 | 1 |
-| `GL-X01` | 过饱神迹 | Resource+Attack联动；Stack 1 | 1 |
-| `GL-TG01` | 饥神显形 | 类型成长；Stack 1 | 1 |
 
 ## 嫉妒｜8张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
@@ -457,7 +456,7 @@ Elite不读取。
 当前采用显式方案：
 
 - 旧“拿普通Sin卡后后台自动加基础属性”取消；
-- 当前共7张；每Sin恰好1张；
+- 当前共6张；除Gluttony外，每个有Type Growth的Sin恰好1张；Gluttony是Owner确认的无Type Growth例外；
 - Stack Max = 1；
 - 一次取得即完整生效；
 - 约2个直观非伤害维度；
@@ -466,7 +465,7 @@ Elite不读取。
 - 对应Sin普通Enemy与Possessed同源生效；
 - 取得后对应Sin `Investment +1`。
 
-当前ID：`PR-TG01`, `SL-TG01`, `GL-TG01`, `EN-TG01`, `WR-TG01`, `GR-TG01`, `LU-TG01`。
+当前ID：`PR-TG01`, `SL-TG01`, `EN-TG01`, `WR-TG01`, `GR-TG01`, `LU-TG01`。
 
 ## 7.3 Global Slot
 
@@ -496,7 +495,7 @@ Owner最新Excel / Card v1.1删除线为正式删除。
 
 旧Global 6张全部删除：`GX-M01`, `GX-M02`, `GX-A01`, `GX-A02`, `GX-S01`, `GX-S02`。
 
-普通Monster Card正式删除且不补：`PR-S02`, `SL-A06`, `GL-M02`, `EN-A02`, `EN-R03`, `EN-X01`, `GR-A04`, `GR-M04`, `GR-S03`, `LU-M04`。
+普通Monster Card正式删除且不补：`PR-S02`, `SL-A06`, `GL-M02`, `GL-X01`, `GL-TG01`, `EN-A02`, `EN-R03`, `EN-X01`, `GR-A04`, `GR-M04`, `GR-S03`, `LU-M04`。
 
 不得为了恢复历史84张或旧Coverage重新补回。
 

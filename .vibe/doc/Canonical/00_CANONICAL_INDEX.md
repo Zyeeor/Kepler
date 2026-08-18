@@ -61,7 +61,7 @@ Repository 当前实现只能回答：
 
 `CANONICAL / CURRENT CONTENT BASELINE`
 
-负责七宗罪Roster、21个基础技能、79张Card注册表、Card作用域、Type Growth / Global Slot、固定起始傲慢Body、Encounter / Spawn、Elite、Terrain、Tutorial等Content基线。
+负责七宗罪Roster、21个基础技能、77张Card注册表、Card作用域、Type Growth / Global Slot、固定起始傲慢Body、Encounter / Spawn、Elite、Terrain、Tutorial等Content基线。
 
 ## `03_PRESENTATION_CANONICAL.md`
 
@@ -73,7 +73,7 @@ Repository 当前实现只能回答：
 
 `OWNER REVIEW PASSED / CURRENT CARD CONTENT TRUTH`
 
-负责79张Card完整逐卡字段、明暗文案、机制、Stack、人工删除历史，以及当前Basic / Global / Type Growth规则。
+负责77张Card完整逐卡字段、明暗文案、机制、Stack、人工删除历史，以及当前Basic / Global / Type Growth规则。
 
 ## `Content/Encounter_CardOffer_Baseline_v1.0.md`
 
@@ -100,7 +100,7 @@ Repository 当前实现只能回答：
 | Rules | `CLOSED` | 无核心规则阻塞 |
 | Monster Core | `CARD-READY / CLOSED` | 七只Roster与三槽稳定 |
 | Starting Carrier | `CONFIRMED` | 开场Soul被分配进傲慢Carrier；玩家首个可操作Body固定傲慢 |
-| Card Content | `OWNER REVIEW PASSED` | 79张当前真源完成；色欲已按2026-08-17 Owner决策更新为7张 |
+| Card Content | `OWNER REVIEW PASSED / OWNER DELTA APPLIED` | 77张当前真源；色欲与暴食均已按2026-08-17 Owner决策更新为7张 |
 | Card Timing | `CONFIRMED` | 删除Opening Card；W1–7后各1次，W8后连续2次，共9次 |
 | Card Scope | `CONFIRMED` | Basic / Global作用普通Enemy + Possessed；Elite完全排除当前Run Card层 |
 | World / Narrative | `R03.1 INTEGRATED` | 核心主题、Reveal、First Clear已收口；深层Ontology故意Open |
@@ -128,6 +128,9 @@ Repository 当前实现只能回答：
 12. `LU-S05`确认为“同一次色欲Special中，被牵引目标相互碰撞时爆炸”，不重复解锁基础Special已有的牵引能力。
 13. 色欲6张非Type Growth卡的精确伤害、半径、延迟、扩散时间和伤害隔离宽限为首轮`TUNABLE / PLAYABLE` Baseline。
 14. `LU-TG01`提高色欲Body基础移速，并使Movement / Attack / Special三槽冷却统一减少30%；冷却缩减为Owner确认值，基础移速增幅留待Playable调校，且不缩短前摇、后摇或敌人最低预警。
+15. 暴食三槽更新：小猫化为约50%体型、持续3秒、移速+100%；深渊巨口落点快照后0.5秒生成；吞噬命中Enemy写入`Overfed`并复制目标E槽Skill Ability，复制技能成功使用一次后恢复吞噬，换身清除相关状态。
+16. 暴食牌池收缩为7张：保留`GL-M01`, `GL-A01`, `GL-A02`, `GL-A03`, `GL-S01`, `GL-S02`, `GL-S03`；删除`GL-X01`, `GL-TG01`。`GL-A01`与`GL-A02`均可使下一次巨口成对出现；两者同时就绪时合并为同一对，第二巨口额外延迟0.5秒，并同时消费两层强化。
+17. 暴食成为无Type Growth的Owner确认例外；当前Type Growth共6张，当前Card总数为77张。
 
 ---
 

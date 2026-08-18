@@ -3,7 +3,7 @@
 **Project:** Possession<br>
 **Date:** 2026-08-15<br>
 **Status:** `FINAL PRE-IMPORT CLOSURE / GO`<br>
-**Historical snapshot note:** 本审计保留2026-08-15入仓时的82张Card结论；当前牌池已被2026-08-17 Owner Lust Card Delta更新为79张，其中色欲保留并重写`LU-TG01`，现状以`00_CANONICAL_INDEX.md`、`02_CONTENT_CANONICAL.md`与逐卡真源为准。
+**Historical snapshot note:** 本审计保留2026-08-15入仓时的82张Card结论；后续2026-08-17 Owner Delta已先将色欲更新为7张，随后将暴食更新为7张并删除`GL-X01`、`GL-TG01`。当前牌池为77张，现状以`00_CANONICAL_INDEX.md`、`02_CONTENT_CANONICAL.md`与逐卡真源为准。
 
 ---
 
@@ -58,7 +58,7 @@ Opening Card已彻底移除，不存在Wave 0选卡特殊分支。
 
 - 七只基础Monster稳定；
 - 21基础技能稳定；
-- 82张Card真源完成；
+- **Historical：** 入仓时82张Card真源完成；当前牌池已按后续Owner Delta更新为77张。
 - 9次Offer首版算法已补；
 - W1–W8 Encounter首版算法已补；
 - Elite核心已闭合，具体Fake Profile内容仍可后补。
