@@ -24,7 +24,7 @@
 
 | 载体 | Mythic版本 | System版本 | 备注 |
 |---|---|---|---|
-| Card | 完整名称 + 描述 | 完整名称 + 描述 | 当前77张正式资产 |
+| Card | 完整名称 + 描述 | 完整名称 + 描述 | 当前68张正式资产 |
 | Seven Sins / Monster首次介绍 | 罪之形 / 法则 / 权柄 | Training Domain / Carrier Profile | 首次出现 / 首次Possess包装 |
 | Monster Micro Tutorial叙事标题 | 神话化能力称谓 | 功能化能力摘要 | 操作按键本身仍中性 |
 | Initial Carrier Assignment | 灵魂承形 / 王座试炼起点 | Candidate → Pride Carrier initialization | 开场CG / 动画 |

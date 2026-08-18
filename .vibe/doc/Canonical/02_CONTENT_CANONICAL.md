@@ -164,45 +164,47 @@ Enemy行为基线：
 ## Wrath｜愤怒·链狱冥兽
 
 **Movement — 钩索位移**
-- 钩合法地面 / 位移点；
-- 将自身拉向目标位置；
+- 将自己钩向前方合法地面 / 位移点；
 - 无合法点不启动；
-- 钩头不是Attack Projectile。
+- 钩头不是Attack Projectile；
+- 基础只负责位移；`WR-M01`赋予路径伤害，`WR-M02`提高合法抓取距离并使抵达落点后冲击周围地面。
 
-**Attack — 砸地 + Burning**
-- 范围伤害；
-- 留燃烧；
-- 可点燃Greed Oil；
+**Attack — 双拳砸地 + Burning**
+- 双拳砸地，对范围内敌人造成基础范围伤害；
+- 命中区域生成燃烧，燃烧每秒造成5点伤害、持续3秒；
+- 若砸地区域存在Greed普通黑油，则点燃该黑油；
 - 满耐久时本身就必须好用。
 
-**Special — 暴怒锁链**
-- 短时旋转；
-- 持续伤害；
-- 强Pull；
-- 轻 / 中 / 重产生不同位移；
+**Special — 暴怒锁链 / 龙卷风**
+- 用触角将范围内敌人吸入中心，形成持续2秒的龙卷风式牵引；
+- 每0.5秒结算一次伤害；
+- 轻 / 中 / 重产生不同牵引位移；
 - 不Stun；
-- 被Enemy Pull的玩家仍保留移动与Space输入。
+- 被Enemy Pull的玩家仍保留移动与Space输入；
+- `WR-S01`使龙卷风期间获得+300%移动速度；`WR-S03`使龙卷风时长延长2秒。
 
 Enemy行为基线：
 
-> 钩索逼近 → 砸地建立燃烧区 → 合法距离内开启锁链Pull → 恢复 / 再接近。
+> 钩索逼近 / 改角度 → 砸地建立燃烧区并点燃合法黑油 → 合法距离内开启锁链龙卷风Pull → 恢复 / 再接近。
 
 ---
 
 ## Greed｜贪婪·万手藏主
 
 **Movement — 铺黑油**
-- 沿路径留短寿命黑油；
-- Greed在普通油上获得移动增益；
-- 明确火源可点燃；
-- Burning Oil不再提供普通油加速。
+- 沿路径留下短寿命黑油；
+- 踏入普通黑油的Enemy减速；
+- 明确火源可点燃黑油；
+- Burning Oil不再提供普通黑油减速；
+- `GR-M01`扩大黑油路径的长度与覆盖范围。
 
 **Attack — 念力魔手**
 - Body自动积累到库存上限；
 - LMB一次释放当前库存；
 - Possession初始化获得少量魔手；
 - 0库存时Attack不启动、不收费；
-- 已发射魔手跨Body继续。
+- 已发射魔手跨Body继续；
+- `GR-A01`提高库存与单次释放上限；`GR-A02`和`GR-A03`分别提供击杀后的再索敌与新增魔手派生。
 
 **Special — 大手Guard / 吸收转化**
 - 方向明确的正面Guard；
@@ -211,11 +213,12 @@ Enemy行为基线：
 - 截断正面激光；
 - 转化为魔手库存；
 - 空开也视为正常释放并收费 / 进入Reload；
-- 不基础防AoE、Field、Pull、Burning、侧后方。
+- 不基础防AoE、Field、Pull、Burning、侧后方；
+- `GR-S01`提高一次Guard受击后的魔手转化结果；`GR-S04`延长Guard有效持续时间，方向与可吸收对象不变。
 
 Enemy行为基线：
 
-> 铺油建立路径 → 累积并释放魔手 → 对明确正面威胁使用Guard → 将吸收结果转化后反压。
+> 铺油建立减速路径 → 累积并释放魔手 → 对明确正面威胁使用Guard → 将吸收结果转化后反压。
 
 ---
 
@@ -283,7 +286,7 @@ Monster额外初始化：
 
 当前牌池：
 
-> **77张**
+> **68张**
 
 | 分类 | 数量 |
 |---|---:|
@@ -293,14 +296,14 @@ Monster额外初始化：
 | Sloth | 11 |
 | Gluttony | 7 |
 | Envy | 8 |
-| Wrath | 9 |
-| Greed | 12 |
+| Wrath | 6 |
+| Greed | 6 |
 | Lust | 7 |
 
 其中：
 
-- 七罪Monster-Type + Type Growth：61张；
-- Type Growth：6张；Gluttony是当前无Type Growth的Owner确认例外；
+- 七罪Monster-Type + Type Growth：52张；
+- Type Growth：4张；Gluttony、Wrath与Greed是当前无Type Growth的Owner确认例外；
 - 当前无稀有度系统。
 
 详细逐卡真源：
@@ -386,34 +389,25 @@ Monster额外初始化：
 | `EN-S01` | 雷霆作证 | Special派生质变；Stack 2 | 2 |
 | `EN-TG01` | 万眼远证 | 类型成长；Stack 1 | 1 |
 
-## 愤怒｜9张
+## 愤怒｜6张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
-| `WR-A01` | 怒火圣域 | Attack叠层；Stack 3 | 3 |
-| `WR-B01` | 殉身加冕 | Body Trait叠层；Stack 3 | 3 |
-| `WR-B02` | 以身为薪 | Body Trait质变；Stack 1 | 1 |
-| `WR-M01` | 焚途誓约 | Movement派生联动；Stack 1 | 1 |
-| `WR-M02` | 末日锁链 | Movement基础强化；Stack 1 | 1 |
-| `WR-M03` | 坠地神罚 | Movement终点质变；Stack 1 | 1 |
-| `WR-S01` | 锁链之刑 | Special基础强化；Stack 1 | 1 |
-| `WR-S02` | 终末震怒 | Special终段质变；Stack 1 | 1 |
-| `WR-TG01` | 怒神显圣 | 类型成长；Stack 1 | 1 |
+| `WR-M01` | 焚途誓约 | Movement路径伤害；Stack 1 | 1 |
+| `WR-M02` | 末日锁链 | Movement距离 + 落点冲击；Stack 1 | 1 |
+| `WR-B01` | 殉身加冕 | 低耐久伤害 / 攻击范围 / Attack CD缩短；Stack 1 | 1 |
+| `WR-B02` | 以身为薪 | Body Trait燃烧光环；Stack 1 | 1 |
+| `WR-S01` | 风暴锁链 | Special龙卷风移速强化；Stack 1 | 1 |
+| `WR-S03` | 终末飓风 | Special龙卷风时长强化；Stack 1 | 1 |
 
-## 贪婪｜12张
+## 贪婪｜6张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
-| `GR-A01` | 万手圣库 | Attack Resource叠层；Stack 2 | 2 |
-| `GR-A02` | 未收之贡 | Attack派生联动；Stack 1 | 1 |
-| `GR-A03` | 亡者遗产 | Attack高风险派生；Stack 1 | 1 |
-| `GR-A05` | 万手分取 | Attack叠层；Stack 2 | 2 |
-| `GR-A06` | 双生圣手 | Attack派生质变；Stack 1 | 1 |
-| `GR-M01` | 黑油圣路 | Movement叠层；Stack 2 | 2 |
-| `GR-M02` | 沉沦圣油 | Movement叠层；Stack 2 | 2 |
-| `GR-M03` | 燃油连祷 | Movement环境质变；Stack 1 | 1 |
-| `GR-S01` | 圣库纳贡 | Special资源转化；Stack 1 | 1 |
-| `GR-S02` | 圣库开门 | Special终段质变；Stack 1 | 1 |
-| `GR-S04` | 贪神庇护 | Special基础强化；Stack 1 | 1 |
-| `GR-TG01` | 万手疆域 | 类型成长；Stack 1 | 1 |
+| `GR-M01` | 黑油圣路 | Movement黑油范围 / 长度 + 敌人减速；Stack 1 | 1 |
+| `GR-A01` | 万手圣库 | Attack Resource上限；Stack 2 | 2 |
+| `GR-A02` | 未收之贡 | Attack击杀后再索敌；Stack 1 | 1 |
+| `GR-A03` | 亡者遗产 | Attack击杀后新增魔手；Stack 1 | 1 |
+| `GR-S01` | 圣库纳贡 | Special受击资源转化；Stack 1 | 1 |
+| `GR-S04` | 贪神庇护 | Special Guard持续强化；Stack 1 | 1 |
 
 ## 色欲｜7张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
@@ -456,7 +450,7 @@ Elite不读取。
 当前采用显式方案：
 
 - 旧“拿普通Sin卡后后台自动加基础属性”取消；
-- 当前共6张；除Gluttony外，每个有Type Growth的Sin恰好1张；Gluttony是Owner确认的无Type Growth例外；
+- 当前共4张；除Gluttony、Wrath与Greed外，每个有Type Growth的Sin恰好1张；Gluttony、Wrath与Greed是Owner确认的无Type Growth例外；
 - Stack Max = 1；
 - 一次取得即完整生效；
 - 约2个直观非伤害维度；
@@ -465,7 +459,7 @@ Elite不读取。
 - 对应Sin普通Enemy与Possessed同源生效；
 - 取得后对应Sin `Investment +1`。
 
-当前ID：`PR-TG01`, `SL-TG01`, `EN-TG01`, `WR-TG01`, `GR-TG01`, `LU-TG01`。
+当前ID：`PR-TG01`, `SL-TG01`, `EN-TG01`, `LU-TG01`。
 
 ## 7.3 Global Slot
 
@@ -495,7 +489,7 @@ Owner最新Excel / Card v1.1删除线为正式删除。
 
 旧Global 6张全部删除：`GX-M01`, `GX-M02`, `GX-A01`, `GX-A02`, `GX-S01`, `GX-S02`。
 
-普通Monster Card正式删除且不补：`PR-S02`, `SL-A06`, `GL-M02`, `GL-X01`, `GL-TG01`, `EN-A02`, `EN-R03`, `EN-X01`, `GR-A04`, `GR-M04`, `GR-S03`, `LU-M04`。
+普通Monster Card正式删除且不补：`PR-S02`, `SL-A06`, `GL-M02`, `GL-X01`, `GL-TG01`, `EN-A02`, `EN-R03`, `EN-X01`, `WR-A01`, `WR-M03`, `WR-S02`, `WR-TG01`, `GR-A04`, `GR-A05`, `GR-A06`, `GR-M02`, `GR-M03`, `GR-M04`, `GR-S02`, `GR-S03`, `GR-TG01`, `LU-M04`。
 
 不得为了恢复历史84张或旧Coverage重新补回。
 

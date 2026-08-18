@@ -2702,6 +2702,10 @@ MonoBehaviour:
   spawnClearRadius: 3
   waves:
   - waveType: 0
+    mode: 0
+    weightedTable: []
+    totalCount: 20
+    duration: 60
     startTime: 0
     enemies:
     - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
@@ -4391,6 +4395,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 30
+  enableChunkStaticSpawns: 0
   maxWavesPerChunk: 2
   scatterRadius: 3
   minSpawnDistanceToPlayer: 20
@@ -4420,20 +4425,14 @@ MonoBehaviour:
   radiusD: 80
   chunkSize: 8
   tileSize: 2
+  boundaryChunkExtent: 8
+  boundaryCenterOverride: {fileID: 0}
   worldSeed: 12345
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   regionTable: []
   regionCellSize: 2
   regionNeighborWeight: 2
   tickInterval: 0.2
-  activatePerFrame: 2
-  pausePerFrame: 5
-  instantiatePerFrame: 2
-  preparePerFrame: 4
-  unloadScenePerFrame: 2
-  serializePerFrame: 2
-  unloadFullPerFrame: 4
-  timeBudgetMs: 4
   showGizmos: 1
   logStateChanges: 1
 --- !u!4 &753820585
@@ -5884,6 +5883,10 @@ MonoBehaviour:
   spawnClearRadius: 3
   waves:
   - waveType: 0
+    mode: 0
+    weightedTable: []
+    totalCount: 20
+    duration: 60
     startTime: 0
     enemies:
     - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
@@ -7096,6 +7099,10 @@ MonoBehaviour:
   spawnClearRadius: 3
   waves:
   - waveType: 0
+    mode: 0
+    weightedTable: []
+    totalCount: 20
+    duration: 60
     startTime: 0
     enemies:
     - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
@@ -8217,6 +8224,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3d08547a5962d84fa624eeef2517a55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawnInterval: 0.5
+  choiceBuffer: 2
+  autoShowChoiceUI: 1
+  recycleRemainingOnTimeUp: 1
+  waves: []
+  gracePeriod: 2
+  autoStart: 1
+  autoStartTimeout: 30
 --- !u!114 &1593985463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8662,6 +8677,10 @@ MonoBehaviour:
   spawnClearRadius: 3
   waves:
   - waveType: 0
+    mode: 0
+    weightedTable: []
+    totalCount: 20
+    duration: 60
     startTime: 0
     enemies:
     - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
@@ -10206,6 +10225,10 @@ MonoBehaviour:
   spawnClearRadius: 3
   waves:
   - waveType: 0
+    mode: 0
+    weightedTable: []
+    totalCount: 20
+    duration: 60
     startTime: 0
     enemies:
     - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
