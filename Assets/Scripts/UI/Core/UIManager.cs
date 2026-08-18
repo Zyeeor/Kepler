@@ -45,6 +45,10 @@ public class UIManager : MonoBehaviour
     public SettingsPanel settingsPanel;
     public ConfirmDialog confirmDialog;
 
+    [Header("Result")]
+    [Tooltip("结算面板（胜利/失败）延迟弹出秒数：留出时间看最终战况/死亡动画。")]
+    [Min(0f)] public float resultDelaySeconds = 2f;
+
     void Awake()
     {
         if (Instance == null)
@@ -97,8 +101,47 @@ public class UIManager : MonoBehaviour
         if (quitButtonOnGameOver != null)
             quitButtonOnGameOver.onClick.AddListener(OnQuitFromGameOver);
 
+        // Run 级流程：订阅阶段事件驱动结算面板（不再由子系统直接调用 ShowResult）。
+        // Result → VICTORY；Failed → GAME OVER。终态阶段不可再转移，无重复触发。
+        RunSession.EnsureInstance().OnPhaseChanged += OnRunPhaseChanged;
+
         UpdatePauseButtonText();
         UpdateHealthBarToggleText();
+    }
+
+    /// <summary>RunFlow 阶段事件响应：终态弹结算面板（复用 GameOver 面板与 Restart/Home 按钮）。</summary>
+    void OnRunPhaseChanged(RunPhase phase)
+    {
+        switch (phase)
+        {
+            case RunPhase.Result:
+                StartResultDelay(true);
+                break;
+            case RunPhase.Failed:
+                StartResultDelay(false);
+                break;
+            default:
+                break; // 其他阶段不弹结算（Opening/Tutorial/Waves/Choice/Final 由各自系统驱动）
+        }
+    }
+
+    /// <summary>
+    /// 结算面板延迟弹出（胜利/失败共用，延迟秒数 resultDelaySeconds 可配置）：
+    /// 让玩家看清最终战况/死亡动画后再弹窗。用 Realtime 等待，不受暂停/冻结影响。
+    /// </summary>
+    Coroutine resultDelayCoroutine;
+    void StartResultDelay(bool won)
+    {
+        if (resultDelayCoroutine != null) StopCoroutine(resultDelayCoroutine); // 防重复触发
+        resultDelayCoroutine = StartCoroutine(ShowResultDelayed(won));
+    }
+
+    System.Collections.IEnumerator ShowResultDelayed(bool won)
+    {
+        if (resultDelaySeconds > 0f)
+            yield return new WaitForSecondsRealtime(resultDelaySeconds);
+        resultDelayCoroutine = null;
+        ShowResult(won);
     }
 
     void Update()
@@ -135,22 +178,33 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void ShowGameOver()
+    /// <summary>
+    /// 终局结算面板（Result）：胜利/失败统一入口（复用 GameOver 面板与 Restart/Home 按钮）。
+    /// won=true → 文本 VICTORY；false → GAME OVER。结束本局语义由按钮完成：
+    /// Restart = 清档重开（EndRun + 重载场景），Home = 清档回主菜单（EndRun）。
+    /// </summary>
+    public void ShowResult(bool won)
     {
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
-            Debug.Log("UIManager: GameOver panel shown");
+            Debug.Log($"UIManager: Result panel shown (won={won})");
         }
 
         if (gameOverText != null)
-            gameOverText.text = "GAME OVER";
+            gameOverText.text = won ? "VICTORY" : "GAME OVER";
 
         // Show and unlock cursor so the player can click UI buttons
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
         Time.timeScale = 0f;
+    }
+
+    /// <summary>失败结算（GameManager 失败路径调用，委托 ShowResult(false)）。</summary>
+    public void ShowGameOver()
+    {
+        ShowResult(false);
     }
 
     public void HideGameOver()
@@ -165,13 +219,20 @@ public class UIManager : MonoBehaviour
         Debug.Log("UIManager: Restart clicked - ending run, reloading scene");
         // 重开 = 结束当前对局（清内存态+清存档），再重载场景开始新局
         RunSession.EnsureInstance().EndRun();
+        // 重置常驻 GameManager 战斗状态：GameManager 为 DontDestroyOnLoad，
+        // 场景重载不重建——不 Reset 则 currentState 停在 GameOver，新局附身会被 CanStartPossession 拒绝。
+        if (GameManager.Instance != null) GameManager.Instance.ResetGame();
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void OnHomeClicked()
     {
-        Debug.Log("UIManager: Home clicked - loading scene: " + homeSceneName);
+        Debug.Log("UIManager: Home clicked - ending run, loading scene: " + homeSceneName);
+        // 终局返回：结束本局（清内存态 + 清存档）——失败/胜利后主菜单"继续"不再可用（正式语义：失败不续关）
+        RunSession.EnsureInstance().EndRun();
+        // 复位常驻 GameManager：不 Reset 则 currentState 停在 GameOver，主菜单"开始新游戏"后新局附身被拒
+        if (GameManager.Instance != null) GameManager.Instance.ResetGame();
         Time.timeScale = 1f;
         SceneManager.LoadScene(homeSceneName);
     }
@@ -340,7 +401,11 @@ public class UIManager : MonoBehaviour
 
     public void OnQuitFromGameOver()
     {
-        Debug.Log("UIManager: Quit from game over - loading: " + homeSceneName);
+        Debug.Log("UIManager: Return to menu from game over - ending run, loading: " + homeSceneName);
+        // 终局返回主界面：结束本局（清内存态 + 清存档）——失败/胜利后主菜单"继续"不再可用
+        RunSession.EnsureInstance().EndRun();
+        // 复位常驻 GameManager：不 Reset 则 currentState 停在 GameOver，主菜单"开始新游戏"后新局附身被拒
+        if (GameManager.Instance != null) GameManager.Instance.ResetGame();
         Time.timeScale = 1f;
         SceneManager.LoadScene(homeSceneName);
     }
@@ -348,5 +413,10 @@ public class UIManager : MonoBehaviour
     void OnDestroy()
     {
         Time.timeScale = 1f;
+        // 退订 Run 级流程事件：RunSession 为常驻（DontDestroyOnLoad）对象，
+        // 场景重载后旧 UIManager 若不退订，悬空委托会在事件触发时抛"对象已销毁"异常并中断委托链，
+        // 导致后续订阅者（新 UIManager）收不到事件（结算面板不弹）。
+        if (RunSession.Instance != null)
+            RunSession.Instance.OnPhaseChanged -= OnRunPhaseChanged;
     }
 }

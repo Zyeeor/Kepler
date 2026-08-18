@@ -2514,6 +2514,7 @@ GameObject:
   m_Component:
   - component: {fileID: 396728510}
   - component: {fileID: 396728509}
+  - component: {fileID: 396728511}
   m_Layer: 0
   m_Name: WaveManager
   m_TagString: Untagged
@@ -2535,14 +2536,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groupScatterRadius: 3
   spawnInterval: 0.5
-  initialBurstBatches: 2
   pruneInterval: 0.1
-  choiceBuffer: 2
+  choiceBuffer: 1
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   waveMode: 0
   waves:
   - weightedTable:
+    - def: {fileID: 11400000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 2}
+      weight: 1
     - def: {fileID: 11400000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 2}
       weight: 1
     totalCount: 3
@@ -2552,7 +2554,7 @@ MonoBehaviour:
   - weightedTable:
     - def: {fileID: 11400000, guid: b2c3d4e5f60718293a4b5c6d7e8f90a1, type: 2}
       weight: 1
-    totalCount: 4
+    totalCount: 2
     duration: 20
     maxSpawnCount: 0
     doublePick: 0
@@ -2561,7 +2563,7 @@ MonoBehaviour:
       weight: 1
     - def: {fileID: 11400000, guid: c3d4e5f60718293a4b5c6d7e8f90a1b2, type: 2}
       weight: 1
-    totalCount: 6
+    totalCount: 3
     duration: 25
     maxSpawnCount: 0
     doublePick: 0
@@ -2624,6 +2626,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &396728511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396728508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f527960cfcbb6da4384fc96a846c515d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableDebug: 1
+  skipWaveKey: 286
+  showPanel: 1
 --- !u!1 &399063970
 GameObject:
   m_ObjectHideFlags: 0
@@ -5515,6 +5532,7 @@ MonoBehaviour:
   healthBarToggleText: {fileID: 0}
   settingsPanel: {fileID: 1731005095}
   confirmDialog: {fileID: 153670386}
+  resultDelaySeconds: 1
 --- !u!114 &1096202199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8395,7 +8413,6 @@ MonoBehaviour:
   useFixedSeed: 1
   fixedSeed: 12345
   useFormalFlow: 0
-  testDoublePickOnStart: 0
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -8425,7 +8442,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 0}
-  maxRerolls: 3
   maxSelects: 1
   currentPicks:
   - cardName: 
@@ -9214,7 +9230,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groupScatterRadius: 3
   spawnInterval: 0.5
-  initialBurstBatches: 2
   pruneInterval: 0.1
   choiceBuffer: 2
   autoShowChoiceUI: 1

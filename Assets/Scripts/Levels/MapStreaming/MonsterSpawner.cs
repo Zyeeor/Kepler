@@ -44,6 +44,13 @@ public class MonsterSpawner : MonoBehaviour
     public int TrackedMonsterCount { get; private set; }
 
     /// <summary>
+    /// 波次刷怪随机流（种子确定性）：由 WaveManager 每波设置（WorldSeed 派生），
+    /// 取点/群系散射等全部随机走此流——同种子下怪物种类与位置可复现。
+    /// 未设置时（直接调用方）回退全局 Random 语义。
+    /// </summary>
+    public System.Random WaveRandom { get; set; }
+
+    /// <summary>
     /// 收集当前在场可交互的活怪（未销毁、未附身、未倒地），供指引 UI 等外部系统使用。
     /// </summary>
     public void CollectAliveMonsters(List<MonsterActor> buffer)
@@ -155,10 +162,13 @@ public class MonsterSpawner : MonoBehaviour
         if (system == null) return false;
         Vector3 player = GetPlayerPosition();
         var cam = GetMainCamera();
+        var rng = WaveRandom; // 种子随机流（WaveManager 注入）；null 时回退全局 Random
         for (int i = 0; i < 16; i++)
         {
-            float angle = UnityEngine.Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float r = UnityEngine.Random.Range(minSpawnDistanceToPlayer, maxSpawnDistanceToPlayer);
+            float angle = (rng != null ? rng.Next(0, 360) : UnityEngine.Random.Range(0, 360)) * Mathf.Deg2Rad;
+            float r = rng != null
+                ? minSpawnDistanceToPlayer + (float)rng.NextDouble() * (maxSpawnDistanceToPlayer - minSpawnDistanceToPlayer)
+                : UnityEngine.Random.Range(minSpawnDistanceToPlayer, maxSpawnDistanceToPlayer);
             Vector3 c = player + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
             if (!system.Registry.TryGetValue(system.WorldToChunk(c), out var chunk) || chunk == null || chunk.Tiles == null)
                 continue; // 该点归属 Chunk 未加载：跳过（地图边界外同样落此分支）
