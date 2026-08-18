@@ -2545,7 +2545,7 @@ MonoBehaviour:
   - weightedTable:
     - def: {fileID: 11400000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 2}
       weight: 1
-    - def: {fileID: 11400000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 2}
+    - def: {fileID: 11400000, guid: c3d4e5f60718293a4b5c6d7e8f90a1b2, type: 2}
       weight: 1
     totalCount: 3
     duration: 15
@@ -8458,9 +8458,9 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 837435964}
-  useFixedSeed: 0
+  useFixedSeed: 1
   fixedSeed: 12345
-  useFormalFlow: 1
+  useFormalFlow: 0
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -8891,7 +8891,7 @@ MonoBehaviour:
   regionNeighborWeight: 2
   tickInterval: 0.2
   showGizmos: 1
-  logStateChanges: 1
+  logStateChanges: 0
 --- !u!4 &1950834436
 Transform:
   m_ObjectHideFlags: 0
@@ -8940,7 +8940,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ensureBlockerColliders: 0
   showDebug: 1
-  logBuilds: 1
+  logBuilds: 0
 --- !u!114 &1950834439
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -118,8 +118,8 @@ public class MapStreamingSystem : MonoBehaviour
     [Header("调试")]
     [Tooltip("Scene 视图绘制 A/B/C/D 范围圆 + Chunk 状态色块。")]
     public bool showGizmos = true;
-    [Tooltip("Chunk 状态切换时输出 Debug.Log。")]
-    public bool logStateChanges = true;
+    [Tooltip("chunk 状态切换日志（移动时高频刷屏，默认关闭；排查流送问题时可临时开启）。")]
+    public bool logStateChanges = false;
 
     /// <summary>事件：Chunk 状态切换（coord, oldState, newState）。</summary>
     public event Action<ChunkCoord, ChunkStreamState, ChunkStreamState> OnChunkStateChanged;

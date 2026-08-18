@@ -18,7 +18,8 @@ public class PlayerController : MonoBehaviour, IController
 
     [Header("Input")]
     public LayerMask groundLayer = -1;
-    public bool enableGlobalClickLogs = true;
+    [Tooltip("全局鼠标点击诊断日志（每次点击 2 条，高频；默认关闭，排查 UI 输入问题时可临时开启）。")]
+    public bool enableGlobalClickLogs = false;
     [Range(1, 16)] public int globalClickLogRaycastLimit = 8;
 
     private Camera mainCamera;
