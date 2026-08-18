@@ -108,7 +108,7 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlurFactor: 0
-    - _BlurFactorK: 0.043
+    - _BlurFactorK: 0.282
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -137,18 +137,18 @@ Material:
     - _LineTilingU: 1.5
     - _LineTilingV: 8
     - _LineUVScale: 0
-    - _LineUVScaleK: 3.82
+    - _LineUVScaleK: 4
     - _LogoAR: 0
     - _LogoAlpha: 0
     - _MainAlpha: 1
-    - _MainAlphaK: 0.233
+    - _MainAlphaK: 1
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RedBlueFactor: 0
-    - _RedBlueFactorK: 1.2
+    - _RedBlueFactorK: 1.3
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _Soft: 0.275
@@ -156,7 +156,7 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StepFactor: 0.6
-    - _StepFactorK: 0.551
+    - _StepFactorK: 0.5
     - _Surface: 0
     - _TexAR: 1
     - _TexAlpha: 0
