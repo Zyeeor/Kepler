@@ -46,17 +46,23 @@ public class MineBehaviour : MonoBehaviour
         }
     }
 
-    void Explode(Vector3 pos)
+    void Explode(Vector3 ignoredTargetPos)
     {
-        CombatHitboxDebug.DrawSphere(drawHitboxes, pos, blastRadius);
+        Vector3 blastPos = transform.position;
+        CombatHitboxDebug.DrawSphere(drawHitboxes, blastPos, blastRadius);
         if (blastVfxPrefab != null)
         {
-            var blast = Instantiate(blastVfxPrefab, pos, Quaternion.identity);
-            foreach (var ps in blast.GetComponentsInChildren<ParticleSystem>()) ps.Play();
-            Destroy(blast, blastVfxDuration);
+            var blast = Instantiate(blastVfxPrefab, blastPos, Quaternion.identity);
+            foreach (var ps in blast.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = ps.main;
+                if (main.loop) main.loop = false;
+                ps.Play(true);
+            }
+            Destroy(blast, Mathf.Max(0.01f, blastVfxDuration));
         }
 
-        var allHits = Physics.OverlapSphere(pos, blastRadius, ~0, QueryTriggerInteraction.Collide);
+        var allHits = Physics.OverlapSphere(blastPos, blastRadius, ~0, QueryTriggerInteraction.Collide);
         foreach (var hit in allHits)
         {
             var enemy = hit.GetComponentInParent<Enemy>();

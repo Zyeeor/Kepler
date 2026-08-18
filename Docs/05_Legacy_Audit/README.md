@@ -2,6 +2,13 @@
 
 This deployment creates the audit mechanism only; it does not audit or retire current Demo content.
 
+Audit inputs:
+
+- **Design Truth:** `.vibe/doc/Canonical/00_CANONICAL_INDEX.md` and the task-relevant Canonical documents.
+- **Open / Deferred constraints:** `Docs/02_Open_Decisions/`.
+- **Repository Fact:** the latest approved Inventory Freeze plus a required Micro Delta Inventory when Repository Fact changed after that freeze.
+- **Boundary:** Repository Fact ≠ Design Truth. Modules, CSV files, and old Demo behavior are audit evidence, not current Authority.
+
 Use these classifications:
 
 - `KEEP`: may continue unchanged.

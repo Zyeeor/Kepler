@@ -27,6 +27,9 @@ public class SoulActor : Actor
     public override float MaxHealth => stats != null ? stats.maxHealth : 0f;
 
     private Vector3 currentVelocity;          // 加速度平滑（移动手感）
+    private Transform possessionAnchor;
+    private Transform parentBeforePossession;
+
 
     /// <summary>移动速度：SoulActor 自身配置优先，否则读 PlayerPassiveManager 当前移速（含被动加成）。</summary>
     private float EffectiveMoveSpeed
@@ -126,13 +129,35 @@ public class SoulActor : Actor
         transform.position = bodyPosition + Vector3.up * yOffset;
     }
 
+    public void AttachToPossessionAnchor(Transform anchor)
+    {
+        if (anchor == null) return;
+        if (possessionAnchor == anchor) return;
+
+        DetachFromPossessionAnchor();
+        parentBeforePossession = transform.parent;
+        possessionAnchor = anchor;
+        transform.SetParent(anchor, true);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.identity;
+    }
+
+    public void DetachFromPossessionAnchor()
+    {
+        if (possessionAnchor == null) return;
+
+        transform.SetParent(parentBeforePossession, true);
+        possessionAnchor = null;
+        parentBeforePossession = null;
+    }
+
     /// <summary>
-    /// 附身跟随模式：灵魂吸附到被附身怪头顶上方 + possessYOffset。
+    /// 附身跟随模式：若已配置锚点则由 Transform 父子关系跟随；否则吸附到被附身怪头顶上方。
     /// 由 Update 在 IsSuppressed 时调用（本类 Update 覆写中）。
     /// </summary>
     public void FollowBody(Transform body)
     {
-        if (body == null) return;
+        if (possessionAnchor != null || body == null) return;
         Vector3 pos = body.position + Vector3.up * possessYOffset;
         transform.position = pos;
     }

@@ -72,7 +72,8 @@ public class CoreChoiceUI : MonoBehaviour
     /// </summary>
     /// <param name="onClosed">弹窗关闭回调（触发方注入房间流程等；null 则仅关闭）。</param>
     /// <param name="doublePick">true=双选（可选 2 张），false=单选。</param>
-    public void Show(Action onClosed = null, bool doublePick = false)
+    /// <param name="keepPicks">true=保留 CardManager.currentPicks（读档补弹用，不重新随机抽卡）。</param>
+    public void Show(Action onClosed = null, bool doublePick = false, bool keepPicks = false)
     {
         if (_isDrafting) return;   // 会话进行中忽略重复打开
         _isDrafting = true;
@@ -91,9 +92,20 @@ public class CoreChoiceUI : MonoBehaviour
                 Destroy(cardParent.GetChild(i).gameObject);
         }
 
-        // Draw random cards from CardManager
+        // Draw random cards from CardManager（读档补弹时保留已有候选，不重新随机）
         if (CardManager.Instance != null)
-            CardManager.Instance.DrawCards(cardCount);
+        {
+            if (keepPicks && CardManager.Instance.currentPicks != null
+                && CardManager.Instance.currentPicks.Length > 0
+                && CardManager.Instance.currentPicks[0] != null)
+            {
+                // 已有候选：保留（读档补弹，候选与退出时一致）
+            }
+            else
+            {
+                CardManager.Instance.DrawCards(cardCount);
+            }
+        }
         else
             Debug.LogWarning("[CoreChoiceUI] CardManager.Instance is null — no cards will be shown. Add CardManager to the scene.");
 

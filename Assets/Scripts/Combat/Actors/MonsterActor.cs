@@ -119,6 +119,14 @@ public class MonsterActor : Actor
     public float moveSpeedJitterMin => AiConfig.moveSpeedJitterMin;
     /// <summary>追击速度抖动上限（AI 配置）。</summary>
     public float moveSpeedJitterMax => AiConfig.moveSpeedJitterMax;
+    /// <summary>AI 移动加速度（AI 配置）。</summary>
+    public float aiMoveAcceleration => AiConfig.moveAcceleration;
+    /// <summary>AI 移动减速度（AI 配置）。</summary>
+    public float aiMoveDeceleration => AiConfig.moveDeceleration;
+    /// <summary>AI 最大转向速度（AI 配置）。</summary>
+    public float aiTurnSpeed => AiConfig.turnSpeed;
+    /// <summary>AI 转向加速度（AI 配置）。</summary>
+    public float aiTurnAcceleration => AiConfig.turnAcceleration;
     /// <summary>调试圆环开关（AI 配置，是否可视化索敌/普攻/技能范围）。</summary>
     public bool showDebugRanges => forceDebugRanges || AiConfig.showDebugRanges;
 
@@ -151,6 +159,8 @@ public class MonsterActor : Actor
     public bool suppressPossessionDrain;
     public bool isPossessed = false;
     public bool playerDetected = false;
+    [Tooltip("流送 AI 激活开关：false 时 AI 完全休眠（不产出指令，仅 0.5s 低频维持索敌目标缓存）。由 MonsterSpawner 按 Chunk 状态机驱动；附身中的怪永不休眠。默认 true，非流送场景（调试刷怪等）行为不变。")]
+    public bool aiActiveOverride = true;
 
     [Header("Corpse Lifecycle")]
     [Min(0f)] public float corpsePossessionWindow = 5f;
@@ -217,6 +227,8 @@ public class MonsterActor : Actor
     private Color originalColor;
     private Vector3 lastFramePosition;
     private Vector3 possessVelocity; // 附身玩家态加速度平滑
+    private Vector3 aiVelocity; // AI 态加速度平滑
+    private float aiCurrentTurnSpeed; // AI 态角速度平滑
     public bool IsAbilityFacingLocked { get; set; }
 
     /// <summary>追击目标（Actor.Update 填充 ActorContext.PlayerTarget；AIController 使用）。</summary>
@@ -230,8 +242,7 @@ public class MonsterActor : Actor
         return ai;
     }
 
-    protected override void Awake()
-    {
+    protected override void Awake(){
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
@@ -282,10 +293,9 @@ public class MonsterActor : Actor
         else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
     }
 
-    void Start()
-    {
+    protected virtual void Start(){
         // After child OnEnable has stamped AbilityType, only inject shared dash when no custom Mobility exists.
-        if (!HasCustomMobilityAbility() && GetComponent<EnemyAbility_MobilityDash>() == null)
+        if (!HasCustomMobilityAbility()&& GetComponent<EnemyAbility_MobilityDash>()== null)
             gameObject.AddComponent<EnemyAbility_MobilityDash>();
 
         gameObject.layer = 8;
@@ -302,8 +312,7 @@ public class MonsterActor : Actor
     /// <summary>
     /// 统一索敌目标查找：Start / ResetForSpawn / AIController 共用（避免多处散落的 FindGameObjectWithTag）。
     /// </summary>
-    public void RefreshPlayerTarget()
-    {
+    public void RefreshPlayerTarget(){
         var p = GameObject.FindGameObjectWithTag("Player");
         targetPlayer = p != null ? p.transform : null;
     }
@@ -330,8 +339,7 @@ public class MonsterActor : Actor
     /// AI 逻辑由 AIController.Tick 产出指令，此处走 Actor.Update 统一流程
     /// （Controller.Tick → ExecuteButtons → ExecuteMovement）。
     /// </summary>
-    protected override void Update()
-    {
+    protected override void Update(){
         // Some legacy abilities and Inspector debugging can set health directly instead of calling TakeDamage.
         // Normalize that state here so a zero-health monster always enters the corpse possession lifecycle.
         if (!isPossessed && !isDowned && currentHealth <= 0f)
@@ -354,6 +362,8 @@ public class MonsterActor : Actor
         if (IsMovementBlocked)
         {
             possessVelocity = Vector3.zero;
+            aiVelocity = Vector3.zero;
+            aiCurrentTurnSpeed = 0f;
             return;
         }
 
@@ -395,13 +405,33 @@ public class MonsterActor : Actor
             return;
         }
 
-        // AI 态：匀速
-        if (!cmd.HasMove || cmd.MoveDirection.sqrMagnitude < 0.0001f) return;
-        Vector3 aiDir = cmd.MoveDirection;
+        // AI 态：以速度和角速度加速/减速，避免决策刷新时抽动。
+        Vector3 aiDir = cmd.HasMove ? cmd.MoveDirection : Vector3.zero;
         aiDir.y = 0f;
-        float aiMoveSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
-        MoveWithSpherecast(aiDir * aiMoveSpeed * Time.deltaTime);
-        transform.rotation = Quaternion.LookRotation(aiDir, Vector3.up);
+        float directionMagnitude = Mathf.Clamp01(aiDir.magnitude);
+        Vector3 targetVelocity = Vector3.zero;
+
+        if (directionMagnitude > 0.0001f)
+        {
+            Vector3 targetDirection = aiDir.normalized;
+            float aiMoveSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+            targetVelocity = targetDirection * aiMoveSpeed * directionMagnitude;
+
+            if (!IsAbilityFacingLocked)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+                aiCurrentTurnSpeed = Mathf.MoveTowards(aiCurrentTurnSpeed, aiTurnSpeed, aiTurnAcceleration * Time.deltaTime);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, aiCurrentTurnSpeed * Time.deltaTime);
+            }
+        }
+        else
+        {
+            aiCurrentTurnSpeed = Mathf.MoveTowards(aiCurrentTurnSpeed, 0f, aiTurnAcceleration * Time.deltaTime);
+        }
+
+        float velocityChange = targetVelocity.sqrMagnitude > aiVelocity.sqrMagnitude ? aiMoveAcceleration : aiMoveDeceleration;
+        aiVelocity = Vector3.MoveTowards(aiVelocity, targetVelocity, velocityChange * Time.deltaTime);
+        MoveWithSpherecast(aiVelocity * Time.deltaTime);
     }
 
     /// <summary>SphereCast 预检测后的Transform移动（AI与玩家共用）。</summary>
@@ -426,8 +456,7 @@ public class MonsterActor : Actor
     /// 显示条件：Inspector 勾选 showDebugRanges，且怪处于可作战的 AI 态（未附身/未倒地/未消失）。
     /// 池化复用：Return 时整物体 SetActive(false) 自动隐藏，Spawn 后本方法按勾选状态自动恢复。
     /// </summary>
-    void UpdateDebugRanges()
-    {
+    void UpdateDebugRanges(){
         bool show = showDebugRanges && !isPossessed && !isDowned
                     && Body != BodyState.Fading && Body != BodyState.Despawned;
         if (!show)
@@ -509,8 +538,7 @@ public class MonsterActor : Actor
         return line;
     }
 
-    void UpdateAnimatorSpeed()
-    {
+    void UpdateAnimatorSpeed(){
         var anim = GetComponent<Animator>();
         if (anim == null) return;
         float speed = Vector3.Distance(transform.position, lastFramePosition) / Mathf.Max(Time.deltaTime, 0.0001f);
@@ -528,10 +556,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float basicCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
+                        TakeDamage(basicCost);
                     }
                     any = true;
                 }
@@ -544,10 +573,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float skillCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
+                        TakeDamage(skillCost);
                     }
                     any = true;
                 }
@@ -560,10 +590,11 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    if (isPossessed && !suppressPossessionDrain && entry.hpCost > 0f)
+                    float mobilityCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
                     {
-                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={entry.hpCost}, hp before={currentHealth}");
-                        TakeDamage(entry.hpCost);
+                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
+                        TakeDamage(mobilityCost);
                     }
                     any = true;
                 }
@@ -576,8 +607,7 @@ public class MonsterActor : Actor
     /// AI 攻击前面向索敌目标：把 transform.forward 转正到玩家方向（仅水平面）。
     /// 用于修正 AI 追击走位（侧移/对峙 ±90°）导致的攻击方向偏移。
     /// </summary>
-    void FaceAttackTarget()
-    {
+    void FaceAttackTarget(){
         Transform target = targetPlayer;
         if (target == null) return;
         Vector3 toTarget = target.position - transform.position;
@@ -586,18 +616,15 @@ public class MonsterActor : Actor
             transform.rotation = Quaternion.LookRotation(toTarget, Vector3.up);
     }
 
-    public void PlayerTriggerBasicAttack()
-    {
+    public void PlayerTriggerBasicAttack(){
         TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.BasicAttack);
     }
 
-    public void PlayerTriggerSkill()
-    {
+    public void PlayerTriggerSkill(){
         TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill);
     }
 
-    public void PlayerTriggerMobility()
-    {
+    public void PlayerTriggerMobility(){
         TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Mobility);
     }
 
@@ -627,6 +654,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability == a) { cost = entry.hpCost; break; }
             }
         }
+        cost *= a.GetHpCostMultiplier();
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
@@ -634,8 +662,7 @@ public class MonsterActor : Actor
         }
     }
 
-    void LateUpdate()
-    {
+    void LateUpdate(){
         UpdateDebugRanges();
         // Animator speed always updates (even when downed/possessed)
         UpdateAnimatorSpeed();
@@ -651,7 +678,7 @@ public class MonsterActor : Actor
         }
     }
 
-    public void TakeDamage(float amount)
+    public virtual void TakeDamage(float amount)
     {
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsUntargetable(this) || IsDamageImmune(this)) return;
@@ -730,8 +757,7 @@ public class MonsterActor : Actor
         return target != null && target.Combat != null && target.Combat.Tags.HasTag("State.Defense.DamageImmune");
     }
 
-    private bool HasCustomMobilityAbility()
-    {
+    private bool HasCustomMobilityAbility(){
         EnemyAbility[] abilities = GetComponentsInChildren<EnemyAbility>(true);
         for (int i = 0; i < abilities.Length; i++)
         {
@@ -743,8 +769,7 @@ public class MonsterActor : Actor
     }
 
     /// <summary>Only AI-controlled monsters may damage the soul player.</summary>
-    public bool CanDamageSoul()
-    {
+    public bool CanDamageSoul(){
         return !isPossessed && Body != BodyState.Fading && Body != BodyState.Despawned;
     }
 
@@ -772,7 +797,7 @@ public class MonsterActor : Actor
             Debug.Log($"[Burn] Possessed attack: burnPct={totalBurnPercent}, vfx={burnVfx != null}, target={target.name}");
             // BurnEffect.Init 签名为 Enemy（敌人 prefab 经 Enemy 壳类实例化），显式转换安全
             Enemy enemyTarget = target as Enemy;
-            if (enemyTarget != null && totalBurnPercent > 0f && enemyTarget.GetComponent<BurnEffect>() == null)
+            if (enemyTarget != null && totalBurnPercent > 0f && enemyTarget.GetComponent<BurnEffect>()== null)
             {
                 var burn = enemyTarget.gameObject.AddComponent<BurnEffect>();
                 burn.Init(enemyTarget, totalBurnPercent, 3f, 0.5f, burnVfx);
@@ -798,14 +823,12 @@ public class MonsterActor : Actor
         UpdateHealthUI();
     }
 
-    void BecomeWeakened()
-    {
+    void BecomeWeakened(){
         isWeakened = true;
         if (meshRenderer != null) meshRenderer.material.color = weakenedColor;
     }
 
-    public void OnPossessed()
-    {
+    public void OnPossessed(){
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -833,22 +856,19 @@ public class MonsterActor : Actor
         if (animator != null) animator.SetBool("IsDowned", false);
     }
 
-    public void OnUnpossessed()
-    {
+    public void OnUnpossessed(){
         isPossessed = false;
         gameObject.tag = "Enemy";
         if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
     }
 
-    private void EnterHitState()
-    {
+    private void EnterHitState(){
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
         Body = BodyState.Hit;
         hitStateEndsAt = Time.time + hitStateDuration;
     }
 
-    private void Die()
-    {
+    protected virtual void Die(){
         isDowned = true;
         isPossessed = false;
         Body = BodyState.Downed;
@@ -870,8 +890,7 @@ public class MonsterActor : Actor
         Debug.Log($"[MonsterState] '{displayName}' downed. Possess window={corpsePossessionWindow:F1}s.");
     }
 
-    public void BeginDisappearing()
-    {
+    public void BeginDisappearing(){
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
@@ -889,14 +908,12 @@ public class MonsterActor : Actor
         Debug.Log($"[MonsterState] '{displayName}' entered fading state.");
     }
 
-    private System.Collections.IEnumerator CorpseLifecycleRoutine()
-    {
+    private System.Collections.IEnumerator CorpseLifecycleRoutine(){
         while (Body == BodyState.Downed && (isPossessionReserved || Time.time < possessionWindowEndsAt)) yield return null;
         if (Body == BodyState.Downed) BeginDisappearing();
     }
 
-    private System.Collections.IEnumerator FadeAndReturnRoutine()
-    {
+    private System.Collections.IEnumerator FadeAndReturnRoutine(){
         float elapsed = 0f;
         while (elapsed < corpseFadeDuration)
         {
@@ -911,8 +928,7 @@ public class MonsterActor : Actor
         MonsterPool.Instance.Return(this);
     }
 
-    public void ResetForSpawn()
-    {
+    public void ResetForSpawn(){
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -925,12 +941,15 @@ public class MonsterActor : Actor
         suppressPossessionDrain = false;
         isPossessionReserved = false;
         playerDetected = false;
+        aiActiveOverride = true; // 池复用默认激活；流送场景由 MonsterSpawner 刷出后按 Chunk 状态改写
         Body = BodyState.Active;
         possessionWindowEndsAt = 0f;
         hitStateEndsAt = 0f;
         currentHealth = maxHealth;
         currentTenacity = maxTenacity;
         possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         SetAbilityComponentsEnabled(true);
         CancelAbilityRuntimeState();
         gameObject.tag = "Enemy";
@@ -949,11 +968,12 @@ public class MonsterActor : Actor
         UpdateHealthUI();
     }
 
-    public void ResetForPool()
-    {
+    public void ResetForPool(){
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
         possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -961,8 +981,30 @@ public class MonsterActor : Actor
         }
     }
 
-    private void CancelAbilityRuntimeState()
+    /// <summary>
+    /// 流送恢复（Phase 3）：MonsterPool.Spawn 复位（ResetForSpawn）后立即调用，把快照状态覆盖回实例。
+    /// health 下限钳 1：防止非倒地恢复后 Update 中 currentHealth &lt;= 0 被自动判死。
+    /// downed=true 复用 Die 的尸体姿态/碰撞/动画/淡出协程——附身窗口重新计时（近似行为，
+    /// 精确剩余窗口恢复留 TODO；当前快照构建已把倒地怪分流到 CorpseSnapshot，正常不走此分支）。
+    /// </summary>
+    public void ApplyStreamSnapshot(float health, bool weakened, bool downed)
     {
+        if (downed)
+        {
+            currentHealth = 0f;
+            Die();
+            return;
+        }
+        currentHealth = Mathf.Clamp(health, 1f, maxHealth);
+        if (weakened)
+        {
+            currentTenacity = 0f;
+            BecomeWeakened();
+        }
+        UpdateHealthUI();
+    }
+
+    private void CancelAbilityRuntimeState(){
         foreach (EnemyAbility ability in GetComponentsInChildren<EnemyAbility>(true))
             if (ability != null) ability.ResetForOwnerReuse();
     }
@@ -973,28 +1015,24 @@ public class MonsterActor : Actor
             if (ability != null) ability.enabled = enabled;
     }
 
-    public bool TryReserveForPossession()
-    {
+    public bool TryReserveForPossession(){
         if (!CanBePossessed) return false;
         isPossessionReserved = true;
         Debug.Log($"[MonsterState] '{displayName}' reserved for possession.");
         return true;
     }
 
-    public void CancelPossessionReservation()
-    {
+    public void CancelPossessionReservation(){
         if (!isPossessionReserved) return;
         isPossessionReserved = false;
         Debug.Log($"[MonsterState] '{displayName}' possession reservation cancelled.");
     }
 
-    public string GetPossessionDebugState()
-    {
+    public string GetPossessionDebugState(){
         return $"body={Body}, downed={isDowned}, possessed={isPossessed}, reserved={isPossessionReserved}, remaining={PossessionWindowRemaining:F2}s, active={gameObject.activeInHierarchy}";
     }
 
-    private void EnableCorpsePossessionCollider()
-    {
+    private void EnableCorpsePossessionCollider(){
         if (corpsePossessionCollider == null)
         {
             Transform colliderTransform = transform.Find(CorpseColliderObjectName);
@@ -1037,8 +1075,7 @@ public class MonsterActor : Actor
 
         if (!hasBounds) localBounds = new Bounds(Vector3.zero, Vector3.one * MinimumCorpseColliderSize);
         corpsePossessionCollider.center = localBounds.center;
-        corpsePossessionCollider.size = Vector3.Max(
-            localBounds.size + Vector3.one * CorpseColliderPadding * 2f,
+        corpsePossessionCollider.size = Vector3.Max(localBounds.size + Vector3.one * CorpseColliderPadding * 2f,
             Vector3.one * MinimumCorpseColliderSize);
         corpsePossessionCollider.isTrigger = true;
         corpsePossessionCollider.enabled = true;
@@ -1066,13 +1103,11 @@ public class MonsterActor : Actor
         }
     }
 
-    void FlashDamage()
-    {
+    protected void FlashDamage(){
         if (meshRenderer != null) StartCoroutine(FlashRoutine());
     }
 
-    System.Collections.IEnumerator FlashRoutine()
-    {
+    System.Collections.IEnumerator FlashRoutine(){
         Color orig = meshRenderer.material.color;
         meshRenderer.material.color = flashColor;
         yield return new WaitForSeconds(flashDuration);
@@ -1083,8 +1118,7 @@ public class MonsterActor : Actor
         else meshRenderer.material.color = bodyColor;
     }
 
-    public void UpdateHealthUI()
-    {
+    public void UpdateHealthUI(){
         if (healthSlider != null)
         {
             healthSlider.maxValue = maxHealth;
@@ -1102,8 +1136,7 @@ public class MonsterActor : Actor
         }
     }
 
-    void OnDrawGizmosSelected()
-    {
+    void OnDrawGizmosSelected(){
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
     }

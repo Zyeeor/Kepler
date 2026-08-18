@@ -108,13 +108,14 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
             }
 
             Vector3 from = owner.transform.position;
-            Vector3 targetPos = currentTarget.transform.position;
+            Vector3 targetPos = GetSkinnedMeshBoundsCenter(currentTarget);
             Vector3 direction = targetPos - from;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f)
                 direction = owner.transform.forward;
             direction.Normalize();
 
+            // Approach the visual body center (XZ), keep owner height so feet stay grounded.
             Vector3 strikePos = targetPos - direction * arrivalOffset;
             strikePos.y = from.y;
             Vector3 passEnd = strikePos + direction * Mathf.Max(0f, passThroughDistance);
@@ -137,7 +138,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
             }
 
             Enemy next = FindNearestTarget(
-                currentTarget != null ? currentTarget.transform.position : owner.transform.position,
+                currentTarget != null ? GetSkinnedMeshBoundsCenter(currentTarget) : owner.transform.position,
                 currentTarget);
             currentTarget = next != null ? next : currentTarget;
 
@@ -240,12 +241,41 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         {
             Enemy candidate = candidates[i];
             if (candidate == null || candidate == exclude || owner == null || !owner.CanDamage(candidate)) continue;
-            float distance = Vector3.Distance(origin, candidate.transform.position);
+            float distance = Vector3.Distance(origin, GetSkinnedMeshBoundsCenter(candidate));
             if (distance > bestDistance) continue;
             bestDistance = distance;
             result = candidate;
         }
         return result;
+    }
+
+    /// <summary>
+    /// World-space center of all SkinnedMeshRenderer bounds on the target.
+    /// Falls back to transform.position when no skinned mesh exists.
+    /// </summary>
+    private static Vector3 GetSkinnedMeshBoundsCenter(Enemy target)
+    {
+        if (target == null) return Vector3.zero;
+
+        SkinnedMeshRenderer[] skins = target.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        bool hasAny = false;
+        Bounds combined = default;
+        for (int i = 0; i < skins.Length; i++)
+        {
+            SkinnedMeshRenderer skin = skins[i];
+            if (skin == null) continue;
+            if (!hasAny)
+            {
+                combined = skin.bounds;
+                hasAny = true;
+            }
+            else
+            {
+                combined.Encapsulate(skin.bounds);
+            }
+        }
+
+        return hasAny ? combined.center : target.transform.position;
     }
 
     private void HideOwnerMeshes()

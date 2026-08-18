@@ -11,6 +11,8 @@ public class Projectile : MonoBehaviour
     public bool isPlayerProjectile = true;
     [Tooltip("Who fired this projectile (used for burn/lifesteal passives).")]
     public Enemy ownerEnemy;
+    [Tooltip("When set, hit settlement goes through the Ability (damage + Effects).")]
+    public EnemyAbility sourceAbility;
 
     [Header("Visual")]
     public GameObject hitEffectPrefab;
@@ -34,11 +36,7 @@ public class Projectile : MonoBehaviour
         if (Physics.Raycast(transform.position, transform.forward, out RaycastHit wallHit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
         {
             transform.position = wallHit.point;
-            if (hitEffectPrefab != null)
-            {
-                var effect = Instantiate(hitEffectPrefab, wallHit.point, Quaternion.LookRotation(wallHit.normal));
-                Destroy(effect, hitEffectDuration);
-            }
+            SpawnFallbackHitVfx(wallHit.point, Quaternion.LookRotation(wallHit.normal));
             Destroy(gameObject);
             return;
         }
@@ -62,9 +60,26 @@ public class Projectile : MonoBehaviour
         var hits = Physics.OverlapSphere(transform.position, checkRadius);
         foreach (var hit in hits)
         {
-            if (isPlayerProjectile && hit.CompareTag("Enemy"))
+            var enemy = hit.GetComponentInParent<Enemy>();
+            if (ownerEnemy != null && ownerEnemy.CanDamage(enemy))
             {
-                var enemy = hit.GetComponent<Enemy>();
+                if (sourceAbility != null) sourceAbility.SettleHit(enemy, damage);
+                else DealDamage(enemy);
+                OnHit();
+                return;
+            }
+
+            var playerHealth = hit.GetComponentInParent<PlayerHealth>();
+            if (playerHealth != null && ownerEnemy != null && ownerEnemy.CanDamageSoul())
+            {
+                if (sourceAbility != null) sourceAbility.SettleHit(playerHealth, damage);
+                else playerHealth.TakeDamage(damage);
+                OnHit();
+                return;
+            }
+
+            if (sourceAbility == null && isPlayerProjectile && hit.CompareTag("Enemy"))
+            {
                 if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
                 {
                     DealDamage(enemy);
@@ -72,19 +87,8 @@ public class Projectile : MonoBehaviour
                     return;
                 }
             }
-            if (!isPlayerProjectile && hit.CompareTag("Player"))
-            {
-                var playerHealth = hit.GetComponent<PlayerHealth>();
-                if (playerHealth != null && (ownerEnemy == null || ownerEnemy.CanDamageSoul()))
-                {
-                    playerHealth.TakeDamage(damage);
-                    OnHit();
-                    return;
-                }
-            }
         }
     }
-
 
     void DealDamage(Enemy enemy)
     {
@@ -113,11 +117,15 @@ public class Projectile : MonoBehaviour
 
     void OnHit()
     {
-        if (hitEffectPrefab != null)
-        {
-            var effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
-            Destroy(effect, hitEffectDuration);
-        }
+        if (sourceAbility == null)
+            SpawnFallbackHitVfx(transform.position, Quaternion.identity);
         Destroy(gameObject);
+    }
+
+    void SpawnFallbackHitVfx(Vector3 position, Quaternion rotation)
+    {
+        if (hitEffectPrefab == null) return;
+        var effect = Instantiate(hitEffectPrefab, position, rotation);
+        Destroy(effect, hitEffectDuration);
     }
 }

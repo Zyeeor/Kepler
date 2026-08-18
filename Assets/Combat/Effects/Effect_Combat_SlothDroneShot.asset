@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ffa75f8f1f74df2b0838f2bbe7f8d5, type: 3}
+  m_Name: Effect_Combat_SlothDroneShot
+  m_EditorClassIdentifier: 
+  effectName: "\u6728\u7075\u5F39\u547D\u4E2D"
+  effectTag: Effect.Combat.SlothDroneShot
+  duration: 0.05
+  maxStacks: 1
+  stackPolicy: 0
+  grantedTags: []
+  periodicInterval: 0
+  activeVfxPrefab: {fileID: 0}
+  parentVfxToTarget: 1
+  hitVfxPrefab: {fileID: 2300246185322642342, guid: 246a270cf8f1398448444807fe41d3b8,
+    type: 3}
+  hitVfxDuration: 0.6

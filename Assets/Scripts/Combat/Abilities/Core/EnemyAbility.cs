@@ -38,6 +38,12 @@ public abstract class EnemyAbility : MonoBehaviour
         return false;
     }
 
+    /// <summary>Multiplier applied to the possessed HP cost when this ability is paid.</summary>
+    public virtual float GetHpCostMultiplier()
+    {
+        return 1f;
+    }
+
     protected float GetCardParameter(string key, float defaultValue)
     {
         return CardManager.Instance != null && CardManager.Instance.TryGetUnlockedAbilityParameter(this, key, out float value)
@@ -62,9 +68,12 @@ public abstract class EnemyAbility : MonoBehaviour
     }
 
     [Header("VFX")]
-    public GameObject vfxPrefab;       // VFX prefab spawned when the ability triggers
-    public Transform vfxSpawnPoint;    // optional spawn anchor (defaults to enemy root)
-    [Tooltip("Optional weapon anchor for Gameplay Effect weapon VFX. Falls back to VFX Spawn Point.")]
+    [Tooltip("Body VFX spawned when the ability triggers.")]
+    public GameObject vfxPrefab;
+    public Transform vfxSpawnPoint;
+    [Tooltip("Weapon VFX spawned when the ability triggers. Bound to this Ability, not to Effects.")]
+    public GameObject weaponVfxPrefab;
+    [Tooltip("Optional weapon anchor. Falls back to VFX Spawn Point, then owner root.")]
     public Transform weaponVfxSpawnPoint;
     [Tooltip("Local position offset added to the spawn point (relative to anchor's transform).")]
     public Vector3 vfxPositionOffset = Vector3.zero;
@@ -97,6 +106,15 @@ public abstract class EnemyAbility : MonoBehaviour
     [Tooltip("Effect applied to this ability owner when activation starts. Its granted Tags and duration define casting control, such as State.Control.Stunned.")]
     public GameplayEffectDefinition activationEffect;
 
+    [Header("Hit Feedback (Combat Effect Manager)")]
+    [Tooltip("Post-process / shake / hit-stop on hit. Fires for possessed (player-controlled) attacks only, once per Trigger.")]
+    public HitFeedbackParams hitFeedback = new HitFeedbackParams
+    {
+        shakeOnHit = true,
+        hitStopOnHit = true,
+        postProcessOnHit = false
+    };
+
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
     public float EffectiveCooldown
     {
@@ -112,6 +130,9 @@ public abstract class EnemyAbility : MonoBehaviour
     protected float currentCooldown;
     public float CurrentCooldown { get { return currentCooldown; } }
     protected GameObject activeVfx;
+
+    /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
+    private bool _hitFeedbackFiredThisAttack;
 
     protected virtual void Awake()
     {
@@ -203,6 +224,7 @@ public abstract class EnemyAbility : MonoBehaviour
         if (!TryBeginActivationEffect()) return;
 
         currentCooldown = EffectiveCooldown;
+        _hitFeedbackFiredThisAttack = false;
         if (debugLogCooldown)
             Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)
@@ -231,6 +253,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Spawn the assigned VFX prefab at the spawn point (or enemy root).</summary>
     protected virtual GameObject SpawnVfx()
     {
+        SpawnWeaponVfx();
         if (vfxPrefab == null) return null;
         Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : (owner != null ? owner.transform : transform);
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
@@ -240,12 +263,71 @@ public abstract class EnemyAbility : MonoBehaviour
         return activeVfx;
     }
 
+    protected GameObject SpawnWeaponVfx()
+    {
+        if (weaponVfxPrefab == null) return null;
+        Transform anchor = weaponVfxSpawnPoint != null
+            ? weaponVfxSpawnPoint
+            : (vfxSpawnPoint != null ? vfxSpawnPoint : (owner != null ? owner.transform : transform));
+        Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
+        Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
+        GameObject instance = Instantiate(weaponVfxPrefab, pos, rot);
+        PlayVfx(instance);
+        return instance;
+    }
+
+    protected Projectile SpawnAbilityProjectile(GameObject prefab, Vector3 position, Quaternion rotation, float shotDamage, float speed, float lifetime)
+    {
+        if (prefab == null) return null;
+        GameObject go = Instantiate(prefab, position, rotation);
+        PlayVfx(go);
+        Projectile projectile = go.GetComponent<Projectile>();
+        if (projectile == null) projectile = go.AddComponent<Projectile>();
+        projectile.sourceAbility = this;
+        projectile.ownerEnemy = owner;
+        projectile.damage = shotDamage;
+        projectile.speed = speed;
+        projectile.maxLifetime = lifetime;
+        projectile.isPlayerProjectile = owner != null && owner.isPossessed;
+        return projectile;
+    }
+
     /// <summary>Play all ParticleSystems on a VFX GameObject.</summary>
     protected void PlayVfx(GameObject vfx)
     {
         if (vfx == null) return;
         foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
             ps.Play(true);
+    }
+
+    /// <summary>
+    /// One ParticleSystem cycle if readable; otherwise fallback (default 1s).
+    /// Looping systems on this instance are switched to play-once so they do not linger.
+    /// </summary>
+    protected static float ResolveVfxPlayDuration(GameObject vfx, float fallback = 1f)
+    {
+        float resolved = 0f;
+        if (vfx != null)
+        {
+            foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = ps.main;
+                if (main.loop) main.loop = false;
+                if (main.duration > resolved) resolved = main.duration;
+            }
+        }
+        if (resolved > 0.01f) return resolved;
+        return Mathf.Max(0.01f, fallback);
+    }
+
+    protected static void StopVfxLooping(GameObject vfx)
+    {
+        if (vfx == null) return;
+        foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            var main = ps.main;
+            if (main.loop) main.loop = false;
+        }
     }
 
     /// <summary>Spawn a VFX that auto-destroys when the owner dies.</summary>
@@ -261,12 +343,24 @@ public abstract class EnemyAbility : MonoBehaviour
         return go;
     }
 
+    /// <summary>Public hit settlement used by projectiles and melee helpers.</summary>
+    public void SettleHit(Enemy target, float amount)
+    {
+        DealDamageTo(target, amount);
+    }
+
+    public void SettleHit(PlayerHealth player, float amount)
+    {
+        DealDamageToPlayer(player, amount);
+    }
+
     /// <summary>Helper: deal damage to a target via Enemy.ApplyDamageTo so it respects lifesteal etc.</summary>
     protected void DealDamageTo(Enemy target, float amount)
     {
         if (target == null || owner == null) return;
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
         owner.ApplyOffensiveDamage(target, amount);
+        TryPlayHitFeedback(target != null ? target.transform : null);
         ApplyConfiguredEffectsTo(target.Combat);
     }
 
@@ -274,9 +368,25 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (player == null || owner == null || !owner.CanDamageSoul()) return;
         player.TakeDamage(amount);
+        TryPlayHitFeedback(player != null ? player.transform : null);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
         // Also trigger lifesteal for the owner enemy
         owner.OnDealtDamage(amount);
+    }
+
+    /// <summary>
+    /// Plays configured hit feedback once per Trigger while the owner is player-possessed.
+    /// AI-controlled enemies skip this to avoid camera spam.
+    /// </summary>
+    protected void TryPlayHitFeedback(Transform victim)
+    {
+        if (_hitFeedbackFiredThisAttack || hitFeedback == null || !hitFeedback.HasAnyEnabled)
+            return;
+        if (owner == null || !owner.isPossessed)
+            return;
+
+        CombatEffectManager.PlayHitFeedback(hitFeedback, owner.transform, victim);
+        _hitFeedbackFiredThisAttack = true;
     }
 
     protected void ApplyConfiguredEffectsTo(CombatAbilityComponent target)
@@ -298,21 +408,12 @@ public abstract class EnemyAbility : MonoBehaviour
 
     private void SpawnAttackEffectVfx(GameplayEffectDefinition definition, CombatAbilityComponent target, Vector3 hitPosition)
     {
-        if (definition == null) return;
-        Transform weaponAnchor = weaponVfxSpawnPoint != null ? weaponVfxSpawnPoint : vfxSpawnPoint;
-        if (definition.weaponVfxPrefab != null && weaponAnchor != null)
-            SpawnEffectVfx(definition.weaponVfxPrefab, weaponAnchor.position, weaponAnchor.rotation, definition.weaponVfxLifetime, definition.attackVfxDuration, target, definition);
-        if (definition.hitVfxPrefab != null)
-            SpawnEffectVfx(definition.hitVfxPrefab, hitPosition, Quaternion.identity, definition.hitVfxLifetime, definition.attackVfxDuration, target, definition);
-    }
-
-    private void SpawnEffectVfx(GameObject prefab, Vector3 position, Quaternion rotation, GameplayEffectVfxLifetime lifetime, float fixedDuration, CombatAbilityComponent target, GameplayEffectDefinition definition)
-    {
-        GameObject instance = Instantiate(prefab, position, rotation);
+        if (definition == null || definition.hitVfxPrefab == null) return;
+        GameObject instance = Instantiate(definition.hitVfxPrefab, hitPosition, Quaternion.identity);
         PlayVfx(instance);
-        if (lifetime == GameplayEffectVfxLifetime.FixedDuration && fixedDuration > 0f)
-            Destroy(instance, fixedDuration);
-        else if (lifetime == GameplayEffectVfxLifetime.EffectLifetime)
+        if (definition.hitVfxDuration > 0f)
+            Destroy(instance, definition.hitVfxDuration);
+        else if (target != null)
             target.RegisterEffectVfx(definition, instance);
     }
 

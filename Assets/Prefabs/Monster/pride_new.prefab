@@ -1031,9 +1031,11 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 7180877996318577951}
   - {fileID: 6240802779470137039}
   - {fileID: 7211694873834702418}
   - {fileID: 8159881647401772904}
+  - {fileID: 2407912368899548843}
   - {fileID: 1896984365522949595}
   m_Father: {fileID: 2604072077845893213}
   m_LocalEulerAnglesHint: {x: 0, y: -263.421, z: 0}
@@ -1064,9 +1066,9 @@ Transform:
   m_GameObject: {fileID: 2800422760279785372}
   serializedVersion: 2
   m_LocalRotation: {x: -0.4246091, y: 0.5654264, z: 0.42460904, w: 0.5654266}
-  m_LocalPosition: {x: 0.004662592, y: 0.019337155, z: 0.0030998485}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.003, y: 0.029, z: 0.003}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 7813748111483280125}
   m_LocalEulerAnglesHint: {x: -73.81, y: 90, z: 0}
@@ -1100,6 +1102,89 @@ MeshRenderer:
   m_Materials:
   - {fileID: 2100000, guid: d466edacb999c6846ba1e86f41ca896f, type: 2}
   - {fileID: 2100000, guid: c8d3a460253f25047a7a92f4875ff288, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2837339765036519572
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2407912368899548843}
+  - component: {fileID: 1425392142194684740}
+  - component: {fileID: 1785386590776125864}
+  m_Layer: 0
+  m_Name: Box019 (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2407912368899548843
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2837339765036519572}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0.004, y: 0.011, z: 0.333}
+  m_LocalScale: {x: 1.8, y: 1.137033, z: 1.8}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 3254293299598757157}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &1425392142194684740
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2837339765036519572}
+  m_Mesh: {fileID: 3557879054105070054, guid: ab2d4a71a022b5d40ad242862c16cb6e, type: 3}
+--- !u!23 &1785386590776125864
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2837339765036519572}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 8067be85a1225264e87154f261a5e190, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1179,7 +1264,7 @@ Transform:
   m_GameObject: {fileID: 2913140342874028718}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0, y: 0.09618444, z: 0.0000000042043555}
+  m_LocalPosition: {x: -0, y: 0.126, z: 0.0000000042043555}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1205,7 +1290,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -3661639628750336703, guid: 7280f001c5bd96f49b2f9cb7d2ef841c, type: 3}
+  - {fileID: 2100000, guid: de3979b2618ea284a82bd51e23b5910b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1571,7 +1656,7 @@ Transform:
   m_GameObject: {fileID: 3419645408455150391}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0, y: 0.133755, z: 0.0000000058466165}
+  m_LocalPosition: {x: -0, y: 0.199, z: 0.0000000058466165}
   m_LocalScale: {x: 1, y: 0.665903, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1720,12 +1805,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
-  acceleration: 0
-  deceleration: 0
+  acceleration: 100
+  deceleration: 120
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
-  maxHealth: 100
+  maxHealth: 80
   currentHealth: 20
   displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
   maxTenacity: 150
@@ -1733,6 +1818,7 @@ MonoBehaviour:
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Pride_new
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -1748,6 +1834,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -1772,6 +1859,7 @@ MonoBehaviour:
   weaponDescription: "\u6FC0\u5149\u592A\u5200"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 3031908619099889803}
 --- !u!136 &7931589197715648695
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2741,7 +2829,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.216981, g: 0.9490974, b: 1, a: 0}
+      key0: {r: 0.6901961, g: 0.85901064, b: 1, a: 0}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -2968,6 +3056,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1580645508603214141}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6112803955079431774
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3031908619099889803}
+  m_Layer: 0
+  m_Name: SoulHead
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3031908619099889803
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6112803955079431774}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.001, y: 0.01, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7813748111483280125}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6181791830606505940
 GameObject:
@@ -3213,6 +3332,7 @@ Transform:
   m_Children:
   - {fileID: 4983599831907573267}
   - {fileID: 3285034003099641126}
+  - {fileID: 3031908619099889803}
   m_Father: {fileID: 7492402908402004871}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6811531549103844129
@@ -3368,6 +3488,160 @@ SkinnedMeshRenderer:
     m_Center: {x: 0.017420571, y: -0.016242493, z: 0.0024145506}
     m_Extent: {x: 0.05793463, y: 0.053586166, z: 0.07932782}
   m_DirtyAABB: 0
+--- !u!1 &7594598634421289436
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7180877996318577951}
+  - component: {fileID: 2567749664814520574}
+  m_Layer: 9
+  m_Name: Trail (9)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &7180877996318577951
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7594598634421289436}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.8061263, y: -0.43991986, z: 0.26805475, w: 0.29116595}
+  m_LocalPosition: {x: -0.001, y: 0.45, z: 0.327}
+  m_LocalScale: {x: 0.14285709, y: 0.14285706, z: 0.14285707}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 3254293299598757157}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!96 &2567749664814520574
+TrailRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7594598634421289436}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 51a6a4f56fdb85042bb409478bd63a3a, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_Time: 0.5
+  m_PreviewTimeScale: 1
+  m_Parameters:
+    serializedVersion: 3
+    widthMultiplier: 1
+    widthCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.12945068
+        inSlope: 3.6971145
+        outSlope: 3.6971145
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.57310665
+      - serializedVersion: 3
+        time: 0.26564905
+        value: 0.11997968
+        inSlope: -0.9504823
+        outSlope: -0.9504823
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.83192956
+        outWeight: 0.17023648
+      - serializedVersion: 3
+        time: 1
+        value: 0.02728276
+        inSlope: -0.3112334
+        outSlope: -0.3112334
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.15535475
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    colorGradient:
+      serializedVersion: 2
+      key0: {r: 0.6901961, g: 0.85901064, b: 1, a: 0}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 514
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 4626
+      atime2: 65535
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: 0
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 3
+    numCornerVertices: 0
+    numCapVertices: 0
+    alignment: 0
+    textureMode: 0
+    textureScale: {x: 1, y: 1}
+    shadowBias: 0.5
+    generateLightingData: 0
+  m_MinVertexDistance: 0
+  m_MaskInteraction: 0
+  m_Autodestruct: 0
+  m_Emitting: 1
+  m_ApplyActiveColorSpace: 1
 --- !u!1 &7960038838783966801
 GameObject:
   m_ObjectHideFlags: 0
@@ -3590,47 +3864,70 @@ MonoBehaviour:
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0.9, z: 0}
-  vfxDelay: 0.25
+  vfxDelay: 0.3
   vfxRotationOffset: {x: -170, y: 90, z: 0}
   damage: 20
   drawHitboxes: 0
-  cooldown: 1
+  cooldown: 0.5
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.SwordQi
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
-  maxRange: 4
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
   projectileWidth: 1.5
-  projectileHeight: 2
+  projectileHeight: 3
   blastRadius: 2
   blastDamageMultiplier: 0.7
   targetMask:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 256
   animTrigger: SwordQi
   aimTurnSpeed: 720
-  projectileVfxPrefab: {fileID: 6111486948785554852, guid: f7967f33aeac15f48a3732e3fd3ac36c,
+  activationDisplay: {fileID: 7594598634421289436}
+  projectileVfxPrefab: {fileID: 821419318031468683, guid: 8cb5727277cbb5945905182571d0a5de,
     type: 3}
-  projectileVfxScale: 0.5
-  projectileVfxPositionOffset: {x: 0, y: 1.2, z: 1}
+  projectileVfxScale: 1
+  projectileVfxPositionOffset: {x: 0, y: 1, z: 1}
   projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
-  explosionVfxPrefab: {fileID: 1035977224672214417, guid: 5a4d3bae36010574d8ca01fbeedee3ec,
+  explosionVfxPrefab: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19,
     type: 3}
   explosionVfxDuration: 0.5
   explosionVfxPositionOffset: {x: 0, y: 0, z: 0}
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
   pride01MaxRange: 20
   pride02SpreadAngle: 20
-  pierceVfxPrefab: {fileID: 4797775238236629471, guid: eb1315b188c70674182af9986dcae542,
+  pierceVfxPrefab: {fileID: 7478006030143991211, guid: 2088839dd24009a4db10df10661ad160,
     type: 3}
   pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
-  pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
+  pierceVfxRotationOffset: {x: 0, y: 0, z: 45}
   pierceDamageMultiplier: 2
 --- !u!1 &8305497005758189896
 GameObject:
@@ -3792,21 +4089,43 @@ MonoBehaviour:
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 1, z: -3}
   vfxDelay: 0
   vfxRotationOffset: {x: -20, y: -90, z: 0}
   damage: 20
   drawHitboxes: 0
-  cooldown: 2
+  cooldown: 1
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.ChargeStrike
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   chargeDistance: 5
-  chargeSpeed: 24
+  chargeSpeed: 60
   hitRadius: 0.8
   landingRadius: 1.5
   damageMultiplier: 1
@@ -3929,7 +4248,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.216981, g: 0.9490974, b: 1, a: 0}
+      key0: {r: 0.6901961, g: 0.85901064, b: 1, a: 0}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -4022,13 +4341,14 @@ MonoBehaviour:
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 1, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 5
+  damage: 10
   drawHitboxes: 0
-  cooldown: 1.5
+  cooldown: 2
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.BlinkChain
@@ -4036,6 +4356,27 @@ MonoBehaviour:
   - Effect.Combat.PrideBlinkHit
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 1
+    postProcessEffectName: BlackFlash
+    postProcessDuration: 3
+    overridePostProcessParams: 0
+    stepFactor: 0.416
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 3
+    shakeDuration: 1
+    hitStopOnHit: 1
+    hitStopDuration: 1
+    hitStopScale: 0.166
+    useGlobalTimeScale: 0
   searchRange: 8
   blinkCount: 4
   blinkInterval: 0.25
@@ -4096,6 +4437,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -4108,6 +4450,27 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0

@@ -120,6 +120,8 @@ Approved Canonical
 
 Never silently convert an Open Decision or Agent inference into Canonical. Existing protected documents under `.vibe/doc/` are source inputs; report conflicts and wait for Owner review before promoting changes into Canonical.
 
+For Possession, `.vibe/doc/Canonical/**` is the Approved Design Authority. `.vibe/doc/Modules/**`, CSV files, Legacy documents, and old Demo behavior are Historical / Implementation Reference only. “Protected source documents” in the paragraph above means non-Canonical source inputs unless the Owner has explicitly approved them as Canonical. Read only the Related Canonical required by the Task scope; small non-design fixes do not require loading the entire Canonical set.
+
 ## Task start protocol
 
 The GitHub Issue is the first Task entry point. Before changing files, read:
@@ -173,3 +175,5 @@ High-risk shared changes require human confirmation. Never resolve Unity YAML co
 ## Completion protocol
 
 Run available checks, inspect `git diff`, verify scope, record known issues, and identify human review points. Agents may prepare commits and pushes only when explicitly authorized; humans perform the final merge to `main`.
+
+The sole narrow exception is `.vibe/shared-skills/monster-dev-pipeline/SKILL.md` Stage C. When that skill is active and the user explicitly says “提交<怪物>”, “提交所有怪物”, or a semantically equivalent Monster submission command, the command authorizes the complete Owner-approved Monster Development Fast Path, including its scoped merge and push to `main`. This exception does not apply to Canonical, `.vibe/rules.md`, `AGENTS.md`, Packages, ProjectSettings, high-risk Shared Originals, ambiguous Unity YAML conflicts, cross-system architecture changes, or non-Monster work. All other Tasks retain the general human final-merge rule.

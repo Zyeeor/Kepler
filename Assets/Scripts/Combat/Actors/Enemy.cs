@@ -9,4 +9,7 @@ using System;
 /// </summary>
 public class Enemy : MonsterActor
 {
+    [Header("Possession")]
+    [Tooltip("Optional point where the SoulActor is attached while this enemy is possessed.")]
+    public Transform soulAnchorPoint;
 }

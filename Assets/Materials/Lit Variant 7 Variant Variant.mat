@@ -8,17 +8,18 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Lit Variant 7 Variant Variant
-  m_Shader: {fileID: -6465566751694194690, guid: 90171cf28c827f24a96ef52b03120785,
-    type: 3}
-  m_Parent: {fileID: 2100000, guid: fc1d881c2f9aa2343a70cc9086ec7529, type: 2}
+  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+  m_Parent: {fileID: 2100000, guid: b013bfa2be2cb5b458959a8ec8f8aaaa, type: 2}
   m_ModifiedSerializedProperties: 2
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _NORMALMAP
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -26,11 +27,13 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _DstBlend: 0
     - _QueueControl: 0
     - _Smoothness: 0.168
+    - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.8805031, g: 0.442258, b: 0.29073206, a: 1}
-    - _Color: {r: 0.8805031, g: 0.44225797, b: 0.29073203, a: 1}
+    - _BaseColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Color: {r: 0, g: 0, b: 0, a: 1}
     - _Color_A: {r: 0.54088044, g: 0.082419865, b: 0, a: 0}
     - _EmissionColor: {r: 0.78616345, g: 0.01931579, b: 0, a: 1}
   m_BuildTextureStacks: []

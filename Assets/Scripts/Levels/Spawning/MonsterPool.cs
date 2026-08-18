@@ -78,6 +78,23 @@ public class MonsterPool : MonoBehaviour
         available.Enqueue(instanceToReturn);
     }
 
+    /// <summary>
+    /// 反查实例对应的 prefab 资产（存档等场景：prefabId 应存真实资产名，而非实例名，
+    /// 实例名可能是 "X(Clone)" 或场景重命名后的 "X(1)"）。
+    /// </summary>
+    public GameObject GetPrefabOf(GameObject instance)
+    {
+        if (instance == null) return null;
+        prefabByInstance.TryGetValue(instance, out GameObject prefab);
+        if (prefab == null)
+        {
+            // 容忍父级：怪根实例可能被包在其它结构下
+            GameObject root = FindPooledRoot(instance.transform);
+            if (root != null) prefabByInstance.TryGetValue(root, out prefab);
+        }
+        return prefab;
+    }
+
     private GameObject FindPooledRoot(Transform transformToResolve)
     {
         Transform current = transformToResolve;

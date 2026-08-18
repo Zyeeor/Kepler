@@ -15,7 +15,7 @@ MonoBehaviour:
   cards:
   - cardName: "\u5251\u6C14\u7A7F\u900F"
     effectId: Pride.Pierce
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Sword Qi pierces, X follow-up, double damage.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -24,7 +24,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
     effectId: Pride02
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Fires three Sword Qi blades in a spread.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -33,7 +33,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
     effectId: Pride01
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Sword Qi becomes long-range.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -42,7 +42,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u84C4\u529B\u7A81\u8FDB"
     effectId: Pride.ChargeEmpowered
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Charge farther; damage scales up to +100%.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -53,7 +53,7 @@ MonoBehaviour:
       value: 10
   - cardName: "\u7A7F\u68AD\u9644\u52A0\u6C14\u5203"
     effectId: Pride.BlinkSwordQi
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Each blink also fires Sword Qi along blink direction.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -62,7 +62,7 @@ MonoBehaviour:
     abilityParameters: []
   - cardName: "\u7A7F\u68AD+2"
     effectId: Pride.BlinkCountPlusTwo
-    image: {fileID: 0}
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Blink Chain strikes 6 times.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -125,3 +125,143 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+  - cardName: "\u843D\u5730\u7206\u70B8"
+    effectId: Sloth.LandingBlast
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: Landing explosion on hop.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Launch
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u84C4\u529B\u6563\u5C04"
+    effectId: Sloth.Scatter
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: On enemy hit, scatter fragments that ignore the first target. Count
+      scales with charge time.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.ChargeShot
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u5E03\u7F6E\u5730\u96F7"
+    effectId: Sloth.LandingMine
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: Place a mine at the takeoff point before jumping. Other monsters
+      trigger an explosion.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Launch
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u65E0\u4EBA\u673A\u7ECF\u6D4E"
+    effectId: Sloth.DroneEconomy
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: Drone HP cost -50%, lifetime +10%.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Drone
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u65E0\u4EBA\u673A\u6B7B\u4EA1\u7206\u70B8"
+    effectId: Sloth.DroneDeathBlast
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: Drone explodes toward enemies on death.
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Drone
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u7FA4\u53E3\u5723\u5BB4"
+    effectId: GL-A01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u6DF1\u6E0A\u5DE8\u53E3\u4F1A\u989D\u5916\u51FA\u73B0\u4E00\u4E2A\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.AbyssMaw
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u730E\u6B65\u5723\u9910"
+    effectId: GL-A02
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u4F4D\u79FB\u540E\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u8303\u56F4\u6269\u5927100%\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u8FDC\u65B9\u5723\u9910"
+    effectId: GL-A03
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u6DF1\u6E0A\u5DE8\u53E3\u53EF\u5728\u66F4\u8FDC\u4F4D\u7F6E\u751F\u6210\uFF1B\u4ECD\u4E0D\u8FFD\u8E2A\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.AbyssMaw
+    grantedEffectTags: []
+    abilityParameters:
+    - key: MawAimDistance
+      value: 12
+  - cardName: "\u9965\u795E\u730E\u6B65"
+    effectId: GL-M01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u5C0F\u732B\u5F62\u6001\u79FB\u52A8\u66F4\u5FEB\u3001\u8F6C\u5411\u66F4\u7075\u6D3B\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.SmallCat
+    grantedEffectTags: []
+    abilityParameters:
+    - key: SmallCatSpeedMult
+      value: 1.25
+  - cardName: "\u9C9C\u8840\u5723\u9910"
+    effectId: GL-S01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u6BCF\u5177\u8EAF\u4F53\u7B2C\u4E00\u6B21\u6210\u529F\u541E\u566C\u654C\u4EBA\u65F6\u6062\u590D\u8010\u4E45\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.Devour
+    grantedEffectTags: []
+    abilityParameters:
+    - key: FirstDevourHeal
+      value: 20
+  - cardName: "\u6700\u540E\u4E00\u9910"
+    effectId: GL-S02
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u541E\u566C\u547D\u4E2D\u4F4E\u8010\u4E45\u654C\u4EBA\u65F6\u5904\u51B3\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.Devour
+    grantedEffectTags: []
+    abilityParameters:
+    - key: ExecuteThreshold
+      value: 0.2
+  - cardName: "\u4E07\u7269\u7686\u98DF"
+    effectId: GL-S03
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u541E\u566C\u53EF\u5403\u6389\u8F83\u5C0F\u8FCE\u9762\u653B\u51FB\u5E76\u83B7\u5F97\u8FC7\u9971\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.Devour
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u8FC7\u9971\u795E\u8FF9"
+    effectId: GL-X01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u6D88\u8017\u8FC7\u9971\u65F6\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u6539\u4E3A\u6210\u5BF9\u51FA\u73B0\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony.AbyssMaw
+    grantedEffectTags: []
+    abilityParameters: []
+  - cardName: "\u9965\u795E\u663E\u5F62"
+    effectId: GL-TG01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u66B4\u98DF\u79FB\u901F\u63D0\u5347\uFF0C\u6DF1\u6E0A\u5DE8\u53E3\u66F4\u5927\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Gluttony
+    grantedEffectTags: []
+    abilityParameters:
+    - key: BodyMoveSpeedMult
+      value: 1.15
+    - key: MawSizeMult
+      value: 1.2

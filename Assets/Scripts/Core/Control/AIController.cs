@@ -18,10 +18,13 @@ using UnityEngine;
 /// 守卫语义：
 ///   - isPossessed（被玩家附身）→ 不产出任何指令
 ///   - isDowned / isWeakened → 不产出任何指令
+///   - aiActiveOverride = false（流送休眠，）→ 不产出任何指令，仅 0.5s 低频维持索敌目标缓存
 ///   - 玩家超出 detectionRadius → 待机（原地停留，不转向）
 /// </summary>
 public class AIController : MonoBehaviour, IController
 {
+    private const float DormantTickInterval = 0.5f; // 休眠 Tick 频率（0.5s/tick 而非每帧）
+
     private MonsterActor host;
     private BTBlackboard bb;
     private BTNode root;
@@ -29,6 +32,7 @@ public class AIController : MonoBehaviour, IController
     private BTAction_Standoff standoffAction;
     private float nextDecisionTime;
     private float nextTargetRetryTime;
+    private float dormantTickAccum; // 休眠节拍累计（unscaled 时间）
 
     /// <summary>运行时自动挂载（CreateDefaultController 兜底 AddComponent）；Prefab 上无序列化需求。</summary>
     void Awake()
@@ -45,22 +49,20 @@ public class AIController : MonoBehaviour, IController
         ResetDecisionState();
     }
 
-    public void OnDetached()
-    {
+    public void OnDetached(){
         host = null;
     }
 
     /// <summary>重建决策状态：决策相位随机化（打散同帧刷怪的行为同步）。攻击就绪态每帧由技能 CD 重算，无需预置。</summary>
-    private void ResetDecisionState()
-    {
+    private void ResetDecisionState(){
         bb.Pressed = CommandButtons.None;
         bb.WantMove = false;
         bb.MoveDir = Vector3.zero;
+        dormantTickAccum = 0f;
         nextDecisionTime = Time.time + Random.Range(0f, host.decisionIntervalMax);
     }
 
-    private void BuildTree()
-    {
+    private void BuildTree(){
         bb = new BTBlackboard(host);
         moveAction = new BTAction_MoveToPlayer();
         standoffAction = new BTAction_Standoff();
@@ -68,46 +70,53 @@ public class AIController : MonoBehaviour, IController
         // 攻击分支：任一攻击范围内，技能/普攻按权重互斥选择。
         // 技能分支带 InSkillRange 守卫、普攻分支带 InBasicRange 守卫——玩家在技能范围内但普攻范围外时，
         // 普攻分支因范围条件失败自动回退，只能释放技能（若冷却好）；两个分支都失败则整体回退到追击。
-        BTNode attackBranch = new BTSequence(
-            new BTCondition_InAttackRange(),
-            new BTWeightedSelector(
-                new BTWeightedSelector.Entry(host.skillPriority,
+        BTNode attackBranch = new BTSequence(new BTCondition_InAttackRange(),
+            new BTWeightedSelector(new BTWeightedSelector.Entry(host.skillPriority,
                     new BTSequence(new BTCondition_InSkillRange(), new BTCondition_SkillReady(), new BTAction_Skill())),
                 new BTWeightedSelector.Entry(1f - host.skillPriority,
-                    new BTSequence(new BTCondition_InBasicRange(), new BTCondition_BasicReady(), new BTAction_BasicAttack()))
-            )
-        );
+                    new BTSequence(new BTCondition_InBasicRange(), new BTCondition_BasicReady(), new BTAction_BasicAttack()))));
 
         // 追击分支：攻击范围外、索敌范围内。
         // - 追击超时（ChaseExpired）→ 对峙（随机角度游走，不再直线扑向玩家）
         // - 未超时 → 按权重在「位移冲刺」与「普通追击」间互斥选择；位移冷却未就绪时自动回退普通追击。
-        BTNode chaseBranch = new BTSelector(
-            new BTSequence(new BTCondition_ChaseExpired(), standoffAction),
-            new BTWeightedSelector(
-                new BTWeightedSelector.Entry(host.aiMobilityChance,
+        BTNode chaseBranch = new BTSelector(new BTSequence(new BTCondition_ChaseExpired(), standoffAction),
+            new BTWeightedSelector(new BTWeightedSelector.Entry(host.aiMobilityChance,
                     new BTSequence(new BTCondition_MobilityReady(), new BTAction_MobilityDash())),
-                new BTWeightedSelector.Entry(1f - host.aiMobilityChance, moveAction)
-            )
-        );
+                new BTWeightedSelector.Entry(1f - host.aiMobilityChance, moveAction)));
 
         // 根选择器：优先级互斥短路（攻击 > 追击/冲刺 > 待机）
-        root = new BTSelector(
-            attackBranch,
+        root = new BTSelector(attackBranch,
             new BTSequence(new BTCondition_InDetectRange(), chaseBranch),
-            new BTAction_Idle()
-        );
+            new BTAction_Idle());
     }
 
     public void Tick(in ActorContext ctx, ref ControlCommand cmd)
     {
         cmd = ControlCommand.Empty;
         if (host == null) return;
-        if (host.isPossessed) return;
+        if (host.isPossessed) return; // 附身中的怪永不休眠，由 PlayerController 驱动
         if (host.isDowned || host.isWeakened) return;
+
+        // 流送休眠：Chunk 在 A 范围外时不产出任何指令（cmd 保持 Empty 直接返回）；
+        // 仅按 ~0.5s 低频节拍维持索敌目标缓存，便于回到 A 时无缝激活。
+        // 用 unscaledDeltaTime 累计：子弹时间（timeScale<1）下休眠节拍不被拖慢。
+        if (!host.aiActiveOverride)
+        {
+            dormantTickAccum += Time.unscaledDeltaTime;
+            if (dormantTickAccum < DormantTickInterval) return;
+            dormantTickAccum = 0f;
+            if (IsTargetInvalid()&& Time.time >= nextTargetRetryTime)
+            {
+                host.RefreshPlayerTarget();
+                nextTargetRetryTime = Time.time + 0.5f; // 与激活态同款的查找节流
+            }
+            return;
+        }
+
         if (root == null) return;
 
         // Y2 目标有效性校验：销毁/失活（池回收）/ tag 不再是 Player（附身切换或释放）→ 失效重找
-        if (IsTargetInvalid() && Time.time >= nextTargetRetryTime)
+        if (IsTargetInvalid()&& Time.time >= nextTargetRetryTime)
         {
             host.RefreshPlayerTarget();
             nextTargetRetryTime = Time.time + 0.5f; // 查找失败重试节流，避免每帧 FindGameObjectWithTag
@@ -156,8 +165,7 @@ public class AIController : MonoBehaviour, IController
     /// 缓存必须实时校验，否则会追一个不存在的目标（隔空转向 / 追尸体原位）。
     /// Unity 假空：已销毁对象 == null 为 true，短路后不再访问成员，避免 MissingReferenceException。
     /// </summary>
-    private bool IsTargetInvalid()
-    {
+    private bool IsTargetInvalid(){
         Transform t = host.targetPlayer;
         if (t == null) return true;
         if (!t.gameObject.activeInHierarchy) return true;
@@ -179,15 +187,14 @@ public class AIController : MonoBehaviour, IController
         bb.PlayerInSkillRange = dist <= host.skillAttackRange;
         bb.PlayerInAttackRange = bb.PlayerInBasicRange || bb.PlayerInSkillRange;
 
-        // 攻击节奏统一以技能自身 cooldown 为准（方案 A）：CanTrigger() 即「冷却就绪」。
+        // 攻击节奏统一以技能自身 cooldown 为准（方案 A）：CanTrigger 即「冷却就绪」。
         // 不再用 basicCastTime/skillCastTime 双层节拍，避免与技能 CD 职责重叠 + attackSpeed 双重加速。
         bb.BasicReady = AnyBasicCanTrigger();
         bb.SkillReady = AnySkillCanTrigger();
         bb.MobilityReady = AnyMobilityCanTrigger();
     }
 
-    bool AnyBasicCanTrigger()
-    {
+    bool AnyBasicCanTrigger(){
         for (int i = 0; i < host.basicAbilities.Count; i++)
         {
             var e = host.basicAbilities[i];
@@ -196,8 +203,7 @@ public class AIController : MonoBehaviour, IController
         return false;
     }
 
-    bool AnySkillCanTrigger()
-    {
+    bool AnySkillCanTrigger(){
         for (int i = 0; i < host.skillAbilities.Count; i++)
         {
             var e = host.skillAbilities[i];
@@ -206,8 +212,7 @@ public class AIController : MonoBehaviour, IController
         return false;
     }
 
-    bool AnyMobilityCanTrigger()
-    {
+    bool AnyMobilityCanTrigger(){
         for (int i = 0; i < host.mobilityAbilities.Count; i++)
         {
             var e = host.mobilityAbilities[i];
@@ -217,8 +222,7 @@ public class AIController : MonoBehaviour, IController
     }
 
     /// <summary>技能触发成功回调（保留：仍用于通知 AI 技能已释放，当前无额外冷却逻辑）。</summary>
-    public void NotifySkillTriggered()
-    {
+    public void NotifySkillTriggered(){
         // 方案 A：技能冷却完全由技能自身 cooldown 管理，此处不再维护 SkillReadyAt。
     }
 }
