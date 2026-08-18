@@ -406,25 +406,23 @@ Knockback可以位移。
 
 基础Interaction保留：
 
-### Greed正面Guard
+### Greed全伤害Guard
 
-- 正面合法飞行攻击；
-- 正面激光；
+- Guard在有效窗口内吸收所有伤害来源；
+- 持续伤害按实际吸收量累计；
+- Guard期间不能移动或攻击；
+- 空开仍按Ability合同收费并进入Reload。
 
-不基础处理：
-
-- Ground AoE；
-- Field；
-- Pull；
-- Burning；
-- 侧后方攻击。
+基础Guard持续1秒，每100点实际吸收伤害转化1只魔手；`GR-S01`将换算改为每60点，`GR-S04`将窗口延长至3秒并允许二次Special提前结束、立即进入Reload。
 
 ### Oil + Ignite
 
 明确火源可点燃Greed Oil。
 
-基础：
+基础普通黑油：
 
+- 只为玩家 / Possessed Greed提供移动加速；
+- 不基础减速Enemy；`GR-M01`才赋予Enemy减速；
 - 不无限扩散；
 - 不无限刷新。
 
@@ -474,7 +472,7 @@ Cut / Crush / Reflection / Devour / Clear等：
 典型清除：
 
 - Envy激光持续引导；
-- Envy Record；
+- Envy 目标Mark（换身清除）；
 - Gluttony Overfed与未使用的复制Skill Ability；
 - Greed未释放库存；
 - Greed Guard；

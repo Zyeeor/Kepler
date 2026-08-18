@@ -3,7 +3,7 @@
 **Project:** Possession<br>
 **Date:** 2026-08-15<br>
 **Status:** `FINAL PRE-IMPORT CLOSURE / GO`<br>
-**Historical snapshot note:** 本审计保留2026-08-15入仓时的82张Card结论；后续Owner Delta已将色欲与暴食更新为各7张、愤怒与贪婪更新为各6张。贪婪删除`GR-A05`、`GR-A06`、`GR-M02`、`GR-M03`、`GR-S02`、`GR-TG01`。当前牌池为68张，现状以`00_CANONICAL_INDEX.md`、`02_CONTENT_CANONICAL.md`与逐卡真源为准。
+**Historical snapshot note:** 本审计保留2026-08-15入仓时的82张Card结论；后续2026-08-18 Owner Delta以「怪物设计（新）」同步七罪三槽与Card，新增`PR-A04`、`EN-M01`、`EN-A05`、`GR-M02`、`GR-A07`。表格“龙卷风时长+2秒”合并回既有`WR-S03`，不新增`WR-S04`。`GR-M02`以“圣路恩赐”新定义恢复，不沿用历史黑油减速叠层语义。当前牌池为73张，现状以`00_CANONICAL_INDEX.md`、`02_CONTENT_CANONICAL.md`与逐卡真源为准。
 
 ---
 
@@ -58,7 +58,7 @@ Opening Card已彻底移除，不存在Wave 0选卡特殊分支。
 
 - 七只基础Monster稳定；
 - 21基础技能稳定；
-- **Historical：** 入仓时82张Card真源完成；当前牌池已按后续Owner Delta更新为68张。
+- **Historical：** 入仓时82张Card真源完成；当前牌池已按后续Owner Delta更新为73张。
 - 9次Offer首版算法已补；
 - W1–W8 Encounter首版算法已补；
 - Elite核心已闭合，具体Fake Profile内容仍可后补。

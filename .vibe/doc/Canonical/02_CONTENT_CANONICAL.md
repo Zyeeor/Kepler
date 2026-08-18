@@ -35,7 +35,7 @@
 | Pride | 傲慢·终刃绝影 | 宣称 / 压制 | 高机动刺客 | 快速突进、剑气、多段穿梭后切身 |
 | Sloth | 怠惰·机械之灵 | 委托 / 延迟 | 重炮 / 短寿命召唤 | 留Drone与炮弹后切身 |
 | Gluttony | 暴食·魔猫 | 吞并 / 消耗 | 捕食 / 短周期爆发 | 小猫接近→吞噬→过饱巨口 |
-| Envy | 嫉妒·激光异形 | 映照 / 夺取差异 | 持续猎杀 / 延迟兑现 | 激光积Record→雷暴兑现 |
+| Envy | 嫉妒·激光异形 | 映照 / 夺取差异 | 持续猎杀 / 延迟兑现 | 激光写Mark→雷暴兑现 |
 | Wrath | 愤怒·链狱冥兽 | 冲突 / 反击 | 低耐久狂战 / 聚怪 | 钩入→砸地→Pull→Relay |
 | Greed | 贪婪·万手藏主 | 占有 / 累积 | 囤积 / 防守反击 | 初始手→Guard转化→倾泻 |
 | Lust | 色欲·灵念师 | 牵引 / 绑定 | Anchor / Link位置控制 | Anchor→Link→Pull→切AoE Body |
@@ -49,24 +49,20 @@
 ## Pride｜傲慢·终刃绝影
 
 **Movement — 一刀斩突进**
-- 高速向输入方向突进；
-- 前端斩击；
-- 不基础清弹；
-- Enemy必须有方向前兆。
+- 高速向输入方向突进，并以刀锋前端斩击；
+- 基础不清弹；Enemy必须有方向前兆；
+- 当前Playable Baseline：`Reload 2–5 / hp cost 5–25 / damage 20`。
 
 **Attack — 剑气**
-- 短中程实体飞行斩击；
-- 玩家自由瞄准；
-- Enemy有挥刀前摇；
-- 基础不与飞行攻击对冲；
-- 可被Greed正面Guard吸收。
+- 短程实体飞行斩击；玩家自由瞄准；Enemy有挥刀前摇；
+- 基础不与飞行攻击对冲；可被Greed Guard吸收；
+- 当前Playable Baseline：`Reload 1 / hp cost 5 / damage 20`。
 
 **Special — 穿梭斩**
-- 多段高速穿梭；
-- 无合法目标不启动；
-- 目标少时可重复命中；
-- 穿梭瞬间可不可选中；
-- 结束后有恢复窗口。
+- 一次合法施放进行4段高速穿梭，每段0.25秒；
+- 无合法目标不启动；目标少时可重复命中；穿梭瞬间可不可选中；结束后有恢复窗口；
+- 当前Playable Baseline：`Reload 1.5 / hp cost 20 / damage 10 per blink`；
+- 输入仍为`E`，`Q`保持Bullet Time。
 
 Enemy行为基线：
 
@@ -77,22 +73,20 @@ Enemy行为基线：
 ## Sloth｜怠惰·机械之灵
 
 **Movement — 弹射起跳**
-- 明显蓄势后重新定位；
-- 腾空主要是表现，不获得地面攻击免疫。
+- 朝地面开炮后弹射起跳；有明显起跳前摇；
+- 腾空主要是表现，不获得地面攻击免疫；
+- 当前Playable Baseline：`Reload 1 / hp cost 20 / damage 0`。
 
 **Attack — 蓄力爆炸炮**
-- 按住蓄力；
-- 蓄力提高威胁、范围与伤害档；
-- 释放有明显后坐；
-- “重型”本身不自动压弹。
+- 按住蓄力；蓄力提高威胁、范围与伤害档；
+- 释放有明显后坐动画 / 反馈，但不产生Gameplay位移；
+- “重型”本身不自动压弹；
+- 当前Playable Baseline：`Reload 0 / hp cost 5 / damage 2–100`。
 
 **Special — 木灵**
-- 短寿命自动攻击单位；
-- 可被击毁；
-- 不可Possess；
-- 不产Corpse；
-- 换身后按自身寿命继续；
-- 达上限后新木灵替换最旧同源木灵。
+- 向天空投出短寿命自动攻击木灵；木灵跟随玩家、持续追击并攻击最近Enemy直到死亡；
+- 可被击毁；不可Possess；不产Corpse；换身后按自身寿命继续；达上限后新木灵替换最旧同源木灵；
+- 当前Playable Baseline：`lifetime 4s / Reload 1 / hp cost 50 / damage 5 per attack / attack range 30`。
 
 Enemy行为基线：
 
@@ -103,61 +97,50 @@ Enemy行为基线：
 ## Gluttony｜暴食·魔猫
 
 **Movement — 小猫化**
-- 变为约50%体型的小猫，持续3秒；
-- 移动速度提高100%，重量变轻；
-- 不改变受击层；
-- 再次使用Movement切换回魔猫形态；
-- 使用Special也会恢复魔猫形态；
-- 普通Attack默认解除小猫化；取得`GL-M01`后，普通Attack不再解除小猫化。
+- 变为约50%体型的小猫，持续3秒；移动速度提高100%，重量变轻；不改变受击层；
+- 再次使用Movement切换回魔猫形态；使用Special也会恢复魔猫形态；普通Attack默认解除小猫化，取得`GL-M01`后不解除；
+- 当前Playable Baseline：`Reload 0 / hp cost 100 / damage 0`。
 
 **Attack — 深渊巨口**
-- 指定地面位置；
-- 施放时快照；
-- 0.5秒后生成；
-- 不持续追踪；
-- Enemy与玩家版本均必须显示清晰地面危险区。
+- 基础在施放者脚下生成深渊巨口；施放时快照，0.5秒后生成，不持续追踪；
+- `GL-A03`使施放者将诱饵抛向远处，在远端位置生成巨口；
+- Enemy与玩家版本均必须显示清晰地面危险区；
+- 当前Playable Baseline：`Reload 2 / hp cost 10 / damage 20`。
 
 **Special — 吞噬 / 复制Skill Ability**
-- 魔猫形态下向前方约1米半径扇形作出巨大咬合；
-- 命中合法Enemy后获得`Overfed`；
-- `Overfed`使下一次基础吞噬变为二次咬合，触发后消费；
-- 命中Enemy时复制其`E / Skill Ability`，作为暴食E槽的临时替代；
-- 复制本身不额外消耗资源；复制技能成功使用一次后失效，E槽恢复吞噬；
+- 魔猫形态下向前方约1米半径扇形作出巨大咬合，只命中最近的合法Enemy；
+- 命中后获得`Overfed`，下一次基础吞噬变为二次咬合并消费；
+- 复制该最近Enemy的`E / Skill Ability`，临时替换暴食E槽；成功使用一次后失效并恢复吞噬；
 - 换身清除`Overfed`和未使用的复制Skill Ability；
-- 基础不吞飞行攻击；`GL-S03`是吞飞行攻击并获得`Overfed`的明确例外。
+- 基础不吞飞行攻击；`GL-S03`是吞飞行攻击并获得`Overfed`的例外；
+- 当前Playable Baseline：`Reload 1 / hp cost 50 / damage 40`。
 
 Enemy行为基线：
 
-> 小猫态追击 / 重定位 → 在预测位置放巨口 → 近距离尝试吞噬 → 获得`Overfed`后优先二次咬合；Enemy不使用玩家专属的临时复制E槽，但保留吞噬、过饱与二次咬合的核心Payload与表现语义。
+> 小猫态追击 / 重定位 → 在脚下放巨口 → 近距离尝试吞噬 → 获得`Overfed`后优先二次咬合；Enemy不使用玩家专属的临时复制E槽，但保留吞噬、过饱与二次咬合的核心Payload与表现语义。
 
 ---
 
 ## Envy｜嫉妒·激光异形
 
 **Movement — 飞行加速**
-- 短时飞起并加速；
-- 可在维持激光时调角度 / 距离；
-- 不建立真实空中层；
-- 不基础无敌 / 清弹。
+- 飞起并获得+200%移动速度，持续1秒；可在维持激光时调角度 / 距离；不建立真实空中层，不基础无敌 / 清弹；
+- 当前Playable Baseline：`Reload 0 / hp cost 20 / damage 0`。
 
-**Attack — 激光 + Record**
-- 玩家可直接鼠标瞄准；
-- Enemy锁当前玩家，不使用“最高HP目标”；
-- 基础Record只记录当前Envy自身激光对当前连接目标造成的有效伤害；
-- 不记录其他Body、Drone、Burning等外部来源；
-- 激光可被Greed Guard截断；
-- 被截断伤害不写Record。
+**Attack — 激光 + Mark**
+- 玩家可直接鼠标瞄准；Enemy锁当前玩家，不使用“最高HP目标”；
+- 激光命中目标时向该目标写入Mark；每个Mark储存目标受到伤害的20%；
+- 激光可被Greed Guard截断；被截断伤害不写入Mark；
+- 当前Playable Baseline：`Reload 0 / hp cost 10 per second / damage 2 per second`。
 
 **Special — 雷暴兑现**
-- 读取当前Body自身Record；
-- 造成基础雷暴 + Record比例结果；
-- 随后消费Record；
-- 雷暴不能回写同一Record；
-- Enemy使用前必须预警。
+- 将锁链雷电传导至所有带Mark的合法Enemy；每个目标结算基础雷暴+自身Mark储存伤害，并消费自身Mark；
+- 没有合法带Mark目标时不启动、不收费、不进Reload；Enemy使用前必须预警；
+- 当前Playable Baseline：`Reload 1 / hp cost 50 / damage 10 + stored Mark damage per target`。
 
 Enemy行为基线：
 
-> 保持中距离视线 → 激光持续压迫 / 追踪 → 积累Record → 合法时雷暴兑现 → 飞行调整角度。
+> 保持中距离视线 → 激光持续压迫 / 追踪并写入Mark → 合法时雷暴传导兑现 → 飞行调整角度。
 
 ---
 
@@ -192,33 +175,24 @@ Enemy行为基线：
 ## Greed｜贪婪·万手藏主
 
 **Movement — 铺黑油**
-- 沿路径留下短寿命黑油；
-- 踏入普通黑油的Enemy减速；
-- 明确火源可点燃黑油；
-- Burning Oil不再提供普通黑油减速；
-- `GR-M01`扩大黑油路径的长度与覆盖范围。
+- 向前方释放短寿命黑油；站在自身普通黑油上的玩家 / Possessed Greed获得加速；
+- 明确火源可点燃黑油；`GR-M01`扩大黑油路径长度与覆盖范围，并使Enemy踏入黑油时减速；
+- 当前Playable Baseline：`Reload 0 / hp cost 10 / damage 0`。
 
 **Attack — 念力魔手**
-- Body自动积累到库存上限；
-- LMB一次释放当前库存；
-- Possession初始化获得少量魔手；
-- 0库存时Attack不启动、不收费；
-- 已发射魔手跨Body继续；
+- 每秒生成1只魔手，魔手环绕本体，基础库存上限6；
+- LMB以0.2秒间隔依次释放所有库存魔手；一次释放总计消耗20HP；无合法目标的魔手消失；
+- Possession初始化获得少量魔手；0库存时Attack不启动、不收费；已发射魔手跨Body继续；
 - `GR-A01`提高库存与单次释放上限；`GR-A02`和`GR-A03`分别提供击杀后的再索敌与新增魔手派生。
 
 **Special — 大手Guard / 吸收转化**
-- 方向明确的正面Guard；
-- Guard期间不能同时倾泻魔手；
-- 吸收正面合法飞行攻击；
-- 截断正面激光；
-- 转化为魔手库存；
-- 空开也视为正常释放并收费 / 进入Reload；
-- 不基础防AoE、Field、Pull、Burning、侧后方；
-- `GR-S01`提高一次Guard受击后的魔手转化结果；`GR-S04`延长Guard有效持续时间，方向与可吸收对象不变。
+- 大手保护身体，吸收所有伤害；基础持续1秒，期间不能移动，也不能倾泻魔手；
+- 每100点实际吸收伤害转化1只魔手；空开也视为正常释放并收费 / 进入Reload；
+- `GR-S01`使每60点实际吸收伤害转化1只魔手；`GR-S04`使Guard持续3秒，可再次使用Special提前结束并立即进入Reload。
 
 Enemy行为基线：
 
-> 铺油建立减速路径 → 累积并释放魔手 → 对明确正面威胁使用Guard → 将吸收结果转化后反压。
+> 铺油建立玩家机动路径 → 累积并释放魔手 → 需要防护时开启Guard并将吸收结果转化后反压。
 
 ---
 
@@ -273,7 +247,7 @@ Enemy行为基线：
 Monster额外初始化：
 
 - Gluttony：Overfed = 0，未持有复制Skill Ability；
-- Envy：Record = 0；
+- Envy：Mark清空；换身清除已写入目标身上的Mark；
 - Greed：少量初始魔手，数量Tunable；
 - Lust：无Anchor / Link；
 - Wrath：满耐久，不继承Enemy死前低耐久运行状态。
@@ -286,23 +260,23 @@ Monster额外初始化：
 
 当前牌池：
 
-> **68张**
+> **73张**
 
 | 分类 | 数量 |
 |---|---:|
 | 基础通用 | 9 |
 | Global Slot质变 | 7 |
-| Pride | 7 |
+| Pride | 8 |
 | Sloth | 11 |
 | Gluttony | 7 |
-| Envy | 8 |
+| Envy | 10 |
 | Wrath | 6 |
-| Greed | 6 |
+| Greed | 8 |
 | Lust | 7 |
 
 其中：
 
-- 七罪Monster-Type + Type Growth：52张；
+- 七罪Monster-Type + Type Growth：57张；
 - Type Growth：4张；Gluttony、Wrath与Greed是当前无Type Growth的Owner确认例外；
 - 当前无稀有度系统。
 
@@ -340,15 +314,16 @@ Monster额外初始化：
 | `GX-MR01` | 命运折返 | 位移弹反质变；Stack 1 | 1 |
 | `GX-AR01` | 审判回返 | 普攻弹反质变；Stack 1 | 1 |
 
-## 傲慢｜7张
+## 傲慢｜8张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
-| `PR-A01` | 王冠军势 | Attack数量质变；Stack 1 | 1 |
-| `PR-A02` | 十字圣裁 | Attack形态质变；Stack 1 | 1 |
+| `PR-A01` | 王冠军势 | Attack三道散射；Stack 1 | 1 |
+| `PR-A02` | 十字圣裁 | Attack十字剑气；Stack 1 | 1 |
 | `PR-A03` | 异端噤声 | Attack高阶Interaction；Stack 1 | 1 |
-| `PR-M01` | 王座之步 | Movement专属基础；Stack 3 | 3 |
+| `PR-A04` | 王命远征 | Attack合法作用距离强化；Stack 1 | 1 |
+| `PR-M01` | 王座之步 | Movement距离+伤害强化；Stack 1 | 1 |
 | `PR-S01` | 王权巡猎 | Special数量质变；Stack 1 | 1 |
-| `PR-X01` | 征服者之径 | Movement+Special联动；Stack 1 | 1 |
+| `PR-X01` | 征服者之径 | Special路径剑气；Stack 1 | 1 |
 | `PR-TG01` | 王权疾令 | 类型成长；Stack 1 | 1 |
 
 ## 怠惰｜11张
@@ -371,23 +346,25 @@ Monster额外初始化：
 |---|---|---|---:|
 | `GL-M01` | 饥神猎步 | Movement基础强化 + Attack形态例外；Stack 1 | 1 |
 | `GL-A01` | 群口圣宴 | Overfed→Attack成对巨口；Stack 1 | 1 |
-| `GL-A02` | 猎步圣餐 | Movement→Attack成对巨口；Stack 1 | 1 |
+| `GL-A02` | 猎步圣餐 | Movement→Attack巨口范围+100%；Stack 1 | 1 |
 | `GL-A03` | 远方圣餐 | Attack基础强化；Stack 1 | 1 |
 | `GL-S01` | 鲜血圣餐 | Special首次吞噬耐久回复；Stack 1 | 1 |
 | `GL-S02` | 最后一餐 | Special条件处决；Stack 1 | 1 |
 | `GL-S03` | 万物皆食 | Special高阶Interaction；Stack 1 | 1 |
 
-## 嫉妒｜8张
+## 嫉妒｜10张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
-| `EN-A01` | 万眼同视 | Attack形态质变；Stack 1 | 1 |
+| `EN-A01` | 万眼同视 | Attack周期四目标；Stack 1 | 1 |
 | `EN-A03` | 穿镜圣光 | Attack高阶形态质变；Stack 1 | 1 |
 | `EN-A04` | 妒神凝视 | Attack叠层；Stack 2 | 2 |
-| `EN-R01` | 无底之镜 | Resource成长；Stack 1 | 1 |
+| `EN-A05` | 妒焰渐炽 | Attack持续伤害成长；Stack 1 | 1 |
+| `EN-M01` | 镜痕巡猎 | Movement路径印记；Stack 1 | 1 |
+| `EN-R01` | 无底之镜 | Mark储存成长；Stack 1 | 1 |
 | `EN-R02` | 伤痕告解 | Resource成长；Stack 1 | 1 |
 | `EN-R04` | 凝视未终 | Resource叠层；Stack 2 | 2 |
 | `EN-S01` | 雷霆作证 | Special派生质变；Stack 2 | 2 |
-| `EN-TG01` | 万眼远证 | 类型成长；Stack 1 | 1 |
+| `EN-TG01` | 万妒远证 | 类型成长；Stack 1 | 1 |
 
 ## 愤怒｜6张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
@@ -399,13 +376,15 @@ Monster额外初始化：
 | `WR-S01` | 风暴锁链 | Special龙卷风移速强化；Stack 1 | 1 |
 | `WR-S03` | 终末飓风 | Special龙卷风时长强化；Stack 1 | 1 |
 
-## 贪婪｜6张
+## 贪婪｜8张
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
 | `GR-M01` | 黑油圣路 | Movement黑油范围 / 长度 + 敌人减速；Stack 1 | 1 |
+| `GR-M02` | 圣路恩赐 | Movement区域地形伤害防护；Stack 1 | 1 |
 | `GR-A01` | 万手圣库 | Attack Resource上限；Stack 2 | 2 |
 | `GR-A02` | 未收之贡 | Attack击杀后再索敌；Stack 1 | 1 |
 | `GR-A03` | 亡者遗产 | Attack击杀后新增魔手；Stack 1 | 1 |
+| `GR-A07` | 迂回纳贡 | Attack侧翼路径形态质变；Stack 1 | 1 |
 | `GR-S01` | 圣库纳贡 | Special受击资源转化；Stack 1 | 1 |
 | `GR-S04` | 贪神庇护 | Special Guard持续强化；Stack 1 | 1 |
 
@@ -489,7 +468,7 @@ Owner最新Excel / Card v1.1删除线为正式删除。
 
 旧Global 6张全部删除：`GX-M01`, `GX-M02`, `GX-A01`, `GX-A02`, `GX-S01`, `GX-S02`。
 
-普通Monster Card正式删除且不补：`PR-S02`, `SL-A06`, `GL-M02`, `GL-X01`, `GL-TG01`, `EN-A02`, `EN-R03`, `EN-X01`, `WR-A01`, `WR-M03`, `WR-S02`, `WR-TG01`, `GR-A04`, `GR-A05`, `GR-A06`, `GR-M02`, `GR-M03`, `GR-M04`, `GR-S02`, `GR-S03`, `GR-TG01`, `LU-M04`。
+普通Monster Card正式删除且不补：`PR-S02`, `SL-A06`, `GL-M02`, `GL-X01`, `GL-TG01`, `EN-A02`, `EN-R03`, `EN-X01`, `WR-A01`, `WR-M03`, `WR-S02`, `WR-TG01`, `GR-A04`, `GR-A05`, `GR-A06`, `GR-M03`, `GR-M04`, `GR-S02`, `GR-S03`, `GR-TG01`, `LU-M04`。`GR-M02`已按2026-08-18 Owner Delta以“圣路恩赐”新定义恢复，不沿用历史黑油减速叠层语义。
 
 不得为了恢复历史84张或旧Coverage重新补回。
 
@@ -687,7 +666,7 @@ Opening Cinematic / CG
 - Body Cost；
 - CD / Reload（`LU-TG01`三槽冷却减少30%除外，该值为Owner当前确认）；
 - 各种持续 / 距离 / Pull量；
-- Envy Record比例与上限；
+- Envy Mark写入比例与储存上限；
 - Greed初始魔手；
 - Sloth Drone上限；
 - 实例预算；
