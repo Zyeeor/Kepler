@@ -4184,6 +4184,9 @@ MonoBehaviour:
   cardParent: {fileID: 1170007485}
   confirmAllButton: {fileID: 1361398536}
   titleText: {fileID: 342066982}
+  cardOpenSfx: {fileID: 8300000, guid: 89479c37eebdc9d4ba131348aa184b84, type: 3}
+  cardSelectSfx: {fileID: 8300000, guid: f1afbe252b4aa3142902a2cbe6abf1cb, type: 3}
+  cardRerollSfx: {fileID: 8300000, guid: 1dca4c19cd179a84da480a49e9b2504f, type: 3}
 --- !u!114 &786004063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7769,6 +7772,51 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
+--- !u!1 &1638854449
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1638854451}
+  - component: {fileID: 1638854450}
+  m_Layer: 0
+  m_Name: SceneBgmHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1638854450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638854449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfb6e7daf61d3db4fb5196b0d8e82733, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bgmClip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
+--- !u!4 &1638854451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638854449}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!134 &1640098484
 PhysicMaterial:
   m_ObjectHideFlags: 0
@@ -8410,9 +8458,9 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 837435964}
-  useFixedSeed: 1
+  useFixedSeed: 0
   fixedSeed: 12345
-  useFormalFlow: 0
+  useFormalFlow: 1
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -8442,6 +8490,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 0}
+  maxRerollsPerCard: 1
   maxSelects: 1
   currentPicks:
   - cardName: 
@@ -10857,3 +10906,4 @@ SceneRoots:
   - {fileID: 146584553}
   - {fileID: 1950834436}
   - {fileID: 396728510}
+  - {fileID: 1638854451}

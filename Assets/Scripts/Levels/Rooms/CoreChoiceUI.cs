@@ -29,6 +29,14 @@ public class CoreChoiceUI : MonoBehaviour
     public Button confirmAllButton;
     public TextMeshProUGUI titleText;
 
+    [Header("Audio（可配置 Clip，null 跳过）")]
+    [Tooltip("弹卡音：弹窗打开时播放。")]
+    public AudioClip cardOpenSfx;
+    [Tooltip("选卡确认音。")]
+    public AudioClip cardSelectSfx;
+    [Tooltip("重抽音。")]
+    public AudioClip cardRerollSfx;
+
     // State
     private CoreChoiceCard[] cards;
     private int selectedIndex = -1;
@@ -79,6 +87,9 @@ public class CoreChoiceUI : MonoBehaviour
         if (_isDrafting) return;   // 会话进行中忽略重复打开
         _isDrafting = true;
 
+        // 选卡弹窗期间静默通用 UI 点击音（由专属卡牌音接管）——AudioManager 不感知具体 UI
+        AudioManager.Instance?.PushUiClickMute();
+
         this.onClosed = onClosed;
         this.doublePick = doublePick;
         this.picksRemaining = doublePick ? 2 : 1;
@@ -119,6 +130,7 @@ public class CoreChoiceUI : MonoBehaviour
         Debug.Log($"[CoreChoiceUI] Show called: doublePick={doublePick}, panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
         if (panelRoot != null) panelRoot.SetActive(true);
         else Debug.LogError("[CoreChoiceUI] panelRoot is NULL — drag the UI Panel into this field!");
+        AudioManager.Instance?.PlayUiSfx(cardOpenSfx);
 
         // continue 按钮在 panelRoot 外，始终显示（供 toggle 显隐选卡界面）
         if (confirmAllButton != null)
@@ -182,6 +194,7 @@ public class CoreChoiceUI : MonoBehaviour
         // 点卡即选即生效（双选中更符合直觉）；解锁该卡
         if (CardManager.Instance != null)
             CardManager.Instance.SelectCard(index);
+        AudioManager.Instance?.PlayUiSfx(cardSelectSfx);
 
         picksRemaining--;
         if (picksRemaining > 0 && doublePick)
@@ -224,6 +237,7 @@ public class CoreChoiceUI : MonoBehaviour
             cards[index].Replace(newCard.cardName, sprite, newCard.description ?? "");
             // currentPicks[index] 已由 DrawOneReroll 内部更新，UI 不再直写
             if (selectedIndex == index) selectedIndex = -1;
+            AudioManager.Instance?.PlayUiSfx(cardRerollSfx);
             Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}");
         }
         else
@@ -249,6 +263,7 @@ public class CoreChoiceUI : MonoBehaviour
     private void Close()
     {
         _isDrafting = false;
+        AudioManager.Instance?.PopUiClickMute(); // 退出静默（与 Show 的 Push 成对）
         if (panelRoot != null) panelRoot.SetActive(false);
         // continue 按钮随弹窗关闭隐藏
         if (confirmAllButton != null) confirmAllButton.gameObject.SetActive(false);

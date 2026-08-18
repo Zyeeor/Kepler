@@ -49,6 +49,13 @@ public class GameManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
 
+            // 全局音频管理器由常驻 GameManager 统一创建（各场景不挂 AudioManager，
+            // 避免场景内实例与常驻单例多实例竞态）。SceneBgm 组件仍留在各场景中，
+            // AudioManager 监听场景加载自动切曲。创建放在 Start：Awake 时场景加载未完成，
+            // DontDestroyOnLoad 可能失效，导致常驻音频管理器随场景卸载被销毁。
+            // 注：若 AudioManager 已被销毁而 Instance 残留（fake null），Unity 的 == 比较
+            // 会返回 null，EnsureInstance 能正确重建新实例（Start 时序下 DDOL 可靠）。
+
             // 正式流程：游戏启动先进主菜单（而非直接进入对局场景）。
             // 注意仅在首次创建时跳转——主菜单点"开始/继续"二次进入对局场景时
             // Instance 已存在（DDOL 保留），不会重新跳转。
@@ -70,18 +77,38 @@ public class GameManager : MonoBehaviour
         // 对局状态归 RunSession 管（新局/继续/重开由会话决定初始值），
         // 本层只负责系统级常驻，不再无条件重置（否则"返回主菜单再进入"会清空进度）。
         Debug.Log($"GameManager: Scene loaded - {scene.name}");
+        // 音频管理器丢失自愈（幂等）：常驻实例正常时无操作；若因极端时序被销毁，
+        // 在场景加载完成后重建（此时 Start 的 DontDestroyOnLoad 可靠）。
+        AudioManager.EnsureInstance();
+        // 每次场景加载收敛 AudioListener（新场景相机可能带启用的监听器，且不止一个时需收敛）
+        EnsureSingleAudioListener();
+    }
+
+    /// <summary>
+    /// 确保仅保留一个启用的 AudioListener（FindObjectsOfType 顺序不稳定，不能按索引"保留第一个"：
+    /// 那可能保留的是本就禁用的，把唯一启用的（如主相机）误禁掉，导致无声）。
+    /// Start 与每次场景加载后调用。
+    /// </summary>
+    void EnsureSingleAudioListener()
+    {
+        var listeners = FindObjectsOfType<AudioListener>();
+        bool kept = false;
+        foreach (var l in listeners)
+        {
+            if (!kept && l.enabled) { kept = true; continue; }
+            l.enabled = false;
+        }
     }
     
     void Start()
     {
+        AudioManager.EnsureInstance();
+        AudioSettingsManager.EnsureInstance();
         soulTime = 15f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;
 
-        // Ensure only one AudioListener exists
-        var listeners = FindObjectsOfType<AudioListener>();
-        for (int i = 1; i < listeners.Length; i++)
-            listeners[i].enabled = false;
+        EnsureSingleAudioListener();
     }
     
     void Update()
