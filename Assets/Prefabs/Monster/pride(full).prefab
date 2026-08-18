@@ -54,6 +54,7 @@ MonoBehaviour:
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0.9, z: 0}
   vfxDelay: 0.2
@@ -61,10 +62,34 @@ MonoBehaviour:
   damage: 10
   drawHitboxes: 0
   cooldown: 0.5
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
@@ -77,6 +102,7 @@ MonoBehaviour:
     m_Bits: 512
   animTrigger: SwordQi
   aimTurnSpeed: 720
+  activationDisplay: {fileID: 0}
   projectileVfxPrefab: {fileID: 6111486948785554852, guid: f7967f33aeac15f48a3732e3fd3ac36c,
     type: 3}
   projectileVfxScale: 0.5
@@ -89,8 +115,9 @@ MonoBehaviour:
   explosionVfxRotationOffset: {x: 0, y: 0, z: 0}
   pride01MaxRange: 20
   pride02SpreadAngle: 20
-  pierceXAngle: 45
-  pierceXRange: 4
+  pierceVfxPrefab: {fileID: 0}
+  pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
+  pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
   pierceDamageMultiplier: 2
 --- !u!1 &199426485261981135
 GameObject:
@@ -219,6 +246,7 @@ MonoBehaviour:
   vfxPrefab: {fileID: 5761796857240755751, guid: 731c61ddc266e1647ae532c05e40e3bb,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 1, z: 1}
   vfxDelay: 0.3
@@ -226,10 +254,34 @@ MonoBehaviour:
   damage: 20
   drawHitboxes: 0
   cooldown: 1
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   dashDistance: 3
   dashDuration: 0.15
   slashWidth: 2
@@ -299,6 +351,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -306,10 +359,34 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0
@@ -490,6 +567,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4202068629033295698}
+  - component: {fileID: 1715048883049032441}
   m_Layer: 0
   m_Name: pride(full)
   m_TagString: Enemy
@@ -513,6 +591,25 @@ Transform:
   - {fileID: 5417715533104391790}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1715048883049032441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3744361111654940414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &3977957720664182867
 GameObject:
   m_ObjectHideFlags: 0
@@ -1580,6 +1677,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2243265119229648551}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1594722330573782906}
   m_SourcePrefab: {fileID: 100100000, guid: 7280f001c5bd96f49b2f9cb7d2ef841c, type: 3}
 --- !u!4 &540367488077252346 stripped
 Transform:
@@ -1641,11 +1742,28 @@ MonoBehaviour:
   maxHealth: 50
   currentHealth: 20
   displayName: Pride
+  enemyStats:
+    maxHealth: 50
+    moveSpeed: 8
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 0
+    attackSpeed: 1
+  possessedStats:
+    maxHealth: 50
+    moveSpeed: 8
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 0
+    attackSpeed: 1
   maxTenacity: 150
   collisionDamage: 0
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Pride
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -1661,6 +1779,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -1683,6 +1802,7 @@ MonoBehaviour:
   weaponDescription: "\u6FC0\u5149\u592A\u5200"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 0}
 --- !u!136 &2243265119229648551
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1706,6 +1826,25 @@ CapsuleCollider:
   m_Height: 0.2
   m_Direction: 1
   m_Center: {x: 0, y: 0.25, z: 0}
+--- !u!114 &1594722330573782906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4639911848492006612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!4 &5417715533104391790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,

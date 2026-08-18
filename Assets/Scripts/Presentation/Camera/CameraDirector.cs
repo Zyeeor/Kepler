@@ -79,6 +79,7 @@ public class CameraDirector : MonoBehaviour
         Instance = this;
         EnsureRig();
         EnsureCombatEffectManager();
+        EnsureCombatAudioManager();
     }
 
     private static void EnsureCombatEffectManager()
@@ -92,6 +93,18 @@ public class CameraDirector : MonoBehaviour
         CameraDirector director = Instance;
         if (director != null)
             director.gameObject.AddComponent<CombatEffectManager>();
+    }
+
+    private static void EnsureCombatAudioManager()
+    {
+        if (CombatAudioManager.Instance != null)
+            return;
+        if (FindFirstObjectByType<CombatAudioManager>() != null)
+            return;
+
+        CameraDirector director = Instance;
+        if (director != null)
+            director.gameObject.AddComponent<CombatAudioManager>();
     }
 
     void Start()

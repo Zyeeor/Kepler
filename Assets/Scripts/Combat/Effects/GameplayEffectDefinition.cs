@@ -48,6 +48,12 @@ public class GameplayEffectDefinition : ScriptableObject
     [Header("Optional Periodic Trigger")]
     [Tooltip("Seconds between periodic callbacks. Values <= 0 disable periodic behavior.")]
     public float periodicInterval;
+    [Tooltip("Damage dealt on each periodic tick, multiplied by current stacks. 0 = no auto damage.")]
+    public float damagePerStack;
+
+    [Header("Optional Stat Modifiers")]
+    [Tooltip("Multiplies move speed while this effect is active. 1 = unchanged. Stacks multiply together across effects.")]
+    public float moveSpeedMultiplier = 1f;
 
     [Header("Target VFX")]
     [Tooltip("Spawned on the target while this effect is active. Used for persistent visuals such as afterimage.")]

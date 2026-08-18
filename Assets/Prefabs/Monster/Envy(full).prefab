@@ -358,6 +358,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8718562640809038739}
+  - component: {fileID: 2397140202046836832}
   m_Layer: 0
   m_Name: Envy(full)
   m_TagString: Enemy
@@ -381,6 +382,25 @@ Transform:
   - {fileID: 3799322721487255056}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2397140202046836832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1418491709266848708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &1443340470193122480
 GameObject:
   m_ObjectHideFlags: 0
@@ -506,6 +526,7 @@ MonoBehaviour:
   vfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -513,10 +534,34 @@ MonoBehaviour:
   damage: 10
   drawHitboxes: 0
   cooldown: 2
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   chainCount: 3
   chainRange: 10
   chainDamage: 15
@@ -736,6 +781,7 @@ MonoBehaviour:
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 1568167200115282398}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -743,10 +789,34 @@ MonoBehaviour:
   damage: 0.5
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   maxRange: 7
   damagePerTick: 0.5
   tickInterval: 0.05
@@ -1285,6 +1355,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -1292,10 +1363,34 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 0
   burnBonusPercent: 1
@@ -1686,6 +1781,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 291080705173219686}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 077dd4c98a4745a4eafd7dde682d6dc8,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3871586672033797269}
   m_SourcePrefab: {fileID: 100100000, guid: 077dd4c98a4745a4eafd7dde682d6dc8, type: 3}
 --- !u!4 &1397446445020503279 stripped
 Transform:
@@ -1759,11 +1858,28 @@ MonoBehaviour:
   maxHealth: 50
   currentHealth: 20
   displayName: Envy
+  enemyStats:
+    maxHealth: 50
+    moveSpeed: 6
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 0
+    attackSpeed: 0.25
+  possessedStats:
+    maxHealth: 50
+    moveSpeed: 6
+    acceleration: 0
+    deceleration: 0
+    maxTenacity: 150
+    collisionDamage: 0
+    attackSpeed: 0.25
   maxTenacity: 150
   collisionDamage: 0
   attackSpeed: 0.25
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
   aiConfigId: Envy
+  forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
@@ -1779,6 +1895,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  aiActiveOverride: 1
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -1801,6 +1918,7 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  soulAnchorPoint: {fileID: 0}
 --- !u!136 &291080705173219686
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1824,6 +1942,25 @@ CapsuleCollider:
   m_Height: 0.40000004
   m_Direction: 1
   m_Center: {x: 0, y: 0.20000002, z: 0}
+--- !u!114 &3871586672033797269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4607806177636592810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!4 &6583672633381112487 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -1698215504171738276, guid: 077dd4c98a4745a4eafd7dde682d6dc8,

@@ -9,6 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9169231563391740419}
+  - component: {fileID: 4505456661464304921}
+  - component: {fileID: 7441827422419002616}
+  - component: {fileID: 3693191418997399283}
+  - component: {fileID: 6298332961789993458}
   m_Layer: 0
   m_Name: SpikeTrap
   m_TagString: Untagged
@@ -32,6 +36,97 @@ Transform:
   - {fileID: 7792225967499428920}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
+--- !u!114 &4505456661464304921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 666978414410227392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4789a9c5769e849a0ae0d1f23c993a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrainKind: 1
+  isWalkable: 1
+  markerType: 0
+  displayName: 
+--- !u!114 &7441827422419002616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 666978414410227392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b79dbbb676cc46c4973a0312e174cb49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  kind: 2
+  effect: {fileID: 0}
+  detectionCenter: {x: 0, y: 1, z: 0}
+  detectionSize: {x: 1.25, y: 2.5, z: 1.25}
+  detectionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  overlapBufferSize: 32
+  moveSpeedMultiplier: 1
+  spikeDamage: 25
+  lavaBaseDamagePerStack: 5
+  lavaStackInterval: 0.5
+  lavaMaxStacks: 5
+  lavaEffectDuration: 3
+  lavaFireVfxPrefab: {fileID: 0}
+--- !u!65 &3693191418997399283
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 666978414410227392}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.25, y: 2.5, z: 1.25}
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!54 &6298332961789993458
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 666978414410227392}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 126
+  m_CollisionDetection: 0
 --- !u!1001 &7757790412128756691
 PrefabInstance:
   m_ObjectHideFlags: 0

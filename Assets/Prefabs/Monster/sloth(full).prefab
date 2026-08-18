@@ -136,6 +136,7 @@ MonoBehaviour:
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -143,10 +144,34 @@ MonoBehaviour:
   damage: 2
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   projectilePrefab: {fileID: 1455237202425575238, guid: f521ce0cedbf59d4db85b8a31772ea43,
     type: 3}
   projectileWidth: 1.5
@@ -319,6 +344,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -326,10 +352,34 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 2
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   minePrefab: {fileID: 1455237202425575238, guid: 2de265022472a3e4b96294cae884560c,
     type: 3}
   mineDuration: 10
@@ -618,6 +668,7 @@ MonoBehaviour:
   upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
@@ -625,10 +676,34 @@ MonoBehaviour:
   damage: 0
   drawHitboxes: 0
   cooldown: 0
+  debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
   moveSpeedBonusPercent: 0
   lifestealBonusPercent: 0
   burnBonusPercent: 0
@@ -644,6 +719,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4086736707067642174}
+  - component: {fileID: 9102176970787092767}
   m_Layer: 0
   m_Name: sloth(full)
   m_TagString: Enemy
@@ -667,6 +743,25 @@ Transform:
   - {fileID: 1389111029511016729}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9102176970787092767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6572464085868828155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &7085506166273155390
 GameObject:
   m_ObjectHideFlags: 0
@@ -999,7 +1094,11 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 479370070110791032}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3923155230589149752, guid: 4244737609abee747a04c20a81d8cb57,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7645580453152102707}
   m_SourcePrefab: {fileID: 100100000, guid: 4244737609abee747a04c20a81d8cb57, type: 3}
 --- !u!4 &1389111029511016729 stripped
 Transform:
@@ -1007,6 +1106,31 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 3349857161187420571}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1732986127480294307 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3923155230589149752, guid: 4244737609abee747a04c20a81d8cb57,
+    type: 3}
+  m_PrefabInstance: {fileID: 3349857161187420571}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7645580453152102707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732986127480294307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!4 &6131404802346507369 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8892979205271401970, guid: 4244737609abee747a04c20a81d8cb57,

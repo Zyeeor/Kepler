@@ -68,6 +68,8 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
   hitFeedback:
     postProcessOnHit: 1
     postProcessEffectName: BlackFlash
@@ -434,6 +436,8 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
   hitFeedback:
     postProcessOnHit: 0
     postProcessEffectName: 
@@ -779,6 +783,7 @@ GameObject:
   - component: {fileID: 508043233229563332}
   - component: {fileID: 6338237778914058849}
   - component: {fileID: 5961538212497846973}
+  - component: {fileID: 1364621643160175845}
   m_Layer: 0
   m_Name: gluttony_new
   m_TagString: Untagged
@@ -825,6 +830,22 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   displayName: "\u66B4\u98DF-\u9B54\u732B"
+  enemyStats:
+    maxHealth: 100
+    moveSpeed: 4
+    acceleration: 60
+    deceleration: 80
+    maxTenacity: 200
+    collisionDamage: 30
+    attackSpeed: 1
+  possessedStats:
+    maxHealth: 100
+    moveSpeed: 4
+    acceleration: 60
+    deceleration: 80
+    maxTenacity: 200
+    collisionDamage: 30
+    attackSpeed: 1
   maxTenacity: 200
   collisionDamage: 30
   attackSpeed: 1
@@ -969,6 +990,25 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1364621643160175845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4750602423163319368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimIntensity: 2.4
+  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
+  hitFlashDuration: 0.12
+  hitFlashPeak: 0.85
+  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  convertMaterialsToFxShader: 1
 --- !u!1 &5807367358007265780
 GameObject:
   m_ObjectHideFlags: 0
@@ -1041,6 +1081,8 @@ MonoBehaviour:
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
   hitFeedback:
     postProcessOnHit: 0
     postProcessEffectName: 

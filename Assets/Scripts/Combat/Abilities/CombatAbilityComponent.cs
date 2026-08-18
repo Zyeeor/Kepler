@@ -42,6 +42,13 @@ public class CombatAbilityComponent : MonoBehaviour
     private readonly GameplayTagContainer tags = new GameplayTagContainer();
     private readonly List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
     private readonly List<ActiveEffect> activeEffects = new List<ActiveEffect>();
+    private readonly List<SpeedMultiplier> externalSpeedMultipliers = new List<SpeedMultiplier>();
+
+    private struct SpeedMultiplier
+    {
+        public object source;
+        public float multiplier;
+    }
 
     public GameplayTagContainer Tags
     {
@@ -68,6 +75,9 @@ public class CombatAbilityComponent : MonoBehaviour
         public float nextPeriodicAt;
         public GameObject vfxInstance;
         public List<GameObject> attachedVfx = new List<GameObject>();
+        public float damagePerStackOverride = -1f;
+        public float periodicIntervalOverride = -1f;
+        public GameplayEffectStackPolicy? stackPolicyOverride;
     }
 
     public void AddLooseTags(object source, IEnumerable<string> grantedTags)
@@ -158,30 +168,68 @@ public class CombatAbilityComponent : MonoBehaviour
 
     public bool ApplyEffect(GameplayEffectDefinition definition, CombatAbilityComponent source, IEnumerable<string> sourceTags, out string reason)
     {
+        return ApplyEffect(definition, source, sourceTags, out reason, -1f, -1);
+    }
+
+    /// <param name="durationOverride">Seconds; &lt;= 0 keeps definition.duration.</param>
+    /// <param name="maxStacksOverride">When &gt; 0, clamps stacks using this instead of definition.maxStacks.</param>
+    public bool ApplyEffect(
+        GameplayEffectDefinition definition,
+        CombatAbilityComponent source,
+        IEnumerable<string> sourceTags,
+        out string reason,
+        float durationOverride,
+        int maxStacksOverride)
+    {
+        return ApplyEffect(definition, source, sourceTags, out reason, durationOverride, maxStacksOverride, -1f, -1f, null);
+    }
+
+    public bool ApplyEffect(
+        GameplayEffectDefinition definition,
+        CombatAbilityComponent source,
+        IEnumerable<string> sourceTags,
+        out string reason,
+        float durationOverride,
+        int maxStacksOverride,
+        float damagePerStackOverride,
+        float periodicIntervalOverride,
+        GameplayEffectStackPolicy? stackPolicyOverride)
+    {
         if (!CanApplyEffect(definition, out reason))
         {
             if (definition != null) OnEffectRejected?.Invoke(definition, reason);
             return false;
         }
 
+        int stackCap = maxStacksOverride > 0 ? maxStacksOverride : Mathf.Max(1, definition.maxStacks);
+        GameplayEffectStackPolicy policy = stackPolicyOverride ?? definition.stackPolicy;
         ActiveEffect active = FindActiveEffect(definition);
         if (active == null)
         {
-            active = CreateEffectInstance(definition, null);
+            active = CreateEffectInstance(definition, null, durationOverride, periodicIntervalOverride);
+            active.damagePerStackOverride = damagePerStackOverride;
+            active.periodicIntervalOverride = periodicIntervalOverride;
+            active.stackPolicyOverride = stackPolicyOverride;
         }
         else
         {
-            if (definition.stackPolicy == GameplayEffectStackPolicy.Replace)
+            if (policy == GameplayEffectStackPolicy.Replace)
             {
                 RemoveEffectInstance(active);
-                active = CreateEffectInstance(definition, null);
+                active = CreateEffectInstance(definition, null, durationOverride, periodicIntervalOverride);
+                active.damagePerStackOverride = damagePerStackOverride;
+                active.periodicIntervalOverride = periodicIntervalOverride;
+                active.stackPolicyOverride = stackPolicyOverride;
             }
             else
             {
-                if (definition.stackPolicy == GameplayEffectStackPolicy.AddStack)
-                    active.stacks = Mathf.Min(active.stacks + 1, Mathf.Max(1, definition.maxStacks));
+                if (policy == GameplayEffectStackPolicy.AddStack)
+                    active.stacks = Mathf.Min(active.stacks + 1, stackCap);
 
-                active.expiresAt = GetExpiry(definition);
+                active.expiresAt = GetExpiry(definition, durationOverride);
+                if (damagePerStackOverride > 0f) active.damagePerStackOverride = damagePerStackOverride;
+                if (periodicIntervalOverride > 0f) active.periodicIntervalOverride = periodicIntervalOverride;
+                if (stackPolicyOverride.HasValue) active.stackPolicyOverride = stackPolicyOverride;
             }
         }
 
@@ -216,15 +264,79 @@ public class CombatAbilityComponent : MonoBehaviour
         RemoveEffectInstance(active);
     }
 
+    /// <summary>Remove all active effects whose identity tag matches (case-insensitive).</summary>
+    public void RemoveEffectsWithTag(string effectTag)
+    {
+        string normalized = GameplayTagUtility.Normalize(effectTag);
+        if (string.IsNullOrEmpty(normalized)) return;
+
+        for (int i = activeEffects.Count - 1; i >= 0; i--)
+        {
+            ActiveEffect effect = activeEffects[i];
+            if (effect == null || effect.definition == null) continue;
+            if (!string.Equals(effect.definition.effectTag, normalized, System.StringComparison.OrdinalIgnoreCase))
+                continue;
+            RemoveEffectInstance(effect);
+        }
+    }
+
+    public bool TryGetEffectStacks(GameplayEffectDefinition definition, out int stacks)
+    {
+        ActiveEffect active = FindActiveEffect(definition);
+        if (active == null)
+        {
+            stacks = 0;
+            return false;
+        }
+        stacks = active.stacks;
+        return true;
+    }
+
     public void RegisterEffectVfx(GameplayEffectDefinition definition, GameObject instance)
     {
         ActiveEffect effect = FindActiveEffect(definition);
         if (effect != null && instance != null) effect.attachedVfx.Add(instance);
     }
 
+    public void AddMoveSpeedMultiplier(object source, float multiplier)
+    {
+        if (source == null) return;
+        for (int i = 0; i < externalSpeedMultipliers.Count; i++)
+        {
+            if (ReferenceEquals(externalSpeedMultipliers[i].source, source))
+            {
+                var entry = externalSpeedMultipliers[i];
+                entry.multiplier = multiplier;
+                externalSpeedMultipliers[i] = entry;
+                return;
+            }
+        }
+        externalSpeedMultipliers.Add(new SpeedMultiplier { source = source, multiplier = multiplier });
+    }
+
+    public void RemoveMoveSpeedMultiplier(object source)
+    {
+        if (source == null) return;
+        for (int i = externalSpeedMultipliers.Count - 1; i >= 0; i--)
+        {
+            if (ReferenceEquals(externalSpeedMultipliers[i].source, source))
+                externalSpeedMultipliers.RemoveAt(i);
+        }
+    }
+
     public float ModifyMoveSpeed(float value)
     {
-        return value;
+        float multiplier = 1f;
+        for (int i = 0; i < activeEffects.Count; i++)
+        {
+            GameplayEffectDefinition def = activeEffects[i].definition;
+            if (def == null || Mathf.Approximately(def.moveSpeedMultiplier, 1f) || def.moveSpeedMultiplier <= 0f)
+                continue;
+            multiplier *= def.moveSpeedMultiplier;
+        }
+        for (int i = 0; i < externalSpeedMultipliers.Count; i++)
+            multiplier *= externalSpeedMultipliers[i].multiplier;
+        return value * multiplier;
     }
 
     public float ModifyOutgoingDamage(float value)
@@ -250,21 +362,49 @@ public class CombatAbilityComponent : MonoBehaviour
         for (int i = 0; i < activeEffects.Count; i++)
         {
             ActiveEffect effect = activeEffects[i];
-            if (effect.definition == null || effect.definition.periodicInterval <= 0f || Time.time < effect.nextPeriodicAt) continue;
-            effect.nextPeriodicAt = Time.time + effect.definition.periodicInterval;
+            float interval = effect.periodicIntervalOverride > 0f
+                ? effect.periodicIntervalOverride
+                : (effect.definition != null ? effect.definition.periodicInterval : 0f);
+            if (effect.definition == null || interval <= 0f || Time.time < effect.nextPeriodicAt) continue;
+            effect.nextPeriodicAt = Time.time + interval;
             OnEffectPeriodic?.Invoke(effect.definition, effect.stacks);
+            ApplyPeriodicDamage(effect);
         }
     }
 
-    private ActiveEffect CreateEffectInstance(GameplayEffectDefinition definition, Component ownerAbility)
+    private void ApplyPeriodicDamage(ActiveEffect effect)
     {
+        if (effect == null || effect.definition == null)
+            return;
+        float perStack = effect.damagePerStackOverride > 0f ? effect.damagePerStackOverride : effect.definition.damagePerStack;
+        if (perStack <= 0f)
+            return;
+        float amount = perStack * Mathf.Max(1, effect.stacks);
+        MonsterActor monster = GetComponent<MonsterActor>();
+        if (monster != null)
+        {
+            monster.TakeEnvironmentalDamage(amount);
+            return;
+        }
+        PlayerHealth soul = GetComponent<PlayerHealth>();
+        if (soul != null)
+            soul.TakeDamage(amount);
+    }
+
+    private ActiveEffect CreateEffectInstance(GameplayEffectDefinition definition, Component ownerAbility, float durationOverride = -1f, float periodicIntervalOverride = -1f)
+    {
+        float interval = periodicIntervalOverride > 0f ? periodicIntervalOverride : definition.periodicInterval;
+        // Terrain/hazard overrides request an immediate first tick; normal effects wait one interval.
+        float firstPeriodicAt = -1f;
+        if (interval > 0f)
+            firstPeriodicAt = periodicIntervalOverride > 0f ? Time.time : Time.time + interval;
         var effect = new ActiveEffect
         {
             definition = definition,
             ownerAbility = ownerAbility,
             stacks = 1,
-            expiresAt = GetExpiry(definition),
-            nextPeriodicAt = definition.periodicInterval > 0f ? Time.time + definition.periodicInterval : -1f,
+            expiresAt = GetExpiry(definition, durationOverride),
+            nextPeriodicAt = firstPeriodicAt,
             vfxInstance = SpawnEffectVfx(definition)
         };
         activeEffects.Add(effect);
@@ -331,8 +471,9 @@ public class CombatAbilityComponent : MonoBehaviour
         return null;
     }
 
-    private float GetExpiry(GameplayEffectDefinition definition)
+    private float GetExpiry(GameplayEffectDefinition definition, float durationOverride = -1f)
     {
-        return definition.duration > 0f ? Time.time + definition.duration : -1f;
+        float duration = durationOverride > 0f ? durationOverride : definition.duration;
+        return duration > 0f ? Time.time + duration : -1f;
     }
 }
