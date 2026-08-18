@@ -18,8 +18,8 @@ public class CardManager : MonoBehaviour
     public GameplayTagCatalog gameplayTagCatalog;
 
     [Header("Reroll Limit")]
-    [Tooltip("Maximum total rerolls allowed across all cards per CoreChoiceUI session.")]
-    public int maxRerolls = 3;
+    [Tooltip("每张卡最多刷新 1 次（按槽位记：刷新过的卡禁再刷，其他卡不受影响）。")]
+    public bool maxRerollsPerCard = true;
 
     [Header("Select Limit")]
     [Tooltip("Maximum cards that can be selected (confirmed) per CoreChoiceUI session.")]
@@ -33,8 +33,26 @@ public class CardManager : MonoBehaviour
     // Session exclusion: every card shown during the current popup session
     // (including ones rerolled away) never reappears until the next DrawCards.
     private readonly HashSet<string> shownThisSession = new HashSet<string>();
-    private int rerollsUsed;
+    private readonly HashSet<int> rerolledSlots = new HashSet<int>(); // 已刷新过的槽位（每卡最多 1 次）
     private int selectsUsed;
+
+    // ── 卡牌随机流（种子确定性，经 SeedSystem 统一派生）──
+    // 本局卡牌（初始三张 + 每次刷新/重抽）由会话种子派生，与全局 UnityEngine.Random 隔离：
+    // 同一种子下（读档恢复同 worldSeed），整局卡牌序列完全可复现。
+    // 每波用独立子种子：SeedSystem.CreateFlow(DomainCard, waveIndex)。
+    private int currentWaveCardSeed = -1;
+
+    /// <summary>局部随机流：每波独立子种子（SeedSystem 统一入口，质数混合防跨域/跨波关联）。</summary>
+    System.Random CardRandom()
+    {
+        return SeedSystem.CreateFlow(SeedSystem.DomainCard, currentWaveCardSeed);
+    }
+
+    /// <summary>新一波选卡会话开始时固定子种子（由 CardManager 外部在弹卡前调用）。</summary>
+    public void PrepareCardSession(int waveIndex)
+    {
+        currentWaveCardSeed = waveIndex;
+    }
 
     /// <summary>本局已解锁效果（存档采集用，只读）。</summary>
     public IReadOnlyCollection<string> UnlockedEffects => unlockedEffects;
@@ -105,7 +123,7 @@ public class CardManager : MonoBehaviour
     /// <param name="keepSession">true=保留本次弹窗会话已出现记录（双选第二轮用，避免重现第一轮候选）；false=新会话清空。</param>
     public void DrawCards(int count = 3, bool keepSession = false)
     {
-        rerollsUsed = 0;
+        rerolledSlots.Clear();                               // 新会话每张卡重置为可刷新 1 次
         selectsUsed = 0;
         if (!keepSession) shownThisSession.Clear();          // 新会话才清空；双选第二轮保留
 
@@ -117,6 +135,21 @@ public class CardManager : MonoBehaviour
             currentPicks[i] = i < available.Count ? available[i] : null;
             if (currentPicks[i] != null) shownThisSession.Add(currentPicks[i].effectId);
         }
+        SyncChoicePicksToSession(); // 候选变化即同步会话（选卡界面任意时刻退出，补弹候选都一致）
+    }
+
+    /// <summary>
+    /// 候选卡同步到对局会话（RunSession.ChoicePicks）：
+    /// 每次抽卡/重抽/恢复后调用，保证"选卡界面退出 → 继续"补弹的候选与退出时一致。
+    /// 存档（SaveProgress）读取的是会话快照，而非采样瞬间的 currentPicks。
+    /// </summary>
+    void SyncChoicePicksToSession()
+    {
+        if (RunSession.Instance == null) return;
+        RunSession.Instance.ChoicePicks.Clear();
+        if (currentPicks == null) return;
+        foreach (var c in currentPicks)
+            if (c != null && !string.IsNullOrEmpty(c.effectId)) RunSession.Instance.ChoicePicks.Add(c.effectId);
     }
 
     /// <summary>
@@ -126,7 +159,7 @@ public class CardManager : MonoBehaviour
     public void RestoreChoicePicks(List<string> effectIds)
     {
         if (effectIds == null || effectIds.Count == 0) return;
-        rerollsUsed = 0;
+        rerolledSlots.Clear();                               // 读档补弹：每张卡重置为可刷新 1 次
         selectsUsed = 0;
         shownThisSession.Clear();
         var pool = new List<CardData>();
@@ -141,6 +174,7 @@ public class CardManager : MonoBehaviour
             currentPicks[i] = found;
             if (found != null) shownThisSession.Add(found.effectId);
         }
+        SyncChoicePicksToSession();
         Debug.Log($"[CardManager] 恢复选卡候选 {effectIds.Count} 张（与退出时一致）。");
     }
 
@@ -157,10 +191,10 @@ public class CardManager : MonoBehaviour
         return available;
     }
 
-    /// <summary>是否还有可刷新的候选卡（不扣次数、不改状态；供 UI 刷新前检查）。</summary>
-    public bool HasRerollCandidates()
+    /// <summary>该槽位是否还可刷新（每卡最多 1 次：未刷过且有候选）。</summary>
+    public bool HasRerollCandidates(int slotIndex = -1)
     {
-        if (rerollsUsed >= maxRerolls) return false;
+        if (maxRerollsPerCard && slotIndex >= 0 && rerolledSlots.Contains(slotIndex)) return false;
         return GetRerollCandidates().Count > 0;
     }
 
@@ -169,22 +203,22 @@ public class CardManager : MonoBehaviour
     /// </summary>
     public CardData DrawOneReroll(int slotIndex)
     {
-        if (rerollsUsed >= maxRerolls) return null;
+        // 每卡最多 1 次：该槽位已刷新过则拒绝
+        if (maxRerollsPerCard && slotIndex >= 0 && rerolledSlots.Contains(slotIndex)) return null;
 
         var available = GetRerollCandidates();
         if (available.Count == 0) return null;               // 无候选不扣次数
 
-        rerollsUsed++;
+        if (slotIndex >= 0) rerolledSlots.Add(slotIndex);
 
-        var picked = available[UnityEngine.Random.Range(0, available.Count)];
+        var picked = available[CardRandom().Next(0, available.Count)];
         shownThisSession.Add(picked.effectId);
         if (currentPicks != null && slotIndex >= 0 && slotIndex < currentPicks.Length)
             currentPicks[slotIndex] = picked;
+        SyncChoicePicksToSession(); // 重抽后同步（退出时补弹候选含重抽结果）
         return picked;
     }
 
-    /// <summary>How many rerolls remain this session.</summary>
-    public int RerollsRemaining => Mathf.Max(0, maxRerolls - rerollsUsed);
     /// <summary>How many selects remain this session.</summary>
     public int SelectsRemaining => Mathf.Max(0, maxSelects - selectsUsed);
 
@@ -349,9 +383,11 @@ public class CardManager : MonoBehaviour
 
     void Shuffle<T>(List<T> list)
     {
+        // 用卡牌局部随机流（种子确定），不用全局 UnityEngine.Random——保证同种子下整局可复现
+        var rng = CardRandom();
         for (int i = list.Count - 1; i > 0; i--)
         {
-            int j = UnityEngine.Random.Range(0, i + 1);
+            int j = rng.Next(0, i + 1);
             var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
         }
     }

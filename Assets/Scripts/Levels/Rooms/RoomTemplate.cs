@@ -8,7 +8,6 @@ using System.Collections.Generic;
 
 public enum RoomType { Combat, Boss, Reward, Start }
 public enum RoomState { Loading, Ready, Combat, Cleared, ExitPhase, Completed }
-public enum WaveType { Normal, Elite, Boss }
 
 /// <summary>
 /// 波次模式：
@@ -17,36 +16,32 @@ public enum WaveType { Normal, Elite, Boss }
 /// </summary>
 public enum WaveMode { CountKill, Timed }
 
+/// <summary>
+/// 波内编队条目：引用一个 MonsterWaveDef（刷哪些怪）+ 本波内的抽取权重（占比）。
+/// 权重放在条目上而非 def 资产内——同一 def 可被多波引用，各自独立调占比。
+/// </summary>
 [Serializable]
-public class EnemySpawnEntry
+public class WaveDefEntry
 {
-    [Tooltip("Enemy prefab to spawn.")]
-    public GameObject enemyPrefab;
-    [Tooltip("How many of this enemy in this wave.")]
-    public int count;
-    [Tooltip("Spawn delay from wave start.")]
-    public float delay;
+    [Tooltip("怪物编队（MonsterWaveDef 资产：本组刷哪些怪、组内数量）。")]
+    public MonsterWaveDef def;
+    [Tooltip("本波内该编队的抽取权重（占比）：值越大越常出。仅本波生效，不影响其他波引用同一编队。")]
+    [Min(0f)] public float weight = 1f;
 }
 
 [Serializable]
 public class WaveConfig
 {
-    public WaveType waveType = WaveType.Normal;
-    [Tooltip("波次模式：CountKill=数量波（刷满 totalCount 清完过波）；Timed=时间波（撑满 duration 过波）。")]
-    public WaveMode mode = WaveMode.CountKill;
-    [Tooltip("怪物权重表：本波按 spawnWeight 抽取刷怪（与地图刷怪同款 MonsterWaveDef）。每波可配置不同组成。")]
-    public List<MonsterWaveDef> weightedTable = new List<MonsterWaveDef>();
-    [Tooltip("数量波：本波刷怪总数，刷满后不再补充；玩家清完场上本波怪触发选卡。")]
+    [Tooltip("怪物编队表：本波按条目 weight 抽取刷怪（每波独立占比，同一编队可被多波引用）。")]
+    public List<WaveDefEntry> weightedTable = new List<WaveDefEntry>();
+    [Tooltip("数量波：本波刷怪总数，刷满后不再补充；玩家清完场上本波怪触发选卡。仅 CountKill 模式生效。")]
     [Min(1)] public int totalCount = 20;
-    [Tooltip("时间波：本波时长（秒）。时间到即结算（触发选卡），剩余在场怪按回收策略处理。")]
+    [Tooltip("时间波：本波时长（秒）。时间到即结算（触发选卡），剩余在场怪按回收策略处理。仅 Timed 模式生效。")]
     [Min(1f)] public float duration = 60f;
-    [Tooltip("Seconds before this wave starts (relative to room start).")]
-    public float startTime;
-    // 旧字段保留（兼容既有序列化数据）；新波次逻辑改用 weightedTable，以下不再使用。
-    [Tooltip("[已废弃] 旧房间直刷敌人列表，新波次逻辑不再使用。")]
-    public List<EnemySpawnEntry> enemies = new List<EnemySpawnEntry>();
-    [Tooltip("[已废弃] 旧房间刷怪点组，新波次逻辑不再使用。")]
-    public string spawnPointGroup;
+    [Tooltip("时间波：本波累计刷怪总数上限（含被击杀/回收）。0 = 不限制（仅受 MonsterSpawner 全场配额 maxCombatMonsters 约束）。仅 Timed 模式生效。")]
+    [Min(0)] public int maxSpawnCount = 0;
+    [Tooltip("本波清场后选卡：true=双选（连续选 2 张），false=单选。")]
+    public bool doublePick = false;
 }
 
 [Serializable]
@@ -120,6 +115,8 @@ public class RoomTemplate : MonoBehaviour
     public float spawnClearRadius = 2.5f;
 
     [Header("Waves")]
+    [Tooltip("波次模式（整体）：CountKill=全部波为数量波（刷满 totalCount 清完过波）；Timed=全部波为时间波（撑满 duration 过波）。")]
+    public WaveMode waveMode = WaveMode.CountKill;
     public List<WaveConfig> waves = new List<WaveConfig>();
     [Tooltip("第一波开始前的等待时间（秒）。")]
     public float gracePeriod = 2f;

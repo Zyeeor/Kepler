@@ -10,7 +10,7 @@ public class RoomInstance : MonoBehaviour
     [Header("Spawn Points")]
     [Tooltip("Player spawn point.")]
     public Transform playerSpawnPoint;
-    [Tooltip("Named spawn point groups (used by WaveConfig.spawnPointGroup).")]
+    [Tooltip("命名刷怪点组（供刷怪逻辑按名取点）。")]
     public List<SpawnPointGroup> spawnPointGroups = new List<SpawnPointGroup>();
 
     [Header("Exits")]

@@ -56,7 +56,5 @@ MonoBehaviour:
   roadChance: 0.5
   plazaCount: 1
   groundSpreadChance: 0.793
-  waveTable:
-  - {fileID: 11400000, guid: 23535f3072c15f641b1d16d5b38b42b0, type: 2}
   preferredNeighbors: []
   isSafeFallback: 0

@@ -3,15 +3,33 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
+/// Run 级流程阶段（整局状态链）：与战斗级状态（GameManager.GameState）分离。
+/// Opening/Tutorial/Final 当前为结构占位（默认直通下一阶段，内容后续填充）。
+/// </summary>
+public enum RunPhase
+{
+    Opening,   // 开场（占位：默认直通）
+    Tutorial,  // 教学（占位：默认直通）
+    Waves,     // 波次（WaveManager 驱动）
+    Choice,    // 选卡（与存档点绑定）
+    Final,     // 最终阶段（占位：默认直通）
+    Result,    // 结算（终态，胜利 VICTORY）
+    Failed,    // 失败打断（终态，GAME OVER）
+}
+
+/// <summary>
 /// 对局会话（Run）：一局完整对局的生命周期状态，常驻（DontDestroyOnLoad）。
 ///
 /// 三层架构的"会话级"：跨场景持有对局进度（地图种子/已选卡/波次/灵魂状态），
 /// 场景对象（MapStreamingSystem/WaveManager/CardManager）Awake 时向本会话查询并重建，
 /// 不直接持有跨场景状态；持久化统一经 SaveCoordinator（纯 IO 层）。
 ///
+/// 同时承担 Run 级流程总控（RunFlow）：整局由 RunPhase 状态链管理，
+/// 阶段切换经 TransitionTo 集中校验并广播 OnPhaseChanged（UI/子系统订阅，事件驱动）。
+///
 /// 流转：
-///   - 主菜单[新游戏] → BeginNewRun：随机种子 + 清状态 + 清旧存档
-///   - 主菜单[继续]   → LoadFromSave：读档填充内存态（随后场景对象据此重建）
+///   - 主菜单[新游戏] → BeginNewRun：随机种子 + 清状态 + 清旧存档（阶段=Opening）
+///   - 主菜单[继续]   → LoadFromSave：读档填充内存态（阶段=Waves 或 Choice，跳过开场/教学）
 ///   - 对局中波间存档  → SaveProgress：更新内存态 + 落盘
 ///   - 返回主菜单     → 会话保留（内存态=最近波间，再进入零读盘恢复）
 ///   - 重开/胜利/失败 → EndRun：清内存态 + 清存档
@@ -22,6 +40,52 @@ public class RunSession : MonoBehaviour
 
     /// <summary>是否有进行中的对局（BeginNewRun/LoadFromSave 后 true，EndRun 后 false）。</summary>
     public bool HasActiveRun { get; private set; }
+
+    /// <summary>当前 Run 级流程阶段（整局状态链，总控）。</summary>
+    public RunPhase CurrentPhase { get; private set; }
+
+    /// <summary>阶段切换事件（UI/子系统订阅，事件驱动——不直接跨系统调用）。</summary>
+    public event Action<RunPhase> OnPhaseChanged;
+
+    /// <summary>
+    /// 阶段转移（集中校验合法边 + 日志 + 广播）。非法转移仅警告不执行。
+    /// 合法边：Opening→Tutorial→Waves↔Choice→Final→Result；Waves/Choice/Final→Failed（打断边）。
+    /// </summary>
+    public void TransitionTo(RunPhase next)
+    {
+        if (CurrentPhase == next) return; // 幂等：已在目标阶段（多路径重复触发无副作用）
+        if (!IsValidTransition(CurrentPhase, next))
+        {
+            Debug.LogWarning($"[RunFlow] 非法阶段转移：{CurrentPhase} → {next}（忽略）。");
+            return;
+        }
+        var prev = CurrentPhase;
+        CurrentPhase = next;
+        Debug.Log($"[RunFlow] {prev} → {next}");
+        OnPhaseChanged?.Invoke(next);
+    }
+
+    /// <summary>阶段合法转移表（null 行=非法）。终态 Result/Failed 不可再转移。</summary>
+    static readonly Dictionary<RunPhase, RunPhase[]> PhaseTransitions = new Dictionary<RunPhase, RunPhase[]>
+    {
+        // Failed 为全局打断边：任意非终态（含直接 Play 场景时的 Opening）均可失败——
+        // 玩家可能在开局/教学/波次任意时刻死亡，阶段不可阻塞失败结算。
+        { RunPhase.Opening,  new[] { RunPhase.Tutorial, RunPhase.Failed } },
+        { RunPhase.Tutorial, new[] { RunPhase.Waves, RunPhase.Failed } },
+        { RunPhase.Waves,    new[] { RunPhase.Choice, RunPhase.Final, RunPhase.Failed } },
+        { RunPhase.Choice,   new[] { RunPhase.Waves, RunPhase.Failed } },
+        { RunPhase.Final,    new[] { RunPhase.Result, RunPhase.Failed } },
+        { RunPhase.Result,   Array.Empty<RunPhase>() }, // 终态
+        { RunPhase.Failed,   Array.Empty<RunPhase>() }, // 终态
+    };
+
+    static bool IsValidTransition(RunPhase from, RunPhase to)
+    {
+        if (!PhaseTransitions.TryGetValue(from, out var allowed)) return false;
+        for (int i = 0; i < allowed.Length; i++)
+            if (allowed[i] == to) return true;
+        return false;
+    }
 
     /// <summary>地图种子：对局期间锁定，恢复时注入 MapStreamingSystem（地图确定性重建）。</summary>
     public uint WorldSeed { get; private set; }
@@ -75,6 +139,19 @@ public class RunSession : MonoBehaviour
         Instance = this;
     }
 
+    /// <summary>
+    /// 仅初始化世界种子（直接 Play 场景兜底用）：与 BeginNewRun 同款种子逻辑（useFixedSeed 生效），
+    /// 但不清进度、不清存档、不置 HasActiveRun——确保"直接 Play"与"主菜单新游戏"的卡牌/刷怪序列一致。
+    /// </summary>
+    public void InitWorldSeed()
+    {
+        var gm = GameManager.Instance;
+        WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
+                                                    : (uint)UnityEngine.Random.Range(1, int.MaxValue);
+        CurrentPhase = RunPhase.Opening;
+        Debug.Log($"[RunSession] 直接 Play 种子初始化：worldSeed={WorldSeed}（useFixedSeed={gm != null && gm.useFixedSeed}）。");
+    }
+
     /// <summary>开始新对局：随机地图种子（或编辑器配置的固定种子）、清空进度、清除旧存档。</summary>
     public void BeginNewRun()
     {
@@ -93,6 +170,7 @@ public class RunSession : MonoBehaviour
         Corpses.Clear();
         HasActiveRun = true;
         SaveCoordinator.DeleteSave();
+        CurrentPhase = RunPhase.Opening; // 新局从开场开始（Opening 占位直通，见 RunFlow）
         Debug.Log($"[RunSession] 新对局开始：worldSeed={WorldSeed}");
     }
 
@@ -123,7 +201,9 @@ public class RunSession : MonoBehaviour
         Corpses.Clear();
         if (data.corpses != null) Corpses.AddRange(data.corpses);
         HasActiveRun = true;
-        Debug.Log($"[RunSession] 读档恢复对局：已完成波 {CompletedWaveIndex + 1}，worldSeed={WorldSeed}，解锁卡 {UnlockedEffects.Count} 张。");
+        // 读档不经过开场/教学：回到波次或选卡补弹（pendingChoice=true → Choice）
+        CurrentPhase = PendingChoice ? RunPhase.Choice : RunPhase.Waves;
+        Debug.Log($"[RunSession] 读档恢复对局：已完成波 {CompletedWaveIndex + 1}，worldSeed={WorldSeed}，解锁卡 {UnlockedEffects.Count} 张（阶段={CurrentPhase}）。");
         return true;
     }
 
@@ -143,7 +223,8 @@ public class RunSession : MonoBehaviour
         CompletedWaveIndex = completedWaveIndex;
         PendingChoice = pendingChoice;
         SampleBodies();
-        SampleChoicePicks(); // 选卡界面退出时快照当前候选（pendingChoice=true 才有意义）
+        // 候选卡不在此采样：CardManager 每次抽卡/重抽/恢复后已实时同步 ChoicePicks
+        // （弹卡后任何时刻退出，快照都是玩家最后看到的候选，含双选第二轮/重抽结果）。
 
         SaveCoordinator.SaveSnapshot(completedWaveIndex, WorldSeed, UnlockedEffects,
             SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks);
@@ -183,16 +264,6 @@ public class RunSession : MonoBehaviour
         }
     }
 
-    /// <summary>采样选卡候选（选卡界面退出时调用；pendingChoice=true 时把当前候选卡快照进存档）。</summary>
-    void SampleChoicePicks()
-    {
-        ChoicePicks.Clear();
-        var cm = CardManager.Instance;
-        if (cm == null || cm.currentPicks == null) return;
-        foreach (var c in cm.currentPicks)
-            if (c != null && !string.IsNullOrEmpty(c.effectId)) ChoicePicks.Add(c.effectId);
-    }
-
     /// <summary>
     /// 解析 prefabId：优先取 MonsterPool 反查的真实 prefab 资产名（恢复时与波表 prefab.name 匹配）；
     /// 非池实例（如场景静态怪）回退去 "(Clone)" 的实例名。
@@ -212,6 +283,7 @@ public class RunSession : MonoBehaviour
     public void EndRun()
     {
         HasActiveRun = false;
+        CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
         CompletedWaveIndex = -1;
         UnlockedEffects.Clear();
         SaveCoordinator.DeleteSave();

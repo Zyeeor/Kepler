@@ -73,7 +73,8 @@ public class CoreChoiceUI : MonoBehaviour
     /// <param name="onClosed">弹窗关闭回调（触发方注入房间流程等；null 则仅关闭）。</param>
     /// <param name="doublePick">true=双选（可选 2 张），false=单选。</param>
     /// <param name="keepPicks">true=保留 CardManager.currentPicks（读档补弹用，不重新随机抽卡）。</param>
-    public void Show(Action onClosed = null, bool doublePick = false, bool keepPicks = false)
+    /// <param name="waveIndex">波次号（种子确定性：本波抽卡序列由 种子+波次 派生，同种子可复现）。</param>
+    public void Show(Action onClosed = null, bool doublePick = false, bool keepPicks = false, int waveIndex = -1)
     {
         if (_isDrafting) return;   // 会话进行中忽略重复打开
         _isDrafting = true;
@@ -91,6 +92,10 @@ public class CoreChoiceUI : MonoBehaviour
             for (int i = cardParent.childCount - 1; i >= 0; i--)
                 Destroy(cardParent.GetChild(i).gameObject);
         }
+
+        // 种子确定性：本波弹卡前固定卡牌随机流（种子+波次号派生），同一种子整局卡牌可复现
+        if (CardManager.Instance != null && waveIndex >= 0)
+            CardManager.Instance.PrepareCardSession(waveIndex);
 
         // Draw random cards from CardManager（读档补弹时保留已有候选，不重新随机）
         if (CardManager.Instance != null)

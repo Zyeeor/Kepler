@@ -30,10 +30,6 @@ public class GameManager : MonoBehaviour
     [Tooltip("正式流程开关：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；同时屏蔽调试显示（F2 面板/作弊提示/刷怪面板）。关闭则直接进入当前场景（调试模式）。")]
     public bool useFormalFlow = false;
 
-    [Header("Test")]
-    [Tooltip("测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）。")]
-    public bool testDoublePickOnStart = true;
-    
     public enum GameState
     {
         Soul,        // 灵魂态
@@ -86,23 +82,6 @@ public class GameManager : MonoBehaviour
         var listeners = FindObjectsOfType<AudioListener>();
         for (int i = 1; i < listeners.Length; i++)
             listeners[i].enabled = false;
-
-        // 测试开关：开局自动触发一次双选选卡弹窗（验证双选/暂停/ESC 交互）
-        if (testDoublePickOnStart)
-            StartCoroutine(TriggerTestDoublePick());
-    }
-
-    // 测试用：延迟两帧确保 CoreChoiceUI.Instance 已就绪后，触发双选弹窗
-    System.Collections.IEnumerator TriggerTestDoublePick()
-    {
-        yield return null;          // 等一帧，确保 CoreChoiceUI.Instance 已 Awake
-        yield return null;          // 再等一帧，确保场景完全就绪
-        var ui = CoreChoiceUI.Instance;
-        Debug.Log($"[Test] TriggerTestDoublePick: CoreChoiceUI.Instance={(ui != null ? "found" : "NULL")}");
-        if (ui != null)
-        {
-            ui.Show(onClosed: () => Debug.Log("[Test] DoublePick closed"), doublePick: true);
-        }
     }
     
     void Update()
@@ -151,6 +130,8 @@ public class GameManager : MonoBehaviour
                 // 附身编排防御：GameOver 时显式终止飞行协程/附身态，防止协程用 unscaledDeltaTime 继续推进覆盖 GameOver
                 if (PossessionManager.Instance != null) PossessionManager.Instance.OnGameOver();
                 ShowGameOverUI();
+                // Run 级流程：失败打断边 → Failed（终态），UIManager 订阅后弹 GAME OVER 结算
+                RunSession.EnsureInstance().TransitionTo(RunPhase.Failed);
                 break;
         }
         Debug.Log($"State: {newState}");
@@ -158,6 +139,14 @@ public class GameManager : MonoBehaviour
     
     void ShowGameOverUI()
     {
+        // 结算面板由 UIManager 订阅 RunFlow 阶段事件（Failed → 延迟 resultDelaySeconds 后 ShowResult(false)）驱动。
+        // UIManager 存在时不本地立即显示（避免双重弹窗），仅停时间冻结战斗（死亡动画暂停展示）。
+        if (UIManager.Instance != null)
+        {
+            Time.timeScale = 0f;
+            return;
+        }
+        // UIManager 缺失时的本地回退显示
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
@@ -180,6 +169,9 @@ public class GameManager : MonoBehaviour
         currentState = GameState.GameOver;
         Debug.Log("GAME OVER - Soul time depleted!");
         ShowGameOverUI();
+        // Run 级流程：失败打断边 → Failed（终态），UIManager 订阅后弹 GAME OVER 结算。
+        // 放 ShowGameOverUI 之后：先停战斗态（含本地兜底显示），再推进全局流程。
+        RunSession.EnsureInstance().TransitionTo(RunPhase.Failed);
     }
 
     /// <summary>

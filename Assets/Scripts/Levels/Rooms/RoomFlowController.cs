@@ -50,9 +50,9 @@ public class RoomFlowController : MonoBehaviour
     /// </summary>
     void OnWaveCompletedHandler(int waveIndex)
     {
-        Debug.Log($"[RoomFlow] Wave {waveIndex} completed → trigger choice UI (single pick)");
+        Debug.Log($"[RoomFlow] Wave {waveIndex} completed → trigger choice UI (doublePick={waveManager.GetWaveDoublePick(waveIndex)})");
         if (CoreChoiceUI.Instance != null)
-            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: false);
+            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: waveManager.GetWaveDoublePick(waveIndex), waveIndex: waveIndex);
         else
             Debug.LogWarning("[RoomFlow] CoreChoiceUI.Instance is null — cannot show choice UI");
     }
