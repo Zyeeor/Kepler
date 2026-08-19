@@ -23,9 +23,15 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public GameObject confirmedMark;
     public GameObject rerolledMark;
 
+    [Header("Card Layers (assign on prefab, optional)")]
+    public Image foregroundImage;
+    public Image middlegroundImage;
+    public Image backgroundImage;
+    public Image borderImage;
+
     private Action<int> onSelectCallback;
 
-    public void Init(int index, string text, Sprite sprite, string description, Action<int> onSelect, Action<int> onReroll)
+    public void Init(int index, string text, Sprite sprite, string description, Action<int> onSelect, Action<int> onReroll, CardData data = null)
     {
         Index = index;
         IsSelected = false;
@@ -35,6 +41,7 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (cardText != null) cardText.text = text;
         if (cardImage != null && sprite != null) cardImage.sprite = sprite;
         if (descriptionText != null) descriptionText.text = description;
+        ApplyLayers(data);
         if (confirmedMark != null) confirmedMark.SetActive(false);
         if (rerolledMark != null) rerolledMark.SetActive(false);
 
@@ -51,14 +58,13 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         {
             Debug.Log($"[CoreChoiceCard] Reroll clicked: index={Index}, card='{cardText?.text}', rerolled={IsRerolled}");
             if (IsRerolled) return;
-            // 无可刷新候选时不进入刷新（不置 IsRerolled，保持卡片可点）
+            // 无可刷新候选/次数已满时不进入刷新（不置 IsRerolled，保持卡片可点）
             if (CardManager.Instance != null && !CardManager.Instance.HasRerollCandidates(Index))
             {
-                Debug.Log($"[CoreChoiceCard] Reroll skipped: no candidates left or already rerolled, index={Index}");
+                Debug.Log($"[CoreChoiceCard] Reroll skipped: no candidates left or reroll limit reached, index={Index}");
                 return;
             }
-            IsRerolled = true;
-            RefreshUI();
+            // 刷新后是否锁卡由 CoreChoiceUI 统一判定（ApplyRerollLock）——支持每卡多次刷新
             onReroll?.Invoke(Index);
         });
 
@@ -121,16 +127,48 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     }
 
     /// <summary>Replace this card's content with a new card (used on reroll).</summary>
-    public void Replace(string text, Sprite sprite, string description)
+    public void Replace(string text, Sprite sprite, string description, CardData data = null)
     {
         IsRerolled = false;
         IsSelected = false;
         if (cardText != null) cardText.text = text;
         if (cardImage != null && sprite != null) cardImage.sprite = sprite;
         if (descriptionText != null) descriptionText.text = description;
+        ApplyLayers(data);
         if (confirmedMark != null) confirmedMark.SetActive(false);
         if (rerolledMark != null) rerolledMark.SetActive(false);
         if (confirmButton != null) confirmButton.interactable = true;
         if (rerollButton != null) rerollButton.interactable = true;
+    }
+
+    /// <summary>
+    /// 由 CoreChoiceUI 在每次刷新后调用：locked=true（该槽位已刷满 maxRerollsPerCard 次）
+    /// 锁定卡片（禁用刷新/选择）；locked=false 恢复可交互。
+    /// </summary>
+    public void ApplyRerollLock(bool locked)
+    {
+        IsRerolled = locked;
+        if (locked)
+        {
+            RefreshUI();
+        }
+        else
+        {
+            if (confirmButton != null) confirmButton.interactable = true;
+            if (rerollButton != null) rerollButton.interactable = true;
+        }
+    }
+
+    /// <summary>
+    /// 应用 CardData 配置的四层素材（foreground/middleground/background/broader）。
+    /// 字段为 null 的层保持 prefab 默认素材不动（便于内容侧逐层配置）。
+    /// </summary>
+    void ApplyLayers(CardData data)
+    {
+        if (data == null) return;
+        if (foregroundImage != null && data.foregroundSprite != null) foregroundImage.sprite = data.foregroundSprite;
+        if (middlegroundImage != null && data.middlegroundSprite != null) middlegroundImage.sprite = data.middlegroundSprite;
+        if (backgroundImage != null && data.backgroundSprite != null) backgroundImage.sprite = data.backgroundSprite;
+        if (borderImage != null && data.borderSprite != null) borderImage.sprite = data.borderSprite;
     }
 }

@@ -635,7 +635,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2606274025504633017}
-  - component: {fileID: 9040086081430543745}
   m_Layer: 0
   m_Name: Wrath(full)
   m_TagString: Enemy
@@ -659,27 +658,6 @@ Transform:
   - {fileID: 6381022695023645885}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9040086081430543745
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3551598183782676372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 2.4
-  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
-  hitFlashDuration: 0.12
-  hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.4, g: 0.2, b: 0.12, a: 1.0}
-  dissolveEdgeIntensity: 4.5
-  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!1 &3674330693683559912
 GameObject:
   m_ObjectHideFlags: 0
@@ -2541,10 +2519,9 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.4, g: 0.2, b: 0.12, a: 1.0}
+  dissolveEdgeColor: {r: 2.4, g: 0.2, b: 0.12, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!4 &6381022695023645885 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3a8f0afb95527744fbed5e019f5a3f2d,

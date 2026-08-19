@@ -173,7 +173,8 @@ public class CoreChoiceUI : MonoBehaviour
             if (go == null) continue;
             var card = go.GetComponent<CoreChoiceCard>();
             if (card == null) card = go.AddComponent<CoreChoiceCard>();
-            card.Init(i, name, sprite, desc, OnCardConfirm, OnCardReroll);
+            CardData cardData = picks != null && i < picks.Length ? picks[i] : null;
+            card.Init(i, name, sprite, desc, OnCardConfirm, OnCardReroll, cardData);
             cards[i] = card;
         }
     }
@@ -234,11 +235,14 @@ public class CoreChoiceUI : MonoBehaviour
         {
             Sprite sprite = null;
             if (newCard.image != null) sprite = newCard.image;
-            cards[index].Replace(newCard.cardName, sprite, newCard.description ?? "");
+            cards[index].Replace(newCard.cardName, sprite, newCard.description ?? "", newCard);
             // currentPicks[index] 已由 DrawOneReroll 内部更新，UI 不再直写
+            // 刷新次数判定：已刷满 maxRerollsPerCard 次则锁卡（每卡可刷新次数可配）
+            bool locked = CardManager.Instance != null && !CardManager.Instance.HasRerollCandidates(index);
+            cards[index].ApplyRerollLock(locked);
             if (selectedIndex == index) selectedIndex = -1;
             AudioManager.Instance?.PlayUiSfx(cardRerollSfx);
-            Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}");
+            Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}, locked={locked}");
         }
         else
         {
