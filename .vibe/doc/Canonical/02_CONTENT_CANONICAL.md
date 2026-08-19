@@ -1,9 +1,9 @@
 # 02_CONTENT_CANONICAL — v1.1
 
 **Project:** Possession<br>
-**Date:** 2026-08-17<br>
+**Date:** 2026-08-19<br>
 **Status:** `CANONICAL / CURRENT CONTENT BASELINE`<br>
-**Primary sources integrated:** Seven Sins Monster Production Baseline v1.0；Card System v1.1 Owner Review Passed；R03.1；Design Canonical v1.0；2026-08-17 Owner-approved Lust Card Update。
+**Primary sources integrated:** Seven Sins Monster Production Baseline v1.0；Card System v1.1 Owner Review Passed；R03.1；Design Canonical v1.0；2026-08-17 Owner-approved Lust Card Update；2026-08-19 Owner-approved Card Stack 废除（全牌池 Stack Max = 1）。
 
 ---
 
@@ -284,7 +284,7 @@ Monster额外初始化：
 
 > `Content/Card_System_Current_Truth_v1.1.md`
 
-本文件下列Registry用于快速检索；名称、描述、机制简述、叠层文本等完整字段以详细Card真源为准。
+本文件下列Registry用于快速检索；名称、描述、机制简述等完整字段以详细Card真源为准。
 
 ---
 
@@ -330,13 +330,13 @@ Monster额外初始化：
 | Card ID | 明线名称 | 机制类别 | Stack Max |
 |---|---|---|---:|
 | `SL-A01` | 怠惰者的赦免 | Attack专属强化；Stack 1 | 1 |
-| `SL-A02` | 巨像之息 | Attack叠层；Stack 3 | 3 |
+| `SL-A02` | 巨像之息 | Attack炮体强化；Stack 1 | 1 |
 | `SL-A03` | 圣骸分裂 | Attack形态质变；Stack 1 | 1 |
 | `SL-A04` | 众仆齐鸣 | Attack形态质变；Stack 1 | 1 |
 | `SL-A05` | 巨像践踏 | Attack高阶Interaction；Stack 1 | 1 |
 | `SL-M01` | 遗下的守望者 | Movement派生质变；Stack 1 | 1 |
 | `SL-M02` | 迟来的地鸣 | Movement派生质变；Stack 1 | 1 |
-| `SL-S01` | 沉眠侍从 | Special叠层；Stack 2 | 2 |
+| `SL-S01` | 沉眠侍从 | Special数量强化；Stack 1 | 1 |
 | `SL-S02` | 遗命不绝 | Special终结协议质变；Stack 1 | 1 |
 | `SL-S03` | 侍从圣武 | Special专属成长；Stack 1 | 1 |
 | `SL-TG01` | 沉眠遗命 | 类型成长；Stack 1 | 1 |
@@ -357,13 +357,13 @@ Monster额外初始化：
 |---|---|---|---:|
 | `EN-A01` | 万眼同视 | Attack周期四目标；Stack 1 | 1 |
 | `EN-A03` | 穿镜圣光 | Attack高阶形态质变；Stack 1 | 1 |
-| `EN-A04` | 妒神凝视 | Attack叠层；Stack 2 | 2 |
+| `EN-A04` | 妒神凝视 | Attack窗口强化；Stack 1 | 1 |
 | `EN-A05` | 妒焰渐炽 | Attack持续伤害成长；Stack 1 | 1 |
 | `EN-M01` | 镜痕巡猎 | Movement路径印记；Stack 1 | 1 |
 | `EN-R01` | 无底之镜 | Mark储存成长；Stack 1 | 1 |
 | `EN-R02` | 伤痕告解 | Resource成长；Stack 1 | 1 |
-| `EN-R04` | 凝视未终 | Resource叠层；Stack 2 | 2 |
-| `EN-S01` | 雷霆作证 | Special派生质变；Stack 2 | 2 |
+| `EN-R04` | 凝视未终 | Resource窗口强化；Stack 1 | 1 |
+| `EN-S01` | 雷霆作证 | Special派生质变；Stack 1 | 1 |
 | `EN-TG01` | 万妒远证 | 类型成长；Stack 1 | 1 |
 
 ## 愤怒｜6张
@@ -381,7 +381,7 @@ Monster额外初始化：
 |---|---|---|---:|
 | `GR-M01` | 黑油圣路 | Movement黑油范围 / 长度 + 敌人减速；Stack 1 | 1 |
 | `GR-M02` | 圣路恩赐 | Movement区域地形伤害防护；Stack 1 | 1 |
-| `GR-A01` | 万手圣库 | Attack Resource上限；Stack 2 | 2 |
+| `GR-A01` | 万手圣库 | Attack Resource上限强化；Stack 1 | 1 |
 | `GR-A02` | 未收之贡 | Attack击杀后再索敌；Stack 1 | 1 |
 | `GR-A03` | 亡者遗产 | Attack击杀后新增魔手；Stack 1 | 1 |
 | `GR-A07` | 迂回纳贡 | Attack侧翼路径形态质变；Stack 1 | 1 |
@@ -483,7 +483,7 @@ Owner最新Excel / Card v1.1删除线为正式删除。
 - Wave 8后连续2次；
 - `Opening Card = DEPRECATED / REMOVED`；
 - 每次3选1；
-- 达Stack Max / 唯一Card后退出池；
+- 唯一Card已取得后退出池（当前全牌池 Stack Max = 1）；
 - 当前Build完全零作用的Card不应出现；
 - 同一Offer禁止重复Card ID。
 
