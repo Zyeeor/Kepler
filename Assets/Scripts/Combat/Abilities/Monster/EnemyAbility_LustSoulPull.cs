@@ -1,0 +1,287 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Lust Q: pull all Linked targets toward the active Anchor, deal damage, consume Anchor+Links.
+/// Requires valid Anchor + at least one Linked target (fail: no start / no cost / no reload).
+/// LU-S05: mutual collision blasts among pulled targets.
+/// LU-S06: isolate pulled sources' damage onto the player's Possessed Body.
+/// </summary>
+public class EnemyAbility_LustSoulPull : EnemyAbility
+{
+    public float pullWindow = 0.60f;
+    public float pullMaxDistance = 6f;
+    public float pullDamage = 25f;
+    public float aimTurnSpeed = 720f;
+    public GameObject tetherVfx;
+    public GameObject impactVfx;
+    public GameObject telegraphVfx;
+
+    [Header("LU-S05")]
+    public float s05CollisionDistance = 0.75f;
+    public float s05BlastDamage = 25f;
+    public float s05BlastRadius = 2f;
+    public GameObject s05BlastVfx;
+
+    [Header("LU-S06")]
+    public float s06Grace = 0.15f;
+
+    private LustBodyState _state;
+
+    private void OnEnable()
+    {
+        type = AbilityType.Skill;
+        abilityName = "诱引牵魂";
+        cooldown = cooldown <= 0f ? 6f : cooldown;
+        if (damage <= 0f) damage = pullDamage;
+        if (abilityTags == null) abilityTags = new List<string>();
+        EnsureTag("Ability.Monster.Lust");
+        EnsureTag("Ability.Monster.Lust.SoulPull");
+        EnsureUpgradeSlot("LU-S05");
+        EnsureUpgradeSlot("LU-S06");
+        EnsureUpgradeSlot("LU-TG01");
+    }
+
+    private void EnsureTag(string tag)
+    {
+        if (!abilityTags.Exists(t => string.Equals(t, tag, System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add(tag);
+    }
+
+    private void EnsureUpgradeSlot(string effectId)
+    {
+        if (upgrades == null) upgrades = new List<UpgradeSlot>();
+        if (upgrades.Exists(u => u != null && string.Equals(u.effectId, effectId, System.StringComparison.OrdinalIgnoreCase)))
+            return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
+
+    public override bool CanTrigger()
+    {
+        if (!base.CanTrigger()) return false;
+        CacheState();
+        if (_state == null || !_state.HasValidAnchor) return false;
+        return _state.GetValidLinkedTargets().Count > 0;
+    }
+
+    protected override void OnTrigger()
+    {
+        CacheState();
+        if (_state == null || !_state.HasValidAnchor || _state.GetValidLinkedTargets().Count == 0)
+        {
+            // Spec: failed gate must not charge / reload. Undo the base Trigger cooldown.
+            currentCooldown = 0f;
+            EndActivationEffect();
+            return;
+        }
+
+        StartCoroutine(PullRoutine());
+    }
+
+    private IEnumerator PullRoutine()
+    {
+        if (owner == null)
+        {
+            EndActivationEffect();
+            yield break;
+        }
+
+        var anim = owner.GetActiveAnimator();
+        if (anim != null) anim.SetTrigger("Skill");
+
+        LustAnchorMarker anchor = _state.ActiveAnchor;
+        Vector3 anchorPos = anchor != null ? anchor.transform.position : owner.transform.position;
+        List<Enemy> linked = _state.GetValidLinkedTargets();
+        if (linked.Count == 0 || anchor == null)
+        {
+            currentCooldown = 0f;
+            EndActivationEffect();
+            yield break;
+        }
+
+        if (telegraphVfx != null)
+            Object.Instantiate(telegraphVfx, anchorPos, Quaternion.identity);
+
+        List<PullTargetState> pulls = new List<PullTargetState>();
+        List<MonsterActor> isolationSources = new List<MonsterActor>();
+        for (int i = 0; i < linked.Count; i++)
+        {
+            Enemy target = linked[i];
+            if (target == null || target.isDowned) continue;
+            float weightMul = _state.GetPullDistanceMultiplier(target);
+            float maxDist = GetCardParameter("PullMaxDistance", pullMaxDistance) * weightMul;
+            Vector3 from = target.transform.position;
+            Vector3 toAnchor = anchorPos - from;
+            toAnchor.y = 0f;
+            Vector3 destination = from;
+            if (toAnchor.sqrMagnitude > 0.0001f)
+            {
+                float travel = Mathf.Min(maxDist, toAnchor.magnitude);
+                destination = from + toAnchor.normalized * travel;
+                destination.y = from.y;
+            }
+
+            IController previous = target.Controller;
+            target.SetController(NullController.Instance);
+            pulls.Add(new PullTargetState
+            {
+                enemy = target,
+                start = from,
+                end = destination,
+                previousController = previous,
+                damaged = false
+            });
+            isolationSources.Add(target);
+
+            if (tetherVfx != null)
+                Object.Instantiate(tetherVfx, from, Quaternion.identity);
+        }
+
+        bool isolate = IsUpgradeUnlocked("LU-S06");
+        MonsterActor protectedBody = ResolveProtectedBody();
+        if (isolate && protectedBody != null)
+            LustPullDamageGate.BeginWindow(protectedBody, isolationSources);
+
+        float window = GetCardParameter("PullWindow", pullWindow);
+        float elapsed = 0f;
+        HashSet<int> collisionUsed = new HashSet<int>();
+        bool s05 = IsUpgradeUnlocked("LU-S05");
+
+        while (elapsed < window)
+        {
+            elapsed += AbilityDeltaTime;
+            float u = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, window));
+            for (int i = 0; i < pulls.Count; i++)
+            {
+                PullTargetState state = pulls[i];
+                if (state.enemy == null || state.enemy.isDowned) continue;
+                Vector3 pos = Vector3.Lerp(state.start, state.end, u);
+                state.enemy.transform.position = pos;
+            }
+
+            if (s05)
+                ProcessCollisions(pulls, collisionUsed);
+
+            yield return null;
+        }
+
+        float dmg = damage > 0f ? damage : pullDamage;
+        for (int i = 0; i < pulls.Count; i++)
+        {
+            PullTargetState state = pulls[i];
+            if (state.enemy == null) continue;
+            if (!state.enemy.isDowned && !state.damaged)
+            {
+                DealDamageTo(state.enemy, dmg);
+                state.damaged = true;
+                if (impactVfx != null)
+                    Object.Instantiate(impactVfx, state.enemy.transform.position, Quaternion.identity);
+            }
+
+            if (state.previousController != null)
+                state.enemy.SetController(state.previousController);
+            else
+                state.enemy.SetController(NullController.Instance);
+        }
+
+        List<Enemy> consumed = new List<Enemy>();
+        for (int i = 0; i < pulls.Count; i++)
+            if (pulls[i].enemy != null) consumed.Add(pulls[i].enemy);
+        _state.ConsumeLinks(consumed);
+        _state.DestroyActiveAnchor();
+
+        if (isolate)
+            LustPullDamageGate.EndWindow(GetCardParameter("Grace", s06Grace));
+
+        EndActivationEffect();
+    }
+
+    private void ProcessCollisions(List<PullTargetState> pulls, HashSet<int> used)
+    {
+        float maxDist = GetCardParameter("Dist", s05CollisionDistance);
+        List<(int a, int b, float dist, Vector3 mid)> pairs = new List<(int, int, float, Vector3)>();
+        for (int i = 0; i < pulls.Count; i++)
+        {
+            Enemy a = pulls[i].enemy;
+            if (a == null || a.isDowned || used.Contains(a.GetInstanceID())) continue;
+            for (int j = i + 1; j < pulls.Count; j++)
+            {
+                Enemy b = pulls[j].enemy;
+                if (b == null || b.isDowned || used.Contains(b.GetInstanceID())) continue;
+                float d = HorizontalDistance(a.transform.position, b.transform.position);
+                bool contact = d <= maxDist;
+                if (!contact)
+                {
+                    // Soft contact fallback via collider proximity already covered by distance.
+                    contact = false;
+                }
+                if (!contact) continue;
+                Vector3 mid = (a.transform.position + b.transform.position) * 0.5f;
+                pairs.Add((a.GetInstanceID(), b.GetInstanceID(), d, mid));
+            }
+        }
+
+        pairs.Sort((x, y) => x.dist.CompareTo(y.dist));
+        for (int i = 0; i < pairs.Count; i++)
+        {
+            var pair = pairs[i];
+            if (used.Contains(pair.a) || used.Contains(pair.b)) continue;
+            used.Add(pair.a);
+            used.Add(pair.b);
+            float dmg = GetCardParameter("CollisionDmg", s05BlastDamage);
+            float radius = GetCardParameter("R", s05BlastRadius);
+            if (s05BlastVfx != null)
+                Object.Instantiate(s05BlastVfx, pair.mid, Quaternion.identity);
+            DamageEnemiesInSphere(pair.mid, radius, dmg);
+            if (!owner.isPossessed)
+                TryDamagePlayerInRadius(pair.mid, radius, dmg);
+        }
+    }
+
+    private MonsterActor ResolveProtectedBody()
+    {
+        // Isolation protects the player's current Possessed Body (when Lust is AI pulling that body,
+        // or when another Lust body is pulling while player is elsewhere). Prefer PossessionManager.
+        if (PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null)
+            return PossessionManager.Instance.CurrentBody;
+        return null;
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    private void CacheState()
+    {
+        if (owner == null) return;
+        _state = owner.GetComponent<LustBodyState>();
+        if (_state == null) _state = owner.gameObject.AddComponent<LustBodyState>();
+    }
+
+    protected override void OnDisable()
+    {
+        LustPullDamageGate.Clear();
+        base.OnDisable();
+    }
+
+    public override void ResetForOwnerReuse()
+    {
+        LustPullDamageGate.Clear();
+        CacheState();
+        _state?.ClearBodyBoundState();
+        base.ResetForOwnerReuse();
+    }
+
+    private class PullTargetState
+    {
+        public Enemy enemy;
+        public Vector3 start;
+        public Vector3 end;
+        public IController previousController;
+        public bool damaged;
+    }
+}

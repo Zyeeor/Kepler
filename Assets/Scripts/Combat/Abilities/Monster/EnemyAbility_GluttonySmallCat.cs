@@ -4,8 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Gluttony mobility: shrink, speed up, light form. Special (Devour) cancels this form.
-/// Card GL-M01: extra speed while in form. Card GL-A02 armed on successful use.
-/// Card GL-TG01: permanent body move-speed bonus while unlocked.
+/// Re-trigger Space exits early. Default Attack exits unless GL-M01 is unlocked.
+/// Card GL-M01: extra speed while in form. Card GL-A02 armed on successful enter.
 /// </summary>
 public class EnemyAbility_GluttonySmallCat : EnemyAbility
 {
@@ -84,7 +84,7 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
     private IEnumerator FormRoutine()
     {
         EnterForm();
-        if (_state != null && CardManager.Instance != null && CardManager.Instance.IsEffectUnlocked("GL-A02"))
+        if (_state != null && IsUpgradeUnlocked("GL-A02"))
             _state.ArmHuntStepEmpower();
 
         float duration = GetCardParameter("TransformDuration", formDuration);
@@ -102,11 +102,16 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
         _state?.SetSmallCatActive(true);
 
         float speedMult = speedMultiplier;
+        float turnMult = 1f;
         if (IsUpgradeUnlocked("GL-M01"))
+        {
             speedMult *= GetCardParameter("SmallCatSpeedMult", glM01SpeedBonus);
+            turnMult = Mathf.Max(0.01f, glM01TurnResponsiveness);
+        }
 
         owner.transform.localScale = _baseScale * Mathf.Max(0.05f, scaleMultiplier);
         owner.moveSpeed = _baseMoveSpeed * speedMult;
+        _state?.SetSmallCatTurnMult(turnMult);
         SetModelSwap(true);
     }
 

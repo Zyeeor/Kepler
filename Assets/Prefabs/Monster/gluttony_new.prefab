@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 719994c5a5caa4dbe90bde5dc2cd91fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u541E\u566C"
   type: 2
   upgrades:
   - effectId: GL-S01
@@ -63,9 +63,10 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 70, z: 0}
   damage: 40
   drawHitboxes: 0
-  cooldown: 2
+  cooldown: 1
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Gluttony.Devour
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -92,7 +93,7 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
-  range: 4
+  range: 1
   angle: 100
   damageAmount: 40
   hitDelay: 0.5
@@ -422,7 +423,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e93f249f51b714b9d8b4f6ea2fd388a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u5C0F\u732B\u5316"
   type: 3
   upgrades:
   - effectId: GL-M01
@@ -440,7 +441,8 @@ MonoBehaviour:
   drawHitboxes: 0
   cooldown: 0
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Gluttony.SmallCat
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -916,10 +918,10 @@ MonoBehaviour:
   showHealthBar: 1
   basicAbilities:
   - ability: {fileID: 2752360748002137055}
-    hpCost: 5
+    hpCost: 10
   skillAbilities:
   - ability: {fileID: 6329727593119150537}
-    hpCost: 40
+    hpCost: 50
   mobilityAbilities:
   - ability: {fileID: 7931621627804301870}
     hpCost: 10
@@ -1094,7 +1096,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 991f9513104cc4a298fd47eabcae3d5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u6DF1\u6E0A\u5DE8\u53E3"
   type: 1
   upgrades:
   - effectId: GL-A01
@@ -1112,7 +1114,8 @@ MonoBehaviour:
   drawHitboxes: 0
   cooldown: 2
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Gluttony.AbyssMaw
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}

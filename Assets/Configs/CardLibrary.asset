@@ -13,107 +13,156 @@ MonoBehaviour:
   m_Name: CardLibrary
   m_EditorClassIdentifier: 
   cards:
-  - cardName: "\u5251\u6C14\u7A7F\u900F"
-    effectId: Pride.Pierce
+  - cardName: "\u80CC\u79BB\u4E4B\u7F5A"
+    effectId: LU-M03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Sword Qi pierces, X follow-up, double damage.
+    description: "\u6362\u4F4D\u6210\u529F\u540E\uFF0C\u65E7 Anchor \u4F4D\u7F6E\u5EF6\u8FDF\u7206\u70B8\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
-    - Ability.Monster.Pride.SwordQi
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 1
-    foregroundSprite: {fileID: 21300000, guid: 0b70c6a9168b5b44ab3e56b7affbe8b1, type: 3}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
-    effectId: Pride02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Fires three Sword Qi blades in a spread.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.SwordQi
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
-    effectId: Pride01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Sword Qi becomes long-range.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.SwordQi
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u84C4\u529B\u7A81\u8FDB"
-    effectId: Pride.ChargeEmpowered
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Charge farther; damage scales up to +100%.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.ChargeStrike
+    - Ability.Monster.Lust.Anchor
     grantedEffectTags: []
     abilityParameters:
-    - key: ChargeDistance
-      value: 10
+    - key: BlastDelay
+      value: 0.15
+    - key: Dmg
+      value: 30
+    - key: R
+      value: 2.5
     category: 2
-    monsterType: 1
+    monsterType: 7
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u7A7F\u68AD\u9644\u52A0\u6C14\u5203"
-    effectId: Pride.BlinkSwordQi
+  - cardName: "\u540C\u6B32\u4E4B\u5F71"
+    effectId: LU-M05
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Each blink also fires Sword Qi along blink direction.
+    description: "\u6709\u6548 Anchor \u5EF6\u8FDF\u6A21\u4EFF\u672C\u4F53 Attack\uFF0C\u4F24\u5BB350%\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
-    - Ability.Monster.Pride.BlinkChain
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u7A7F\u68AD+2"
-    effectId: Pride.BlinkCountPlusTwo
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Blink Chain strikes 6 times.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.BlinkChain
+    - Ability.Monster.Lust.RoundTrip
     grantedEffectTags: []
     abilityParameters:
-    - key: BlinkCount
-      value: 6
+    - key: MirrorDelay
+      value: 0.1
+    - key: DmgMul
+      value: 0.5
     category: 2
-    monsterType: 1
+    monsterType: 7
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: Death Eye
-    effectId: Envy01
+  - cardName: "\u540C\u6B32\u76F8\u566C"
+    effectId: LU-S05
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u540C\u6B21 Pull \u4E2D Linked \u76EE\u6807\u4E92\u649E\u7206\u70B8\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Lust.SoulPull
+    grantedEffectTags: []
+    abilityParameters:
+    - key: CollisionDmg
+      value: 25
+    - key: R
+      value: 2
+    - key: Dist
+      value: 0.75
+    category: 2
+    monsterType: 7
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u6B32\u75D5\u6B96\u7206"
+    effectId: LU-A03
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "Linked \u76EE\u6807\u6B7B\u4EA1\u6D88\u8D39\u7206\u70B8\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Lust.RoundTrip
+    grantedEffectTags: []
+    abilityParameters:
+    - key: Delay
+      value: 0.1
+    - key: Dmg
+      value: 30
+    - key: R
+      value: 2.5
+    category: 2
+    monsterType: 7
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u65E0\u5BB3\u4E4B\u62E5"
+    effectId: LU-S06
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u7275\u5F15\u6765\u6E90\u4F24\u5BB3\u9694\u79BB\uFF08Pull + grace\uFF09\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Lust.SoulPull
+    grantedEffectTags: []
+    abilityParameters:
+    - key: Grace
+      value: 0.15
+    category: 2
+    monsterType: 7
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u8272\u6B32\u6F6E\u6C50"
+    effectId: LU-A04
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "Attack \u66FF\u6362\u4E3A\u73AF\u5F62\u8FF7\u6C14\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Lust.RoundTrip
+    grantedEffectTags: []
+    abilityParameters:
+    - key: R0
+      value: 0.5
+    - key: R1
+      value: 4
+    - key: T
+      value: 0.8
+    - key: Width
+      value: 0.8
+    - key: Dmg
+      value: 20
+    category: 2
+    monsterType: 7
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u6B32\u6F6E\u4E0D\u606F"
+    effectId: LU-TG01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u79FB\u901F +15%\uFF1B\u4E09\u69FD CD \u00D70.70\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Lust
+    grantedEffectTags: []
+    abilityParameters:
+    - key: MoveSpeed
+      value: 0.15
+    - key: CDMul
+      value: 0.7
+    category: 3
+    monsterType: 7
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4E07\u773C\u540C\u89C6"
+    effectId: EN-A01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: lazer Damage will ramp up while tethering its enemy
-    abilityPrefab: {fileID: 1991930722731350795, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-      type: 3}
-    targetAbilityTags: []
+    description: "\u6BCF\u96943\u79D2\uFF0C\u6FC0\u5149\u4F1A\u77ED\u6682\u540C\u65F6\u7167\u5411\u56DB\u4E2A\u76EE\u6807\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
     grantedEffectTags: []
     abilityParameters: []
     category: 2
@@ -122,13 +171,68 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: Muti Eye
-    effectId: Envy02
+  - cardName: "\u7A7F\u955C\u5723\u5149"
+    effectId: EN-A03
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: death eye split into two, both shoot lazer
-    abilityPrefab: {fileID: 1991930722731350795, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-      type: 3}
-    targetAbilityTags: []
+    description: "\u6FC0\u5149\u4F1A\u5728\u77ED\u6682\u9636\u6BB5\u83B7\u5F97\u7A7F\u900F\u80FD\u529B\uFF0C\u53EF\u4EE5\u7EE7\u7EED\u547D\u4E2D\u540E\u65B9\u76EE\u6807\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    grantedEffectTags: []
+    abilityParameters:
+    - key: PierceDuration
+      value: 1
+    - key: PierceInterval
+      value: 4
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u5992\u795E\u51DD\u89C6"
+    effectId: EN-A04
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u6FC0\u5149\u53EF\u4EE5\u7EF4\u6301\u66F4\u4E45\uFF0C\u8FDE\u63A5\u671F\u95F4\u7684\u8F6C\u5411\u4E5F\u66F4\u7A33\u5B9A\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    grantedEffectTags: []
+    abilityParameters:
+    - key: ConnectDuration
+      value: 12
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u5992\u7130\u6E10\u70BC"
+    effectId: EN-A05
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u6FC0\u5149\u7EF4\u6301\u8D8A\u4E45\uFF0C\u4F24\u5BB3\u8D8A\u9AD8\uFF0C\u6700\u9AD8\u8FBE\u5230\u6BCF\u79D250\u70B9\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    grantedEffectTags: []
+    abilityParameters:
+    - key: RampMaxDps
+      value: 50
+    - key: RampTime
+      value: 8
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u955C\u75D5\u5DE1\u730E"
+    effectId: EN-M01
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u98DE\u884C\u7ECF\u8FC7\u7684\u654C\u4EBA\u4F1A\u7559\u4E0B\u5370\u8BB0\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Flight
     grantedEffectTags: []
     abilityParameters: []
     category: 2
@@ -137,13 +241,223 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: Chain Dash
-    effectId: Wrath01
+  - cardName: "\u65E0\u5E95\u4E4B\u955C"
+    effectId: EN-R01
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u76EE\u6807\u8EAB\u4E0A\u7684\u5370\u8BB0\u80FD\u50A8\u5B58\u66F4\u591A\u4F24\u5BB3\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    grantedEffectTags: []
+    abilityParameters:
+    - key: MarkStorageBonus
+      value: 0.5
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4F24\u75D5\u544A\u89E3"
+    effectId: EN-R02
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u6FC0\u5149\u9020\u6210\u7684\u4F24\u5BB3\u4F1A\u66F4\u5FEB\u586B\u5165\u5370\u8BB0\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    grantedEffectTags: []
+    abilityParameters:
+    - key: MarkWriteRatio
+      value: 0.35
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u51DD\u89C6\u672A\u7EC8"
+    effectId: EN-R04
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u6FC0\u5149\u65AD\u5F00\u540E\uFF0C\u5370\u8BB0\u4F1A\u6682\u65F6\u4FDD\u7559\uFF1B\u91CD\u65B0\u8FDE\u63A5\u53EF\u4EE5\u7EE7\u7EED\u5199\u5165\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u7528\u96F7\u66B4\u5151\u73B0\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    grantedEffectTags: []
+    abilityParameters:
+    - key: MarkGraceDuration
+      value: 2.5
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u96F7\u9706\u4F5C\u8BC1"
+    effectId: EN-S01
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u96F7\u66B4\u547D\u4E2D\u540E\uFF0C\u4F1A\u5728\u8BE5\u4F4D\u7F6E1\u79D2\u540E\u7EE7\u7EED\u964D\u4E0B\u96F7\u9706\uFF0C\u968F\u540E\u518D\u964D\u4E0B\u7B2C\u4E09\u6B21\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Thunderstorm
+    grantedEffectTags: []
+    abilityParameters:
+    - key: FollowUpWaves
+      value: 2
+    - key: FollowUpDelay
+      value: 1
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4E07\u5992\u8FDC\u8BC1"
+    effectId: EN-TG01
+    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    description: "\u5AC9\u5992\u7684\u6FC0\u5149\u4E0E\u96F7\u66B4\u90FD\u80FD\u4F5C\u7528\u5230\u66F4\u8FDC\u7684\u4F4D\u7F6E\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Envy.Laser
+    - Ability.Monster.Envy.Thunderstorm
+    grantedEffectTags: []
+    abilityParameters:
+    - key: AttackRangeBonus
+      value: 4
+    - key: SpecialRangeBonus
+      value: 4
+    category: 3
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u9ED1\u6CB9\u5723\u8DEF"
+    effectId: GR-M01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u9ED1\u6CB9\u66F4\u957F\u66F4\u5BBD\uFF1B\u654C\u4EBA\u8E0F\u5165\u51CF\u901F\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.BlackOil
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u5723\u8DEF\u6069\u8D50"
+    effectId: GR-M02
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u7AD9\u5728\u81EA\u8EAB\u666E\u901A\u9ED1\u6CB9\u4E0A\u514D\u75AB\u5730\u5F62\u4F24\u5BB3\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.BlackOil
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4E07\u624B\u5723\u5E93"
+    effectId: GR-A01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u63D0\u9AD8\u9B54\u624B\u5E93\u5B58/\u5355\u6B21\u91CA\u653E\u4E0A\u9650\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.Hands
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u672A\u6536\u4E4B\u8D21"
+    effectId: GR-A02
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u9B54\u624B\u81F4\u547D\u540E\u518D\u7D22\u654C\u4E00\u6B21\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.Hands
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4EA1\u8005\u9057\u4EA7"
+    effectId: GR-A03
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u9B54\u624B\u51FB\u6740\u540E\u751F\u62101-2\u53EA\u65B0\u624B\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.Hands
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u8FC2\u56DE\u7EB3\u8D21"
+    effectId: GR-A07
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u9B54\u624B\u4FA7\u7FFC\u5F27\u7EBF\u518D\u6536\u675F\u8FFD\u51FB\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.Hands
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u5723\u5E93\u7EB3\u8D21"
+    effectId: GR-S01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "Guard\u6BCF60\u70B9\u5438\u6536\u8F6C1\u624B\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.Guard
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u8D2A\u795E\u5E87\u62A4"
+    effectId: GR-S04
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "Guard\u6301\u7EED3\u79D2\uFF0C\u53EF\u63D0\u524D\u7ED3\u675F\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Greed.Guard
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 6
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u711A\u9014\u8A93\u7EA6"
+    effectId: WR-M01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
-    description: Wrath uses the chain to lauch itself forward
-    abilityPrefab: {fileID: 4458424409059008162, guid: 66d90218762cbc74c8a67b828c7e4e85,
-      type: 3}
-    targetAbilityTags: []
+    description: "\u94A9\u7D22\u8DEF\u5F84\u4E00\u6B21\u4F24\u5BB3"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Wrath.Grapple
     grantedEffectTags: []
     abilityParameters: []
     category: 2
@@ -152,13 +466,30 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: Grasping Chain
-    effectId: Wrath02
+  - cardName: "\u672B\u65E5\u9501\u94FE"
+    effectId: WR-M02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
-    description: The Chain can grap mutiple enemies in an area
-    abilityPrefab: {fileID: 8551900017215022505, guid: 66d90218762cbc74c8a67b828c7e4e85,
-      type: 3}
-    targetAbilityTags: []
+    description: "\u94A9\u7D22\u8DDD\u79BB\u63D0\u5347\u5E76\u5728\u843D\u70B9\u51B2\u51FB"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Wrath.Grapple
+    grantedEffectTags: []
+    abilityParameters:
+    - key: GrappleRangeMult
+      value: 1.5
+    category: 2
+    monsterType: 5
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u6B89\u8EAB\u52A0\u5195"
+    effectId: WR-B01
+    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    description: "\u7F3A\u5931\u8010\u4E45\u63D0\u9AD8\u4F24\u5BB3/\u8303\u56F4\u5E76\u7F29\u77EDAttack CD"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Wrath.Slam
     grantedEffectTags: []
     abilityParameters: []
     category: 2
@@ -167,109 +498,47 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: Parasidic Mine
-    effectId: Sloth01
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Enemy died from eneergy blast will spawn a mine automaticlally
-    abilityPrefab: {fileID: 6423168399959792756, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-      type: 3}
-    targetAbilityTags: []
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: Shatter Blast
-    effectId: Sloth02
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Based on charge time, blast will spread more blasts upon impact
-    abilityPrefab: {fileID: 4365737887685492572, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-      type: 3}
-    targetAbilityTags: []
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u843D\u5730\u7206\u70B8"
-    effectId: Sloth.LandingBlast
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Landing explosion on hop.
+  - cardName: "\u4EE5\u8EAB\u4E3A\u85AA"
+    effectId: WR-B02
+    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    description: "\u5E38\u9A7B\u8D34\u8EAB\u71C3\u70E7\u5149\u73AF"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
-    - Ability.Monster.Sloth.Launch
+    - Ability.Monster.Wrath.BurnAura
     grantedEffectTags: []
     abilityParameters: []
     category: 2
-    monsterType: 2
+    monsterType: 5
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u84C4\u529B\u6563\u5C04"
-    effectId: Sloth.Scatter
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: On enemy hit, scatter fragments that ignore the first target. Count
-      scales with charge time.
+  - cardName: "\u98CE\u66B4\u9501\u94FE"
+    effectId: WR-S01
+    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    description: "\u9F99\u5377\u98CE\u671F\u95F4\u79FB\u901F+300%"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
-    - Ability.Monster.Sloth.ChargeShot
+    - Ability.Monster.Wrath.ChainStorm
     grantedEffectTags: []
     abilityParameters: []
     category: 2
-    monsterType: 2
+    monsterType: 5
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u5E03\u7F6E\u5730\u96F7"
-    effectId: Sloth.LandingMine
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Place a mine at the takeoff point before jumping. Other monsters
-      trigger an explosion.
+  - cardName: "\u7EC8\u672B\u98D3\u98CE"
+    effectId: WR-S03
+    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    description: "\u9F99\u5377\u98CE\u65F6\u957F+2\u79D2"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
-    - Ability.Monster.Sloth.Launch
+    - Ability.Monster.Wrath.ChainStorm
     grantedEffectTags: []
     abilityParameters: []
     category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u65E0\u4EBA\u673A\u7ECF\u6D4E"
-    effectId: Sloth.DroneEconomy
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Drone HP cost -50%, lifetime +10%.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Sloth.Drone
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u65E0\u4EBA\u673A\u6B7B\u4EA1\u7206\u70B8"
-    effectId: Sloth.DroneDeathBlast
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Drone explodes toward enemies on death.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Sloth.Drone
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
+    monsterType: 5
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
@@ -347,8 +616,8 @@ MonoBehaviour:
     - Ability.Monster.Gluttony.Devour
     grantedEffectTags: []
     abilityParameters:
-    - key: 
-      value: 0
+    - key: FirstDevourHeal
+      value: 50
     category: 2
     monsterType: 3
     foregroundSprite: {fileID: 0}
@@ -387,40 +656,14 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u8FC7\u9971\u795E\u8FF9"
-    effectId: GL-X01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: "\u6D88\u8017\u8FC7\u9971\u65F6\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u6539\u4E3A\u6210\u5BF9\u51FA\u73B0\u3002"
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Gluttony.AbyssMaw
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 3
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u9965\u795E\u663E\u5F62"
-    effectId: GL-TG01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: "\u66B4\u98DF\u79FB\u901F\u63D0\u5347\uFF0C\u6DF1\u6E0A\u5DE8\u53E3\u66F4\u5927\u3002"
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Gluttony
-    grantedEffectTags: []
-    abilityParameters:
-    - key: BodyMoveSpeedMult
-      value: 1.15
-    - key: MawSizeMult
-      value: 1.2
-    category: 3
-    monsterType: 3
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
   disabledEffectIds:
   - GL-X01
   - GL-TG01
+  - GR-A04
+  - GR-A05
+  - GR-A06
+  - GR-M03
+  - GR-M04
+  - GR-S02
+  - GR-S03
+  - GR-TG01

@@ -446,7 +446,11 @@ public class MonsterActor : Actor
                 if (!IsAbilityFacingLocked)
                 {
                     Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, movementDeltaTime * 12f);
+                    float turnRate = 12f;
+                    GluttonyBodyState gluttonyState = GetComponent<GluttonyBodyState>();
+                    if (gluttonyState != null && gluttonyState.SmallCatTurnMult > 0.01f)
+                        turnRate *= gluttonyState.SmallCatTurnMult;
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, movementDeltaTime * turnRate);
                 }
 
                 float effectiveMoveSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
@@ -640,7 +644,7 @@ public class MonsterActor : Actor
                     if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
                     {
                         Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
-                        TakeDamage(basicCost);
+                        TakeDamage(basicCost, allowGreedGuardAbsorb: false);
                     }
                     any = true;
                 }
@@ -657,7 +661,7 @@ public class MonsterActor : Actor
                     if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
                     {
                         Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
-                        TakeDamage(skillCost);
+                        TakeDamage(skillCost, allowGreedGuardAbsorb: false);
                     }
                     any = true;
                 }
@@ -674,7 +678,7 @@ public class MonsterActor : Actor
                     if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
                     {
                         Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
-                        TakeDamage(mobilityCost);
+                        TakeDamage(mobilityCost, allowGreedGuardAbsorb: false);
                     }
                     any = true;
                 }
@@ -738,7 +742,7 @@ public class MonsterActor : Actor
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
-            TakeDamage(cost);
+            TakeDamage(cost, allowGreedGuardAbsorb: false);
         }
     }
 
@@ -760,10 +764,20 @@ public class MonsterActor : Actor
 
     public virtual void TakeDamage(float amount)
     {
+        TakeDamage(amount, allowGreedGuardAbsorb: true);
+    }
+
+    public virtual void TakeDamage(float amount, bool allowGreedGuardAbsorb)
+    {
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsUntargetable(this) || IsDamageImmune(this)) return;
         if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
         if (amount <= 0f) return;
+        if (allowGreedGuardAbsorb && TryGreedGuardAbsorb(amount, environmental: false))
+        {
+            FlashDamage();
+            return;
+        }
 
         EnterHitState();
         if (isPossessed)
@@ -805,8 +819,17 @@ public class MonsterActor : Actor
     {
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsDamageImmune(this)) return;
+        // GR-M02: own normal black oil ignores terrain damage (no Guard convert credit).
+        EnemyAbility_GreedBlackOil blackOil = GetComponentInChildren<EnemyAbility_GreedBlackOil>(true);
+        if (blackOil != null && blackOil.ShouldIgnoreTerrainDamage())
+            return;
         if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
         if (amount <= 0f) return;
+        if (TryGreedGuardAbsorb(amount, environmental: true))
+        {
+            FlashDamage();
+            return;
+        }
 
         if (isDowned || Body == BodyState.Downed)
         {
@@ -815,7 +838,13 @@ public class MonsterActor : Actor
             return;
         }
 
-        TakeDamage(amount);
+        TakeDamage(amount, allowGreedGuardAbsorb: false);
+    }
+
+    private bool TryGreedGuardAbsorb(float amount, bool environmental)
+    {
+        EnemyAbility_GreedGuard guard = GetComponentInChildren<EnemyAbility_GreedGuard>(true);
+        return guard != null && guard.TryAbsorb(amount, environmental, out _);
     }
 
     public void OnDealtDamage(float amount)
@@ -878,6 +907,8 @@ public class MonsterActor : Actor
     public void ApplyOffensiveDamage(MonsterActor target, float amount)
     {
         if (!CanDamage(target) || amount <= 0f) return;
+        // Lust LU-S06: pulled sources cannot damage the player's Possessed Body during pull + grace.
+        if (LustPullDamageGate.ShouldBlock(this, target)) return;
         if (Combat != null) amount = Combat.ModifyOutgoingDamage(amount);
         target.TakeDamage(amount);
         OnDealtDamage(amount);
@@ -960,6 +991,7 @@ public class MonsterActor : Actor
 
         Animator animator = GetActiveAnimator();
         if (animator != null) animator.SetBool("IsDowned", false);
+        EnvyMarkTarget.ClearMarksFromSource(this as Enemy);
     }
 
     public void OnUnpossessed(){
@@ -969,6 +1001,7 @@ public class MonsterActor : Actor
         if (visualFx != null) visualFx.SetPossessionHighlight(false);
         // Cheat immortality must not linger on bodies left as normal enemies.
         ClearCheatDefenseEffects();
+        EnvyMarkTarget.ClearMarksFromSource(this as Enemy);
     }
 
     private void EnterHitState(){

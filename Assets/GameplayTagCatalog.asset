@@ -33,6 +33,39 @@ MonoBehaviour:
   - Ability.Monster.Gluttony.Devour
   - Effect.Combat.GluttonyOverfed
   - State.Combat.Overfed
+  - Ability.Monster.Lust
+  - Ability.Monster.Lust.Anchor
+  - Ability.Monster.Lust.RoundTrip
+  - Ability.Monster.Lust.SoulPull
+  - Effect.Combat.LustLink
+  - Effect.Combat.LustPullIsolation
+  - State.Combat.Lust.Linked
+  - State.Combat.Lust.PullDamageIsolation
+  - State.Combat.Lust.PulledSource
+  - Ability.Monster.Envy.Flight
+  - Ability.Monster.Envy.Laser
+  - Ability.Monster.Envy.Thunderstorm
+  - Effect.Combat.EnvyFlight
+  - Effect.Combat.EnvyMark
+  - Effect.Combat.EnvyLaserHit
+  - State.Combat.EnvyFlight
+  - State.Combat.EnvyMark
+  - Ability.Monster.Greed.BlackOil
+  - Ability.Monster.Greed.Hands
+  - Ability.Monster.Greed.Guard
+  - Effect.Combat.GreedGuard
+  - Effect.Combat.GreedHandHit
+  - State.Control.Rooted
+  - State.Defense.GreedGuard
+  - State.Combat.BurningOil
+  - Ability.Monster.Wrath.Grapple
+  - Ability.Monster.Wrath.Slam
+  - Ability.Monster.Wrath.ChainStorm
+  - Ability.Monster.Wrath.BurnAura
+  - Effect.Combat.WrathBurn
+  - Effect.Combat.WrathStormSpeed
+  - State.Status.Burning
+  - State.Buff.WrathStormSpeed
   effectDefinitions:
   - {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   - {fileID: 11400000, guid: fbfb59adaa30c448eade1b236543e4ea, type: 2}
@@ -41,3 +74,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ebe9e8f842a9f4053aeb56efc067b64f, type: 2}
   - {fileID: 11400000, guid: 584d7c7b8edf245c7ad7bb2f8ab60ed2, type: 2}
   - {fileID: 11400000, guid: 7e614deaf632842788761aad4ffce1a8, type: 2}
+  - {fileID: 11400000, guid: f4c93e7fa8514be29620b560a5cfeae6, type: 2}
+  - {fileID: 11400000, guid: d85128d79f814acf9d1e95ae2304114f, type: 2}
+  - {fileID: 11400000, guid: 3ab54dae587249618abcb3ae795b164e, type: 2}
+  - {fileID: 11400000, guid: d35abb93af99477880e7abb901d8ffd6, type: 2}
+  - {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
+  - {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
+  - {fileID: 11400000, guid: a7f43be5e7bf48ff9845ee75658f96aa, type: 2}
+  - {fileID: 11400000, guid: 4531f875d7d74cc2af0e3aec4f7039d4, type: 2}
+  - {fileID: 11400000, guid: 5fcd4b49b1b04320bd7031fd0fdadd22, type: 2}

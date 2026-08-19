@@ -11,11 +11,11 @@ GameObject:
   - component: {fileID: 4673453431339555007}
   - component: {fileID: 4825843220655286282}
   - component: {fileID: 2858550828181286527}
-  - component: {fileID: 4210523712398922941}
   - component: {fileID: 7553643922654602067}
   - component: {fileID: 4465128518715992516}
   - component: {fileID: 8490741439310761608}
   - component: {fileID: 7938556968617966024}
+  - component: {fileID: 5667508307776216601}
   m_Layer: 0
   m_Name: lust_new
   m_TagString: Untagged
@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 4
+  moveSpeed: 6
   acceleration: 60
   deceleration: 80
   groundLayer:
@@ -61,10 +61,10 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 100
   currentHealth: 100
-  displayName: "\u66B4\u98DF-\u9B54\u732B"
+  displayName: "\u8272\u6B32-\u7075\u5FF5\u5E08"
   enemyStats:
     maxHealth: 100
-    moveSpeed: 4
+    moveSpeed: 6
     acceleration: 60
     deceleration: 80
     maxTenacity: 200
@@ -72,7 +72,7 @@ MonoBehaviour:
     attackSpeed: 1
   possessedStats:
     maxHealth: 100
-    moveSpeed: 4
+    moveSpeed: 6
     acceleration: 60
     deceleration: 80
     maxTenacity: 200
@@ -82,7 +82,7 @@ MonoBehaviour:
   collisionDamage: 30
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Gluttony_new
+  aiConfigId: Lust_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -107,14 +107,14 @@ MonoBehaviour:
   healthCanvas: {fileID: 0}
   showHealthBar: 1
   basicAbilities:
-  - ability: {fileID: 0}
-    hpCost: 5
+  - ability: {fileID: 4906122484495260960}
+    hpCost: 1
   skillAbilities:
-  - ability: {fileID: 0}
-    hpCost: 40
+  - ability: {fileID: 1215811978824066421}
+    hpCost: 30
   mobilityAbilities:
-  - ability: {fileID: 0}
-    hpCost: 10
+  - ability: {fileID: 1105355259635401983}
+    hpCost: 20
   passiveAbilities: []
   currentTenacity: 0
   targetPlayer: {fileID: 0}
@@ -147,19 +147,6 @@ MonoBehaviour:
     - State.Defense.SuperArmor
     blockedEffectTags:
     - Effect.Control
---- !u!114 &4210523712398922941
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2259565064542781952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c34b1f512178c45c7b769a831835afb0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  overfedEffect: {fileID: 11400000, guid: 7e614deaf632842788761aad4ffce1a8, type: 2}
 --- !u!114 &7553643922654602067
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -242,6 +229,229 @@ MonoBehaviour:
   dissolveEdgeColor: {r: 2.3, g: 0.55, b: 0.12, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+--- !u!114 &5667508307776216601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2259565064542781952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6233dfe422a54cde8f0c8a5b73f10aea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultAnchorLifetime: 8
+  defaultLinkDuration: 6
+  bodyWeight: 1
+  tg01MoveSpeedMult: 1.15
+  tg01CooldownMult: 0.7
+  linkEffect: {fileID: 11400000, guid: f4c93e7fa8514be29620b560a5cfeae6, type: 2}
+  anchorPrefab: {fileID: 7904209009906722592, guid: 9770612fd041949018b73900b083aa45,
+    type: 3}
+  anchorSpawnVfx: {fileID: 0}
+  anchorSwapVfx: {fileID: 0}
+--- !u!1 &4722559240599056523
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6531455362806902501}
+  - component: {fileID: 1215811978824066421}
+  m_Layer: 0
+  m_Name: skill_soulpull
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6531455362806902501
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4722559240599056523}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8670385308785488569}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1215811978824066421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4722559240599056523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb8e34f9441540a9867e69cf2c0a208d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: Ability
+  type: 0
+  upgrades: []
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 25
+  drawHitboxes: 0
+  cooldown: 6
+  debugLogCooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  pullWindow: 0.6
+  pullMaxDistance: 6
+  pullDamage: 25
+  aimTurnSpeed: 720
+  tetherVfx: {fileID: 0}
+  impactVfx: {fileID: 0}
+  telegraphVfx: {fileID: 0}
+  s05CollisionDistance: 0.75
+  s05BlastDamage: 25
+  s05BlastRadius: 2
+  s05BlastVfx: {fileID: 0}
+  s06Grace: 0.15
+--- !u!1 &5149697916183236243
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5034324014763015484}
+  - component: {fileID: 4906122484495260960}
+  m_Layer: 0
+  m_Name: basic_roundtrip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5034324014763015484
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5149697916183236243}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8670385308785488569}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4906122484495260960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5149697916183236243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfa1f3c3fc174fd5adea25eef6256b48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: Ability
+  type: 0
+  upgrades: []
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 20
+  drawHitboxes: 0
+  cooldown: 2
+  debugLogCooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  segmentDamage: 20
+  mistWidth: 1
+  mistSpeed: 14
+  mistRange: 8
+  linkDuration: 6
+  aimTurnSpeed: 720
+  mistVfxPrefab: {fileID: 0}
+  linkMarkVfx: {fileID: 0}
+  ringInnerRadius: 0.5
+  ringOuterRadius: 4
+  ringExpandDuration: 0.8
+  ringWidth: 0.8
+  ringMistVfx: {fileID: 0}
+  mirrorDelay: 0.1
+  mirrorDamageMul: 0.5
+  a03Delay: 0.1
+  a03Damage: 30
+  a03Radius: 2.5
+  a03BlastVfx: {fileID: 0}
 --- !u!1 &6718537225855363445
 GameObject:
   m_ObjectHideFlags: 0
@@ -270,9 +480,105 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 462196062277548380}
+  - {fileID: 5034324014763015484}
+  - {fileID: 6531455362806902501}
   m_Father: {fileID: 4673453431339555007}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6942424109527450406
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 462196062277548380}
+  - component: {fileID: 1105355259635401983}
+  m_Layer: 0
+  m_Name: mobility_anchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &462196062277548380
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6942424109527450406}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8670385308785488569}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1105355259635401983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6942424109527450406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5d89656e7b1492e86bb14ef6ec9a325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: Ability
+  type: 0
+  upgrades: []
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 0
+  drawHitboxes: 0
+  cooldown: 1
+  debugLogCooldown: 0
+  abilityTags: []
+  appliedEffectTags: []
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  dashDistance: 4
+  dashDuration: 0.18
+  anchorLifetime: 8
+  aimTurnSpeed: 720
+  m03BlastDelay: 0.15
+  m03BlastDamage: 30
+  m03BlastRadius: 2.5
+  m03BlastVfx: {fileID: 0}
 --- !u!1 &8306792325877648821
 GameObject:
   m_ObjectHideFlags: 0
