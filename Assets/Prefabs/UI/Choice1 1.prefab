@@ -213,17 +213,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pointerArea: {fileID: 1156736915327256289}
-  foregroundLayer: {fileID: 6763454874060334290}
-  middlegroundLayer: {fileID: 6758258373324698334}
-  backgroundLayer: {fileID: 8811101112222333446}
-  foregroundTilt: 13
-  middlegroundTilt: 7.5
-  backgroundTilt: 3.3
+  foregroundLayer: {fileID: 6758258373324698334}
+  middlegroundLayer: {fileID: 3375467456503642465}
+  backgroundLayer: {fileID: 6763454874060334290}
+  foregroundTilt: 9.8
+  middlegroundTilt: 5.6
+  backgroundTilt: 1
   invertBackgroundTilt: 0
   smoothSpeed: 20
-  foregroundOffset: {x: 10, y: 10}
-  middlegroundOffset: {x: 7, y: 7}
-  backgroundOffset: {x: 4, y: 4}
+  foregroundOffset: 10
+  middlegroundOffset: 7
+  backgroundOffset: 4
 --- !u!1 &2935273577307308582
 GameObject:
   m_ObjectHideFlags: 0
@@ -590,7 +590,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 884ed8ca5636f9a4ab93b156f23e3a1a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d3d3135e0a88b3c4eb2e6046243aec28, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
