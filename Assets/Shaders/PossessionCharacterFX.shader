@@ -10,9 +10,8 @@ Shader "Possession/CharacterFX"
         [Header(Dissolve)]
         _CorpseFade ("Corpse Fade (1=visible)", Range(0,1)) = 1
         _DissolveAmount ("Dissolve Amount (0=solid)", Range(0,1)) = 0
-        _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1, 0.45, 0.1, 1)
-        _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.2)) = 0.045
         _DissolveNoiseScale ("Dissolve Noise Scale", Float) = 12
+        _DissolveSoftness ("Dissolve Softness", Range(0.01, 0.5)) = 0.12
 
         [Header(Possession Rim)]
         _RimColor ("Rim Color", Color) = (0.55, 0.2, 1, 1)
@@ -65,9 +64,8 @@ Shader "Possession/CharacterFX"
                 half _BumpScale;
                 half _CorpseFade;
                 half _DissolveAmount;
-                half4 _DissolveEdgeColor;
-                half _DissolveEdgeWidth;
                 half _DissolveNoiseScale;
+                half _DissolveSoftness;
                 half4 _RimColor;
                 half _RimIntensity;
                 half _RimPower;
@@ -130,16 +128,21 @@ Shader "Possession/CharacterFX"
             {
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
 
-                // Combine corpse fade (1=visible) with dissolve amount (0=solid).
+                // 0 = solid body, 1 = fully dissolved. Transparent holes grow with progress.
                 half dissolve = saturate(max(1.0h - _CorpseFade, _DissolveAmount));
                 float noise = ValueNoise(input.uv * _DissolveNoiseScale + input.positionWS.xz * 0.35);
-                half edge = saturate((noise - dissolve) / max(_DissolveEdgeWidth, 1e-4h));
-                clip(noise - dissolve - 0.001h);
+                half soft = max(_DissolveSoftness, 1e-4h);
+                // Keep original albedo; only alpha opens up where noise is eaten by dissolve.
+                half dissolveMask = 1.0h - smoothstep(noise - soft, noise + soft, dissolve);
+                half alpha = albedo.a * dissolveMask * saturate(_CorpseFade);
+                clip(alpha - 0.004h);
 
                 half3 normalWS = normalize(input.normalWS);
                 Light mainLight = GetMainLight();
                 half ndotl = saturate(dot(normalWS, mainLight.direction));
-                half3 lighting = mainLight.color * (ndotl * 0.85h + 0.15h);
+                // Lifted lighting so dissolve keeps the authored look instead of collapsing to black.
+                half3 ambient = SampleSH(normalWS);
+                half3 lighting = mainLight.color * (ndotl * 0.45h + 0.55h) + ambient * 0.4h;
 
                 half3 viewDir = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half rim = pow(1.0h - saturate(dot(normalWS, viewDir)), _RimPower);
@@ -147,9 +150,6 @@ Shader "Possession/CharacterFX"
 
                 half3 color = albedo.rgb * lighting + rimCol;
                 color = lerp(color, _HitFlashColor.rgb, _HitFlashAmount);
-                color = lerp(color, _DissolveEdgeColor.rgb, (1.0h - edge) * step(0.001h, dissolve));
-
-                half alpha = albedo.a * _CorpseFade * saturate(1.0h - dissolve * 0.35h);
                 color = MixFog(color, input.fogFactor);
                 return half4(color, alpha);
             }

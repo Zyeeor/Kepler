@@ -619,12 +619,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 2.4
+  possessionRimIntensity: 4.33
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!1 &3797659131636598871
 GameObject:
   m_ObjectHideFlags: 0
@@ -1830,6 +1829,7 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  possessionHighlightIntensity: 1.8
   healthSlider: {fileID: 9015894102159341057}
   healthCanvas: {fileID: 5679323062078869185}
   showHealthBar: 1
@@ -1868,7 +1868,6 @@ MonoBehaviour:
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!4 &5417715533104391790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
