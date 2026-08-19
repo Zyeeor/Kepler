@@ -16,8 +16,8 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
     public float speedMultiplier = 2f;
     [Tooltip("Extra speed mult when GL-M01 is unlocked.")]
     public float glM01SpeedBonus = 1.25f;
-    [Tooltip("Permanent body move-speed mult when GL-TG01 is unlocked.")]
-    public float glTg01MoveSpeedBonus = 1.15f;
+    [Tooltip("Extra turn responsiveness reserved for GL-M01. Movement turning remains owned by the controller.")]
+    public float glM01TurnResponsiveness = 1.25f;
 
     [Header("Model Swap")]
     [Tooltip("Default body model, pre-placed as a child of this enemy, with its own Animator + Controller (must expose the same param names as every other monster: \"Basic\"/\"Skill\"/\"IsDowned\"/\"Speed\"). Hidden while small-cat form is active.")]
@@ -31,7 +31,6 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
     private Vector3 _baseScale = Vector3.one;
     private float _baseMoveSpeed;
     private bool _capturedBase;
-    private bool _tg01Applied;
 
     private void OnEnable()
     {
@@ -53,7 +52,6 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
     protected override void Update()
     {
         base.Update();
-        ApplyTg01MoveSpeedIfNeeded();
     }
 
     protected override void OnTrigger()
@@ -61,7 +59,12 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
         if (owner == null) return;
         CacheOwnerState();
         CaptureBaseStats();
-        if (_formRoutine != null) StopCoroutine(_formRoutine);
+        if (_formActive)
+        {
+            ForceExitForm();
+            return;
+        }
+
         _formRoutine = StartCoroutine(FormRoutine());
     }
 
@@ -81,7 +84,7 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
     private IEnumerator FormRoutine()
     {
         EnterForm();
-        if (_state != null && IsUpgradeUnlocked("GL-A02"))
+        if (_state != null && CardManager.Instance != null && CardManager.Instance.IsEffectUnlocked("GL-A02"))
             _state.ArmHuntStepEmpower();
 
         float duration = GetCardParameter("TransformDuration", formDuration);
@@ -103,7 +106,7 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
             speedMult *= GetCardParameter("SmallCatSpeedMult", glM01SpeedBonus);
 
         owner.transform.localScale = _baseScale * Mathf.Max(0.05f, scaleMultiplier);
-        owner.moveSpeed = _baseMoveSpeed * speedMult * Tg01Mult();
+        owner.moveSpeed = _baseMoveSpeed * speedMult;
         SetModelSwap(true);
     }
 
@@ -115,7 +118,13 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
         SetModelSwap(false);
         if (owner == null) return;
         owner.transform.localScale = _baseScale;
-        owner.moveSpeed = _baseMoveSpeed * Tg01Mult();
+        owner.moveSpeed = _baseMoveSpeed;
+    }
+
+    /// <summary>Restores the normal body when a Basic attack is used unless GL-M01 is unlocked.</summary>
+    public void ExitForAttack()
+    {
+        if (!IsUpgradeUnlocked("GL-M01")) ForceExitForm();
     }
 
     private void SetModelSwap(bool catActive)
@@ -125,23 +134,6 @@ public class EnemyAbility_GluttonySmallCat : EnemyAbility
         // Enemy.GetActiveAnimator() picks up whichever child is active for "Basic"/"Skill"/etc.
         if (normalModelRoot != null) normalModelRoot.SetActive(!catActive);
         if (smallCatModelRoot != null) smallCatModelRoot.SetActive(catActive);
-    }
-
-    private float Tg01Mult()
-    {
-        return IsUpgradeUnlocked("GL-TG01")
-            ? GetCardParameter("BodyMoveSpeedMult", glTg01MoveSpeedBonus)
-            : 1f;
-    }
-
-    private void ApplyTg01MoveSpeedIfNeeded()
-    {
-        if (owner == null || _formActive) return;
-        CaptureBaseStats();
-        bool want = IsUpgradeUnlocked("GL-TG01");
-        if (want == _tg01Applied) return;
-        _tg01Applied = want;
-        owner.moveSpeed = _baseMoveSpeed * Tg01Mult();
     }
 
     private void CaptureBaseStats()

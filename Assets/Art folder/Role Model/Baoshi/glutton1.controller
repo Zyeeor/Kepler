@@ -17,10 +17,10 @@ AnimatorStateMachine:
     m_Position: {x: -270, y: 500, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 7220632368896569721}
-    m_Position: {x: 360, y: 490, z: 0}
+    m_Position: {x: 410, y: 500, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1610525408826346282}
-    m_Position: {x: 30, y: 390, z: 0}
+    m_Position: {x: 40, y: 420, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -186,7 +186,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Locomotion
-  m_Speed: 1
+  m_Speed: 0.5
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 387004508405838491}
@@ -451,14 +451,14 @@ BlendTree:
       type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 1
+    m_TimeScale: 0.01
     m_CycleOffset: 0
     m_DirectBlendParameter: speed
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 1827226128182048838, guid: b36f562bc7fdf604e9dbe371dc019f64,
       type: 3}
-    m_Threshold: 8
+    m_Threshold: 4
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
     m_CycleOffset: 0
@@ -467,7 +467,7 @@ BlendTree:
   m_BlendParameter: Speed
   m_BlendParameterY: speed
   m_MinThreshold: 0
-  m_MaxThreshold: 8
+  m_MaxThreshold: 4
   m_UseAutomaticThresholds: 0
   m_NormalizedBlendValues: 0
   m_BlendType: 0

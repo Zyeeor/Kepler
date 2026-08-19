@@ -322,6 +322,42 @@ public class MonsterActor : Actor
         else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a)) passiveAbilities.Add(a);
     }
 
+    /// <summary>Swaps one Skill-slot ability at runtime while preserving its configured HP cost.</summary>
+    public void ReplaceSkillAbility(EnemyAbility original, EnemyAbility replacement)
+    {
+        if (original == null || replacement == null) return;
+        float hpCost = 0f;
+        for (int i = skillAbilities.Count - 1; i >= 0; i--)
+        {
+            SkillAbilityEntry entry = skillAbilities[i];
+            if (entry == null || entry.ability == original)
+            {
+                if (entry != null && entry.ability == original) hpCost = entry.hpCost;
+                skillAbilities.RemoveAt(i);
+            }
+            else if (entry.ability == replacement)
+            {
+                skillAbilities.RemoveAt(i);
+            }
+        }
+        skillAbilities.Add(new SkillAbilityEntry { ability = replacement, hpCost = hpCost });
+    }
+
+    /// <summary>Restores the original Skill-slot ability after a temporary runtime replacement.</summary>
+    public void RestoreSkillAbility(EnemyAbility original, EnemyAbility replacement)
+    {
+        if (original == null) return;
+        float hpCost = 0f;
+        for (int i = skillAbilities.Count - 1; i >= 0; i--)
+        {
+            SkillAbilityEntry entry = skillAbilities[i];
+            if (entry != null && entry.ability == replacement) hpCost = entry.hpCost;
+            if (entry == null || entry.ability == replacement || entry.ability == original)
+                skillAbilities.RemoveAt(i);
+        }
+        skillAbilities.Add(new SkillAbilityEntry { ability = original, hpCost = hpCost });
+    }
+
     protected virtual void Start(){
         // After child OnEnable has stamped AbilityType, only inject shared dash when no custom Mobility exists.
         if (!HasCustomMobilityAbility()&& GetComponent<EnemyAbility_MobilityDash>()== null)

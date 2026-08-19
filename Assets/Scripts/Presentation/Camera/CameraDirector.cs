@@ -80,6 +80,8 @@ public class CameraDirector : MonoBehaviour
         EnsureRig();
         EnsureCombatEffectManager();
         EnsureCombatAudioManager();
+        // 调试飞行相机（开发工具，F4 切换；与 CombatEffectManager 同款自举模式）
+        DebugCameraController.EnsureOn(GetComponent<Camera>());
     }
 
     private static void EnsureCombatEffectManager()

@@ -1,8 +1,9 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Body-bound Gluttony combat flags shared by SmallCat / AbyssMaw / Devour.
-/// Overfed clears on possess / unpossess (Canonical: 换身清除 + init 0).
+/// Body-bound Gluttony combat state shared by SmallCat, AbyssMaw, and Devour.
+/// Overfed and an unused copied Skill clear whenever this body changes control state.
 /// </summary>
 [DisallowMultipleComponent]
 public class GluttonyBodyState : MonoBehaviour
@@ -16,26 +17,34 @@ public class GluttonyBodyState : MonoBehaviour
     public bool HasHuntStepEmpower { get; private set; }
     public bool FirstDevourHealUsed { get; private set; }
     public bool IsSmallCatActive { get; private set; }
+    public bool HasCopiedSkill => _copiedSkill != null;
 
-    private MonsterActor _owner;
+    private Enemy _owner;
     private bool _wasPossessed;
     private EnemyAbility_GluttonySmallCat _smallCat;
+    private EnemyAbility_GluttonyDevour _devour;
+    private EnemyAbility _copiedSkill;
+    private Coroutine _restoreCopiedSkillRoutine;
 
     private void Awake()
     {
-        _owner = GetComponent<MonsterActor>();
+        _owner = GetComponent<Enemy>();
         _smallCat = GetComponentInChildren<EnemyAbility_GluttonySmallCat>(true);
+        _devour = GetComponentInChildren<EnemyAbility_GluttonyDevour>(true);
         _wasPossessed = _owner != null && _owner.isPossessed;
-        ClearOverfed();
+        ClearBodyBoundState();
     }
 
     private void LateUpdate()
     {
-        if (_owner == null) return;
-        if (_wasPossessed == _owner.isPossessed) return;
+        if (_owner == null || _wasPossessed == _owner.isPossessed) return;
         _wasPossessed = _owner.isPossessed;
-        ClearOverfed();
-        FirstDevourHealUsed = false;
+        ClearBodyBoundState();
+    }
+
+    private void OnDisable()
+    {
+        ClearBodyBoundState();
     }
 
     public void GrantOverfed()
@@ -83,10 +92,108 @@ public class GluttonyBodyState : MonoBehaviour
         IsSmallCatActive = active;
     }
 
+    public void ExitSmallCatForAttack()
+    {
+        if (_smallCat == null)
+            _smallCat = GetComponentInChildren<EnemyAbility_GluttonySmallCat>(true);
+        _smallCat?.ExitForAttack();
+    }
+
     public void CancelSmallCat()
     {
         if (_smallCat == null)
             _smallCat = GetComponentInChildren<EnemyAbility_GluttonySmallCat>(true);
         _smallCat?.ForceExitForm();
+    }
+
+    /// <summary>
+    /// Player-only: clones the swallowed enemy's first Skill ability into this body's active Skill slot.
+    /// The clone keeps its own source configuration but executes with this Gluttony body as owner.
+    /// </summary>
+    public bool TryCopySkillFrom(Enemy target, EnemyAbility_GluttonyDevour devour)
+    {
+        if (_owner == null || !_owner.isPossessed || target == null || devour == null) return false;
+
+        EnemyAbility source = FindFirstSkillAbility(target);
+        if (source == null) return false;
+
+        ClearCopiedSkill();
+        GameObject copiedRoot = Instantiate(source.gameObject, _owner.transform);
+        copiedRoot.name = $"CopiedSkill_{source.abilityName}";
+        _copiedSkill = copiedRoot.GetComponent<EnemyAbility>();
+        if (_copiedSkill == null)
+        {
+            Destroy(copiedRoot);
+            return false;
+        }
+
+        _devour = devour;
+        _devour.enabled = false;
+        _owner.ReplaceSkillAbility(_devour, _copiedSkill);
+        _copiedSkill.Activated += OnCopiedSkillActivated;
+        return true;
+    }
+
+    private static EnemyAbility FindFirstSkillAbility(Enemy target)
+    {
+        foreach (MonsterActor.SkillAbilityEntry entry in target.skillAbilities)
+            if (entry != null && entry.ability != null) return entry.ability;
+
+        foreach (EnemyAbility ability in target.GetComponentsInChildren<EnemyAbility>(true))
+            if (ability.type == EnemyAbility.AbilityType.Skill) return ability;
+        return null;
+    }
+
+    private void OnCopiedSkillActivated(EnemyAbility ability)
+    {
+        if (_copiedSkill != ability || _restoreCopiedSkillRoutine != null) return;
+        _restoreCopiedSkillRoutine = StartCoroutine(RestoreCopiedSkillAfterActivation(ability));
+    }
+
+    private IEnumerator RestoreCopiedSkillAfterActivation(EnemyAbility ability)
+    {
+        // Let MonsterActor finish iterating the current Skill list before swapping it back.
+        yield return null;
+        if (_copiedSkill != ability) yield break;
+
+        ability.Activated -= OnCopiedSkillActivated;
+        if (_owner != null && _devour != null)
+        {
+            _owner.RestoreSkillAbility(_devour, ability);
+            _devour.enabled = true;
+        }
+
+        // Keep the copied component alive for any coroutine-driven payload it already launched.
+        // It is no longer present in the Skill slot and will be destroyed on the next copy or body transition.
+        _restoreCopiedSkillRoutine = null;
+    }
+
+    private void ClearCopiedSkill()
+    {
+        if (_restoreCopiedSkillRoutine != null)
+        {
+            StopCoroutine(_restoreCopiedSkillRoutine);
+            _restoreCopiedSkillRoutine = null;
+        }
+
+        if (_copiedSkill != null)
+        {
+            _copiedSkill.Activated -= OnCopiedSkillActivated;
+            if (_owner != null && _devour != null)
+                _owner.RestoreSkillAbility(_devour, _copiedSkill);
+            Destroy(_copiedSkill.gameObject);
+            _copiedSkill = null;
+        }
+
+        if (_devour != null) _devour.enabled = true;
+    }
+
+    private void ClearBodyBoundState()
+    {
+        ClearOverfed();
+        HasHuntStepEmpower = false;
+        FirstDevourHealUsed = false;
+        CancelSmallCat();
+        ClearCopiedSkill();
     }
 }

@@ -24,6 +24,14 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats: []
-    m_Colors: []
+    m_Floats:
+    - _DarkRange: 0.71
+    - _Dark_intensity: 0.125
+    - _Darksoft: 0.639
+    - _Highlight_range: -0.979
+    - _Highlight_soft: 0.917
+    - _OutlineWidth: 0.002
+    m_Colors:
+    - _MainColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Outline_color: {r: 0.34846687, g: 0.19811308, b: 1, a: 1}
   m_BuildTextureStacks: []

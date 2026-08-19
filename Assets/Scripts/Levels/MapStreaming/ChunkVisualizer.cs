@@ -34,8 +34,8 @@ public class ChunkVisualizer : MonoBehaviour
     [Header("调试")]
     [Tooltip("Scene 视图绘制非 Normal Tile 线框（Lava 橙 / Spike 黄 / Blocker 红）。")]
     public bool showDebug = true;
-    [Tooltip("视觉建成/销毁时输出 Debug.Log。")]
-    public bool logBuilds = true;
+    [Tooltip("chunk 视觉建成/销毁日志（移动时高频刷屏，默认关闭）。")]
+    public bool logBuilds = false;
 
     /// <summary>视觉根注册表：coord → 聚合根 GameObject（重复进出 B 正确重建/销毁的凭据）。</summary>
     readonly Dictionary<ChunkCoord, GameObject> visualRoots = new Dictionary<ChunkCoord, GameObject>();

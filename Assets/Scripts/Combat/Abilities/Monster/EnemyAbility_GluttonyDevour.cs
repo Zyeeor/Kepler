@@ -1,21 +1,42 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Gluttony skill: forward heavy bite. On unit hit → Overfed (Q4: hit only).
-/// Cancels SmallCat on start. GL-S01 first-hit heal, GL-S02 execute, GL-S03 swallow small projectiles.
+/// Gluttony's Special: a forward bite that consumes the nearest legal Enemy.
+/// A possessed Gluttony temporarily copies that Enemy's Skill ability after a successful bite.
 /// </summary>
 public class EnemyAbility_GluttonyDevour : EnemyAbility
 {
-    public float range = 3f;
+    public float range = 1f;
     public float angle = 100f;
     public float damageAmount = 40f;
+    [Tooltip("Delay between the Devour cast and its Enemy damage / consume resolution.")]
+    public float hitDelay = 0.5f;
     [Range(0f, 1f)] public float executeHealthFraction = 0.2f;
-    public float firstDevourHeal = 20f;
+    public float firstDevourHeal = 50f;
     public float projectileSwallowRadius = 2.5f;
     public float maxSwallowProjectileDamage = 25f;
 
+    [Header("Devour Hit VFX")]
+    [Tooltip("Optional burst VFX spawned on the body of the Enemy successfully consumed by Devour.")]
+    public GameObject blastVfxPrefab;
+    public float blastVfxDuration = 1f;
+
+    [Header("Devour VFX Motion")]
+    [Tooltip("Local forward/up displacement from VFX Spawn Point at the apex of the Devour VFX motion.")]
+    public Vector3 vfxForwardUpOffset = new Vector3(0f, 0.5f, 1f);
+    [Tooltip("Duration of the small-to-large forward/upward phase.")]
+    public float vfxExpandDuration = 0.5f;
+    [Tooltip("Duration of the large-to-small backward/downward phase.")]
+    public float vfxReturnDuration = 0.5f;
+    [Tooltip("Scale multiplier at the beginning and end of the Devour VFX motion.")]
+    public float vfxStartEndScale = 0.25f;
+    [Tooltip("Scale multiplier at the apex of the Devour VFX motion.")]
+    public float vfxPeakScale = 1f;
+
     private GluttonyBodyState _state;
+    private Coroutine _vfxMotionRoutine;
 
     private void OnEnable()
     {
@@ -36,58 +57,142 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             return;
         }
 
-        var anim = owner.GetActiveAnimator();
-        if (anim != null) anim.SetTrigger("Skill");
-
         CacheOwnerState();
         _state?.CancelSmallCat();
 
-        float dmg = damage > 0f ? damage : damageAmount;
-        bool hitUnit = false;
+        Animator anim = owner.GetActiveAnimator();
+        if (anim != null) anim.SetTrigger("Skill");
 
-        foreach (Enemy enemy in FindEnemiesInArc(owner.transform.position, owner.transform.forward, range, angle))
+        Enemy target = FindNearestDevourTarget();
+        if (target != null)
         {
-            hitUnit = true;
-            float amount = dmg;
-            if (IsUpgradeUnlocked("GL-S02"))
-            {
-                float threshold = GetCardParameter("ExecuteThreshold", executeHealthFraction);
-                if (enemy.maxHealth > 0f && enemy.currentHealth / enemy.maxHealth <= threshold)
-                    amount = enemy.currentHealth;
-            }
-            DealDamageTo(enemy, amount);
+            StartCoroutine(ConsumeEnemyAfterDelay(target));
+            return;
         }
 
-        if (owner.CanDamageSoul())
-        {
-            foreach (var ph in Object.FindObjectsByType<PlayerHealth>(FindObjectsSortMode.None))
-            {
-                if (ph == null) continue;
-                Vector3 to = ph.transform.position - owner.transform.position;
-                to.y = 0f;
-                if (to.magnitude > range) continue;
-                if (Vector3.Angle(owner.transform.forward, to) > angle * 0.5f) continue;
-                hitUnit = true;
-                DealDamageToPlayer(ph, dmg);
-            }
-        }
-
-        bool swallowedProjectile = false;
-        if (IsUpgradeUnlocked("GL-S03"))
-            swallowedProjectile = TrySwallowProjectile();
-
-        if (hitUnit || swallowedProjectile)
-        {
+        // GL-S03 projectile classification is intentionally retained for later work.
+        // The current implementation only attempts its existing projectile swallow fallback.
+        if (IsUpgradeUnlocked("GL-S03") && TrySwallowProjectile())
             _state?.GrantOverfed();
-            if (hitUnit && IsUpgradeUnlocked("GL-S01") && _state != null && !_state.FirstDevourHealUsed)
-            {
-                float heal = GetCardParameter("FirstDevourHeal", firstDevourHeal);
-                owner.Heal(heal);
-                _state.MarkFirstDevourHealUsed();
-            }
-        }
 
         EndActivationEffect();
+    }
+
+    private IEnumerator ConsumeEnemyAfterDelay(Enemy target)
+    {
+        yield return AbilityWait(Mathf.Max(0f, hitDelay));
+        if (owner != null && target != null && owner.CanDamage(target))
+            ConsumeEnemy(target);
+        EndActivationEffect();
+    }
+
+    private Enemy FindNearestDevourTarget()
+    {
+        Enemy nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+        Vector3 origin = owner.transform.position;
+        foreach (Enemy candidate in FindEnemiesInArc(origin, owner.transform.forward, range, angle))
+        {
+            if (candidate == null || !owner.CanDamage(candidate)) continue;
+            float sqrDistance = (candidate.transform.position - origin).sqrMagnitude;
+            if (sqrDistance >= nearestSqrDistance) continue;
+            nearest = candidate;
+            nearestSqrDistance = sqrDistance;
+        }
+        return nearest;
+    }
+
+    private void ConsumeEnemy(Enemy target)
+    {
+        float damageToDeal = damage > 0f ? damage : damageAmount;
+        if (IsUpgradeUnlocked("GL-S02") && target.maxHealth > 0f &&
+            target.currentHealth / target.maxHealth < GetCardParameter("ExecuteThreshold", executeHealthFraction))
+        {
+            damageToDeal = target.currentHealth;
+        }
+
+        DealDamageTo(target, damageToDeal);
+        PlayBlastVfx(target.transform.position);
+        _state?.GrantOverfed();
+
+        if (IsUpgradeUnlocked("GL-S01") && _state != null && !_state.FirstDevourHealUsed)
+        {
+            owner.Heal(GetCardParameter("FirstDevourHeal", firstDevourHeal));
+            _state.MarkFirstDevourHealUsed();
+        }
+
+        if (owner.isPossessed)
+            _state?.TryCopySkillFrom(target, this);
+    }
+
+    private void PlayBlastVfx(Vector3 position)
+    {
+        if (blastVfxPrefab == null) return;
+        GameObject blast = Instantiate(blastVfxPrefab, position, Quaternion.identity);
+        PlayVfx(blast);
+        StopVfxLooping(blast);
+        Destroy(blast, Mathf.Max(0.01f, blastVfxDuration));
+    }
+
+    protected override GameObject SpawnVfx()
+    {
+        SpawnWeaponVfx();
+        if (vfxPrefab == null || owner == null) return null;
+
+        if (_vfxMotionRoutine != null)
+        {
+            StopCoroutine(_vfxMotionRoutine);
+            _vfxMotionRoutine = null;
+        }
+        if (activeVfx != null) Destroy(activeVfx);
+
+        Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : owner.transform;
+        activeVfx = Instantiate(vfxPrefab, anchor);
+        activeVfx.transform.localPosition = vfxPositionOffset;
+        activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
+        Vector3 authoredScale = activeVfx.transform.localScale;
+        activeVfx.transform.localScale = authoredScale * vfxStartEndScale;
+        PlayVfx(activeVfx);
+        _vfxMotionRoutine = StartCoroutine(AnimateDevourVfx(activeVfx, authoredScale));
+        return activeVfx;
+    }
+
+    private IEnumerator AnimateDevourVfx(GameObject vfx, Vector3 authoredScale)
+    {
+        Transform motion = vfx.transform;
+        Vector3 startPosition = vfxPositionOffset;
+        Vector3 peakPosition = startPosition + vfxForwardUpOffset;
+        float expandDuration = Mathf.Max(0.01f, vfxExpandDuration);
+        float returnDuration = Mathf.Max(0.01f, vfxReturnDuration);
+
+        yield return AnimateDevourVfxPhase(motion, startPosition, peakPosition,
+            authoredScale * vfxStartEndScale, authoredScale * vfxPeakScale, expandDuration);
+        yield return AnimateDevourVfxPhase(motion, peakPosition, startPosition,
+            authoredScale * vfxPeakScale, authoredScale * vfxStartEndScale, returnDuration);
+
+        if (vfx != null) Destroy(vfx);
+        if (activeVfx == vfx) activeVfx = null;
+        _vfxMotionRoutine = null;
+    }
+
+    private IEnumerator AnimateDevourVfxPhase(Transform motion, Vector3 fromPosition,
+        Vector3 toPosition, Vector3 fromScale, Vector3 toScale, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration && motion != null)
+        {
+            elapsed += AbilityDeltaTime;
+            float progress = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            motion.localPosition = Vector3.LerpUnclamped(fromPosition, toPosition, progress);
+            motion.localScale = Vector3.LerpUnclamped(fromScale, toScale, progress);
+            yield return null;
+        }
+
+        if (motion != null)
+        {
+            motion.localPosition = toPosition;
+            motion.localScale = toScale;
+        }
     }
 
     private bool TrySwallowProjectile()
@@ -96,9 +201,8 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             projectileSwallowRadius, ~0, QueryTriggerInteraction.Collide);
         foreach (Collider hit in hits)
         {
-            var projectile = hit.GetComponentInParent<Projectile>();
+            Projectile projectile = hit.GetComponentInParent<Projectile>();
             if (projectile == null) continue;
-            // Base forbids flight swallow; card allows small frontal projectiles only.
             if (projectile.isPlayerProjectile == owner.isPossessed) continue;
             if (projectile.damage > maxSwallowProjectileDamage) continue;
 

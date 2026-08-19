@@ -4,7 +4,7 @@ using TMPro;
 
 /// <summary>
 /// 共用设置弹窗面板。
-/// 音效音量 + 音乐音量两个滑块，弹窗覆盖模式。
+/// 音效音量（含 UI 音效，UI 跟随 SFX）+ 音乐音量两个滑块，弹窗覆盖模式。
 /// 可挂载到主菜单、暂停菜单、结束界面的 Canvas 下复用。
 /// </summary>
 public class SettingsPanel : MonoBehaviour
@@ -34,6 +34,11 @@ public class SettingsPanel : MonoBehaviour
     {
         if (inited) return;
         inited = true;
+
+        // 音频系统自举：设置面板可能在无 GameManager 的场景（如主菜单）被打开，
+        // 确保音量调节链路（AudioSettingsManager + AudioManager）始终可用。
+        AudioSettingsManager.EnsureInstance();
+        AudioManager.EnsureInstance();
 
         if (sfxSlider != null)
             sfxSlider.onValueChanged.AddListener(OnSFXChanged);
@@ -113,7 +118,7 @@ public class SettingsPanel : MonoBehaviour
     private void UpdateSFXLabel(float value)
     {
         if (sfxLabel != null)
-            sfxLabel.text = "SFX: " + Mathf.RoundToInt(value * 100) + "%";
+            sfxLabel.text = "SFX/UI: " + Mathf.RoundToInt(value * 100) + "%";
     }
 
     private void UpdateMusicLabel(float value)

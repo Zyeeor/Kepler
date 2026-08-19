@@ -13967,7 +13967,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 11400000, guid: f16753855c04a438eb9ae4fe1c54da4d, type: 2}
-  maxSelects: 1
   currentPicks:
   - cardName: 
     effectId: 

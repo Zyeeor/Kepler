@@ -28,7 +28,7 @@
 | 主角-灵魂体 | soul | （现有灵魂；路径见该文件） | 非 Roster 追踪 | **非**七宗罪 Roster；无战斗技能；开场进傲慢 Carrier；路径/手感已 AI 收口进正文 | [主角-灵魂体.md](./主角-灵魂体.md) |
 | 傲慢-终刃绝影 | pride | `pride_new` | 已开发但没资源 | 三槽逻辑已落地；8张`PR-*`（含`PR-A04`）；§5=AI裁定备忘 | [傲慢-终刃绝影.md](./傲慢-终刃绝影.md) |
 | 怠惰-机械之灵 | sloth | `sloth_new` | 已开发但没资源 | 三槽已落地；11张`SL-*`；§5=AI裁定备忘 | [怠惰-机械之灵.md](./怠惰-机械之灵.md) |
-| 暴食-魔猫 | gluttony | `gluttony_new` | 待开发 | 临时复制E槽+7张`GL-*`；工程仍有旧逻辑缺口；§5=AI裁定备忘 | [暴食-魔猫.md](./暴食-魔猫.md) |
+| 暴食-魔猫 | gluttony | `gluttony_new` | 待开发 | 已完成 Canonical Delta 对账；待落地三槽、7张`GL-*`、删除卡清理与复制E槽；`GL-S03`攻击分类本轮暂不处理；§5=AI裁定备忘 | [暴食-魔猫.md](./暴食-魔猫.md) |
 | 嫉妒-激光异形 | envy | `envy_new`（待建） | 待开发 | 目标**Mark**；10张`EN-*`；§5=AI裁定备忘 | [嫉妒-激光异形.md](./嫉妒-激光异形.md) |
 | 愤怒-链狱冥兽 | wrath | `wrath_new`（待建） | 待开发 | 6张`WR-*`；§5=AI裁定备忘 | [愤怒-链狱冥兽.md](./愤怒-链狱冥兽.md) |
 | 贪婪-万手藏主 | greed | `greed_new`（待建） | 待开发 | 黑油加速+Guard全伤害；8张`GR-*`；§5=AI裁定备忘 | [贪婪-万手藏主.md](./贪婪-万手藏主.md) |
@@ -43,7 +43,7 @@
 | **全怪** | §5 文档合同 | Changed | 开放问题台账 → 正文规格 + AI裁定备忘 | skill 强制：空隙收口进正文；§5 仅供策划审阅 |
 | 傲慢 | `PR-A04` 等 | Added / 收口 | 见该文件 §0 / §5 A1–A5 | Owner Delta + 蓄力/被动/散射收口 |
 | 怠惰 | Scatter / 木灵等 | Changed | 误标策划未明确 → 正文 | Card Truth 选边；§5 A1–A9 |
-| 暴食 | `GL-A02` 等 | Changed | 误写成对 → 范围+100%；§5 备忘 | Canonical 对齐 |
+| 暴食 | 三槽 / `GL-*` | Changed | 工程 Delta 对账 + §5 备忘 | 合并 main 对账与 skill 合同；`GL-A02`=范围×2 |
 | 嫉妒 | Mark + `EN-M01`/`EN-A05` | Changed / Added | Record→Mark；8→10 张 | Owner Delta + skill 合同 |
 | 愤怒 | 三槽 / 模型名 | 收口 | §5 A1–A6 | 无硬冲突 |
 | 贪婪 | 黑油/Guard + `GR-M02`/`GR-A07` | Changed / Added | 6→8 张；§5 备忘 | Owner Delta + skill 合同 |
