@@ -292,6 +292,18 @@ public class CombatAbilityComponent : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Extends an already-active effect's expiry without changing stacks or re-firing apply events.
+    /// Returns false if the effect is not currently active.
+    /// </summary>
+    public bool RefreshEffectDuration(GameplayEffectDefinition definition, float durationOverride = -1f)
+    {
+        ActiveEffect active = FindActiveEffect(definition);
+        if (active == null) return false;
+        active.expiresAt = GetExpiry(definition, durationOverride);
+        return true;
+    }
+
     public void RegisterEffectVfx(GameplayEffectDefinition definition, GameObject instance)
     {
         ActiveEffect effect = FindActiveEffect(definition);

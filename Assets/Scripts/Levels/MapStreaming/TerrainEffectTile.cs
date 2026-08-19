@@ -3,8 +3,9 @@ using UnityEngine;
 
 /// <summary>
 /// Gameplay hazard / buff tile. Mount on a Tile prefab (alongside TileVisual).
-/// Occupancy uses Physics.OverlapBox (characters move via transform without Rigidbody,
-/// so OnTriggerEnter is unreliable).
+/// Occupancy uses Physics.OverlapBox against entity colliders (characters often move via
+/// transform without Rigidbody, so OnTriggerEnter alone is unreliable).
+/// Spike damage is owned by a periodically spawned hazard prefab's collider, not tile enter.
 /// </summary>
 [DisallowMultipleComponent]
 public class TerrainEffectTile : MonoBehaviour
@@ -25,7 +26,7 @@ public class TerrainEffectTile : MonoBehaviour
     public GameplayEffectDefinition effect;
 
     [Header("Detection Volume")]
-    [Tooltip("Local-space center of the occupancy box (Tile root space).")]
+    [Tooltip("Local-space center of the occupancy box (Tile root space). Unused for Spike damage (hazard prefab owns hit).")]
     public Vector3 detectionCenter = new Vector3(0f, 1.0f, 0f);
     [Tooltip("Local-space size of the occupancy box. Default covers a 1x1 tile with standing height.")]
     public Vector3 detectionSize = new Vector3(1.4f, 2.5f, 1.4f);
@@ -38,16 +39,22 @@ public class TerrainEffectTile : MonoBehaviour
     public float moveSpeedMultiplier = 1.5f;
 
     [Header("Spike")]
-    [Tooltip("Instant damage dealt on enter only (staying does not re-trigger).")]
+    [Tooltip("Prefab spawned on each spike pulse. Must include at least one Collider; damage applies on overlap with entity colliders.")]
+    public GameObject spikeHazardPrefab;
+    [Tooltip("Seconds between spike activations (spawn).")]
+    public float spikeInterval = 2f;
+    [Tooltip("How long the spawned spike hazard stays active and can deal damage.")]
+    public float spikeHazardLifetime = 0.4f;
+    [Tooltip("Instant damage dealt when the spawned hazard collider overlaps an entity (once per spawn per target).")]
     public float spikeDamage = 25f;
 
     [Header("Lava")]
     [Tooltip("Baseline damage added per lava stack on each periodic tick.")]
     public float lavaBaseDamagePerStack = 5f;
-    [Tooltip("While standing on lava, re-apply / stack every this many seconds.")]
+    [Tooltip("While standing on lava, add a stack every this many seconds.")]
     public float lavaStackInterval = 0.5f;
     [Min(1)] public int lavaMaxStacks = 5;
-    [Tooltip("Lava effect duration (seconds). Refreshed on each stack pulse.")]
+    [Tooltip("Lava burn duration (seconds). Continuously refreshed while standing on lava.")]
     public float lavaEffectDuration = 3f;
     [Tooltip("Optional fire VFX parented to the victim while lava effect is active. Falls back to effect.activeVfxPrefab.")]
     public GameObject lavaFireVfxPrefab;
@@ -58,12 +65,14 @@ public class TerrainEffectTile : MonoBehaviour
     private readonly Dictionary<int, float> _lavaNextPulseAt = new Dictionary<int, float>();
     private Collider[] _overlapBuffer;
     private BoxCollider _volumeCollider;
+    private float _nextSpikeAt;
 
     void Awake()
     {
         overlapBufferSize = Mathf.Max(8, overlapBufferSize);
         _overlapBuffer = new Collider[overlapBufferSize];
         EnsureDetectionVolume();
+        _nextSpikeAt = Time.time + Mathf.Max(0.05f, spikeInterval);
     }
 
     void OnValidate()
@@ -71,6 +80,8 @@ public class TerrainEffectTile : MonoBehaviour
         lavaMaxStacks = Mathf.Max(1, lavaMaxStacks);
         lavaStackInterval = Mathf.Max(0.05f, lavaStackInterval);
         lavaEffectDuration = Mathf.Max(0.1f, lavaEffectDuration);
+        spikeInterval = Mathf.Max(0.05f, spikeInterval);
+        spikeHazardLifetime = Mathf.Max(0.05f, spikeHazardLifetime);
         detectionSize = new Vector3(
             Mathf.Max(0.1f, detectionSize.x),
             Mathf.Max(0.1f, detectionSize.y),
@@ -81,14 +92,36 @@ public class TerrainEffectTile : MonoBehaviour
             moveSpeedMultiplier = 1.5f;
     }
 
+    void OnDisable()
+    {
+        if (_occupants.Count == 0) return;
+
+        List<int> exited = new List<int>(_occupants);
+        for (int i = 0; i < exited.Count; i++)
+        {
+            int id = exited[i];
+            _combatById.TryGetValue(id, out CombatAbilityComponent combat);
+            HandleExit(combat, id);
+        }
+        _occupants.Clear();
+        _combatById.Clear();
+        _lavaNextPulseAt.Clear();
+        _frameOccupants.Clear();
+    }
+
     void FixedUpdate()
     {
+        if (kind == TerrainEffectKind.Spike)
+        {
+            TickSpikeSpawn();
+            return;
+        }
+
         ScanOccupants();
     }
 
     /// <summary>
     /// Ensures a corrected trigger box used both as editor gizmo source and OverlapBox volume.
-    /// Replaces historically broken auto-fit colliders (rotated thin slabs underground).
     /// </summary>
     public void EnsureDetectionVolume()
     {
@@ -101,12 +134,30 @@ public class TerrainEffectTile : MonoBehaviour
         _volumeCollider.size = detectionSize;
         _volumeCollider.enabled = true;
 
-        // Kinematic RB helps legacy trigger paths if any other system still relies on them.
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
         rb.isKinematic = true;
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeAll;
+    }
+
+    private void TickSpikeSpawn()
+    {
+        if (spikeHazardPrefab == null) return;
+        if (Time.time < _nextSpikeAt) return;
+
+        _nextSpikeAt = Time.time + Mathf.Max(0.05f, spikeInterval);
+
+        GameObject instance = Instantiate(spikeHazardPrefab, transform.position, transform.rotation, transform);
+        TerrainSpikeHazard hazard = instance.GetComponent<TerrainSpikeHazard>();
+        if (hazard == null)
+            hazard = instance.AddComponent<TerrainSpikeHazard>();
+
+        float damage = spikeDamage;
+        if (effect != null && effect.damagePerStack > 0f)
+            damage = effect.damagePerStack;
+
+        hazard.Initialize(damage, spikeHazardLifetime, effect, overlapBufferSize);
     }
 
     private void ScanOccupants()
@@ -147,29 +198,26 @@ public class TerrainEffectTile : MonoBehaviour
                 HandleStay(combat, id);
         }
 
-        // Exits
-        if (_occupants.Count > 0)
-        {
-            List<int> exited = null;
-            foreach (int id in _occupants)
-            {
-                if (_frameOccupants.Contains(id)) continue;
-                if (exited == null) exited = new List<int>();
-                exited.Add(id);
-            }
+        if (_occupants.Count == 0) return;
 
-            if (exited != null)
-            {
-                for (int i = 0; i < exited.Count; i++)
-                {
-                    int id = exited[i];
-                    _combatById.TryGetValue(id, out CombatAbilityComponent combat);
-                    HandleExit(combat, id);
-                    _occupants.Remove(id);
-                    _combatById.Remove(id);
-                    _lavaNextPulseAt.Remove(id);
-                }
-            }
+        List<int> exited = null;
+        foreach (int id in _occupants)
+        {
+            if (_frameOccupants.Contains(id)) continue;
+            if (exited == null) exited = new List<int>();
+            exited.Add(id);
+        }
+
+        if (exited == null) return;
+
+        for (int i = 0; i < exited.Count; i++)
+        {
+            int id = exited[i];
+            _combatById.TryGetValue(id, out CombatAbilityComponent combat);
+            HandleExit(combat, id);
+            _occupants.Remove(id);
+            _combatById.Remove(id);
+            _lavaNextPulseAt.Remove(id);
         }
     }
 
@@ -186,9 +234,6 @@ public class TerrainEffectTile : MonoBehaviour
                     combat.ApplyEffect(effect, null, null, out reason, 9999f, 1);
                 }
                 break;
-            case TerrainEffectKind.Spike:
-                ApplySpikeDamage(combat);
-                break;
             case TerrainEffectKind.Lava:
                 _lavaNextPulseAt[id] = Time.time;
                 PulseLava(combat);
@@ -199,6 +244,9 @@ public class TerrainEffectTile : MonoBehaviour
     private void HandleStay(CombatAbilityComponent combat, int id)
     {
         if (kind != TerrainEffectKind.Lava) return;
+
+        // While standing in lava, keep the burn effect duration refreshed.
+        RefreshLavaDuration(combat);
 
         if (!_lavaNextPulseAt.TryGetValue(id, out float nextAt))
             nextAt = Time.time;
@@ -223,24 +271,13 @@ public class TerrainEffectTile : MonoBehaviour
         combat.AddMoveSpeedMultiplier(this, moveSpeedMultiplier);
     }
 
-    private void ApplySpikeDamage(CombatAbilityComponent combat)
+    private void RefreshLavaDuration(CombatAbilityComponent combat)
     {
-        float damage = spikeDamage;
-        if (effect != null && effect.damagePerStack > 0f)
-            damage = effect.damagePerStack;
+        GameplayEffectDefinition def = effect;
+        if (def == null) return;
 
-        MonsterActor monster = combat.GetComponent<MonsterActor>();
-        if (monster == null) monster = combat.GetComponentInParent<MonsterActor>();
-        if (monster != null)
-        {
-            monster.TakeEnvironmentalDamage(damage);
-            return;
-        }
-
-        PlayerHealth soul = combat.GetComponent<PlayerHealth>();
-        if (soul == null) soul = combat.GetComponentInParent<PlayerHealth>();
-        if (soul != null)
-            soul.TakeDamage(damage);
+        float duration = lavaEffectDuration > 0f ? lavaEffectDuration : def.duration;
+        combat.RefreshEffectDuration(def, duration);
     }
 
     private void PulseLava(CombatAbilityComponent combat)
@@ -250,12 +287,6 @@ public class TerrainEffectTile : MonoBehaviour
         {
             Debug.LogWarning($"[TerrainEffectTile] Lava tile '{name}' has no Effect assigned.", this);
             return;
-        }
-
-        // Prefer tile VFX if the effect asset has none.
-        if (def.activeVfxPrefab == null && lavaFireVfxPrefab != null)
-        {
-            // Do not mutate the shared asset permanently; spawn via Register after apply if needed.
         }
 
         float duration = lavaEffectDuration > 0f ? lavaEffectDuration : def.duration;
@@ -275,11 +306,8 @@ public class TerrainEffectTile : MonoBehaviour
             return;
         }
 
-        // Ensure fire VFX exists even when the asset's activeVfx was empty at create time.
         if (lavaFireVfxPrefab != null)
         {
-            // If effect already spawned VFX via asset, skip; otherwise attach one.
-            // Cheap check: look for a child named from the prefab.
             string marker = "__LavaFireVfx";
             Transform existing = combat.transform.Find(marker);
             if (existing == null)
