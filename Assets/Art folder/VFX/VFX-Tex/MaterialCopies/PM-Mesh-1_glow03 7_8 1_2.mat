@@ -1,0 +1,582 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PM-Mesh-1_glow03 7_8 1_2
+  m_Shader: {fileID: 4800000, guid: f45207aa8f9b2f349a63470c9b6ecf0c, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _IFREFACTIONMASK_ON
+  - _IFREFACTION_ON
+  m_InvalidKeywords:
+  - _0
+  - _1
+  - _COLORSTYLE_NORMAL
+  - _CUSTOM10_CUSTOM2X
+  - _CUSTOM11_CUSTOM2X
+  - _CUSTOM12_CUSTOM2X
+  - _CUSTOM13_CUSTOM2X
+  - _CUSTOM1_CUSTOM1X
+  - _CUSTOM2_CUSTOM1X
+  - _CUSTOM3_CUSTOM1X
+  - _CUSTOM4_CUSTOM1X
+  - _CUSTOM5_CUSTOM1X
+  - _CUSTOM6_CUSTOM1X
+  - _CUSTOM7_CUSTOM2X
+  - _CUSTOM8_CUSTOM2X
+  - _CUSTOM9_CUSTOM2X
+  - _DISSOLVEPLUSTEXAR_ON
+  - _DISSOLVEPLUSTEXUVCLIP_ON
+  - _DISSOLVETEXAR_ON
+  - _DISSOLVETEXUVCLIP_ON
+  - _DISTORTTEXAR_ON
+  - _DISTORTUINTENSITY_ON
+  - _DISTORTVINTENSITY_ON
+  - _FLIPBOOKBLENDING_OFF
+  - _FLOAT154_OFF
+  - _MAINTEXUVCLIP_ON
+  - _MASKTEXAR_ON
+  - _MASKTEXUVCLIP_ON
+  - _REFACTIONMASKTEXAR_ON
+  - _REFACTIONTEXAR_ON
+  - _REFACTIONTEXDETAIL_ON
+  - _TEXAR_ON
+  - _VTOTEXAR_ON
+  - _VTOTEXUVCLIP_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 40eb196287f43ff47b46a6d9f2b5cfb8, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DissolvePlusTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DissolveTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DistortTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Logo:
+        m_Texture: {fileID: 2800000, guid: 952e6cda434200247b8852b4b5d1a444, type: 3}
+        m_Scale: {x: 3, y: 3}
+        m_Offset: {x: 0, y: 0.1}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Mask:
+        m_Texture: {fileID: 2800000, guid: 3cb1337812017af449640994018738dc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Mask1:
+        m_Texture: {fileID: 2800000, guid: 441751f3ce2873a4dae71f67832501e3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0.01}
+    - _MaskTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ramptex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RefactionMaskTex:
+        m_Texture: {fileID: 2800000, guid: 3cb1337812017af449640994018738dc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RefactionTex:
+        m_Texture: {fileID: 2800000, guid: 84e8541401b076946b8aa2236b4dc747, type: 3}
+        m_Scale: {x: 1.5, y: 0.8}
+        m_Offset: {x: 0, y: 0}
+    - _Tex:
+        m_Texture: {fileID: 2800000, guid: e26cf22f8c9746d40b85289d87d0f184, type: 3}
+        m_Scale: {x: 300, y: 300}
+        m_Offset: {x: 0, y: 0}
+    - _TextureSample1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _VTOTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _cubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _dissolvetex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _flowmap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _maintex:
+        m_Texture: {fileID: 2800000, guid: 04282586778937c47a24a9c01360b602, type: 3}
+        m_Scale: {x: 2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _matcap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _noise:
+        m_Texture: {fileID: 2800000, guid: 814a251767bd2c449972233581a1e18b, type: 3}
+        m_Scale: {x: 1.36, y: 0.5}
+        m_Offset: {x: 0, y: 0}
+    - _noisemask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _normallight:
+        m_Texture: {fileID: 2800000, guid: 84e8541401b076946b8aa2236b4dc747, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _parallax:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _reftex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _texcoord:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _vertextex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _vertextex1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaClip: 0
+    - _AlphaCutoff: 0.5
+    - _AlphaToMask: 0
+    - _Blend: 0
+    - _BlendMode: 0
+    - _BlendOp: 0
+    - _BlurFactor: 0
+    - _BlurFactorK: 0
+    - _CameraFadingEnabled: 0
+    - _CameraFarFadeDistance: 2
+    - _CameraNearFadeDistance: 1
+    - _ColorMode: 0
+    - _ColorStyle: 0
+    - _Color_Group2: 0
+    - _Color_Group3: 0
+    - _Cull: 2
+    - _CullMode: 0
+    - _Custom1: 0
+    - _Custom10: 4
+    - _Custom11: 4
+    - _Custom12: 4
+    - _Custom13: 4
+    - _Custom2: 0
+    - _Custom3: 0
+    - _Custom4: 0
+    - _Custom5: 0
+    - _Custom6: 0
+    - _Custom7: 4
+    - _Custom8: 4
+    - _Custom9: 4
+    - _CustomDissolve: 0
+    - _CustomDissolvePlusTexUOffset: 0
+    - _CustomDissolvePlusTexVOffset: 0
+    - _CustomDissolveTexUOffset: 0
+    - _CustomDissolveTexVOffset: 0
+    - _CustomDistortFactor: 0
+    - _CustomMainTexUOffset: 0
+    - _CustomMainTexVOffset: 0
+    - _CustomMaskTexUOffset: 0
+    - _CustomMaskTexVOffset: 0
+    - _CustomRefactionFactor: 0
+    - _CustomVTO: 0
+    - _Custom_Group1: 0
+    - _Cutoff: 0.5
+    - _DepthFade: 1
+    - _Depthfade_Group1: 0
+    - _Disolove_Group: 0
+    - _DissolveFactor: 0
+    - _DissolveFactorC: 1
+    - _DissolvePlusIntensity: 0.5
+    - _DissolvePlusTexAR: 1
+    - _DissolvePlusTexDetail: 0
+    - _DissolvePlusTexRotator: 0
+    - _DissolvePlusTexUClamp: 0
+    - _DissolvePlusTexUMirror: 0
+    - _DissolvePlusTexUOffsetC: 1
+    - _DissolvePlusTexUSpeed: 0
+    - _DissolvePlusTexUVClip: 1
+    - _DissolvePlusTexVClamp: 0
+    - _DissolvePlusTexVMirror: 0
+    - _DissolvePlusTexVOffsetC: 1
+    - _DissolvePlusTexVSpeed: 0
+    - _DissolveSoft: 0.1
+    - _DissolveTexAR: 1
+    - _DissolveTexDetail: 0
+    - _DissolveTexRotator: 0
+    - _DissolveTexUClamp: 0
+    - _DissolveTexUMirror: 0
+    - _DissolveTexUOffsetC: 1
+    - _DissolveTexUSpeed: 0
+    - _DissolveTexUVClip: 1
+    - _DissolveTexVClamp: 0
+    - _DissolveTexVMirror: 0
+    - _DissolveTexVOffsetC: 1
+    - _DissolveTexVSpeed: 0
+    - _DissolveWide: 0.05
+    - _DistortDissolveTex: 0
+    - _DistortFactor: 0
+    - _DistortFactorC: 1
+    - _DistortMainTex: 0
+    - _DistortMaskTex: 0
+    - _DistortRemap: 0
+    - _DistortTexAR: 1
+    - _DistortTexDetail: 0
+    - _DistortTexRotator: 0
+    - _DistortTexUMirror: 0
+    - _DistortTexUSpeed: 0
+    - _DistortTexVMirror: 0
+    - _DistortTexVSpeed: 0
+    - _DistortUIntensity: 1
+    - _DistortVIntensity: 1
+    - _DistortionBlend: 0.5
+    - _DistortionEnabled: 0
+    - _DistortionStrength: 1
+    - _DistortionStrengthScaled: 0.1
+    - _Dst: 10
+    - _DstBlend: 0
+    - _DstBlendAlpha: 0
+    - _FDepth: 0
+    - _FDissolvePlusTex: 0
+    - _FDissolveTex: 0
+    - _FDistortTex: 0
+    - _FFnl: 0
+    - _FMaskTex: 0
+    - _FlipbookBlending: 0
+    - _FlipbookMode: 0
+    - _Float0: 0
+    - _Float1: 1
+    - _Float10: 0
+    - _Float11: 0
+    - _Float12: 0
+    - _Float129: 0
+    - _Float130: 0
+    - _Float131: 0
+    - _Float132: 0.5
+    - _Float133: 0.5
+    - _Float134: 0
+    - _Float135: 1
+    - _Float137: 0
+    - _Float139: 0
+    - _Float14: 1
+    - _Float140: 0
+    - _Float141: 0
+    - _Float142: 0
+    - _Float143: 0
+    - _Float144: 0
+    - _Float145: 0
+    - _Float146: 0
+    - _Float15: 2.48
+    - _Float151: 0
+    - _Float152: 2
+    - _Float154: 3
+    - _Float155: 0
+    - _Float157: 0
+    - _Float159: 0
+    - _Float16: 0
+    - _Float160: 0
+    - _Float17: 0
+    - _Float19: 1
+    - _Float2: 1
+    - _Float20: 0
+    - _Float22: 0
+    - _Float23: 0
+    - _Float24: 0
+    - _Float25: 0
+    - _Float257: 0
+    - _Float258: 0
+    - _Float28: 1
+    - _Float30: 1
+    - _Float31: 0
+    - _Float32: 0
+    - _Float33: 0
+    - _Float34: 1
+    - _Float35: 0
+    - _Float36: 1
+    - _Float37: 1
+    - _Float38: 0
+    - _Float39: 1
+    - _Float4: 0
+    - _Float40: 0
+    - _Float41: 0
+    - _Float42: 0
+    - _Float43: 0.5
+    - _Float44: 0
+    - _Float45: 0
+    - _Float46: 0
+    - _Float47: 0
+    - _Float48: 0
+    - _Float49: 0
+    - _Float5: 0
+    - _Float50: 0
+    - _Float51: 0
+    - _Float52: 0
+    - _Float53: 0
+    - _Float54: 0
+    - _Float55: 0
+    - _Float56: 0
+    - _Float57: 0
+    - _Float58: 0
+    - _Float59: 1
+    - _Float6: 0
+    - _Float60: 15
+    - _Float61: 0
+    - _Float62: 0
+    - _Float63: 0
+    - _Float64: 0
+    - _Float65: 0
+    - _Float66: 0
+    - _Float67: 0
+    - _Float68: 0
+    - _Float69: 0
+    - _Float70: 0
+    - _Float71: 0
+    - _Float72: 0
+    - _Float73: 0
+    - _Float74: 0
+    - _Float75: 0
+    - _Float76: 0
+    - _Float77: 0
+    - _Float78: 0
+    - _Float79: 0
+    - _Float8: 0.5
+    - _Float80: 0
+    - _Float81: 0
+    - _Float82: 0
+    - _Float83: 0
+    - _Float84: 0
+    - _Float85: 0
+    - _Float86: 0
+    - _Float87: 0
+    - _Float88: 0
+    - _Float89: 0
+    - _Float9: 0.87
+    - _FnlPower: 1
+    - _FnlScale: 0
+    - _Fresnel_Group2: 0
+    - _IfBlurFactor: 0
+    - _IfLineUVScale: 0
+    - _IfMainAlpha: 0
+    - _IfRedBlueFactor: 0
+    - _IfRefaction: 1
+    - _IfRefactionMask: 1
+    - _IfStepFactor: 0
+    - _IfVTO: 0
+    - _IfVignettePower: 0
+    - _IfVignetteScale: 0
+    - _Ifzhenfu: 0
+    - _Ifzhenpin: 0
+    - _LineColorScale: 0
+    - _LineOffset: 0
+    - _LineTilingU: 2
+    - _LineTilingV: 8
+    - _LineUVScale: 0
+    - _LineUVScaleK: 0
+    - _LogoAR: 0
+    - _LogoAlpha: 0.2
+    - _MainAlpha: 0
+    - _MainAlphaK: 1
+    - _MainRGBA: 14
+    - _MainTexAR: 0
+    - _MainTexCAFator: 0
+    - _MainTexDesaturate: 0
+    - _MainTexDetail: 0
+    - _MainTexRotator: 0
+    - _MainTexUClamp: 0
+    - _MainTexUMirror: 0
+    - _MainTexUOffsetC: 1
+    - _MainTexUSpeed: 0
+    - _MainTexUVClip: 1
+    - _MainTexVClamp: 0
+    - _MainTexVMirror: 0
+    - _MainTexVOffsetC: 1
+    - _MainTexVSpeed: 0
+    - _Maintex_Group: 0
+    - _Maintex_Group2: 0
+    - _Maintex_Group3: 0
+    - _Maintex_Group4: 0
+    - _Maintex_Group5: 0
+    - _MaskTexAR: 1
+    - _MaskTexDetail: 0
+    - _MaskTexRotator: 0
+    - _MaskTexUClamp: 0
+    - _MaskTexUMirror: 0
+    - _MaskTexUOffsetC: 1
+    - _MaskTexUSpeed: 0
+    - _MaskTexUVClip: 1
+    - _MaskTexVClamp: 0
+    - _MaskTexVMirror: 0
+    - _MaskTexVOffsetC: 1
+    - _MaskTexVSpeed: 0
+    - _Mask_Group: 0
+    - _Mode: 0
+    - _Noise_Group: 0
+    - _QueueControl: -1
+    - _QueueOffset: 0
+    - _Ramp: 0
+    - _ReFnl: 0
+    - _RedBlueFactor: 0
+    - _RedBlueFactorK: 0
+    - _Ref_Group: 0
+    - _RefactionFactor: 0.05
+    - _RefactionFactorC: 1
+    - _RefactionMaskTexAR: 1
+    - _RefactionMaskTexDetail: 0
+    - _RefactionMaskTexRotator: 0
+    - _RefactionMaskTexUClamp: 0
+    - _RefactionMaskTexUMirror: 0
+    - _RefactionMaskTexUSpeed: 0
+    - _RefactionMaskTexUVClip: 0
+    - _RefactionMaskTexVClamp: 0
+    - _RefactionMaskTexVMirror: 0
+    - _RefactionMaskTexVSpeed: 0
+    - _RefactionRemap: 0
+    - _RefactionTexAR: 1
+    - _RefactionTexDetail: 1
+    - _RefactionTexRotator: 0
+    - _RefactionTexUMirror: 0
+    - _RefactionTexUSpeed: 0.5
+    - _RefactionTexVMirror: 0
+    - _RefactionTexVSpeed: 1.39
+    - _SB: 0
+    - _SBCompare: 0
+    - _Scr: 5
+    - _Soft: 0.5
+    - _SoftParticlesEnabled: 0
+    - _SoftParticlesFarFadeDistance: 1
+    - _SoftParticlesNearFadeDistance: 0
+    - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
+    - _StepFactor: 0.6
+    - _StepFactorK: 0
+    - _Surface: 0
+    - _TexAR: 1
+    - _TexAlpha: 0.07
+    - _TexRotator: 0.075
+    - _VTOScale: 1
+    - _VTOScaleC: 1
+    - _VTOTexAR: 1
+    - _VTOTexDetail: 0
+    - _VTOTexRotator: 0
+    - _VTOTexUClamp: 0
+    - _VTOTexUMirror: 0
+    - _VTOTexUSpeed: 0
+    - _VTOTexUVClip: 1
+    - _VTOTexVClamp: 0
+    - _VTOTexVMirror: 0
+    - _VTOTexVSpeed: 0
+    - _Vertex_Group: 0
+    - _VignettePower: 1.5
+    - _VignettePowerK: 1.5
+    - _VignetteScale: 1.5
+    - _VignetteScaleK: 1.5
+    - _ZTest: 4
+    - _ZWrite: 1
+    - _Ztestmode: 4
+    - _Ztestmode1: 0
+    - _Ztestmode2: 0
+    - _centerU: 0.5
+    - _centerV: 0.5
+    - _maintex_alpha: 1
+    - _maintex_alpha1: 1
+    - _mask01_alpha: 1
+    - _mask02_alpha: 1
+    - _power3: 1
+    - _refplane: 1
+    - _zhenfu: 0
+    - _zhenfuK: 0
+    - _zhenpin: 0
+    - _zhenpinK: 0
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
+    - _CameraFadeParams: {r: 0, g: 0, b: 0, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4: {r: 0.490566, g: 0.490566, b: 0.490566, a: 1}
+    - _Color5: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveColor: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FnlColor: {r: 1, g: 1, b: 1, a: 1}
+    - _MainColor: {r: 1, g: 1, b: 1, a: 1}
+    - _MainTexRefine: {r: 1, g: 1, b: 1, a: 0}
+    - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector0: {r: 0, g: 1.3, b: 0, a: 0}
+    - _Vector10: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector11: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector13: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector15: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector16: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector17: {r: 0.09, g: 0.56, b: 0, a: 0}
+    - _Vector19: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector21: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector23: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector25: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector32: {r: 0, g: 1, b: 0, a: 1}
+    - _Vector33: {r: 0, g: 1, b: 0, a: 1}
+    - _Vector34: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector35: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector5: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector7: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector9: {r: 1, g: 1, b: 0, a: 0}
+  m_BuildTextureStacks: []
