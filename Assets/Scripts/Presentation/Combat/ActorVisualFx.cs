@@ -79,11 +79,17 @@ public class ActorVisualFx : MonoBehaviour
 
     public void SetPossessionHighlight(bool enabled)
     {
+        SetPossessionHighlight(enabled, possessionRimIntensity);
+    }
+
+    public void SetPossessionHighlight(bool enabled, float intensity)
+    {
         if (enabled)
             EnsureHighlightMaterialInstances();
         else
             RestoreHighlightMaterialInstances();
 
+        possessionRimIntensity = Mathf.Max(0f, intensity);
         _rimIntensity = enabled ? possessionRimIntensity : 0f;
         _rimColor = enabled ? possessionRimColor : Color.black;
         ApplyFx();
@@ -323,20 +329,26 @@ public class ActorVisualFx : MonoBehaviour
     {
         if (src == null || dst == null) return;
 
+        // Cartoon/Amplify mats often expose _Maintex while still declaring empty _BaseMap/_MainTex.
         Texture mainTex = null;
         if (src.HasProperty("_BaseMap")) mainTex = src.GetTexture("_BaseMap");
-        else if (src.HasProperty("_MainTex")) mainTex = src.GetTexture("_MainTex");
+        if (mainTex == null && src.HasProperty("_MainTex")) mainTex = src.GetTexture("_MainTex");
+        if (mainTex == null && src.HasProperty("_Maintex")) mainTex = src.GetTexture("_Maintex");
         if (mainTex != null && dst.HasProperty("_BaseMap"))
             dst.SetTexture("_BaseMap", mainTex);
 
         Color color = Color.white;
-        if (src.HasProperty(BaseColorId)) color = src.GetColor(BaseColorId);
+        if (src.HasProperty("_MainColor")) color = src.GetColor("_MainColor");
+        else if (src.HasProperty(BaseColorId)) color = src.GetColor(BaseColorId);
         else if (src.HasProperty(ColorId)) color = src.GetColor(ColorId);
         if (dst.HasProperty(BaseColorId)) dst.SetColor(BaseColorId, color);
         if (dst.HasProperty(ColorId)) dst.SetColor(ColorId, color);
 
         if (src.HasProperty("_BumpMap") && dst.HasProperty("_BumpMap"))
-            dst.SetTexture("_BumpMap", src.GetTexture("_BumpMap"));
+        {
+            Texture bump = src.GetTexture("_BumpMap");
+            if (bump != null) dst.SetTexture("_BumpMap", bump);
+        }
 
         if (dst.HasProperty(CorpseFadeId)) dst.SetFloat(CorpseFadeId, 1f);
         if (dst.HasProperty(DissolveAmountId)) dst.SetFloat(DissolveAmountId, 0f);

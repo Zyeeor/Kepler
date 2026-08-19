@@ -173,6 +173,10 @@ public class MonsterActor : Actor
     [Min(0f)] public float corpseFadeDuration = 3f;
     [Min(0f)] public float hitStateDuration = 0.12f;
 
+    [Header("Possession Visual")]
+    [Tooltip("Emission rim strength while this body is possessed. 0 = off.")]
+    [Range(0f, 8f)] public float possessionHighlightIntensity = 1.8f;
+
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
     private bool isPossessionReserved;
@@ -895,7 +899,7 @@ public class MonsterActor : Actor
         if (visualFx != null)
         {
             visualFx.SetDissolve(1f);
-            visualFx.SetPossessionHighlight(true);
+            visualFx.SetPossessionHighlight(true, possessionHighlightIntensity);
         }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = true;
         foreach (Collider collider in GetComponentsInChildren<Collider>()) collider.enabled = true;
