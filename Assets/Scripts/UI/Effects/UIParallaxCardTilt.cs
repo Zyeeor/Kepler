@@ -30,12 +30,12 @@ public class UIParallaxCardTilt : MonoBehaviour, IPointerEnterHandler, IPointerE
 
 
     [Header("Parallax Offset")]
-    [Tooltip("Maximum local X/Y movement of the foreground layer at the card edge.")]
-    [SerializeField] private Vector2 foregroundOffset = new Vector2(10f, 10f);
-    [Tooltip("Maximum local X/Y movement of the middleground layer at the card edge.")]
-    [SerializeField] private Vector2 middlegroundOffset = new Vector2(7f, 7f);
-    [Tooltip("Maximum local X/Y movement of the background layer at the card edge.")]
-    [SerializeField] private Vector2 backgroundOffset = new Vector2(4f, 4f);
+    [Tooltip("Maximum local horizontal movement of the foreground layer at the card edge.")]
+    [SerializeField] private float foregroundOffset = 10f;
+    [Tooltip("Maximum local horizontal movement of the middleground layer at the card edge.")]
+    [SerializeField] private float middlegroundOffset = 7f;
+    [Tooltip("Maximum local horizontal movement of the background layer at the card edge.")]
+    [SerializeField] private float backgroundOffset = 4f;
 
     private RectTransform root;
     private Quaternion foregroundBaseRotation;
@@ -128,7 +128,7 @@ public class UIParallaxCardTilt : MonoBehaviour, IPointerEnterHandler, IPointerE
         Quaternion baseRotation,
         Vector3 basePosition,
         float tilt,
-        Vector2 offset,
+        float horizontalOffset,
         bool invertTilt)
     {
         if (layer == null) return;
@@ -141,8 +141,8 @@ public class UIParallaxCardTilt : MonoBehaviour, IPointerEnterHandler, IPointerE
 
         layer.localRotation = baseRotation * tiltRotation;
         layer.localPosition = basePosition + new Vector3(
-            pointerNormalized.x * offset.x,
-            pointerNormalized.y * offset.y,
+            pointerNormalized.x * horizontalOffset,
+            0f,
             0f);
     }
 
