@@ -784,6 +784,7 @@ public class MonsterActor : Actor
         currentTenacity -= amount;
         FlashDamage();
         UpdateHealthUI();
+        EnvyMarkTarget.NotifyDamageTaken(this as Enemy, amount);
         if (currentTenacity <= 0)
         {
             currentTenacity = 0;
