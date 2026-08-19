@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Gameplay hazard / buff tile. Mount on a Tile prefab (alongside TileVisual).
+/// Gameplay hazard / buff tile. Mount on a Tile prefab (self-contained; classification derived via TileSemantics).
 /// Occupancy uses Physics.OverlapBox against entity colliders (characters often move via
 /// transform without Rigidbody, so OnTriggerEnter alone is unreliable).
 /// Spike damage is owned by a periodically spawned hazard prefab's collider, not tile enter.
@@ -33,6 +33,12 @@ public class TerrainEffectTile : MonoBehaviour
     [Tooltip("Layers that can occupy this tile. Default = everything.")]
     public LayerMask detectionMask = ~0;
     [Min(1)] public int overlapBufferSize = 32;
+    [Tooltip("Start 时按自身 Renderer 包围盒自动校准检测盒（对齐视觉网格）。\n" +
+             "美术 prefab 常带根偏移/旋转/嵌套子偏移（如 lava1 视觉在根 (3,-1,3) 处），\n" +
+             "手配 detectionCenter 会与视觉错位导致检测失效。默认开启；需手工精确控制时关闭。")]
+    public bool autoCalibrateToVisual = true;
+    [Tooltip("校准时检测盒最小站立高度（世界单位）。薄片贴地视觉（岩浆面片）用此保证覆盖玩家。")]
+    public float minStandingHeight = 2.0f;
 
     [Header("Speed / Slow")]
     [Tooltip("Move speed multiplier while standing on this tile. SpeedBoost default 1.5, Slow default 0.5.")]
@@ -73,6 +79,46 @@ public class TerrainEffectTile : MonoBehaviour
         _overlapBuffer = new Collider[overlapBufferSize];
         EnsureDetectionVolume();
         _nextSpikeAt = Time.time + Mathf.Max(0.05f, spikeInterval);
+    }
+
+    void Start()
+    {
+        // 必须在 Start 校准：ChunkVisualizer.PlaceBlock 在 Instantiate 返回后才设置根
+        // localScale/localPosition（bounds 对齐），Awake 时 transform 仍是 prefab 原始值。
+        if (autoCalibrateToVisual)
+            CalibrateDetectionToVisual();
+    }
+
+    /// <summary>
+    /// 按自身 Renderer 包围盒（世界）把检测盒对齐视觉网格：
+    ///   - 中心 XZ = 视觉 bounds 中心（换算到根 local），消除美术根偏移/嵌套子偏移造成的错位；
+    ///   - 高度 = max(视觉高度, minStandingHeight)，底面贴视觉最低点（薄片岩浆贴地时覆盖玩家站立高度）；
+    ///   - XZ 尺寸 = 视觉 bounds 跨度（根 local，含 lossyScale 换算），保证覆盖整个视觉面。
+    /// 校准后同步 BoxCollider（编辑器 Gizmo 亦准确）。
+    /// </summary>
+    public void CalibrateDetectionToVisual()
+    {
+        var renderers = GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0) return;
+
+        Bounds b = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
+
+        Vector3 lossy = transform.lossyScale;
+        float worldHeight = Mathf.Max(minStandingHeight, b.size.y);
+        // 盒中心：XZ 取视觉中心；Y 取视觉底面 + 半高（贴地站立盒）
+        Vector3 worldCenter = new Vector3(
+            b.center.x,
+            b.min.y + worldHeight * 0.5f,
+            b.center.z);
+
+        detectionCenter = transform.InverseTransformPoint(worldCenter);
+        detectionSize = new Vector3(
+            b.size.x / Mathf.Max(0.0001f, Mathf.Abs(lossy.x)),
+            worldHeight / Mathf.Max(0.0001f, Mathf.Abs(lossy.y)),
+            b.size.z / Mathf.Max(0.0001f, Mathf.Abs(lossy.z)));
+
+        EnsureDetectionVolume();
     }
 
     void OnValidate()

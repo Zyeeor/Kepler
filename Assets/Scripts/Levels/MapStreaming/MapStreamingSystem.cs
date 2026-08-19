@@ -76,7 +76,7 @@ public class MapStreamingSystem : MonoBehaviour
     [Header("世界种子（Chunk 生成与 WorldPlan 区域解析共用）")]
     [Tooltip("单局种子。ChunkSeed = Hash(coord, worldSeed)，生成顺序无关。")]
     public uint worldSeed = 12345;
-    [Tooltip("默认 Chunk 模板：WorldPlan 接入前所有 Chunk 共用；为空时 Tile 生成退化为纯随机（池内 prefab，可走性以 TileVisual 为准）。")]
+    [Tooltip("默认 Chunk 模板：WorldPlan 接入前所有 Chunk 共用；为空时 Tile 生成退化为纯随机（池内 prefab，可走性=无 solid Collider）。")]
     public ChunkDef defaultChunkDef;
 
     [Header("WorldPlan（宏观区域；空 = 全部用 defaultChunkDef）")]

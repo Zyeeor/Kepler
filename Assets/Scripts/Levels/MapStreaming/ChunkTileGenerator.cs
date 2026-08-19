@@ -102,12 +102,11 @@ public static class ChunkTileGenerator
         for (int y = 0; y < n; y++)
         {
             var prefab = layout.GetTile(x, y);
-            var visual = prefab != null ? prefab.GetComponent<TileVisual>() : null;
             if (prefab != null)
             {
-                // 玩法以 TileVisual 为准；无组件时兜底 Normal 可走
-                var kind = visual != null ? visual.terrainKind : TerrainKind.Normal;
-                var walkable = visual != null ? visual.isWalkable : true;
+                // 玩法语义：逻辑通行性=无 solid Collider；分类由 prefab 语义自动推导（ResolveKind）
+                var kind = TileSemantics.ResolveKind(prefab);
+                var walkable = WalkableOf(prefab);
                 tiles[x, y] = new TileData(x, y, prefab, walkable, kind);
             }
             else
@@ -161,7 +160,7 @@ public static class ChunkTileGenerator
         {
             if (x != 0 && y != 0 && x != max && y != max) continue;
             var prefab = PickFromPool(def != null ? def.normalTiles : null, rng);
-            tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab, TerrainKind.Normal), TerrainKind.Normal);
+            tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab), TerrainKind.Normal);
             assigned[x, y] = true;
         }
 
@@ -177,7 +176,7 @@ public static class ChunkTileGenerator
         {
             if (assigned[x, y]) continue;
             var prefab = PickFromPool(def != null ? def.normalTiles : null, rng);
-            tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab, TerrainKind.Normal), TerrainKind.Normal);
+            tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab), TerrainKind.Normal);
             assigned[x, y] = true;
         }
 
@@ -202,8 +201,8 @@ public static class ChunkTileGenerator
             if (!TryPickPattern(def, rng, out TerrainKind poolKind, out PatternShape shape)) break;
             var prefab = PickFromPool(PoolOf(def, poolKind), rng);
             if (prefab == null) continue;
-            // kind 以实际 prefab 的 TileVisual 为准（伤害池内混有岩浆/地刺等，靠它区分）
-            var kind = KindOf(prefab, poolKind);
+            // kind 由 prefab 语义自动推导（触发逻辑/碰撞体），不依赖手配字段；池类别仅决定抽取来源
+            var kind = TileSemantics.ResolveKind(prefab);
             TryPlaceShape(shape, rng, tiles, assigned, n, prefab, kind);
         }
     }
@@ -286,7 +285,7 @@ public static class ChunkTileGenerator
             }
             if (!fits) continue;
 
-            bool walkable = WalkableOf(prefab, kind);
+            bool walkable = WalkableOf(prefab);
             for (int i = 0; i < offsets.Length; i++)
             {
                 int x = ax + offsets[i].x, y = ay + offsets[i].y;
@@ -334,7 +333,7 @@ public static class ChunkTileGenerator
                 int y = horizontal ? lane : i;
                 if (!assigned[x, y])
                 {
-                    tiles[x, y] = new TileData(x, y, roadPrefab, WalkableOf(roadPrefab, TerrainKind.Normal), TerrainKind.Normal);
+                    tiles[x, y] = new TileData(x, y, roadPrefab, WalkableOf(roadPrefab), TerrainKind.Normal);
                     assigned[x, y] = true;
                 }
             }
@@ -382,7 +381,7 @@ public static class ChunkTileGenerator
         for (int y = py; y < py + size; y++)
         {
             var prefab = def.plazaTiles[(x - px + y - py) % count];
-            tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab, TerrainKind.Normal), TerrainKind.Normal);
+            tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab), TerrainKind.Normal);
             assigned[x, y] = true;
         }
     }
@@ -455,27 +454,22 @@ public static class ChunkTileGenerator
         }
     }
 
-    /// <summary>写入一格 Normal 地面（可走性以 prefab 的 TileVisual 为准）。</summary>
+    /// <summary>写入一格 Normal 地面（可走性 = 无 solid Collider）。</summary>
     static void AssignGround(TileData[,] tiles, bool[,] assigned, int x, int y, GameObject prefab)
     {
-        tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab, TerrainKind.Normal), TerrainKind.Normal);
+        tiles[x, y] = new TileData(x, y, prefab, WalkableOf(prefab), TerrainKind.Normal);
         assigned[x, y] = true;
     }
 
-    // ── 可走性（prefab + TileVisual 承载玩法） ──
+    // ── 可走性（prefab 自带 solid Collider 即阻挡） ──
 
-    /// <summary>可走性：以 prefab 的 TileVisual.isWalkable 为准（无组件兜底 true）。装饰地块可走可挡，全由配置决定。</summary>
-    public static bool WalkableOf(GameObject prefab, TerrainKind kind)
+    /// <summary>
+    /// 逻辑通行性快照：prefab 无 solid Collider 即可通行（= 无物理阻挡物）。
+    /// 物理阻挡由模型 Collider 精确决定（SphereCast），此快照仅用于刷怪选取/开放边等逻辑判定。
+    /// </summary>
+    public static bool WalkableOf(GameObject prefab)
     {
-        var visual = prefab != null ? prefab.GetComponent<TileVisual>() : null;
-        return visual == null || visual.isWalkable;
-    }
-
-    /// <summary>类别以实际 prefab 的 TileVisual.terrainKind 为准；无组件回退默认（池类别）。</summary>
-    public static TerrainKind KindOf(GameObject prefab, TerrainKind fallback)
-    {
-        var visual = prefab != null ? prefab.GetComponent<TileVisual>() : null;
-        return visual != null ? visual.terrainKind : fallback;
+        return !TileSemantics.HasSolidCollider(prefab);
     }
 
     /// <summary>

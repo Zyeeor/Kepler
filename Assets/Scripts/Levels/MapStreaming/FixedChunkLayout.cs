@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Chunk 固定布局资产（Fixed 模式用）：策划手摆的 N×N 网格，每格直接存 prefab 引用——
-/// 玩法语义（可行走/地形类别/刷怪点等）从 prefab 的 TileVisual 组件读取，不重复存储。
+/// 玩法语义（可行走/地形类别等）由 TileSemantics 从 prefab 自带组件推导，不重复存储。
 /// 空格（null）生成时视为可走普通地面。
 /// 索引约定：tiles[y * size + x]，(x, y) 为 Chunk 内局部坐标（y 对应世界 z 方向）。
 /// 手摆工具见 Editor/ChunkLayoutEditorWindow（菜单 Kepler/Map/Chunk Layout Editor）。

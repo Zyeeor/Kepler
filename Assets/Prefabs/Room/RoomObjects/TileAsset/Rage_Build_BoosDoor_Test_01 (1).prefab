@@ -129,6 +129,7 @@ GameObject:
   - component: {fileID: 6805687904323699969}
   - component: {fileID: 3231376630154709834}
   - component: {fileID: 6883847365487724508}
+  - component: {fileID: 787274006072119047}
   m_Layer: 0
   m_Name: Rage_Build_BoosDoor_Test_01 (1)
   m_TagString: Untagged
@@ -202,3 +203,26 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &787274006072119047
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7040937136099897432}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 1.6317675
+  m_Height: 5.67
+  m_Direction: 1
+  m_Center: {x: -0.99, y: 2.47, z: 0.06}

@@ -11,7 +11,7 @@ using UnityEngine.Serialization;
 [Serializable]
 public class ChunkTemplateEntry
 {
-    [Tooltip("手摆布局资产（每格一个 prefab，玩法经 TileVisual 读取）。")]
+    [Tooltip("手摆布局资产（每格一个 prefab，玩法经 TileSemantics 推导）。")]
     public FixedChunkLayout layout;
     [Tooltip("是否必须生成：整张地图至少出现一次（全局分配器优先保证）。")]
     public bool mustGenerate = false;
@@ -65,7 +65,7 @@ public class TerrainPattern
 /// 并逐格映射）还是纯随机（边沿铺普通地面 → 特殊地形图案 → 道路带/花纹区块/填充）。
 /// 模板带全局约束：mustGenerate（整张地图至少出现一次）、maxCount（地图内该模板总数上限）、
 /// weight（抽取权重），由全局模板分配器在 Chunk 首次生成时确定并复用，保证确定性。
-/// 池直接存 prefab（GameObject），玩法语义（可走性/地形类别/伤害等）由 prefab 上的 TileVisual 承载。
+/// 池直接存 prefab（GameObject），玩法语义（地形类别/伤害/碰撞）由 prefab 自带组件推导（TileSemantics）。
 /// </summary>
 [CreateAssetMenu(fileName = "ChunkDef", menuName = "Kepler/Map/Chunk Def")]
 public class ChunkDef : ScriptableObject
@@ -79,12 +79,12 @@ public class ChunkDef : ScriptableObject
     [Tooltip("该 Chunk 走模板（而非随机生成）的比重。0 = 全随机；1 = 全模板。")]
     [Range(0f, 1f)] public float templateWeight = 0f;
 
-    [Header("地形 prefab 池（每项 = 一格大小的 Tile prefab，挂 TileVisual 承载玩法）")]
+    [Header("地形 prefab 池（每项 = 一格大小的 Tile prefab，玩法由自带组件推导）")]
     [Tooltip("普通地面候选（可行走）。程序生成的边沿与地面填充均从此取；为空时告警（每 Tile 非空是硬要求）。")]
     public List<GameObject> normalTiles = new List<GameObject>();
-    [Tooltip("可触发地块候选（岩浆/地刺/传送/事件等触发区）。玩法语义由 prefab 的 TileVisual 承载；为空时 triggerPatterns 不参与抽取（该类不生成）。")]
+    [Tooltip("可触发地块候选（岩浆/地刺/传送/事件等触发区，prefab 自带 TerrainEffectTile）；为空时 triggerPatterns 不参与抽取（该类不生成）。")]
     [FormerlySerializedAs("lavaTiles")] [FormerlySerializedAs("hazardTiles")] public List<GameObject> triggerTiles = new List<GameObject>();
-    [Tooltip("装饰地块候选（柱子/雕塑等视觉装饰，不一定阻挡）。可走性由 prefab 的 TileVisual.isWalkable 配置；为空时 decorationPatterns 不参与抽取（该类不生成）。")]
+    [Tooltip("装饰地块候选（柱子/雕塑等视觉装饰）。阻挡由 prefab 自带 solid Collider 决定（物理精确挡路）；为空时 decorationPatterns 不参与抽取（该类不生成）。")]
     [FormerlySerializedAs("blockerTiles")] public List<GameObject> decorationTiles = new List<GameObject>();
 
     [Header("形状图案（程序生成：各类合并按权重抽取，整块放置于内部区域）")]
@@ -131,7 +131,7 @@ public class ChunkDef : ScriptableObject
 #if UNITY_EDITOR
     /// <summary>
     /// 配置防御：normalTiles 空告警（每 Tile 非空是硬要求）；
-    /// patterns 权重全 0 / 有图案无池告警；池 prefab 未挂 TileVisual / kind 不匹配提示；min > max 提示；
+    /// patterns 权重全 0 / 有图案无池告警；池 prefab 推导 kind 不匹配提示；min > max 提示；
     /// 模板条目 layout 空 / weight≤0 / maxCount<0 提示。
     /// </summary>
     void OnValidate()
@@ -144,8 +144,8 @@ public class ChunkDef : ScriptableObject
         if (fillTiles.Count == 0 && normalTiles.Count > 0)
             Debug.LogWarning($"[ChunkDef] {name}.fillTiles 为空：将回退 normalTiles 作填充（建议直接复用 normalTiles）。", this);
         CheckPool(normalTiles, TerrainKind.Normal, nameof(normalTiles));
-        CheckPool(triggerTiles, TerrainKind.Trigger, nameof(triggerTiles), strictKind: false);
-        CheckPool(decorationTiles, TerrainKind.Decoration, nameof(decorationTiles), strictKind: false);
+        CheckPool(triggerTiles, TerrainKind.Trigger, nameof(triggerTiles));
+        CheckPool(decorationTiles, TerrainKind.Decoration, nameof(decorationTiles));
         CheckPool(roadTiles, TerrainKind.Normal, nameof(roadTiles));
         CheckPool(plazaTiles, TerrainKind.Normal, nameof(plazaTiles));
         CheckPool(fillTiles, TerrainKind.Normal, nameof(fillTiles));
@@ -169,18 +169,19 @@ public class ChunkDef : ScriptableObject
         }
     }
 
-    /// <summary>池检查：prefab 应挂 TileVisual；strictKind=true 时要求其 terrainKind 与池类别匹配。</summary>
-    void CheckPool(List<GameObject> pool, TerrainKind expect, string poolName, bool strictKind = true)
+    /// <summary>
+    /// 池检查：分类由 TileSemantics.ResolveKind 自动推导
+    /// （Trigger=挂 TerrainEffectTile / Decoration=带 solid Collider / Normal=其余），与池类别不符时告警。
+    /// </summary>
+    void CheckPool(List<GameObject> pool, TerrainKind expect, string poolName)
     {
         for (int i = 0; i < pool.Count; i++)
         {
             var prefab = pool[i];
             if (prefab == null) continue;
-            var visual = prefab.GetComponent<TileVisual>();
-            if (visual == null)
-                Debug.LogWarning($"[ChunkDef] {name}.{poolName}[{i}] = '{prefab.name}' 未挂 TileVisual 组件（玩法语义将兜底默认值）。请手动给该 prefab 挂 TileVisual 组件。", this);
-            else if (strictKind && visual.terrainKind != expect)
-                Debug.LogWarning($"[ChunkDef] {name}.{poolName}[{i}] = '{prefab.name}' 标注 terrainKind={visual.terrainKind}，与池类别 {expect} 不匹配（生成器按池分配，kind 以池为准）。", this);
+            var resolved = TileSemantics.ResolveKind(prefab);
+            if (resolved != expect)
+                Debug.LogWarning($"[ChunkDef] {name}.{poolName}[{i}] = '{prefab.name}' 推导类别 {resolved}，与池类别 {expect} 不匹配（触发地块应挂 TerrainEffectTile；装饰地块应自带 solid Collider——如 Capsule/Box/Mesh，生成器不再兜底补碰撞）。", this);
         }
     }
 

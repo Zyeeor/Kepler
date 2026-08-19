@@ -12,7 +12,7 @@ using UnityEngine;
 ///   2. 每个 Tile 独立实例、1×1 原始尺寸，三轴等比缩放适配一格（不做横向合并拉长，保证纹理逐格正确）。
 ///      16×16=256 格 → 最多 256 实例/Chunk（对象池化是未来优化方向，见 PlaceBlock TODO）。
 ///   3. Normal 且无 visualPrefab 的 Tile 无视觉（生成器保证 normalTiles 池非空，极端空槽跳过）。
-///   4. 不可走 Tile（isWalkable=false，如阻挡性装饰物）prefab 无碰撞体时按最终包围盒补 BoxCollider（ensureBlockerColliders）。
+///   4. 物理阻挡完全由 prefab 自带 Collider 决定（装饰物须自带 solid Collider；生成器不兜底补碰撞）。
 ///   5. Chunk 聚合根（ChunkVisual_(x,y)）+ 模块实例化：整块开关/销毁。
 ///
 /// 缩放适配：实例化后实测 prefab 世界 bounds（Renderer 优先，Collider 兜底）→ 逐轴/统一缩放 →
@@ -27,10 +27,6 @@ using UnityEngine;
 /// </summary>
 public class ChunkVisualizer : MonoBehaviour
 {
-    [Header("阻挡物")]
-    [Tooltip("不可走的 Tile（如阻挡性装饰物）实例化时若 prefab 无 Collider，按最终包围盒补 BoxCollider（保证「阻挡」物理语义）。")]
-    public bool ensureBlockerColliders = true;
-
     [Header("调试")]
     [Tooltip("Scene 视图绘制非 Normal Tile 线框（Lava 橙 / Spike 黄 / Blocker 红）。")]
     public bool showDebug = true;
@@ -173,7 +169,7 @@ public class ChunkVisualizer : MonoBehaviour
             string blockName = $"Tile_{t.kind}_{x}_{y}";
             // 装饰地块：保持原始尺寸（不缩放到 1×1，允许模型自然超出边界）；其余内切一格
             bool decoration = t.kind == TerrainKind.Decoration;
-            PlaceBlock(prefab, root, target, ts, ts, decoration, !t.isWalkable, blockName);
+            PlaceBlock(prefab, root, target, ts, ts, decoration, blockName);
             instanceCount++;
             coveredTiles++;
         }
@@ -194,7 +190,7 @@ public class ChunkVisualizer : MonoBehaviour
     /// 注意：假设聚合根父链 localScale = 1（ChunkVisuals 容器与本组件所在物体不做缩放，与 v1 同假设）。
     /// TODO(性能): 对象池化方向——按 prefab 分池，此处改为取池/重置变换。
     /// </summary>
-    void PlaceBlock(GameObject prefab, GameObject root, Vector3 targetCenterXZ, float targetSizeX, float targetSizeZ, bool keepOriginalSize, bool needsCollider, string name)
+    void PlaceBlock(GameObject prefab, GameObject root, Vector3 targetCenterXZ, float targetSizeX, float targetSizeZ, bool keepOriginalSize, string name)
     {
         var go = Instantiate(prefab, root.transform);
         go.name = name;
@@ -221,17 +217,7 @@ public class ChunkVisualizer : MonoBehaviour
         Vector3 scaledCenter = p0 + Vector3.Scale(b.center - p0, new Vector3(s, s, s));
         float scaledMinY = p0.y + (b.min.y - p0.y) * s;
         go.transform.localPosition = p0 + new Vector3(targetCenterXZ.x - scaledCenter.x, 0f - scaledMinY, targetCenterXZ.z - scaledCenter.z);
-
-        // 碰撞体：不可走（如阻挡性装饰物）时兜底补 BoxCollider，保证「阻挡」物理语义
-        if (needsCollider && ensureBlockerColliders && go.GetComponentsInChildren<Collider>(false).Length == 0)
-        {
-            // prefab 无碰撞体时按模型空间包围盒补 BoxCollider
-            // （fb 为模型空间 bounds：center 直接可用；size 按最终缩放逐轴除回局部单位）
-            TryMeasureBounds(go, out var fb);
-            var box = go.AddComponent<BoxCollider>();
-            box.center = fb.center;
-            box.size = new Vector3(SafeRatio(fb.size.x, s), SafeRatio(fb.size.y, s), SafeRatio(fb.size.z, s));
-        }
+        // 物理阻挡完全由 prefab 自带 Collider 决定（装饰物自带 solid Collider 精确挡路，玩家可贴边绕行）
     }
 
     /// <summary>
