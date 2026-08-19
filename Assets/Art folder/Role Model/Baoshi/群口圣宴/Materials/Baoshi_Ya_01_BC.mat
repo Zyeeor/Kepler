@@ -99,9 +99,9 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DarkRange: 0.3
-    - _Dark_intensity: 0.5
-    - _Darksoft: 0.5
+    - _DarkRange: 0.4
+    - _Dark_intensity: 0.886
+    - _Darksoft: 0.839
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -110,11 +110,11 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Highlight_range: -0.964
-    - _Highlight_soft: 0.049
+    - _Highlight_range: -1
+    - _Highlight_soft: 0.535
     - _Metallic: 0
     - _OcclusionStrength: 1
-    - _OutlineWidth: 0.0002
+    - _OutlineWidth: 0.00001
     - _Parallax: 0.005
     - _QueueControl: -1
     - _QueueOffset: 0
@@ -131,9 +131,9 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Highlight_Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Highlight_Color: {r: 0.7735849, g: 0.6612515, b: 0.45004147, a: 1}
     - _MainColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Outline_color: {r: 0, g: 0, b: 0, a: 1}
+    - _Outline_color: {r: 0.6244515, g: 0.5377357, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &5669716687566381136

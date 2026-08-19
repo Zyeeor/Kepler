@@ -2630,6 +2630,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1675851578}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6cb9c8912d69c1748a7cc72ecbbbf6e6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1675851580}
   m_SourcePrefab: {fileID: 100100000, guid: 6cb9c8912d69c1748a7cc72ecbbbf6e6, type: 3}
 --- !u!1 &1675851577 stripped
 GameObject:
@@ -2658,6 +2662,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!111 &1675851580
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1675851577}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Animation: {fileID: 1827226128182048838, guid: 6cb9c8912d69c1748a7cc72ecbbbf6e6,
+    type: 3}
+  m_Animations: []
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_CullingType: 0
 --- !u!1001 &1679871440
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2689,7 +2709,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 78edec2afd3b67c4fb9f702577750afb,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.7999983
+      value: 1.65
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 78edec2afd3b67c4fb9f702577750afb,
         type: 3}
@@ -8335,7 +8355,7 @@ PrefabInstance:
     - target: {fileID: 8774719242200299902, guid: fa05e1679a15463438d1e9768d3bc9b5,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.745
+      value: 1.7049984
       objectReference: {fileID: 0}
     - target: {fileID: 8774719242200299902, guid: fa05e1679a15463438d1e9768d3bc9b5,
         type: 3}
@@ -23585,9 +23605,9 @@ SceneRoots:
   - {fileID: 4782324731231223642}
   - {fileID: 1282047700033923200}
   - {fileID: 1282356354}
-  - {fileID: 1679871440}
   - {fileID: 7236852101268464199}
   - {fileID: 1675851576}
+  - {fileID: 1679871440}
   - {fileID: 4706672065339480271}
   - {fileID: 2766919105716555725}
   - {fileID: 1492056555}

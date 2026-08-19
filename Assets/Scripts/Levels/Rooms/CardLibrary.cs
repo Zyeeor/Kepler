@@ -11,6 +11,14 @@ public class CardLibrary : ScriptableObject
 {
     [Tooltip("卡池所有卡。effectId 需全局唯一（OnValidate 查重，运行时重复项忽略）。")]
     public List<CardData> cards = new List<CardData>();
+    [Tooltip("Temporarily retired effect IDs. Their legacy records stay available for migration, but cannot be offered, found, or applied at runtime.")]
+    public List<string> disabledEffectIds = new List<string>();
+
+    public bool IsEffectEnabled(string effectId)
+    {
+        return !string.IsNullOrEmpty(effectId) &&
+            (disabledEffectIds == null || !disabledEffectIds.Contains(effectId));
+    }
 
 #if UNITY_EDITOR
     void OnValidate()   // editor-side guard: warn on duplicate effectId (runtime ignores later entries)

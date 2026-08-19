@@ -137,6 +137,9 @@ public abstract class EnemyAbility : MonoBehaviour
     public float CurrentCooldown { get { return currentCooldown; } }
     protected GameObject activeVfx;
 
+    /// <summary>Raised after this ability has successfully started its activation behavior.</summary>
+    public event Action<EnemyAbility> Activated;
+
     /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
     private bool _hitFeedbackFiredThisAttack;
     private bool _hitAudioFiredThisAttack;
@@ -242,6 +245,7 @@ public abstract class EnemyAbility : MonoBehaviour
         else
             Invoke(nameof(SpawnVfx), vfxDelay);
         OnTrigger();
+        Activated?.Invoke(this);
     }
 
     /// <summary>Begins this ability's configured Activation Effect. Effect duration controls the state lifetime.</summary>

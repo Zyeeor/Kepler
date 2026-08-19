@@ -26,7 +26,7 @@
 | 主角-灵魂体 | soul | （现有灵魂） | 策划未明确 | **非**七宗罪 Roster；无战斗技能；开场进傲慢 Carrier | [主角-灵魂体.md](./主角-灵魂体.md) |
 | 傲慢-终刃绝影 | pride | `pride_new` | 已开发但没资源 | 三槽逻辑已落地；突进 / 穿梭主VFX仍空或通用占位；7张`PR-*`资源需求已补齐 | [傲慢-终刃绝影.md](./傲慢-终刃绝影.md) |
 | 怠惰-机械之灵 | sloth | `sloth_new` | 已开发但没资源 | 三槽已落地；正式VFX / 木灵模型仍缺；11张`SL-*`资源需求已补齐 | [怠惰-机械之灵.md](./怠惰-机械之灵.md) |
-| 暴食-魔猫 | gluttony | `gluttony_new` | 待开发 | 当前Canonical含临时复制E槽与7张`GL-*`；现工程仍为旧9卡 / 旧Overfed逻辑，且正式资源缺失 | [暴食-魔猫.md](./暴食-魔猫.md) |
+| 暴食-魔猫 | gluttony | `gluttony_new` | 待开发 | 已完成2026-08-19 Canonical Delta 对账；待落地三槽、7张`GL-*`、删除卡清理与复制E槽；`GL-S03`攻击分类本轮暂不处理 | [暴食-魔猫.md](./暴食-魔猫.md) |
 | 嫉妒-激光异形 | envy | `envy_new`（待建） | 待开发 | Canonical三槽 + 8张`EN-*`资源需求已补齐；工程未做 | [嫉妒-激光异形.md](./嫉妒-激光异形.md) |
 | 愤怒-链狱冥兽 | wrath | `wrath_new`（待建） | 待开发 | 已对齐2026-08-18三槽与6张`WR-*`，无Type Growth；资源需求已补齐 | [愤怒-链狱冥兽.md](./愤怒-链狱冥兽.md) |
 | 贪婪-万手藏主 | greed | `greed_new`（待建） | 待开发 | 已对齐2026-08-18三槽与6张`GR-*`，无Type Growth；资源需求已补齐 | [贪婪-万手藏主.md](./贪婪-万手藏主.md) |
@@ -38,7 +38,7 @@
 
 - 21个基础技能均已分配稳定`ResourceSetId`。
 - 每个独立资源行必须包含：资源名、类型、状态、当前资源事实 / 路径、用途、具体设计需求。
-- Card资源关系统一使用`NEW / REUSE / NONE`；当前怪物专属 / Type Growth Card共52张。
+- Card资源关系统一使用`NEW / REUSE / NONE`；当前怪物专属 / Type Growth Card共57张。
 - `已挂`只代表Prefab / Ability / Effect已有序列化引用，不等于正式资源完成；通用或占位引用仍按`已开发但没资源`追踪。
 - 资源具体设计需求必须说明触发时机、表现对象、生命周期 / 清理时机、必须传达的信息和禁止误读项。
 
@@ -49,7 +49,7 @@
 | Authority | Gameplay / Content / Card：**Canonical only** |
 | Modules 角色 | Implementation Tracking（路径、状态、检查清单） |
 | CSV | Legacy Evidence only；不得回读裁决当前 Requirement |
-| 当前怪物Card总量 | 52张：Pride 7 / Sloth 11 / Gluttony 7 / Envy 8 / Wrath 6 / Greed 6 / Lust 7 |
+| 当前怪物Card总量 | 57张：Pride 8 / Sloth 11 / Gluttony 7 / Envy 10 / Wrath 6 / Greed 8 / Lust 7 |
 | Type Growth | 当前4张；Gluttony / Wrath / Greed无Type Growth |
 | 色欲牌池 | Owner最终7张：`LU-M03`, `LU-M05`, `LU-S05`, `LU-A03`, `LU-S06`, `LU-A04`, `LU-TG01` |
 | 已落地怪 | 傲慢 / 怠惰有基线工程；暴食有旧版工程但与当前Canonical存在Changed Delta；均仍有正式资源缺口 |

@@ -108,7 +108,7 @@ public class CardManager : MonoBehaviour
         if (cardLibrary == null || cardLibrary.cards == null) return result;
         foreach (var card in cardLibrary.cards)
         {
-            if (card == null || string.IsNullOrEmpty(card.effectId)) continue;
+            if (card == null || !cardLibrary.IsEffectEnabled(card.effectId)) continue;
             if (unlockedEffects.Contains(card.effectId)) continue;
             if (!seen.Add(card.effectId)) continue;          // pool-level dedupe
             result.Add(card);
@@ -368,7 +368,7 @@ public class CardManager : MonoBehaviour
         if (ability == null || string.IsNullOrWhiteSpace(key) || cardLibrary == null || cardLibrary.cards == null) return false;
         foreach (CardData card in cardLibrary.cards)
         {
-            if (card == null || !IsEffectUnlocked(card.effectId) || !DoesCardTargetAbility(card, ability) || card.abilityParameters == null) continue;
+            if (card == null || !cardLibrary.IsEffectEnabled(card.effectId) || !IsEffectUnlocked(card.effectId) || !DoesCardTargetAbility(card, ability) || card.abilityParameters == null) continue;
             foreach (CardAbilityParameter parameter in card.abilityParameters)
             {
                 if (parameter != null && string.Equals(parameter.key, key, System.StringComparison.OrdinalIgnoreCase))

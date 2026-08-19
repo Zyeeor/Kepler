@@ -141,7 +141,7 @@ Material:
     - _LogoAR: 0
     - _LogoAlpha: 0
     - _MainAlpha: 1
-    - _MainAlphaK: 1
+    - _MainAlphaK: 0.049
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005

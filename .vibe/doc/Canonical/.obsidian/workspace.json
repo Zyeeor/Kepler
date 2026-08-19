@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Content/Card_System_Current_Truth_v1.1.md",
+                "file": "01_DESIGN_CANONICAL.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Card_System_Current_Truth_v1.1"
+              "title": "01_DESIGN_CANONICAL"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Content/Card_System_Current_Truth_v1.1.md",
+                "file": "01_DESIGN_CANONICAL.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Content/Card_System_Current_Truth_v1.1.md",
+                "file": "01_DESIGN_CANONICAL.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Content/Card_System_Current_Truth_v1.1.md",
+                "file": "01_DESIGN_CANONICAL.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -190,13 +190,13 @@
   },
   "active": "0103db1e39bc8b5b",
   "lastOpenFiles": [
-    "02_CONTENT_CANONICAL.md",
-    "01_DESIGN_CANONICAL.md",
     "00_CANONICAL_INDEX.md",
     "Content/Encounter_CardOffer_Baseline_v1.0.md",
     "Content/Dual_Line_Text_Requirements_v1.0.md",
-    "03_PRESENTATION_CANONICAL.md",
     "Content/Card_System_Current_Truth_v1.1.md",
+    "02_CONTENT_CANONICAL.md",
+    "01_DESIGN_CANONICAL.md",
+    "03_PRESENTATION_CANONICAL.md",
     "04_FINAL_CLOSURE_AUDIT.md"
   ]
 }

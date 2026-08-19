@@ -53,16 +53,17 @@ MonoBehaviour:
     unlocked: 0
   - effectId: GL-S03
     unlocked: 0
-  vfxPrefab: {fileID: 0}
-  vfxSpawnPoint: {fileID: 0}
+  vfxPrefab: {fileID: 5627008656671882351, guid: a5061b4f1004cb840a20d616bf5cbc45,
+    type: 3}
+  vfxSpawnPoint: {fileID: 3382246229044458862}
   weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
-  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: -1}
   vfxDelay: 0
-  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  vfxRotationOffset: {x: 0, y: 70, z: 0}
   damage: 40
   drawHitboxes: 0
-  cooldown: 1
+  cooldown: 2
   debugLogCooldown: 0
   abilityTags: []
   appliedEffectTags: []
@@ -91,13 +92,22 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
-  range: 3
+  range: 4
   angle: 100
   damageAmount: 40
+  hitDelay: 0.5
   executeHealthFraction: 0.2
-  firstDevourHeal: 20
+  firstDevourHeal: 50
   projectileSwallowRadius: 2.5
   maxSwallowProjectileDamage: 25
+  blastVfxPrefab: {fileID: 9181966222213245788, guid: b5dcc4c1a935faa4098d33384db8b8d4,
+    type: 3}
+  blastVfxDuration: 1
+  vfxForwardUpOffset: {x: 0, y: 0.5, z: 1}
+  vfxExpandDuration: 0.5
+  vfxReturnDuration: 0.5
+  vfxStartEndScale: 0.25
+  vfxPeakScale: 2
 --- !u!1 &1147022082790652847
 GameObject:
   m_ObjectHideFlags: 0
@@ -419,8 +429,6 @@ MonoBehaviour:
     unlocked: 0
   - effectId: GL-A02
     unlocked: 0
-  - effectId: GL-TG01
-    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -459,11 +467,11 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
-  formDuration: 6
+  formDuration: 3
   scaleMultiplier: 0.5
-  speedMultiplier: 2.5
+  speedMultiplier: 2
   glM01SpeedBonus: 1.25
-  glTg01MoveSpeedBonus: 1.15
+  glM01TurnResponsiveness: 1.25
   normalModelRoot: {fileID: 2336044664155016860}
   smallCatModelRoot: {fileID: 8874487129837964480}
 --- !u!1 &2374964912131161376
@@ -768,6 +776,37 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 1
   m_ApplyActiveColorSpace: 1
+--- !u!1 &4195671644362293999
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3382246229044458862}
+  m_Layer: 0
+  m_Name: pos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3382246229044458862
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4195671644362293999}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.578, z: 0.66}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8883150867078005593}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4750602423163319368
 GameObject:
   m_ObjectHideFlags: 0
@@ -806,6 +845,7 @@ Transform:
   m_Children:
   - {fileID: 8098408544878253690}
   - {fileID: 3107655895255372838}
+  - {fileID: 3382246229044458862}
   - {fileID: 6895681850195311067}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1007,7 +1047,7 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.3, g: 0.55, b: 0.12, a: 1.0}
+  dissolveEdgeColor: {r: 2.3, g: 0.55, b: 0.12, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!1 &5807367358007265780
@@ -1059,13 +1099,7 @@ MonoBehaviour:
   upgrades:
   - effectId: GL-A01
     unlocked: 0
-  - effectId: GL-A02
-    unlocked: 0
   - effectId: GL-A03
-    unlocked: 0
-  - effectId: GL-X01
-    unlocked: 0
-  - effectId: GL-TG01
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
@@ -1107,14 +1141,17 @@ MonoBehaviour:
     useGlobalTimeScale: 0
   maxAimDistance: 8
   glA03AimDistance: 12
-  warnDelay: 0.7
-  blastRadius: 2.2
+  warnDelay: 0.5
+  secondBiteDelay: 0.5
+  blastRadius: 3
   damageAmount: 20
-  glTg01SizeMult: 1.2
   pairedOffset: 2.2
-  extraMawOffset: 2.5
-  telegraphPrefab: {fileID: 0}
-  blastVfxPrefab: {fileID: 0}
+  telegraphPrefab: {fileID: 6594813534947665867, guid: d06ff5b71f4866d4e8efcd9915023859,
+    type: 3}
+  telegraphPositionOffset: {x: 0, y: -2, z: 0}
+  telegraphRotation: {x: 0, y: 0, z: 0}
+  blastVfxPrefab: {fileID: 1321618442796136588, guid: fa05e1679a15463438d1e9768d3bc9b5,
+    type: 3}
   blastVfxDuration: 1
   groundMask:
     serializedVersion: 2
@@ -6576,7 +6613,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 764d33f2025c2fc4a956e0028aff5345,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1271930242389621144, guid: 764d33f2025c2fc4a956e0028aff5345,
         type: 3}
@@ -6750,6 +6787,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: BS_XM_Run
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 81423deb06d00a1458705b2536146a4c,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
