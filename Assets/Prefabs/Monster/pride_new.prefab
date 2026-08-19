@@ -1936,14 +1936,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 2.4
+  possessionRimIntensity: 0
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.0, g: 1.75, b: 0.75, a: 1.0}
+  dissolveEdgeColor: {r: 2, g: 1.75, b: 0.75, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!1 &3644302243139924383
 GameObject:
   m_ObjectHideFlags: 0
@@ -2464,7 +2463,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5432388710610514242}
-  - component: {fileID: 881825226534016120}
   m_Layer: 0
   m_Name: pride_new
   m_TagString: Enemy
@@ -2488,27 +2486,6 @@ Transform:
   - {fileID: 4187380586644637822}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &881825226534016120
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4811431479158837486}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 2.4
-  hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
-  hitFlashDuration: 0.12
-  hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.0, g: 1.75, b: 0.75, a: 1.0}
-  dissolveEdgeIntensity: 4.5
-  fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!1 &4828247949594580820
 GameObject:
   m_ObjectHideFlags: 0

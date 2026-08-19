@@ -265,6 +265,24 @@ public class MonsterActor : Actor
         bodyRenderers = GetComponentsInChildren<Renderer>(true);
         visualFx = GetComponent<ActorVisualFx>();
         if (visualFx == null) visualFx = gameObject.AddComponent<ActorVisualFx>();
+        // Keep exactly one ActorVisualFx on the Enemy host. Extra copies on wrappers/children
+        // share the same renderers and make Inspector tweaks appear to do nothing.
+        var childFx = GetComponentsInChildren<ActorVisualFx>(true);
+        for (int i = 0; i < childFx.Length; i++)
+        {
+            if (childFx[i] != null && childFx[i] != visualFx)
+                Destroy(childFx[i]);
+        }
+        Transform ancestor = transform.parent;
+        while (ancestor != null)
+        {
+            if (ancestor.GetComponent<MonsterActor>() != null)
+                break;
+            var parentFx = ancestor.GetComponent<ActorVisualFx>();
+            if (parentFx != null)
+                Destroy(parentFx);
+            ancestor = ancestor.parent;
+        }
         visualFx.RefreshRenderers();
         visualFx.SetDissolve(1f);
         visualFx.SetPossessionHighlight(false);

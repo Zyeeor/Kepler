@@ -26,7 +26,7 @@ public class ActorVisualFx : MonoBehaviour
     [Header("Possession Highlight")]
     [Tooltip("Emission tint while possessed.")]
     public Color possessionRimColor = new Color(0.55f, 0.25f, 1f, 1f);
-    [Tooltip("Emission strength while possessed. Single config entry for possession highlight brightness.")]
+    [Tooltip("0 = identical to unpossessed look. Higher = brighter possession emission glow.")]
     [Range(0f, 8f)] public float possessionRimIntensity = 1.8f;
 
     [Header("Hit Flash")]
@@ -53,8 +53,7 @@ public class ActorVisualFx : MonoBehaviour
     private bool _usingHighlightInstances;
     private Coroutine _flashRoutine;
     private float _dissolve = 1f;
-    private float _rimIntensity;
-    private Color _rimColor = Color.black;
+    private bool _possessionEnabled;
     private float _hitFlash;
 
     void Awake()
@@ -63,6 +62,16 @@ public class ActorVisualFx : MonoBehaviour
         CaptureLook();
         ClearPropertyBlocks();
     }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        // Live-apply Inspector tweaks while possessed (Play Mode).
+        if (!Application.isPlaying || _block == null) return;
+        if (!_possessionEnabled && !_usingHighlightInstances) return;
+        ApplyFx();
+    }
+#endif
 
     public void RefreshRenderers()
     {
@@ -88,14 +97,30 @@ public class ActorVisualFx : MonoBehaviour
 
     public void SetPossessionHighlight(bool enabled)
     {
-        if (enabled)
-            EnsureHighlightMaterialInstances();
-        else
+        _possessionEnabled = enabled;
+        if (!enabled)
             RestoreHighlightMaterialInstances();
-
-        _rimIntensity = enabled ? Mathf.Max(0f, possessionRimIntensity) : 0f;
-        _rimColor = enabled ? possessionRimColor : Color.black;
         ApplyFx();
+    }
+
+    private float GetPossessionRimIntensity()
+    {
+        return _possessionEnabled ? Mathf.Max(0f, possessionRimIntensity) : 0f;
+    }
+
+    /// <summary>
+    /// possessionRimIntensity == 0 must match the unpossessed look: no material swap, no emission keyword.
+    /// Only create highlight instances when intensity is actually above zero.
+    /// </summary>
+    private void SyncPossessionHighlightMaterials(float rimIntensity)
+    {
+        if (_usingDissolveMaterials) return;
+
+        bool wantHighlight = rimIntensity > 0.001f;
+        if (wantHighlight)
+            EnsureHighlightMaterialInstances();
+        else if (_usingHighlightInstances)
+            RestoreHighlightMaterialInstances();
     }
 
     public void PlayHitFlash()
@@ -138,7 +163,7 @@ public class ActorVisualFx : MonoBehaviour
         for (int r = 0; r < _renderers.Length; r++)
         {
             Renderer renderer = _renderers[r];
-            if (renderer == null || renderer is ParticleSystemRenderer) continue;
+            if (renderer == null || ShouldSkipRenderer(renderer)) continue;
             Material[] materials = renderer.sharedMaterials;
             for (int m = 0; m < materials.Length; m++)
             {
@@ -185,7 +210,7 @@ public class ActorVisualFx : MonoBehaviour
         for (int r = 0; r < _renderers.Length; r++)
         {
             Renderer renderer = _renderers[r];
-            if (renderer == null || renderer is ParticleSystemRenderer)
+            if (renderer == null || ShouldSkipRenderer(renderer))
             {
                 _preHighlightSharedMaterials[r] = null;
                 continue;
@@ -209,7 +234,10 @@ public class ActorVisualFx : MonoBehaviour
                 inst.name = src.name + "_PossessHighlight";
                 if (inst.HasProperty(EmissionColorId))
                 {
+                    // Emission starts black; ApplyFx writes rimColor * intensity via MPB.
+                    // Avoids revealing authored emission just by flipping the keyword on.
                     inst.EnableKeyword("_EMISSION");
+                    inst.SetColor(EmissionColorId, Color.black);
                     inst.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
                 }
                 instances[m] = inst;
@@ -266,7 +294,7 @@ public class ActorVisualFx : MonoBehaviour
         for (int r = 0; r < _renderers.Length; r++)
         {
             Renderer renderer = _renderers[r];
-            if (renderer == null || renderer is ParticleSystemRenderer)
+            if (renderer == null || ShouldSkipRenderer(renderer))
             {
                 _originalSharedMaterials[r] = null;
                 continue;
@@ -362,12 +390,17 @@ public class ActorVisualFx : MonoBehaviour
     private void ApplyFx()
     {
         EnsureCache();
-        bool anyFx = _dissolve < 0.999f || _rimIntensity > 0.001f || _hitFlash > 0.001f;
+        // Always read Inspector fields live so prefab / Play Mode tweaks take effect immediately.
+        float rimIntensity = GetPossessionRimIntensity();
+        Color rimColor = rimIntensity > 0.001f ? possessionRimColor : Color.black;
+        SyncPossessionHighlightMaterials(rimIntensity);
+
+        bool anyFx = _dissolve < 0.999f || rimIntensity > 0.001f || _hitFlash > 0.001f;
 
         for (int r = 0; r < _renderers.Length; r++)
         {
             Renderer renderer = _renderers[r];
-            if (renderer == null || renderer is ParticleSystemRenderer) continue;
+            if (renderer == null || ShouldSkipRenderer(renderer)) continue;
             Material[] materials = renderer.sharedMaterials;
             for (int m = 0; m < materials.Length; m++)
             {
@@ -395,9 +428,9 @@ public class ActorVisualFx : MonoBehaviour
                     if (mat.HasProperty(DissolveEdgeIntensityId))
                         _block.SetFloat(DissolveEdgeIntensityId, dissolveEdgeIntensity);
                     if (mat.HasProperty(RimIntensityId))
-                        _block.SetFloat(RimIntensityId, _rimIntensity);
+                        _block.SetFloat(RimIntensityId, rimIntensity);
                     if (mat.HasProperty(RimColorId))
-                        _block.SetColor(RimColorId, _rimColor);
+                        _block.SetColor(RimColorId, rimColor);
                     if (mat.HasProperty(HitFlashAmountId))
                         _block.SetFloat(HitFlashAmountId, _hitFlash);
                     if (mat.HasProperty(HitFlashColorId))
@@ -413,9 +446,10 @@ public class ActorVisualFx : MonoBehaviour
 
                 if (canUseEmission)
                 {
+                    // Possession glow is driven only by possessionRimIntensity (0 = no added emission).
                     Color emission = baseEmission;
-                    if (_rimIntensity > 0.001f)
-                        emission += _rimColor * (_rimIntensity * 0.55f);
+                    if (rimIntensity > 0.001f)
+                        emission = baseEmission + rimColor * (rimIntensity * 0.55f);
                     if (_hitFlash > 0.001f)
                         emission += hitFlashColor * (_hitFlash * 3.5f);
                     _block.SetColor(EmissionColorId, emission);
@@ -432,6 +466,29 @@ public class ActorVisualFx : MonoBehaviour
                 renderer.SetPropertyBlock(_block, m);
             }
         }
+    }
+
+    /// <summary>
+    /// Skip particle systems and authored VFX meshes (e.g. pride headfire) so possession rim
+    /// only hits body materials and remains controllable via possessionRimIntensity.
+    /// </summary>
+    private bool ShouldSkipRenderer(Renderer renderer)
+    {
+        if (renderer is ParticleSystemRenderer) return true;
+
+        Transform t = renderer.transform;
+        Transform stop = transform;
+        while (t != null)
+        {
+            string n = t.name;
+            if (n.IndexOf("headfire", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (n.IndexOf("VFX", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (t == stop) break;
+            t = t.parent;
+        }
+        return false;
     }
 
     private static int PackKey(int rendererIndex, int materialIndex)
