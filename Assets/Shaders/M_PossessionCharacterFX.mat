@@ -36,8 +36,10 @@ Material:
     - _BumpScale: 1
     - _CorpseFade: 1
     - _DissolveAmount: 0
-    - _DissolveNoiseScale: 12
-    - _DissolveSoftness: 0.12
+    - _DissolveEdgeIntensity: 4.5
+    - _DissolveEdgeSpark: 1.6
+    - _DissolveEdgeWidth: 0.08
+    - _DissolveNoiseScale: 8
     - _HitFlashAmount: 0
     - _Metallic: 0
     - _RimIntensity: 0
@@ -45,6 +47,7 @@ Material:
     - _Smoothness: 0.35
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveEdgeColor: {r: 1.4, g: 0.35, b: 2.2, a: 1}
     - _HitFlashColor: {r: 1, g: 0.9, b: 0.9, a: 1}
     - _RimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   m_BuildTextureStacks: []

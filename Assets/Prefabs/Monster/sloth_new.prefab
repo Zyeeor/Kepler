@@ -775,7 +775,6 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
-  possessionHighlightIntensity: 3.39
   healthSlider: {fileID: 0}
   healthCanvas: {fileID: 0}
   showHealthBar: 1
@@ -869,10 +868,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 2.4
+  possessionRimIntensity: 3.39
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
+  dissolveEdgeColor: {r: 0.25, g: 1.7, b: 2.1, a: 1.0}
+  dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!4 &4411847898468923522 stripped
 Transform:

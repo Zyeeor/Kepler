@@ -12,6 +12,8 @@ public class ActorVisualFx : MonoBehaviour
 {
     public static readonly int CorpseFadeId = Shader.PropertyToID("_CorpseFade");
     public static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
+    public static readonly int DissolveEdgeColorId = Shader.PropertyToID("_DissolveEdgeColor");
+    public static readonly int DissolveEdgeIntensityId = Shader.PropertyToID("_DissolveEdgeIntensity");
     public static readonly int RimIntensityId = Shader.PropertyToID("_RimIntensity");
     public static readonly int RimColorId = Shader.PropertyToID("_RimColor");
     public static readonly int HitFlashAmountId = Shader.PropertyToID("_HitFlashAmount");
@@ -22,7 +24,9 @@ public class ActorVisualFx : MonoBehaviour
     public static readonly int EmissionMapId = Shader.PropertyToID("_EmissionMap");
 
     [Header("Possession Highlight")]
+    [Tooltip("Emission tint while possessed.")]
     public Color possessionRimColor = new Color(0.55f, 0.25f, 1f, 1f);
+    [Tooltip("Emission strength while possessed. Single config entry for possession highlight brightness.")]
     [Range(0f, 8f)] public float possessionRimIntensity = 1.8f;
 
     [Header("Hit Flash")]
@@ -31,6 +35,11 @@ public class ActorVisualFx : MonoBehaviour
     [Range(0f, 1f)] public float hitFlashPeak = 0.75f;
 
     [Header("Dissolve (corpse fade only)")]
+    [Tooltip("HDR burn color on the dissolve hole frontier. Configure per monster for differentiation.")]
+    [ColorUsage(true, true)]
+    public Color dissolveEdgeColor = new Color(1.4f, 0.35f, 2.2f, 1f);
+    [Tooltip("Strength of the dissolve edge glow.")]
+    [Range(0f, 12f)] public float dissolveEdgeIntensity = 4.5f;
     [Tooltip("Template for dissolve-only temporary materials. Original materials are restored if fade is cancelled.")]
     public Material fxMaterialTemplate;
 
@@ -79,18 +88,12 @@ public class ActorVisualFx : MonoBehaviour
 
     public void SetPossessionHighlight(bool enabled)
     {
-        SetPossessionHighlight(enabled, possessionRimIntensity);
-    }
-
-    public void SetPossessionHighlight(bool enabled, float intensity)
-    {
         if (enabled)
             EnsureHighlightMaterialInstances();
         else
             RestoreHighlightMaterialInstances();
 
-        possessionRimIntensity = Mathf.Max(0f, intensity);
-        _rimIntensity = enabled ? possessionRimIntensity : 0f;
+        _rimIntensity = enabled ? Mathf.Max(0f, possessionRimIntensity) : 0f;
         _rimColor = enabled ? possessionRimColor : Color.black;
         ApplyFx();
     }
@@ -387,6 +390,10 @@ public class ActorVisualFx : MonoBehaviour
                         _block.SetFloat(CorpseFadeId, _dissolve);
                     if (mat.HasProperty(DissolveAmountId))
                         _block.SetFloat(DissolveAmountId, 1f - _dissolve);
+                    if (mat.HasProperty(DissolveEdgeColorId))
+                        _block.SetColor(DissolveEdgeColorId, dissolveEdgeColor);
+                    if (mat.HasProperty(DissolveEdgeIntensityId))
+                        _block.SetFloat(DissolveEdgeIntensityId, dissolveEdgeIntensity);
                     if (mat.HasProperty(RimIntensityId))
                         _block.SetFloat(RimIntensityId, _rimIntensity);
                     if (mat.HasProperty(RimColorId))
