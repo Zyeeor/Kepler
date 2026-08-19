@@ -29,8 +29,10 @@ public class SaveData
     public bool pendingChoice;
     /// <summary>选卡界面退出时的候选卡快照（恢复后补弹用，保证与退出时一致——随机由种子决定而非重新随机）。</summary>
     public List<string> choicePicks = new List<string>();
-    /// <summary>本局已解锁的卡牌效果 effectId 列表。</summary>
+    /// <summary>本局已解锁的卡牌效果 effectId 列表（至少取得一层的卡）。</summary>
     public List<string> unlockedEffects = new List<string>();
+    /// <summary>Global 卡软保底 streak（§11）：连续多少次 Offer 三张都没有 Global 卡。>=2 时 Global 候选权重开始提高。</summary>
+    public int globalMissStreak;
     /// <summary>灵魂位置（世界坐标）。</summary>
     public Vector3 soulPosition;
     /// <summary>灵魂当前 HP。</summary>

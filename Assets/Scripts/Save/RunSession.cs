@@ -102,6 +102,13 @@ public class RunSession : MonoBehaviour
     /// <summary>本局已解锁卡牌效果（选卡会话结算后由场景对象同步进来）。</summary>
     public readonly List<string> UnlockedEffects = new List<string>();
 
+    /// <summary>
+    /// Global 卡软保底 streak（Encounter_CardOffer_Baseline §11）：
+    /// 连续多少次 Offer 三张都没有 Global 卡；出现 Global 后重置。
+    /// CardManager 每次 Offer 后同步进来（与 UnlockedEffects 同模式），存档落盘。
+    /// </summary>
+    public int GlobalMissStreak { get; set; }
+
     /// <summary>灵魂位置（最近一次波间存档点的玩家位置 = 下一波起点）。</summary>
     public Vector3 SoulPosition { get; private set; }
 
@@ -163,6 +170,7 @@ public class RunSession : MonoBehaviour
         PendingChoice = false;
         ChoicePicks.Clear();
         UnlockedEffects.Clear();
+        GlobalMissStreak = 0;
         SoulPosition = Vector3.zero;
         SoulHealth = 0f;
         SoulTime = 0f;
@@ -194,6 +202,7 @@ public class RunSession : MonoBehaviour
         if (data.choicePicks != null) ChoicePicks.AddRange(data.choicePicks);
         UnlockedEffects.Clear();
         if (data.unlockedEffects != null) UnlockedEffects.AddRange(data.unlockedEffects);
+        GlobalMissStreak = data.globalMissStreak;
         SoulPosition = data.soulPosition;
         SoulHealth = data.soulHealth;
         SoulTime = data.soulTime;
@@ -227,7 +236,7 @@ public class RunSession : MonoBehaviour
         // （弹卡后任何时刻退出，快照都是玩家最后看到的候选，含双选第二轮/重抽结果）。
 
         SaveCoordinator.SaveSnapshot(completedWaveIndex, WorldSeed, UnlockedEffects,
-            SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks);
+            SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak);
         Debug.Log($"[RunSession] 波 {completedWaveIndex} 存档完成：位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count}");
     }
 

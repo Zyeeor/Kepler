@@ -59,7 +59,7 @@ public static class SaveCoordinator
     public static void SaveSnapshot(int completedWaveIndex, uint worldSeed, List<string> unlockedEffects,
         Vector3 soulPosition, float soulHealth, float soulTime,
         SaveData.MonsterBodySave possessedBody = null, List<SaveData.MonsterBodySave> corpses = null,
-        bool pendingChoice = false, List<string> choicePicks = null)
+        bool pendingChoice = false, List<string> choicePicks = null, int globalMissStreak = 0)
     {
         var data = new SaveData
         {
@@ -72,6 +72,7 @@ public static class SaveCoordinator
             soulHealth = soulHealth,
             soulTime = soulTime,
             possessedBody = possessedBody,
+            globalMissStreak = globalMissStreak,
         };
         if (unlockedEffects != null)
             data.unlockedEffects.AddRange(unlockedEffects);

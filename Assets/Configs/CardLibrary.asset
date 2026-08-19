@@ -22,6 +22,12 @@ MonoBehaviour:
     - Ability.Monster.Pride.SwordQi
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 21300000, guid: 0b70c6a9168b5b44ab3e56b7affbe8b1, type: 3}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
     effectId: Pride02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -31,6 +37,12 @@ MonoBehaviour:
     - Ability.Monster.Pride.SwordQi
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
     effectId: Pride01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -40,6 +52,12 @@ MonoBehaviour:
     - Ability.Monster.Pride.SwordQi
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u84C4\u529B\u7A81\u8FDB"
     effectId: Pride.ChargeEmpowered
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -51,6 +69,12 @@ MonoBehaviour:
     abilityParameters:
     - key: ChargeDistance
       value: 10
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u7A7F\u68AD\u9644\u52A0\u6C14\u5203"
     effectId: Pride.BlinkSwordQi
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -60,6 +84,12 @@ MonoBehaviour:
     - Ability.Monster.Pride.BlinkChain
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u7A7F\u68AD+2"
     effectId: Pride.BlinkCountPlusTwo
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -71,6 +101,12 @@ MonoBehaviour:
     abilityParameters:
     - key: BlinkCount
       value: 6
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: Death Eye
     effectId: Envy01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
@@ -80,6 +116,12 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: Muti Eye
     effectId: Envy02
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
@@ -89,6 +131,12 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 4
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: Chain Dash
     effectId: Wrath01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -98,6 +146,12 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 5
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: Grasping Chain
     effectId: Wrath02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -107,6 +161,12 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 5
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: Parasidic Mine
     effectId: Sloth01
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -116,6 +176,12 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: Shatter Blast
     effectId: Sloth02
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -125,6 +191,12 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u843D\u5730\u7206\u70B8"
     effectId: Sloth.LandingBlast
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -134,6 +206,12 @@ MonoBehaviour:
     - Ability.Monster.Sloth.Launch
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u84C4\u529B\u6563\u5C04"
     effectId: Sloth.Scatter
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -144,6 +222,12 @@ MonoBehaviour:
     - Ability.Monster.Sloth.ChargeShot
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u5E03\u7F6E\u5730\u96F7"
     effectId: Sloth.LandingMine
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -154,6 +238,12 @@ MonoBehaviour:
     - Ability.Monster.Sloth.Launch
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u65E0\u4EBA\u673A\u7ECF\u6D4E"
     effectId: Sloth.DroneEconomy
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -163,6 +253,12 @@ MonoBehaviour:
     - Ability.Monster.Sloth.Drone
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u65E0\u4EBA\u673A\u6B7B\u4EA1\u7206\u70B8"
     effectId: Sloth.DroneDeathBlast
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -172,6 +268,12 @@ MonoBehaviour:
     - Ability.Monster.Sloth.Drone
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u7FA4\u53E3\u5723\u5BB4"
     effectId: GL-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -181,6 +283,12 @@ MonoBehaviour:
     - Ability.Monster.Gluttony.AbyssMaw
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u730E\u6B65\u5723\u9910"
     effectId: GL-A02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -190,6 +298,12 @@ MonoBehaviour:
     - Ability.Monster.Gluttony.SmallCat
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u8FDC\u65B9\u5723\u9910"
     effectId: GL-A03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -201,6 +315,12 @@ MonoBehaviour:
     abilityParameters:
     - key: MawAimDistance
       value: 12
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u9965\u795E\u730E\u6B65"
     effectId: GL-M01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -212,6 +332,12 @@ MonoBehaviour:
     abilityParameters:
     - key: SmallCatSpeedMult
       value: 1.25
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u9C9C\u8840\u5723\u9910"
     effectId: GL-S01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -223,6 +349,12 @@ MonoBehaviour:
     abilityParameters:
     - key: 
       value: 0
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u6700\u540E\u4E00\u9910"
     effectId: GL-S02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -234,6 +366,12 @@ MonoBehaviour:
     abilityParameters:
     - key: ExecuteThreshold
       value: 0.2
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u4E07\u7269\u7686\u98DF"
     effectId: GL-S03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -243,6 +381,12 @@ MonoBehaviour:
     - Ability.Monster.Gluttony.Devour
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u8FC7\u9971\u795E\u8FF9"
     effectId: GL-X01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -252,6 +396,12 @@ MonoBehaviour:
     - Ability.Monster.Gluttony.AbyssMaw
     grantedEffectTags: []
     abilityParameters: []
+    category: 2
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   - cardName: "\u9965\u795E\u663E\u5F62"
     effectId: GL-TG01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -265,6 +415,12 @@ MonoBehaviour:
       value: 1.15
     - key: MawSizeMult
       value: 1.2
+    category: 3
+    monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
   disabledEffectIds:
   - GL-X01
   - GL-TG01
