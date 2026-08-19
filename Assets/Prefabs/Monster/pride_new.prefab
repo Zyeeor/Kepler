@@ -1940,6 +1940,8 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
+  dissolveEdgeColor: {r: 2.0, g: 1.75, b: 0.75, a: 1.0}
+  dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
   convertMaterialsToFxShader: 1
 --- !u!1 &3644302243139924383
@@ -2503,6 +2505,8 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
+  dissolveEdgeColor: {r: 2.0, g: 1.75, b: 0.75, a: 1.0}
+  dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
   convertMaterialsToFxShader: 1
 --- !u!1 &4828247949594580820

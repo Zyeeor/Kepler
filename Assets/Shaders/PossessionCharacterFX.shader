@@ -10,8 +10,11 @@ Shader "Possession/CharacterFX"
         [Header(Dissolve)]
         _CorpseFade ("Corpse Fade (1=visible)", Range(0,1)) = 1
         _DissolveAmount ("Dissolve Amount (0=solid)", Range(0,1)) = 0
-        _DissolveNoiseScale ("Dissolve Noise Scale", Float) = 12
-        _DissolveSoftness ("Dissolve Softness", Range(0.01, 0.5)) = 0.12
+        _DissolveNoiseScale ("Dissolve Noise Scale", Float) = 8
+        _DissolveEdgeWidth ("Dissolve Edge Width", Range(0.01, 0.25)) = 0.08
+        [HDR] _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1.4, 0.35, 2.2, 1)
+        _DissolveEdgeIntensity ("Dissolve Edge Intensity", Range(0, 12)) = 4.5
+        _DissolveEdgeSpark ("Dissolve Edge Spark", Range(0, 4)) = 1.6
 
         [Header(Possession Rim)]
         _RimColor ("Rim Color", Color) = (0.55, 0.2, 1, 1)
@@ -31,8 +34,8 @@ Shader "Possession/CharacterFX"
     {
         Tags
         {
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
@@ -42,7 +45,7 @@ Shader "Possession/CharacterFX"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend One Zero
             ZWrite On
             Cull Back
 
@@ -65,7 +68,10 @@ Shader "Possession/CharacterFX"
                 half _CorpseFade;
                 half _DissolveAmount;
                 half _DissolveNoiseScale;
-                half _DissolveSoftness;
+                half _DissolveEdgeWidth;
+                half4 _DissolveEdgeColor;
+                half _DissolveEdgeIntensity;
+                half _DissolveEdgeSpark;
                 half4 _RimColor;
                 half _RimIntensity;
                 half _RimPower;
@@ -111,6 +117,22 @@ Shader "Possession/CharacterFX"
                 return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
             }
 
+            // Multi-octave noise → irregular growing holes instead of soft global fade.
+            float DissolveNoise(float2 p)
+            {
+                float v = 0.0;
+                float a = 0.5;
+                float2 q = p;
+                [unroll]
+                for (int i = 0; i < 4; i++)
+                {
+                    v += ValueNoise(q) * a;
+                    q = q * 2.17 + float2(17.1, 9.3);
+                    a *= 0.5;
+                }
+                return saturate(v);
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings o;
@@ -128,19 +150,19 @@ Shader "Possession/CharacterFX"
             {
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
 
-                // 0 = solid body, 1 = fully dissolved. Transparent holes grow with progress.
+                // 0 = fully solid, 1 = fully gone. Hard holes grow; surviving pixels stay opaque.
                 half dissolve = saturate(max(1.0h - _CorpseFade, _DissolveAmount));
-                float noise = ValueNoise(input.uv * _DissolveNoiseScale + input.positionWS.xz * 0.35);
-                half soft = max(_DissolveSoftness, 1e-4h);
-                // Keep original albedo; only alpha opens up where noise is eaten by dissolve.
-                half dissolveMask = 1.0h - smoothstep(noise - soft, noise + soft, dissolve);
-                half alpha = albedo.a * dissolveMask * saturate(_CorpseFade);
-                clip(alpha - 0.004h);
+                float2 noiseUV = input.uv * _DissolveNoiseScale
+                    + input.positionWS.xz * 0.45
+                    + float2(_Time.y * 0.07, _Time.y * -0.045);
+                float noise = DissolveNoise(noiseUV);
+
+                // Completely transparent where noise is eaten; no global alpha fade.
+                clip(noise - dissolve - 1e-4);
 
                 half3 normalWS = normalize(input.normalWS);
                 Light mainLight = GetMainLight();
                 half ndotl = saturate(dot(normalWS, mainLight.direction));
-                // Lifted lighting so dissolve keeps the authored look instead of collapsing to black.
                 half3 ambient = SampleSH(normalWS);
                 half3 lighting = mainLight.color * (ndotl * 0.45h + 0.55h) + ambient * 0.4h;
 
@@ -149,9 +171,21 @@ Shader "Possession/CharacterFX"
                 half3 rimCol = _RimColor.rgb * rim * _RimIntensity;
 
                 half3 color = albedo.rgb * lighting + rimCol;
+
+                // Bright burn band only on the hole frontier — body albedo stays intact.
+                half edgeWidth = max(_DissolveEdgeWidth, 1e-4h);
+                half edge = 1.0h - saturate((noise - dissolve) / edgeWidth);
+                edge *= edge; // concentrate glow on the rim
+                half active = step(0.002h, dissolve) * step(dissolve, 0.998h);
+                half spark = pow(edge, 3.0h) * _DissolveEdgeSpark;
+                half3 edgeGlow = _DissolveEdgeColor.rgb * ((_DissolveEdgeIntensity * edge) + spark) * active;
+                color += edgeGlow;
+
                 color = lerp(color, _HitFlashColor.rgb, _HitFlashAmount);
                 color = MixFog(color, input.fogFactor);
-                return half4(color, alpha);
+
+                // Surviving fragments are fully opaque.
+                return half4(color, albedo.a);
             }
             ENDHLSL
         }

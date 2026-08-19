@@ -604,12 +604,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 2.4
+  possessionRimIntensity: 2.6
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
+  dissolveEdgeColor: {r: 2.0, g: 1.75, b: 0.75, a: 1.0}
+  dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!1 &3977957720664182867
 GameObject:
   m_ObjectHideFlags: 0
@@ -1843,8 +1844,9 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
+  dissolveEdgeColor: {r: 2.0, g: 1.75, b: 0.75, a: 1.0}
+  dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!4 &5417715533104391790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
