@@ -729,7 +729,7 @@ Type Growth：
 - Monster-Type位：Known Type Set中的合法Monster-Type / Type Growth；
 - Flex位：全体剩余合法池；
 - 同一Offer禁止重复Card ID；
-- 满Stack / 唯一Card已取得后移出合法池；
+- 唯一Card已取得后移出合法池（当前全牌池 Stack Max = 1）；
 - 完全零效果Card过滤；
 - 空池按`Content/Encounter_CardOffer_Baseline_v1.0.md`执行Fallback；
 - Global使用软保底，不恢复历史W2/W4/W6/W8硬保底。

@@ -191,11 +191,10 @@ Final必须保留尸体供应与换身循环，不得退化成单纯躲避计时
 
 先过滤：
 
-1. 已达Stack Max；
-2. Standalone / Unique已取得；
-3. 前置不满足；
-4. 对当前合法对象完全零效果；
-5. 同一次Offer已被另一个Slot选中的同Card ID。
+1. Card已取得（当前全牌池 Stack Max = 1，唯一获取）；
+2. 前置不满足；
+3. 对当前合法对象完全零效果；
+4. 同一次Offer已被另一个Slot选中的同Card ID。
 
 Fallback：
 
