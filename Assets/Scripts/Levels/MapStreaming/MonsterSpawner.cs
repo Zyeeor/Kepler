@@ -27,6 +27,8 @@ public class MonsterSpawner : MonoBehaviour
     [Min(0f)] public float minSpawnDistanceToPlayer = 20f;
     [Tooltip("波次刷怪点到玩家的最大距离（米）——须在 B 缓冲带内。")]
     [Min(0f)] public float maxSpawnDistanceToPlayer = 50f;
+    [Tooltip("刷怪统一高度（世界 y）：所有怪物生成在这个高度，按地面实际高度手动调整即可。")]
+    public float spawnHeightY = 0f;
 
     [Header("节奏")]
     [Tooltip("低频维护间隔（秒）：追踪列表修剪（尸体 fade 自行回池的怪摘除）。")]
@@ -185,6 +187,7 @@ public class MonsterSpawner : MonoBehaviour
             }
             if (!IsWalkable(chunk, c)) continue;
             pos = c;
+            pos.y = spawnHeightY; // 统一生成高度（世界 y，手动调到地面高度）
             return true;
         }
         return false;

@@ -588,7 +588,7 @@ public class WaveManager : MonoBehaviour
             if (entry == null || entry.prefab == null) continue;
             for (int i = 0; i < entry.count && spawned < quota; i++)
             {
-                Vector2 offset = ScatterOffset(); // 种子流群系散射
+                Vector2 offset = ScatterOffset(); // 种子流群系散射（y 沿用 center 的统一高度）
                 Vector3 pos = center + new Vector3(offset.x, 0f, offset.y);
                 var m = spawner.SpawnWaveMonster(entry.prefab, pos);
                 if (m != null)

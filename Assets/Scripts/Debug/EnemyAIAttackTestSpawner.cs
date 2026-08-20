@@ -20,12 +20,16 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
     public MonsterCheatCatalog catalog;
 
     [Header("Spawn")]
-    [Tooltip("刷怪位置偏移（相对玩家灵魂/身体）。")]
+    [Tooltip("刷怪位置偏移（相对玩家灵魂/身体，XZ 平面）。")]
     public Vector3 spawnOffset = new Vector3(3f, 0f, 0f);
+    [Tooltip("刷怪统一高度（世界 y）：灵魂玩家悬浮（无贴地），怪跟随玩家会刷在空中；此值强制刷怪高度，按地面实际高度手动调整（默认 0）。")]
+    public float spawnHeightY = 0f;
     [Tooltip("刷怪时在 Console 打印该怪的 AI 配置摘要（索敌/普攻/技能范围/攻击迟疑度）。")]
     public bool logAIConfigOnSpawn = true;
     [Tooltip("是否显示屏幕提示面板。")]
     public bool showHint = true;
+    [Tooltip("刷出的怪是否显示调试距离圆环（索敌/普攻/技能范围，Game 视图可见）。仅影响本测试刷怪器刷出的怪。")]
+    public bool showDebugRanges = true;
 
     void Update()
     {
@@ -78,8 +82,8 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
             return;
         }
 
-        // 脚本构造的怪默认显示调试距离圆环（不污染配置资产）
-        monster.forceDebugRanges = true;
+        // 调试距离圆环开关（Inspector 可配；force 机制不污染 AI 配置资产）
+        monster.forceDebugRanges = showDebugRanges;
 
         if (CardManager.Instance != null) CardManager.Instance.ApplyAllUnlocksTo(go);
 
@@ -135,7 +139,9 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
         Vector3 origin = Vector3.zero;
         if (PlayerController.Instance != null && PlayerController.Instance.transform != null)
             origin = PlayerController.Instance.transform.position;
-        return origin + spawnOffset;
+        Vector3 pos = origin + spawnOffset;
+        pos.y = spawnHeightY; // 统一高度（灵魂玩家悬浮，怪不跟随悬浮）
+        return pos;
     }
 
     void OnGUI()

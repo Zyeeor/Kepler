@@ -2615,8 +2615,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catalog: {fileID: 11400000, guid: d995378018fcd4aafa703c3e16e084e6, type: 2}
   spawnOffset: {x: 3, y: 0, z: 0}
-  logAIConfigOnSpawn: 1
-  showHint: 1
+  spawnHeightY: 0
+  logAIConfigOnSpawn: 0
+  showHint: 0
+  showDebugRanges: 0
 --- !u!4 &438339684
 Transform:
   m_ObjectHideFlags: 0
@@ -4347,6 +4349,7 @@ MonoBehaviour:
   maxCombatMonsters: 30
   minSpawnDistanceToPlayer: 20
   maxSpawnDistanceToPlayer: 50
+  spawnHeightY: 0
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1
@@ -9318,6 +9321,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catalog: {fileID: 11400000, guid: d995378018fcd4aafa703c3e16e084e6, type: 2}
   spawnOffset: {x: 2, y: 0, z: 0}
+  spawnHeightY: 0
   despawnPreviousCheatBody: 1
   immortalCheatBodies: 1
   damageImmuneEffect: {fileID: 0}
