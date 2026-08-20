@@ -135,7 +135,7 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
         vfx.transform.localRotation = Quaternion.Euler(landingVfxRotationOffset);
         PlayVfx(vfx);
         StopVfxLooping(vfx);
-        Destroy(vfx, Mathf.Max(0.01f, landingVfxDuration));
+        ReleaseVfx(vfx, Mathf.Max(0.01f, landingVfxDuration));
     }
 
     private void PlaceMine(Vector3 pos)

@@ -184,7 +184,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
     {
         GameObject go;
         if (handProjectilePrefab != null)
-            go = Instantiate(handProjectilePrefab, origin, Quaternion.identity);
+            go = VfxPool.Instance.Spawn(handProjectilePrefab, origin, Quaternion.identity);
         else
         {
             go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -199,8 +199,9 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
         if (handSpawnVfxPrefab != null)
         {
-            GameObject spawnVfx = Instantiate(handSpawnVfxPrefab, origin, Quaternion.identity);
-            Destroy(spawnVfx, 1f);
+            GameObject spawnVfx = VfxPool.Instance.Spawn(handSpawnVfxPrefab, origin, Quaternion.identity);
+            PlayVfx(spawnVfx);
+            ReleaseVfx(spawnVfx, 1f);
         }
 
         GreedHandProjectile hand = go.GetComponent<GreedHandProjectile>();

@@ -191,16 +191,16 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
     {
         CleanupStormVfx();
         if (stormVfxPrefab == null || owner == null) return;
-        _stormVfx = Instantiate(stormVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
+        _stormVfx = VfxPool.Instance.Spawn(stormVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
         PlayVfx(_stormVfx);
-        Destroy(_stormVfx, duration + stormVfxLifetimePadding);
+        ReleaseVfx(_stormVfx, duration + stormVfxLifetimePadding);
     }
 
     private void CleanupStormVfx()
     {
         if (_stormVfx != null)
         {
-            Destroy(_stormVfx);
+            ReleaseVfx(_stormVfx);
             _stormVfx = null;
         }
     }

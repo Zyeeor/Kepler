@@ -32,13 +32,17 @@ public class HookProjectile : MonoBehaviour
     private float hitCheckTimer;
     private Vector3 lastHitCheckPosition;
 
-    void Start()
+    void OnEnable()
+    {
+        ResetForPoolSpawn();
+    }
+
+    public void ResetForPoolSpawn()
     {
         lifetime = maxLifetime;
         hitCheckTimer = hitCheckInterval;
         lastHitCheckPosition = transform.position;
-        if (debugLogging)
-            Debug.Log($"[Hook] Launched owner={ownerTransform?.name ?? "none"} position={transform.position:F2} forward={transform.forward:F2} radius={hitRadius:F2}");
+        hitPlayer = false;
     }
 
     void Update()
@@ -64,7 +68,9 @@ public class HookProjectile : MonoBehaviour
             if (debugLogging)
                 Debug.Log($"[Hook] Missed owner={ownerTransform?.name ?? "none"} position={transform.position:F2} forward={transform.forward:F2}");
             if (ownerAbility != null) ownerAbility.OnHookMissed();
-            Destroy(gameObject);
+            ownerAbility = null;
+            ownerTransform = null;
+            VfxPool.ReleaseOrDestroy(gameObject);
         }
     }
 
@@ -122,14 +128,18 @@ public class HookProjectile : MonoBehaviour
         // Hit VFX
         if (hitVfxPrefab != null)
         {
-            var vfx = Instantiate(hitVfxPrefab, target.position, Quaternion.identity);
-            Destroy(vfx, hitVfxDuration);
+            var vfx = VfxPool.Instance.Spawn(hitVfxPrefab, target.position, Quaternion.identity);
+            foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
+                ps.Play(true);
+            VfxPool.ReleaseOrDestroy(vfx, hitVfxDuration);
         }
 
         // Notify ability to start pull
         if (ownerAbility != null)
             ownerAbility.OnHookHitTarget(target, isPlayer);
 
-        Destroy(gameObject);
+        ownerAbility = null;
+        ownerTransform = null;
+        VfxPool.ReleaseOrDestroy(gameObject);
     }
 }

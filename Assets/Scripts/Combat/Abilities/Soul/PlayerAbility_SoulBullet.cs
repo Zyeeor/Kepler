@@ -32,7 +32,7 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         GameObject bullet;
         if (projectilePrefab != null)
         {
-            bullet = Instantiate(projectilePrefab, spawnPos, aimRot);
+            bullet = VfxPool.Instance.Spawn(projectilePrefab, spawnPos, aimRot);
             Debug.Log("[SoulBullet] Instantiated prefab: " + projectilePrefab.name);
             PlayVfx(bullet);
         }
@@ -51,6 +51,7 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         projectile.hitEffectPrefab = hitEffectPrefab;
         projectile.hitEffectDuration = hitEffectDuration;
         projectile.ownerEnemy = PossessionManager.Instance != null ? PossessionManager.Instance.CurrentBody as Enemy : null;
+        projectile.ResetForPoolSpawn();
 
         Debug.Log("[SoulBullet] Bullet created: " + bullet.name + " at " + bullet.transform.position + " rot=" + bullet.transform.rotation.eulerAngles);
     }
