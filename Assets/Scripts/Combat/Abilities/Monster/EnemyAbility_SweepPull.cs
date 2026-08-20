@@ -137,18 +137,9 @@ public class EnemyAbility_SweepPull : EnemyAbility
             if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
             hookProj = hookObj.GetComponent<HookProjectile>();
             if (hookProj != null)
-            {
-                hookProj.speed = hookSpeed;
-                hookProj.maxLifetime = hookMaxRange / hookSpeed;
-                hookProj.hitVfxPrefab = hitVfxPrefab;
-                hookProj.hitVfxDuration = hitVfxDuration;
-                hookProj.ownerAbility = this;
-                hookProj.ownerTransform = owner.transform;
-                hookProj.hitMask = owner.isPossessed ? ~0 : targetMask;
-                hookProj.ResetForPoolSpawn();
-                if (hookProj.debugLogging)
-                    Debug.Log($"[Hook] Launched owner={owner.name} position={origin:F2} forward={forward:F2} radius={hookProj.hitRadius:F2}");
-            }
+                ConfigurePullHook(hookProj);
+            if (hookProj != null && hookProj.debugLogging)
+                Debug.Log($"[Hook] Launched owner={owner.name} position={origin:F2} forward={forward:F2} radius={hookProj.hitRadius:F2}");
         }
         else
         {
@@ -157,14 +148,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
             hookObj.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
             if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
             hookProj = hookObj.AddComponent<HookProjectile>();
-            hookProj.speed = hookSpeed;
-            hookProj.maxLifetime = hookMaxRange / hookSpeed;
-            hookProj.hitVfxPrefab = hitVfxPrefab;
-            hookProj.hitVfxDuration = hitVfxDuration;
-            hookProj.ownerAbility = this;
-            hookProj.ownerTransform = owner.transform;
-            hookProj.hitMask = owner.isPossessed ? ~0 : targetMask;
-            hookProj.ResetForPoolSpawn();
+            ConfigurePullHook(hookProj);
         }
 
         // Wait for hook to hit or miss
@@ -248,6 +232,23 @@ public class EnemyAbility_SweepPull : EnemyAbility
         pullTarget = target;
         isPullingPlayer = isPlayer;
         if (debugLogging) Debug.Log($"[Hook] Pull target={target?.name ?? "none"} isPlayer={isPlayer}");
+    }
+
+    private void ConfigurePullHook(HookProjectile hookProj)
+    {
+        if (hookProj == null) return;
+        hookProj.flightMode = HookProjectile.FlightMode.PullTargets;
+        hookProj.speed = hookSpeed;
+        hookProj.maxTravelDistance = hookMaxRange;
+        hookProj.maxLifetime = hookMaxRange / Mathf.Max(0.01f, hookSpeed) + 0.25f;
+        hookProj.hitVfxPrefab = hitVfxPrefab;
+        hookProj.hitVfxDuration = hitVfxDuration;
+        hookProj.ownerAbility = this;
+        hookProj.ownerTransform = owner != null ? owner.transform : null;
+        hookProj.hitMask = owner != null && owner.isPossessed ? ~0 : targetMask;
+        hookProj.useUnscaledTime = IsOwnedByPlayer;
+        hookProj.onAnchorStop = null;
+        hookProj.ResetForPoolSpawn();
     }
 
     /// <summary>Called by HookProjectile when hitting a target (Wrath02: multiple).</summary>

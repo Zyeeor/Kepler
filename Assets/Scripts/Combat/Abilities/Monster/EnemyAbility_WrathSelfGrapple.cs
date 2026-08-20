@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Wrath Movement: hook self to a forward legal ground point.
-/// No legal point → CanTrigger false (no HP cost / no reload).
-/// WR-M01 path damage; WR-M02 distance ×1.5 + landing impact.
+/// Wrath Movement: fire HookProjectile toward mouse/facing aim; on stop (max range / monster / obstacle)
+/// dash the body to that point. Hook head itself deals no baseline damage.
+/// WR-M01 path damage during the body dash; WR-M02 distance ×1.5 + landing impact.
 /// </summary>
 public class EnemyAbility_WrathSelfGrapple : EnemyAbility
 {
@@ -16,12 +16,9 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
     [Header("Grapple")]
     public float grappleDistance = 8f;
     public float rangeMultiplierWithM02 = 1.5f;
-    public float grappleSpeed = 28f;
-    public float groundProbeHeight = 2.5f;
-    public float groundProbeDown = 5f;
-    public float minNormalY = 0.45f;
-    public float sampleStep = 0.5f;
-    public LayerMask groundMask = ~0;
+    public float hookSpeed = 32f;
+    public float grappleSpeed = 36f;
+    public LayerMask obstacleMask = ~0;
     public float aimTurnSpeed = 720f;
 
     [Header("WR-M01 Path Damage")]
@@ -34,13 +31,14 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
     public GameObject landingImpactVfxPrefab;
     public float landingImpactVfxDuration = 0.8f;
 
-    [Header("Hook Visual (non-damaging)")]
+    [Header("Hook Projectile")]
     public GameObject hookVisualPrefab;
-    public float hookVisualLifetime = 0.35f;
+    public GameObject hookHitVfxPrefab;
+    public float hookHitVfxDuration = 0.35f;
 
-    private Vector3 _cachedLandingPoint;
-    private bool _hasCachedLanding;
     private readonly HashSet<int> _pathHitIds = new HashSet<int>();
+    private bool _hookResolved;
+    private Vector3 _hookStopPoint;
 
     private void OnEnable()
     {
@@ -50,29 +48,29 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         EnsureTag(TagGrapple);
         EnsureUpgrade(CardPathDamage);
         EnsureUpgrade(CardRangeImpact);
+        // Prefab previously serialized this as hookVisualPrefab.
+        if (obstacleMask.value == 0) obstacleMask = ~0;
     }
 
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        _hasCachedLanding = TryFindLandingPoint(out _cachedLandingPoint);
-        return _hasCachedLanding;
+        return TryResolveFireDirection(out _);
     }
 
     protected override void OnTrigger()
     {
-        if (!_hasCachedLanding && !TryFindLandingPoint(out _cachedLandingPoint))
+        if (!TryResolveFireDirection(out Vector3 direction))
         {
             EndActivationEffect();
             currentCooldown = 0f;
             return;
         }
 
-        StartCoroutine(GrappleRoutine(_cachedLandingPoint));
-        _hasCachedLanding = false;
+        StartCoroutine(GrappleRoutine(direction));
     }
 
-    private IEnumerator GrappleRoutine(Vector3 landingPoint)
+    private IEnumerator GrappleRoutine(Vector3 direction)
     {
         if (owner == null)
         {
@@ -80,11 +78,34 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
             yield break;
         }
 
-        Vector3 start = owner.transform.position;
-        Vector3 flatDir = landingPoint - start;
-        flatDir.y = 0f;
-        if (flatDir.sqrMagnitude > 0.0001f)
-            yield return RotatePossessedOwnerTowards(flatDir.normalized, aimTurnSpeed);
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            EndActivationEffect();
+            currentCooldown = 0f;
+            yield break;
+        }
+        direction.Normalize();
+
+        owner.IsAbilityFacingLocked = true;
+        if (owner is MonsterActor monsterFace)
+            monsterFace.IsAbilityLocomotionLocked = true;
+        owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+
+        float maxDist = GetMaxGrappleDistance();
+        float hookY = owner.transform.position.y;
+        Vector3 origin = new Vector3(owner.transform.position.x, hookY, owner.transform.position.z);
+        _hookResolved = false;
+        _hookStopPoint = origin + direction * maxDist;
+
+        HookProjectile hook = FireHook(origin, direction, maxDist);
+        float timeout = maxDist / Mathf.Max(0.01f, hookSpeed) + 0.35f;
+        float elapsed = 0f;
+        while (owner != null && !_hookResolved && elapsed < timeout)
+        {
+            elapsed += AbilityDeltaTime;
+            yield return null;
+        }
 
         if (owner == null)
         {
@@ -92,13 +113,18 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
             yield break;
         }
 
-        SpawnHookVisual(start, landingPoint);
+        if (!_hookResolved)
+            _hookStopPoint = origin + direction * maxDist;
+
+        // Top-down: hook flies on the XZ plane at the owner's Y; landing keeps that Y.
+        _hookStopPoint.y = hookY;
+        Vector3 landingPoint = _hookStopPoint;
+        Vector3 start = owner.transform.position;
         _pathHitIds.Clear();
 
         float distance = Vector3.Distance(start, landingPoint);
-        float duration = Mathf.Max(0.05f, distance / Mathf.Max(0.01f, grappleSpeed));
-        float elapsed = 0f;
-        owner.IsAbilityFacingLocked = true;
+        float duration = Mathf.Max(0.04f, distance / Mathf.Max(0.01f, grappleSpeed));
+        elapsed = 0f;
         bool dealPath = IsUpgradeUnlocked(CardPathDamage);
 
         while (owner != null && elapsed < duration)
@@ -106,7 +132,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
             elapsed += AbilityDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             Vector3 pos = Vector3.Lerp(start, landingPoint, t);
-            pos.y = Mathf.Lerp(start.y, landingPoint.y, t);
+            pos.y = hookY;
             Vector3 previous = owner.transform.position;
             owner.transform.position = pos;
 
@@ -119,7 +145,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         if (owner != null)
         {
             owner.transform.position = landingPoint;
-            owner.IsAbilityFacingLocked = false;
+            ClearLocomotionLock();
 
             if (IsUpgradeUnlocked(CardRangeImpact))
             {
@@ -131,6 +157,95 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         }
 
         EndActivationEffect();
+    }
+
+    private HookProjectile FireHook(Vector3 origin, Vector3 direction, float maxDist)
+    {
+        Quaternion rot = Quaternion.LookRotation(direction, Vector3.up);
+        GameObject hookObj;
+        HookProjectile hookProj;
+
+        if (hookVisualPrefab != null)
+        {
+            // Do not auto-release: HookProjectile owns its lifetime.
+            hookObj = SpawnVfxTracked(hookVisualPrefab, origin, rot);
+            hookProj = hookObj != null ? hookObj.GetComponent<HookProjectile>() : null;
+            if (hookObj != null && hookProj == null)
+                hookProj = hookObj.AddComponent<HookProjectile>();
+        }
+        else
+        {
+            hookObj = new GameObject("WrathGrappleHook");
+            hookObj.transform.SetPositionAndRotation(origin, rot);
+            hookProj = hookObj.AddComponent<HookProjectile>();
+        }
+
+        if (hookProj == null) return null;
+
+        hookProj.speed = hookSpeed;
+        hookProj.maxTravelDistance = maxDist;
+        hookProj.maxLifetime = maxDist / Mathf.Max(0.01f, hookSpeed) + 0.25f;
+        hookProj.hitVfxPrefab = hookHitVfxPrefab;
+        hookProj.hitVfxDuration = hookHitVfxDuration;
+        hookProj.flightMode = HookProjectile.FlightMode.AnchorStop;
+        hookProj.ownerAbility = null;
+        hookProj.ownerTransform = owner != null ? owner.transform : null;
+        hookProj.hitMask = ~0;
+        hookProj.obstacleMask = obstacleMask.value == 0 ? (LayerMask)~0 : obstacleMask;
+        hookProj.useUnscaledTime = IsOwnedByPlayer;
+        hookProj.debugLogging = false;
+        hookProj.ResetForPoolSpawn();
+        hookProj.onAnchorStop = OnHookAnchored;
+        return hookProj;
+    }
+
+    private void OnHookAnchored(Vector3 stopPoint)
+    {
+        _hookStopPoint = stopPoint;
+        _hookResolved = true;
+    }
+
+    private bool TryResolveFireDirection(out Vector3 direction)
+    {
+        direction = Vector3.zero;
+        if (owner == null) return false;
+
+        if (owner.isPossessed && PlayerController.Instance != null &&
+            PlayerController.Instance.TryGetAimPoint(out Vector3 aimPoint))
+        {
+            direction = aimPoint - owner.transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                direction.Normalize();
+                return true;
+            }
+        }
+
+        if (!owner.isPossessed && owner.targetPlayer != null)
+        {
+            direction = owner.targetPlayer.position - owner.transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                direction.Normalize();
+                return true;
+            }
+        }
+
+        direction = owner.transform.forward;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) return false;
+        direction.Normalize();
+        return true;
+    }
+
+    private float GetMaxGrappleDistance()
+    {
+        float distance = Mathf.Max(0.5f, GetCardParameter("GrappleDistance", grappleDistance));
+        if (IsUpgradeUnlocked(CardRangeImpact))
+            distance *= Mathf.Max(1f, GetCardParameter("GrappleRangeMult", rangeMultiplierWithM02));
+        return distance;
     }
 
     private void DealPathDamageSegment(Vector3 from, Vector3 to)
@@ -179,61 +294,32 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         }
     }
 
-    private bool TryFindLandingPoint(out Vector3 landingPoint)
-    {
-        landingPoint = Vector3.zero;
-        if (owner == null) return false;
-
-        Vector3 origin = owner.transform.position;
-        Vector3 direction = owner.transform.forward;
-        if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aim))
-            direction = aim;
-        direction.y = 0f;
-        if (direction.sqrMagnitude < 0.0001f) direction = owner.transform.forward;
-        direction.Normalize();
-
-        float maxDist = GetMaxGrappleDistance();
-        LayerMask mask = groundMask.value == 0 ? (LayerMask)~0 : groundMask;
-        float step = Mathf.Max(0.25f, sampleStep);
-
-        for (float d = maxDist; d >= step; d -= step)
-        {
-            Vector3 probe = origin + direction * d + Vector3.up * groundProbeHeight;
-            if (!Physics.Raycast(probe, Vector3.down, out RaycastHit hit, groundProbeDown, mask, QueryTriggerInteraction.Ignore))
-                continue;
-            if (hit.normal.y < minNormalY) continue;
-
-            landingPoint = hit.point;
-            return true;
-        }
-
-        return false;
-    }
-
-    private float GetMaxGrappleDistance()
-    {
-        float distance = Mathf.Max(0.5f, GetCardParameter("GrappleDistance", grappleDistance));
-        if (IsUpgradeUnlocked(CardRangeImpact))
-            distance *= Mathf.Max(1f, GetCardParameter("GrappleRangeMult", rangeMultiplierWithM02));
-        return distance;
-    }
-
-    private void SpawnHookVisual(Vector3 from, Vector3 to)
-    {
-        if (hookVisualPrefab == null) return;
-        Vector3 mid = (from + to) * 0.5f;
-        mid.y += 0.5f;
-        Vector3 dir = to - from;
-        Quaternion rot = dir.sqrMagnitude > 0.0001f
-            ? Quaternion.LookRotation(dir.normalized, Vector3.up)
-            : Quaternion.identity;
-        SpawnVfxTracked(hookVisualPrefab, mid, rot, hookVisualLifetime);
-    }
-
     private void PlayLandingImpact(Vector3 position)
     {
         if (landingImpactVfxPrefab == null) return;
         SpawnVfxTracked(landingImpactVfxPrefab, position, Quaternion.identity, landingImpactVfxDuration);
+    }
+
+    private void ClearLocomotionLock()
+    {
+        if (owner == null) return;
+        owner.IsAbilityFacingLocked = false;
+        if (owner is MonsterActor monster)
+            monster.IsAbilityLocomotionLocked = false;
+    }
+
+    protected override void OnDisable()
+    {
+        ClearLocomotionLock();
+        base.OnDisable();
+    }
+
+    public override void ResetForOwnerReuse()
+    {
+        ClearLocomotionLock();
+        _hookResolved = true;
+        StopAllCoroutines();
+        base.ResetForOwnerReuse();
     }
 
     private void EnsureTag(string tag)
