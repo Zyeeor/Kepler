@@ -4330,7 +4330,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e38e7087889dd14da6b269801e2a70d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ensureBlockerColliders: 0
   showDebug: 1
   logBuilds: 1
 --- !u!114 &753820583

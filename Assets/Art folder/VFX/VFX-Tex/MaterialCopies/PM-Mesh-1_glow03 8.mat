@@ -28,6 +28,7 @@ Material:
   - _CUSTOM7_CUSTOM2X
   - _CUSTOM8_CUSTOM2X
   - _CUSTOM9_CUSTOM2X
+  - _CUSTOM9_CUSTOM2Y
   - _FLIPBOOKBLENDING_OFF
   - _FLOAT154_OFF
   m_LightmapFlags: 4
@@ -73,8 +74,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _dissolvetex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: dc11604809595884c854144bc9c53ce6, type: 3}
+        m_Scale: {x: 1.5, y: 0.7}
         m_Offset: {x: 0, y: 0}
     - _flowmap:
         m_Texture: {fileID: 0}
@@ -146,7 +147,7 @@ Material:
     - _Custom6: 0
     - _Custom7: 4
     - _Custom8: 4
-    - _Custom9: 4
+    - _Custom9: 5
     - _Custom_Group1: 0
     - _Cutoff: 0.5
     - _Depthfade_Group1: 0
@@ -162,7 +163,7 @@ Material:
     - _Float0: 0
     - _Float1: 1
     - _Float10: 0
-    - _Float11: 0
+    - _Float11: 1
     - _Float12: 0
     - _Float129: 0
     - _Float130: 0
@@ -300,7 +301,7 @@ Material:
     - _BaseColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
     - _CameraFadeParams: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color0: {r: 47.937244, g: 47.937244, b: 47.937244, a: 1}
+    - _Color0: {r: 145.31859, g: 145.31859, b: 145.31859, a: 1}
     - _Color1: {r: 1, g: 1, b: 1, a: 1}
     - _Color2: {r: 1, g: 1, b: 1, a: 1}
     - _Color3: {r: 1, g: 1, b: 1, a: 1}

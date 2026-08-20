@@ -6,9 +6,9 @@ using UnityEngine;
 
 /// <summary>
 /// Chunk 固定布局手摆工具（菜单 Kepler/Map/Chunk Layout Editor，2026-08 双模式方案；2026-08-14 配置重构）。
-/// 左侧：刷子面板——扫描 Assets 下挂 TileVisual 的 prefab + 橡皮擦；
-/// 右侧：16×16 网格涂刷（点击/拖拽，按 terrainKind 着色：Normal 绿 / Lava 橙 / Spike 黄 / Blocker 红 / 空灰）。
-/// 布局紧凑序列化（决策 1）：每格仅记录 prefab 引用，玩法（可行走/触发逻辑）由 prefab 的 TileVisual 固定。
+/// 左侧：刷子面板——扫描 TileAsset 目录下全部 prefab + 橡皮擦；
+/// 右侧：16×16 网格涂刷（点击/拖拽，按推导类别着色：Normal 绿 / Trigger 橙 / Decoration 红 / 空灰）。
+/// 布局紧凑序列化（决策 1）：每格仅记录 prefab 引用，玩法语义（触发逻辑/碰撞）由 prefab 自带组件推导。
 /// 显示约定：顶行 = y=15（北在上），与地图本地坐标一致（x→右，y→上）。
 /// 资产变更走 Undo.RecordObject + EditorUtility.SetDirty（支持撤销、随项目保存落盘）。
 /// </summary>
@@ -51,7 +51,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
     GameObject brush;
     Vector2 paletteScroll;
     Vector2 gridScroll;
-    /// <summary>刷子候选：挂 TileVisual 的 Tile prefab（玩法标签经组件读取）。</summary>
+    /// <summary>刷子候选：TileAsset 目录下全部 Tile prefab（类别经 TileSemantics 推导）。</summary>
     readonly List<GameObject> palette = new List<GameObject>();
     GUIStyle cellStyle;
 
@@ -80,19 +80,17 @@ public class ChunkLayoutEditorWindow : EditorWindow
     }
 
     /// <summary>
-    /// 扫描 MapModules 目录下挂 TileVisual 组件的 prefab 构建刷子面板（按名称排序，稳定显示）。
-    /// 限定目录 + 按 terrainKind 分类显示，与 Tile 资产组织规范（Terrain/<kind>/）对齐。
+    /// 扫描 Tile 资产目录下的全部 prefab 构建刷子面板（按名称排序，稳定显示）。
+    /// 类别由 TileSemantics 推导（无需组件标记）。
     /// public：供 ChunkLayoutEditorPostprocessor（资产变化自动刷新）调用。
     /// </summary>
     public void RefreshPalette()
     {
         palette.Clear();
-        foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/MapModules" }))
+        foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Room/RoomObjects/TileAsset" }))
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
             if (prefab == null) continue;
-            // 收集 MapModules 下全部 prefab（含未挂 TileVisual 的，列表与实际目录保持一致）；
-            // 未挂 TileVisual 的用灰色标记（可在信息面板看到提示），不排除。
             palette.Add(prefab);
         }
         palette.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
@@ -144,7 +142,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
     void DrawPalette()
     {
         EditorGUILayout.BeginVertical(GUILayout.Width(PaletteWidth));
-        EditorGUILayout.LabelField("Tile 刷子（挂 TileVisual 的 prefab）", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Tile 刷子（TileAsset 目录全部 prefab）", EditorStyles.boldLabel);
         EditorGUILayout.LabelField("  绿=地面 橙=触发 红=装饰 灰=空（同类自动区分深浅）", EditorStyles.miniLabel);
         // 刷子滚动区固定高度，避免挤压右侧网格
         paletteScroll = EditorGUILayout.BeginScrollView(paletteScroll, GUILayout.Height(480f));
@@ -158,13 +156,11 @@ public class ChunkLayoutEditorWindow : EditorWindow
     void DrawBrushButton(GameObject prefab, string label)
     {
         bool selected = brush == prefab;
-        bool hasVisual = prefab != null && prefab.GetComponent<TileVisual>() != null;
         var oldColor = GUI.backgroundColor;
         if (selected) GUI.backgroundColor = new Color(0.4f, 0.8f, 1f);
-        else if (!hasVisual) GUI.backgroundColor = new Color(0.75f, 0.75f, 0.75f); // 无 TileVisual：灰底提示
         if (GUILayout.Button(label, GUILayout.Height(26f))) brush = prefab;
         GUI.backgroundColor = oldColor;
-        // 左侧色条（与格子同色，便于对照）；无 TileVisual 显示灰色
+        // 左侧色条（与格子同色，便于对照）
         var r = GUILayoutUtility.GetLastRect();
         EditorGUI.DrawRect(new Rect(r.x, r.y, 4f, r.height), CellColor(prefab));
     }
@@ -257,29 +253,23 @@ public class ChunkLayoutEditorWindow : EditorWindow
     /// <summary>当前悬停格（-1 表示无）。</summary>
     Vector2Int hoveredCell = new Vector2Int(-1, -1);
 
-    /// <summary>信息面板：当前悬停格的坐标 + prefab + TileVisual 完整配置摘要。</summary>
+    /// <summary>信息面板：当前悬停格的坐标 + prefab + 推导语义摘要。</summary>
     void DrawCellInfo()
     {
         EditorGUILayout.Space(4f);
         if (hoveredCell.x < 0)
         {
-            EditorGUILayout.HelpBox("悬停网格查看格子配置（坐标 / prefab / TileVisual 字段）。", MessageType.None);
+            EditorGUILayout.HelpBox("悬停网格查看格子配置（坐标 / prefab / 推导类别）。", MessageType.None);
             return;
         }
         var prefab = target.GetTile(hoveredCell.x, hoveredCell.y);
-        var v = VisualOf(prefab);
         var sb = new StringBuilder($"({hoveredCell.x}, {hoveredCell.y}) ");
         sb.Append(prefab != null ? prefab.name : "空");
-        if (v != null)
+        if (prefab != null)
         {
-            sb.Append("\n  terrainKind=").Append(v.terrainKind)
-              .Append("\n  isWalkable=").Append(v.isWalkable)
-              .Append("\n  markerType=").Append(v.markerType)
-              .Append("\n  displayName=").Append(v.displayName);
-        }
-        else if (prefab != null)
-        {
-            sb.Append("  （未挂 TileVisual，走默认玩法）");
+            sb.Append("\n  kind=").Append(TileSemantics.ResolveKind(prefab))
+              .Append("（推导）")
+              .Append("\n  solidCollider=").Append(TileSemantics.HasSolidCollider(prefab));
         }
         EditorGUILayout.HelpBox(sb.ToString(), MessageType.Info);
     }
@@ -333,9 +323,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
         Repaint();
     }
 
-    // ── prefab / TileVisual 标签（2026-08-14 配置重构去 TileDef） ──
-
-    static TileVisual VisualOf(GameObject prefab) => prefab != null ? prefab.GetComponent<TileVisual>() : null;
+    // ── prefab 语义标签（推导：kind / solidCollider，无组件配置） ──
 
     /// <summary>
     /// 格子缩写（清晰标记）：[kind 字母][prefab 名首个数字或尾词首字母]。
@@ -344,12 +332,11 @@ public class ChunkLayoutEditorWindow : EditorWindow
     /// </summary>
     static string Abbrev(GameObject prefab)
     {
-        var v = VisualOf(prefab);
-        if (v == null) return "";
-        string name = prefab != null ? prefab.name : "";
-        // ① kind 字母
+        if (prefab == null) return "";
+        string name = prefab.name;
+        // ① kind 字母（推导分类）
         char kindCh;
-        switch (v.terrainKind)
+        switch (TileSemantics.ResolveKind(prefab))
         {
             case TerrainKind.Trigger: kindCh = 'T'; break;
             case TerrainKind.Decoration: kindCh = 'D'; break;
@@ -373,22 +360,16 @@ public class ChunkLayoutEditorWindow : EditorWindow
         return kindCh + variant;
     }
 
-    /// <summary>刷子标签：prefab 名 + [kind, 不可走?, 伤害?, marker?]（从 TileVisual 读；无组件标注灰色）。</summary>
+    /// <summary>刷子标签：prefab 名 + [推导 kind, 有碰撞?]。</summary>
     static string BrushLabel(GameObject prefab)
     {
-        var v = VisualOf(prefab);
         string name = prefab != null ? prefab.name : "?";
         var sb = new StringBuilder(name);
-        if (v != null)
+        if (prefab != null)
         {
-            sb.Append("  [").Append(v.terrainKind);
-            if (!v.isWalkable) sb.Append(", 不可走");
-            if (v.markerType != TileMarkerType.None) sb.Append(", ").Append(v.markerType);
+            sb.Append("  [").Append(TileSemantics.ResolveKind(prefab));
+            if (TileSemantics.HasSolidCollider(prefab)) sb.Append(", 有碰撞");
             sb.Append(']');
-        }
-        else if (prefab != null)
-        {
-            sb.Append("  [无 TileVisual，灰色]");
         }
         return sb.ToString();
     }
@@ -400,17 +381,16 @@ public class ChunkLayoutEditorWindow : EditorWindow
     /// </summary>
     static Color CellColor(GameObject prefab)
     {
-        var v = VisualOf(prefab);
-        if (v == null) return new Color(0.25f, 0.25f, 0.25f); // 空格/无组件：灰
+        if (prefab == null) return new Color(0.25f, 0.25f, 0.25f); // 空格：灰
 
         // ① 数字变体 n（Brick03→3、Base→0、lava→0）；黄金分割散列保证相邻 n 充分散开
         int n = VariantNumber(prefab);
         float phi = 0.61803398875f;
         float t = (n * phi) % 1f; // [0,1) 均匀散布（1→0.618, 2→0.236, 3→0.854, 4→0.472, 5→0.09, 6→0.708 …）
 
-        // ② kind 决定基础色相中心 + 色相可偏移范围
+        // ② kind 决定基础色相中心 + 色相可偏移范围（推导分类）
         float hBase, hRange, sMin;
-        switch (v.terrainKind)
+        switch (TileSemantics.ResolveKind(prefab))
         {
             case TerrainKind.Trigger: hBase = 0.07f; hRange = 0.06f; sMin = 0.85f; break; // 橙
             case TerrainKind.Decoration: hBase = 0.02f; hRange = 0.10f; sMin = 0.7f; break; // 红/粉

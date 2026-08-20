@@ -13,24 +13,24 @@ MonoBehaviour:
   m_Name: MonsterCheatCatalog
   m_EditorClassIdentifier: 
   monsters:
-  - displayName: Pride
+  - displayName: "\u50B2\u6168"
     prefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
       type: 3}
-  - displayName: Envy
-    prefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-      type: 3}
-  - displayName: Wrath
-    prefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
-      type: 3}
-  - displayName: Sloth
-    prefab: {fileID: 6572464085868828155, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-      type: 3}
-  - displayName: Lust
-    prefab: {fileID: 3744361111654940414, guid: cae47f41d68c4e74781786e6cd22b1e9,
-      type: 3}
-  - displayName: Sloth_new
+  - displayName: "\u6020\u60F0"
     prefab: {fileID: 3923155230589149752, guid: db85ea08bfd4b473f911b8e1cd9e477f,
       type: 3}
-  - displayName: gluttony_new
+  - displayName: "\u66B4\u98DF"
     prefab: {fileID: 4750602423163319368, guid: 60ee0a829a7a04ba9bbf8cd652f5c562,
+      type: 3}
+  - displayName: "\u6124\u6012"
+    prefab: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7,
+      type: 3}
+  - displayName: "\u5AC9\u5992"
+    prefab: {fileID: 1418491709266848708, guid: b072b1eddfbc44cdb2a2cd5f2dcc91a8,
+      type: 3}
+  - displayName: "\u8272\u6B32"
+    prefab: {fileID: 2259565064542781952, guid: adf557850b8644449a273ddc69a83bd5,
+      type: 3}
+  - displayName: "\u8D2A\u5A6A"
+    prefab: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40,
       type: 3}

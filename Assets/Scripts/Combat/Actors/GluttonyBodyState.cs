@@ -18,6 +18,8 @@ public class GluttonyBodyState : MonoBehaviour
     public bool FirstDevourHealUsed { get; private set; }
     public bool IsSmallCatActive { get; private set; }
     public bool HasCopiedSkill => _copiedSkill != null;
+    /// <summary>Possessed move-facing turn multiplier while SmallCat + GL-M01 are active.</summary>
+    public float SmallCatTurnMult { get; private set; } = 1f;
 
     private Enemy _owner;
     private bool _wasPossessed;
@@ -32,19 +34,21 @@ public class GluttonyBodyState : MonoBehaviour
         _smallCat = GetComponentInChildren<EnemyAbility_GluttonySmallCat>(true);
         _devour = GetComponentInChildren<EnemyAbility_GluttonyDevour>(true);
         _wasPossessed = _owner != null && _owner.isPossessed;
-        ClearBodyBoundState();
+        ResetBodyLifecycle();
     }
 
     private void LateUpdate()
     {
         if (_owner == null || _wasPossessed == _owner.isPossessed) return;
         _wasPossessed = _owner.isPossessed;
-        ClearBodyBoundState();
+        // Possession init clears Overfed / unused copy / small-cat form.
+        // FirstDevourHealUsed stays for this Body lifecycle.
+        ClearPossessionBoundState();
     }
 
     private void OnDisable()
     {
-        ClearBodyBoundState();
+        ResetBodyLifecycle();
     }
 
     public void GrantOverfed()
@@ -90,6 +94,12 @@ public class GluttonyBodyState : MonoBehaviour
     public void SetSmallCatActive(bool active)
     {
         IsSmallCatActive = active;
+        if (!active) SmallCatTurnMult = 1f;
+    }
+
+    public void SetSmallCatTurnMult(float mult)
+    {
+        SmallCatTurnMult = Mathf.Max(0.01f, mult);
     }
 
     public void ExitSmallCatForAttack()
@@ -127,6 +137,11 @@ public class GluttonyBodyState : MonoBehaviour
             return false;
         }
 
+        // Instantiated under this body so Awake binds owner via GetComponentInParent.
+        // Strip upgrade slots: the copy is a one-shot payload, not a Gluttony card host.
+        if (_copiedSkill.upgrades != null)
+            _copiedSkill.upgrades.Clear();
+
         _devour = devour;
         _devour.enabled = false;
         _owner.ReplaceSkillAbility(_devour, _copiedSkill);
@@ -163,9 +178,11 @@ public class GluttonyBodyState : MonoBehaviour
             _devour.enabled = true;
         }
 
-        // Keep the copied component alive for any coroutine-driven payload it already launched.
-        // It is no longer present in the Skill slot and will be destroyed on the next copy or body transition.
+        // Slot is restored; keep the spent copy alive briefly for any in-flight coroutine payload.
+        _copiedSkill = null;
         _restoreCopiedSkillRoutine = null;
+        if (ability != null)
+            Destroy(ability.gameObject, 8f);
     }
 
     private void ClearCopiedSkill()
@@ -188,12 +205,18 @@ public class GluttonyBodyState : MonoBehaviour
         if (_devour != null) _devour.enabled = true;
     }
 
-    private void ClearBodyBoundState()
+    private void ClearPossessionBoundState()
     {
         ClearOverfed();
         HasHuntStepEmpower = false;
-        FirstDevourHealUsed = false;
+        SmallCatTurnMult = 1f;
         CancelSmallCat();
         ClearCopiedSkill();
+    }
+
+    private void ResetBodyLifecycle()
+    {
+        ClearPossessionBoundState();
+        FirstDevourHealUsed = false;
     }
 }

@@ -99,13 +99,10 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
 
         if (telegraph != null) Destroy(telegraph);
 
-        HashSet<Enemy> hitEnemies = DamageEnemiesInSphere(point, radius, dmg);
-        foreach (Enemy hitEnemy in hitEnemies)
-            PlayBlastVfx(hitEnemy.transform.position, radius);
-
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (TryDamagePlayerInRadius(point, radius, dmg) && playerObject != null)
-            PlayBlastVfx(playerObject.transform.position, radius);
+        // Blast VFX is the maw resolve cue at the snapshotted ground point (not per-hit).
+        PlayBlastVfx(point, radius);
+        DamageEnemiesInSphere(point, radius, dmg);
+        TryDamagePlayerInRadius(point, radius, dmg);
     }
 
     private bool TryResolveAimPoint(out Vector3 aimPoint)

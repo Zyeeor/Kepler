@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6871516757506338927}
-  - component: {fileID: 813012438361135603}
   - component: {fileID: 7613373024098811005}
   - component: {fileID: 6613391932545373350}
   - component: {fileID: 1120013169680360777}
@@ -36,22 +35,6 @@ Transform:
   - {fileID: 6673583065575447492}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &813012438361135603
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2898380885021715338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa4789a9c5769e849a0ae0d1f23c993a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  terrainKind: 1
-  isWalkable: 1
-  markerType: 0
-  displayName: 
 --- !u!114 &7613373024098811005
 MonoBehaviour:
   m_ObjectHideFlags: 0
