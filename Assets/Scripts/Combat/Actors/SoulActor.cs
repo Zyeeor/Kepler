@@ -91,36 +91,44 @@ public class SoulActor : Actor
             // 若不清理，FixedUpdate 会持续用旧指令驱动常规移动并与 FollowBody 直写互相拉扯。
             pendingCmd = new ControlCommand();
             currentVelocity = Vector3.zero;
-            var col = GetComponent<Collider>();
-            if (col != null) col.enabled = false;
-
+            // Disable ALL colliders (not just root): soul is parented under the body while
+            // possessed; any leftover child collider would still receive combat Overlaps and
+            // flash/damage the soul when the body is hit.
+            SetSoulCollidersEnabled(false);
         }
         else
         {
             gameObject.tag = "Player";
             SetController(PlayerController.Instance);
-            var col = GetComponent<Collider>();
-            if (col != null) col.enabled = true;
+            SetSoulCollidersEnabled(true);
         }
     }
 
     public void SetPossessionFlight(bool inFlight)
     {
         IsInPossessionFlight = inFlight;
-        Collider collider = GetComponent<Collider>();
         if (inFlight)
         {
             pendingCmd = new ControlCommand();
             currentVelocity = Vector3.zero;
             SetController(NullController.Instance);
             gameObject.tag = "Soul";
-            if (collider != null) collider.enabled = false;
+            SetSoulCollidersEnabled(false);
         }
         else if (!IsSuppressed)
         {
             gameObject.tag = "Player";
             SetController(PlayerController.Instance);
-            if (collider != null) collider.enabled = true;
+            SetSoulCollidersEnabled(true);
+        }
+    }
+
+    private void SetSoulCollidersEnabled(bool enabled)
+    {
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null) colliders[i].enabled = enabled;
         }
     }
 

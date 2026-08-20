@@ -480,6 +480,10 @@ public class ActorVisualFx : MonoBehaviour
         Transform stop = transform;
         while (t != null)
         {
+            // Soul is parented under the possessed body; body hit-flash must not tint the soul.
+            if (t.GetComponent<SoulActor>() != null && t != stop)
+                return true;
+
             string n = t.name;
             if (n.IndexOf("headfire", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 return true;
