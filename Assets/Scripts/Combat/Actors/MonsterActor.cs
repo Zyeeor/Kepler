@@ -1097,8 +1097,13 @@ public class MonsterActor : Actor
         CancelAbilityRuntimeState();
         gameObject.tag = "Enemy";
         SetRendererFade(1f);
-        transform.localPosition = initialLocalPosition;
-        transform.localRotation = initialLocalRotation;
+        // Root world pose is owned by MonsterPool.Spawn (applied after this reset).
+        // Only restore local offset when this actor is nested under a pooled root.
+        if (transform.parent != null)
+        {
+            transform.localPosition = initialLocalPosition;
+            transform.localRotation = initialLocalRotation;
+        }
         if (visualFx != null)
         {
             visualFx.SetDissolve(1f);

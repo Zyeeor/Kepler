@@ -92,7 +92,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
         if (guardHandVfxPrefab != null)
         {
-            _guardVfx = Instantiate(guardHandVfxPrefab, owner.transform);
+            _guardVfx = VfxPool.Instance.Spawn(guardHandVfxPrefab, owner.transform.position, owner.transform.rotation, owner.transform);
             _guardVfx.transform.localPosition = Vector3.forward * 0.6f + Vector3.up * 0.8f;
         }
 
@@ -118,8 +118,9 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
         if (absorbVfxPrefab != null && owner != null)
         {
-            GameObject vfx = Instantiate(absorbVfxPrefab, owner.transform.position + Vector3.up, Quaternion.identity);
-            Destroy(vfx, 0.6f);
+            GameObject vfx = VfxPool.Instance.Spawn(absorbVfxPrefab, owner.transform.position + Vector3.up, Quaternion.identity);
+            PlayVfx(vfx);
+            ReleaseVfx(vfx, 0.6f);
         }
 
         return true;
@@ -143,8 +144,9 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
         if (convertVfxPrefab != null && owner != null)
         {
-            GameObject vfx = Instantiate(convertVfxPrefab, owner.transform.position + Vector3.up * 1.2f, Quaternion.identity);
-            Destroy(vfx, Mathf.Max(0.05f, convertVfxDuration));
+            GameObject vfx = VfxPool.Instance.Spawn(convertVfxPrefab, owner.transform.position + Vector3.up * 1.2f, Quaternion.identity);
+            PlayVfx(vfx);
+            ReleaseVfx(vfx, Mathf.Max(0.05f, convertVfxDuration));
         }
     }
 
@@ -161,7 +163,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
             owner.Combat.RemoveEffect(guardEffect);
         if (_guardVfx != null)
         {
-            Destroy(_guardVfx);
+            ReleaseVfx(_guardVfx);
             _guardVfx = null;
         }
 

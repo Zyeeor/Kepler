@@ -429,9 +429,9 @@ public class CombatAbilityComponent : MonoBehaviour
         if (effect == null) return;
 
         tags.RemoveTags(effect);
-        if (effect.vfxInstance != null) Destroy(effect.vfxInstance);
+        if (effect.vfxInstance != null) VfxPool.ReleaseOrDestroy(effect.vfxInstance);
         foreach (GameObject instance in effect.attachedVfx)
-            if (instance != null) Destroy(instance);
+            if (instance != null) VfxPool.ReleaseOrDestroy(instance);
         activeEffects.Remove(effect);
         OnEffectExpired?.Invoke(effect.definition);
     }
@@ -459,8 +459,10 @@ public class CombatAbilityComponent : MonoBehaviour
     {
         if (definition == null || definition.activeVfxPrefab == null) return null;
 
-        GameObject instance = Instantiate(definition.activeVfxPrefab, transform.position, transform.rotation);
+        GameObject instance = VfxPool.Instance.Spawn(definition.activeVfxPrefab, transform.position, transform.rotation);
         if (definition.parentVfxToTarget) instance.transform.SetParent(transform, true);
+        foreach (var ps in instance.GetComponentsInChildren<ParticleSystem>())
+            ps.Play(true);
         return instance;
     }
 

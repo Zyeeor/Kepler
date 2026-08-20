@@ -413,7 +413,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         _connectedThisBurst.Clear();
         if (_hitVfx != null)
         {
-            Destroy(_hitVfx, hitImpactDuration);
+            ReleaseVfx(_hitVfx, hitImpactDuration);
             _hitVfx = null;
         }
     }

@@ -52,14 +52,14 @@ public class MineBehaviour : MonoBehaviour
         CombatHitboxDebug.DrawSphere(drawHitboxes, blastPos, blastRadius, blastVfxDuration);
         if (blastVfxPrefab != null)
         {
-            var blast = Instantiate(blastVfxPrefab, blastPos, Quaternion.identity);
+            var blast = VfxPool.Instance.Spawn(blastVfxPrefab, blastPos, Quaternion.identity);
             foreach (var ps in blast.GetComponentsInChildren<ParticleSystem>(true))
             {
                 var main = ps.main;
                 if (main.loop) main.loop = false;
                 ps.Play(true);
             }
-            Destroy(blast, Mathf.Max(0.01f, blastVfxDuration));
+            VfxPool.ReleaseOrDestroy(blast, Mathf.Max(0.01f, blastVfxDuration));
         }
 
         var allHits = Physics.OverlapSphere(blastPos, blastRadius, ~0, QueryTriggerInteraction.Collide);

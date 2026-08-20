@@ -65,7 +65,7 @@ public class EnemyAbility_WrathBurnAura : EnemyAbility
     {
         _nextTickAt = Time.time;
         if (auraVfxPrefab == null || owner == null || _auraVfx != null) return;
-        _auraVfx = Instantiate(auraVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
+        _auraVfx = VfxPool.Instance.Spawn(auraVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
         PlayVfx(_auraVfx);
     }
 
@@ -73,7 +73,7 @@ public class EnemyAbility_WrathBurnAura : EnemyAbility
     {
         if (_auraVfx != null)
         {
-            Destroy(_auraVfx);
+            ReleaseVfx(_auraVfx);
             _auraVfx = null;
         }
     }

@@ -213,7 +213,7 @@ public class EnemyAbility_Laser : EnemyAbility
         isFiring = false;
         EndActivationEffect();
         currentTarget = null;
-        if (hitVfx != null) { Destroy(hitVfx, hitImpactDuration); hitVfx = null; }
+        if (hitVfx != null) { ReleaseVfx(hitVfx, hitImpactDuration); hitVfx = null; }
     }
 
     public override bool CanTrigger()
