@@ -22,7 +22,7 @@ MonoBehaviour:
   periodicInterval: 0.5
   damagePerStack: 5
   moveSpeedMultiplier: 1
-  activeVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
+  activeVfxPrefab: {fileID: 7176043031054818902, guid: 037746f180009464c923dbb64e178811,
     type: 3}
   parentVfxToTarget: 1
   hitVfxPrefab: {fileID: 0}
