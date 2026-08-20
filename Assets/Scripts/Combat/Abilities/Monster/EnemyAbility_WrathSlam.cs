@@ -14,6 +14,8 @@ public class EnemyAbility_WrathSlam : EnemyAbility
 
     [Header("Slam")]
     public float radius = 3f;
+    [Tooltip("Local offset from Wrath's facing direction for the Slam damage area and its impact VFX.")]
+    public Vector3 slamOffset = Vector3.zero;
     public float firstHitDelay = 0.15f;
     public float aimTurnSpeed = 720f;
     public GameObject slamImpactVfxPrefab;
@@ -24,6 +26,8 @@ public class EnemyAbility_WrathSlam : EnemyAbility
     public float burnDps = 5f;
     public float burnDuration = 3f;
     public float burnTickInterval = 0.5f;
+    [Tooltip("Local offset from Wrath's facing direction for the Burning Field damage area and its VFX.")]
+    public Vector3 burnFieldOffset = Vector3.zero;
     public GameObject burnFieldVfxPrefab;
     public GameplayEffectDefinition burnEffect;
     public string burnFieldObjectName = "WrathBurnField";
@@ -96,13 +100,15 @@ public class EnemyAbility_WrathSlam : EnemyAbility
         float slamRadius = radius * radiusScale;
         float fieldRadius = burnRadius * radiusScale;
 
-        Vector3 center = owner.transform.position;
-        PlaySlamImpact(center, slamRadius);
-        DamageEnemiesInSphere(center, slamRadius, slamDamage, null, slamImpactVfxDuration);
+        Vector3 ownerCenter = owner.transform.position;
+        Vector3 slamCenter = ownerCenter + owner.transform.TransformDirection(slamOffset);
+        PlaySlamImpact(slamCenter, slamRadius);
+        DamageEnemiesInSphere(slamCenter, slamRadius, slamDamage, null, slamImpactVfxDuration);
         if (!owner.isPossessed)
-            TryDamagePlayerInRadius(center, slamRadius, slamDamage, slamImpactVfxDuration);
+            TryDamagePlayerInRadius(slamCenter, slamRadius, slamDamage, slamImpactVfxDuration);
 
-        SpawnOrRefreshBurnField(center, fieldRadius);
+        Vector3 burnFieldCenter = ownerCenter + owner.transform.TransformDirection(burnFieldOffset);
+        SpawnOrRefreshBurnField(burnFieldCenter, fieldRadius);
         EndActivationEffect();
     }
 

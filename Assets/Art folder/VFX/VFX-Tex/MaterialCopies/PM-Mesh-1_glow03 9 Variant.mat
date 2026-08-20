@@ -7,9 +7,9 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GeoSphere001 Variant
+  m_Name: PM-Mesh-1_glow03 9 Variant
   m_Shader: {fileID: 4800000, guid: 65ba99a025f80f2458da7209d789d260, type: 3}
-  m_Parent: {fileID: 2100000, guid: 0e8fe338b4981914d87cc0c0f872db88, type: 2}
+  m_Parent: {fileID: 2100000, guid: dffb98d73c6b5854ab5a625f59a1b52e, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
@@ -28,6 +28,9 @@ Material:
   - _CUSTOM7_CUSTOM2X
   - _CUSTOM8_CUSTOM2X
   - _CUSTOM9_CUSTOM2X
+  - _FLIPBOOKBLENDING_OFF
+  - _FLOAT154_MAINTEX
+  - _FLOAT154_MULTIPLY
   - _FLOAT154_OFF
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -40,8 +43,6 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats:
-    - _Float32: 0
-    m_Colors:
-    - _Color0: {r: 1.353861, g: 0.5373882, b: 4.8825607, a: 1}
+    m_Floats: []
+    m_Colors: []
   m_BuildTextureStacks: []
