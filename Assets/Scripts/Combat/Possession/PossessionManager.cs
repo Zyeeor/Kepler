@@ -410,7 +410,7 @@ public class PossessionManager : MonoBehaviour
         {
             soul.DetachFromPossessionAnchor();
             soul.SetSuppressed(false);
-            if (oldBody != null) soul.transform.position = oldBody.transform.position + Vector3.up * possessYOffset;
+            if (oldBody != null) soul.PlaceInFreeSoulForm(oldBody.transform.position);
             if (soul.Combat != null) soul.Combat.RemoveLooseTags(this);
         }
 
@@ -439,7 +439,7 @@ public class PossessionManager : MonoBehaviour
         if (soul != null)
         {
             soul.DetachFromPossessionAnchor();
-            soul.SetPossessionPosition(oldBody != null ? oldBody.transform.position : soul.transform.position, possessYOffset);
+            soul.PlaceInFreeSoulForm(oldBody != null ? oldBody.transform.position : soul.transform.position);
             soul.SetPossessionFlight(false);
             soul.SetSuppressed(false);
         }
