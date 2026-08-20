@@ -657,7 +657,7 @@ Enemy/Possessed不允许因Reverse-BD变成两个不同系统。
 1. **基础通用Card**：简单、单轴、非直接Damage / HP为主；
 2. **Global Slot质变**：单局级常驻槽位规则改变；
 3. **Monster-Type Card**：某Sin / Monster专属显式强化、联动和质变；
-4. **Type Growth Card**：当前四张的显式多维基础成长，属于Monster-Type体系；Gluttony、Wrath与Greed是无Type Growth的Owner确认例外。
+4. **Type Growth Card**：当前两张的显式多维基础成长，属于Monster-Type体系；Gluttony、Wrath、Greed、Sloth与Envy是无Type Growth的Owner确认例外。
 
 当前没有稀有度系统。
 
@@ -691,7 +691,7 @@ Elite被玩家Possess后也保持这一例外，只保留自己的External Histo
 
 Type Growth：
 
-- 当前共4张；除Gluttony、Wrath与Greed外，每个有Type Growth的Sin恰好1张；Gluttony、Wrath与Greed是Owner确认的无Type Growth例外；
+- 当前共2张；除Gluttony、Wrath、Greed、Sloth与Envy外，每个有Type Growth的Sin恰好1张；Gluttony、Wrath、Greed、Sloth与Envy是Owner确认的无Type Growth例外；
 - Stack Max = 1；
 - 约2个直观非伤害基础维度；
 - 不新增复杂资源；
