@@ -2,7 +2,7 @@
 
 **Project:** Possession<br>
 **Date:** 2026-08-18<br>
-**Package Status:** `REPOSITORY-READY DESIGN CANONICAL v1.1 + OWNER DELTA 2026-08-18`<br>
+**Package Status:** `REPOSITORY-READY DESIGN CANONICAL v1.1 + OWNER DELTA 2026-08-20`<br>
 **Repository Fact Snapshot:** `EXTERNAL / REFRESH SEPARATELY`<br>
 **Core boundary:** `Repository Fact ≠ Design Truth`
 
@@ -61,7 +61,7 @@ Repository 当前实现只能回答：
 
 `CANONICAL / CURRENT CONTENT BASELINE`
 
-负责七宗罪Roster、21个基础技能、73张Card注册表、Card作用域、Type Growth / Global Slot、固定起始傲慢Body、Encounter / Spawn、Elite、Terrain、Tutorial等Content基线。
+负责七宗罪Roster、21个基础技能、65张Card注册表、Card作用域、Type Growth / Global Slot、固定起始傲慢Body、Encounter / Spawn、Elite、Terrain、Tutorial等Content基线。
 
 ## `03_PRESENTATION_CANONICAL.md`
 
@@ -87,6 +87,18 @@ Repository 当前实现只能回答：
 
 负责全项目需要Mythic/System双版本的文本资产清单、显示原则与A0–A4映射。
 
+## `Content/Narrative_Voice_Delivery_Baseline_v1.0.md`
+
+`CANONICAL PRESENTATION DELIVERY CONTRACT / EXACT COPY & AUDIO OPEN`
+
+负责数据驱动旁白、Narrative Access / Trigger / Display解耦、双Voice通道、Card显示、Run Analytics、Profile持久化、调试与策划配置合同。
+
+## `Content/Tutorial_Delivery_Baseline_v1.0.md`
+
+`CANONICAL TUTORIAL DELIVERY CONTRACT / EXACT COPY & TIMING OPEN`
+
+负责TUT-01–07与Monster微教学的运行时步骤、Encounter保障、动态按键、持久化、异常兜底、表现与验收合同。
+
 ## `04_FINAL_CLOSURE_AUDIT.md`
 
 记录本轮最终Owner Decision、五轴Closure与入仓Gate；它是审计证据，不高于01–03的设计真源。
@@ -104,7 +116,7 @@ Repository 当前实现只能回答：
 | Card Timing | `CONFIRMED` | 删除Opening Card；W1–7后各1次，W8后连续2次，共9次 |
 | Card Scope | `CONFIRMED` | Basic / Global作用普通Enemy + Possessed；Elite完全排除当前Run Card层 |
 | World / Narrative | `R03.1 INTEGRATED` | 核心主题、Reveal、First Clear已收口；深层Ontology故意Open |
-| Presentation Contracts | `BASELINE CLOSED` | 双线文本资产需求已扩大到全项目 |
+| Presentation Contracts | `DELIVERY CONTRACT CLOSED / COPY & AUDIO OPEN` | 双线、双Voice、可配置Access / Cue / Display与教学Delivery Contract已闭合；最终文案音频仍待生产 |
 | Encounter / Spawn | `BASELINE + TUNABLE` | 首版算法已给出，需接当前Spawner并Playable验证 |
 | Elite Content | `CORE CONTRACT CLOSED / PRESET CONTENT OPEN` | Historical Build Snapshot已定；具体Fake Profile可后续补 |
 | Exact Numbers | `TUNABLE / PLAYABLE` | 不阻塞Canonical |
@@ -141,6 +153,13 @@ Repository 当前实现只能回答：
 25. 废除叠层机制（2026-08-19）：全牌池`Stack Max`统一为1，卡牌唯一获取、不再支持重复叠加。原6张可叠层卡`SL-A02`（原Stack 3）、`SL-S01`、`EN-A04`、`EN-R04`、`EN-S01`、`GR-A01`（原Stack 2）的累计叠层效果合并进单层，`明线/暗线叠层后文本`字段恒置空保留追溯；合并后具体数值档位一律`TUNABLE / PLAYABLE`，开发期公开可调。
 26. 删除怠惰4张卡（2026-08-20）：`SL-A01`、`SL-A02`、`SL-S02`、`SL-TG01`。怠惰从11张减为7张；`SL-TG01`删除后怠惰成为无Type Growth的Owner确认例外（与Gluttony、Wrath、Greed并列）。总牌池从73张减为69张，类型成长卡从4张减为3张。
 27. 嫉妒卡牌裁剪与合并（2026-08-20）：删除 `EN-A04`、`EN-R04`、`EN-TG01`；保留 `EN-R01` 并将 `EN-R02` 的 Mark 写入效率合并进 `EN-R01`。嫉妒从10张减为6张；总牌池从69张减为65张；类型成长卡从3张减为2张。
+28. 旁白成为当前Demo明暗线的核心低成本Delivery载体；Mythic众神声与System电子声是两个独立Presentation Channel，不自动定义为两个独立世界人格。
+29. Narrative Access、Trigger Event与Display Mode正式解耦；具体Wave、Elite、Card、Possession或自定义事件映射全部可配置，不在Canonical写死。
+30. Card与全项目双线文本通过可配置Display Profile读取Neutral / Mythic / System版本；Card ID、图标、Gameplay效果与中性机制摘要始终稳定。
+31. 首个成功Run完成System / Certification / Version / Instance / User Distillation核心揭示；后续Run以Certified Lineage / Version Trials低频深化。
+32. First Clear读取本Run原始统计；主 / 次倾向评分、行为句式和Model / Version / Instance格式配置化。Self-Declaration只表达玩家态度，不改变胜负、Build、评分、结局或能力。
+33. Tutorial Delivery采用数据驱动Step：TUT-01 / 02为开场准备段，TUT-03–05嵌入Waves，TUT-06 / 07与Monster微教学延迟触发；关闭教学自动放行，Step完成跨Run持久化。
+34. 最终Cue、音频、文案数量与具体触发节点不作为Canonical硬指标；程序必须提供Text / Audio / Cue / Access / Tutorial / Debug配置入口，供策划后续增删和Playable调校。
 
 ---
 

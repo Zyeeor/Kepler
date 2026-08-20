@@ -1,7 +1,7 @@
 # Possession — Dual-Line Text Requirements v1.0
 
-**Date:** 2026-08-15<br>
-**Status:** `PRESENTATION PRODUCTION REQUIREMENT`<br>
+**Date:** 2026-08-20<br>
+**Status:** `PRESENTATION PRODUCTION REQUIREMENT / DELIVERY CONFIG UPDATED`<br>
 **Source:** R03.1 + Card Language Contract + latest Owner Decision
 
 ---
@@ -16,7 +16,11 @@
 - System：冷静、礼貌、程序化、评估 / 认证 / Carrier / Sampling / Version语汇；
 - 两条线都认真，不主动制造笑点；
 - 默认同一时间只显示当前Narrative Access适合的一版，不做左右并排“翻译对照”；
-- 双线文案不能改变Gameplay事实。
+- 双线文案不能改变Gameplay事实；
+- 玩家可见文本通过稳定Text Key与Concept Key读取，不在Gameplay代码中写死最终词汇；
+- Display Profile可配置Neutral / Mythic / System / Follow Access；
+- Card ID、图标、Gameplay效果与中性机制摘要不随包装版本改变；
+- Narrative Access、Cue Trigger和Display Mode彼此解耦。
 
 ---
 
@@ -24,7 +28,8 @@
 
 | 载体 | Mythic版本 | System版本 | 备注 |
 |---|---|---|---|
-| Card | 完整名称 + 描述 | 完整名称 + 描述 | 当前73张正式资产 |
+| Card | 完整名称 + 描述 | 完整名称 + 描述 | 当前65张正式资产；另保留稳定中性机制摘要 |
+| Narrative Voice / Narration | 众神 / 神谕式意义与目标语言 | 冷静、礼貌、程序化的功能语言 | 两个独立Presentation Channel；具体Cue可配置 |
 | Seven Sins / Monster首次介绍 | 罪之形 / 法则 / 权柄 | Training Domain / Carrier Profile | 首次出现 / 首次Possess包装 |
 | Monster Micro Tutorial叙事标题 | 神话化能力称谓 | 功能化能力摘要 | 操作按键本身仍中性 |
 | Initial Carrier Assignment | 灵魂承形 / 王座试炼起点 | Candidate → Pride Carrier initialization | 开场CG / 动画 |
@@ -66,6 +71,8 @@
 
 # 4. A0–A4显示策略
 
+以下定义各Access允许的信息与建议节奏，不是硬编码触发表。具体由Wave、Elite、Card、Possession或自定义事件中的哪一个推进，由Narrative Access Profile配置。
+
 ## A0 — 开场分配前
 
 - Mythic几乎完全主导；
@@ -84,8 +91,10 @@
 - System版本开始在Card / Wave /评估类文本中有存在感；
 - 可以出现sampling / domain weight / behavioral pattern一类词。
 
-## A3 — Elite / 高价值转移
+## A3 — 中局System显著进入
 
+- 具体由Wave、Elite、Card、Possession或自定义事件中的哪一个推进，由Narrative Access Profile配置；
+- Elite / 高价值转移是合法候选条件与递进旁白窗口，但不是唯一硬编码入口；
 - 明暗开始明显并置，但默认仍不把同一条文本两版同时显示；
 - System可以明确谈capability package / historical profile / awareness monitoring。
 
@@ -94,6 +103,16 @@
 - System线显著加强；
 - Mythic的“王座 / 完整 / 加冕”继续作为表层闭环；
 - First Clear完成从Mythic closure到System confirmation的转换。
+
+## Voice文字承载
+
+每个Cue可配置：
+
+- `None`：不显示文字；
+- `Optional`：受玩家字幕设置控制；
+- `Forced`：通过字幕、阶段标题或Result UI可靠落字。
+
+普通氛围旁白不要求常驻字幕。A4、First Clear与关键System Confirmation必须有可靠文字承载，但不限定为传统底部字幕。
 
 ---
 
