@@ -816,10 +816,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.8
-  m_Height: 1
+  m_Radius: 0.15138845
+  m_Height: 0.4044597
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0.010851009, y: 0.17356656, z: 0.0024389192}
 --- !u!114 &2302849054582799864
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -872,7 +872,7 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 0.25, g: 1.7, b: 2.1, a: 1.0}
+  dissolveEdgeColor: {r: 0.25, g: 1.7, b: 2.1, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!4 &4411847898468923522 stripped
