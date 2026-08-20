@@ -45,19 +45,23 @@ public class MonsterPool : MonoBehaviour
 
         if (instanceToSpawn == null)
         {
-            instanceToSpawn = Instantiate(prefab, position, rotation);
+            // Keep inactive until pose + state reset are done so OnEnable never sees a stale transform.
+            instanceToSpawn = Instantiate(prefab);
+            instanceToSpawn.SetActive(false);
             prefabByInstance[instanceToSpawn] = prefab;
         }
-        else
-        {
-            instanceToSpawn.transform.SetPositionAndRotation(position, rotation);
-            instanceToSpawn.SetActive(true);
-        }
+
+        // Detach from pool root before reset / pose so world coordinates are authoritative.
+        instanceToSpawn.transform.SetParent(null, false);
 
         MonsterActor monster = instanceToSpawn.GetComponentInChildren<MonsterActor>(true);
         if (monster != null) monster.ResetForSpawn();
 
-        // After ResetForSpawn (may restore localPosition), snap CapsuleCollider bottom to ground Y.
+        // Authoritative world pose AFTER reset (ResetForSpawn may touch local pose on nested actors).
+        instanceToSpawn.transform.SetPositionAndRotation(position, rotation);
+        instanceToSpawn.SetActive(true);
+
+        // After activation (and any OnEnable local tweaks), snap CapsuleCollider bottom to ground Y.
         SnapCapsuleBottomToGround(instanceToSpawn, GroundY);
         return instanceToSpawn;
     }
@@ -134,6 +138,8 @@ public class MonsterPool : MonoBehaviour
         }
 
         monster.ResetForPool();
+        // Pose is irrelevant while pooled; park under the pool root so inactive Update never runs at the old fight location.
+        instanceToReturn.transform.SetParent(transform, false);
         instanceToReturn.SetActive(false);
         available.Enqueue(instanceToReturn);
     }

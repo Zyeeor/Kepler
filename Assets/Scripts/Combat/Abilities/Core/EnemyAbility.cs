@@ -272,8 +272,10 @@ public abstract class EnemyAbility : MonoBehaviour
         Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : (owner != null ? owner.transform : transform);
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
-        activeVfx = Instantiate(vfxPrefab, pos, rot);
+        activeVfx = VfxPool.Instance.Spawn(vfxPrefab, pos, rot);
         PlayVfx(activeVfx);
+        float duration = ResolveVfxPlayDuration(activeVfx);
+        VfxPool.ReleaseOrDestroy(activeVfx, duration);
         return activeVfx;
     }
 
@@ -285,15 +287,17 @@ public abstract class EnemyAbility : MonoBehaviour
             : (vfxSpawnPoint != null ? vfxSpawnPoint : (owner != null ? owner.transform : transform));
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
-        GameObject instance = Instantiate(weaponVfxPrefab, pos, rot);
+        GameObject instance = VfxPool.Instance.Spawn(weaponVfxPrefab, pos, rot);
         PlayVfx(instance);
+        float duration = ResolveVfxPlayDuration(instance);
+        VfxPool.ReleaseOrDestroy(instance, duration);
         return instance;
     }
 
     protected Projectile SpawnAbilityProjectile(GameObject prefab, Vector3 position, Quaternion rotation, float shotDamage, float speed, float lifetime)
     {
         if (prefab == null) return null;
-        GameObject go = Instantiate(prefab, position, rotation);
+        GameObject go = VfxPool.Instance.Spawn(prefab, position, rotation);
         PlayVfx(go);
         Projectile projectile = go.GetComponent<Projectile>();
         if (projectile == null) projectile = go.AddComponent<Projectile>();
@@ -303,7 +307,21 @@ public abstract class EnemyAbility : MonoBehaviour
         projectile.speed = speed;
         projectile.maxLifetime = lifetime;
         projectile.isPlayerProjectile = owner != null && owner.isPossessed;
+        // After field writes: OnEnable may have reset against prefab maxLifetime.
+        projectile.ResetForPoolSpawn();
         return projectile;
+    }
+
+    /// <summary>Return a pooled VFX/projectile, or Destroy if it was never pooled.</summary>
+    protected static void ReleaseVfx(GameObject vfx)
+    {
+        VfxPool.ReleaseOrDestroy(vfx);
+    }
+
+    /// <summary>Delayed pool return (or Destroy).</summary>
+    protected static void ReleaseVfx(GameObject vfx, float delay)
+    {
+        VfxPool.ReleaseOrDestroy(vfx, delay);
     }
 
     /// <summary>Play all ParticleSystems on a VFX GameObject.</summary>
@@ -344,16 +362,16 @@ public abstract class EnemyAbility : MonoBehaviour
         }
     }
 
-    /// <summary>Spawn a VFX that auto-destroys when the owner dies.</summary>
+    /// <summary>Spawn a pooled VFX that returns when the owner dies/pools away, or after autoDestroyTime.</summary>
     protected GameObject SpawnVfxTracked(GameObject prefab, Vector3 pos, Quaternion rot, float autoDestroyTime = -1f)
     {
         if (prefab == null || owner == null) return null;
-        var go = Instantiate(prefab, pos, rot);
+        GameObject go = VfxPool.Instance.Spawn(prefab, pos, rot);
         PlayVfx(go);
-        // Track owner death
-        var tracker = go.AddComponent<DestroyOnOwnerDeath>();
+        DestroyOnOwnerDeath tracker = go.GetComponent<DestroyOnOwnerDeath>();
+        if (tracker == null) tracker = go.AddComponent<DestroyOnOwnerDeath>();
         tracker.owner = owner.gameObject;
-        if (autoDestroyTime > 0f) Destroy(go, autoDestroyTime);
+        if (autoDestroyTime > 0f) ReleaseVfx(go, autoDestroyTime);
         return go;
     }
 
@@ -436,10 +454,10 @@ public abstract class EnemyAbility : MonoBehaviour
     private void SpawnAttackEffectVfx(GameplayEffectDefinition definition, CombatAbilityComponent target, Vector3 hitPosition)
     {
         if (definition == null || definition.hitVfxPrefab == null) return;
-        GameObject instance = Instantiate(definition.hitVfxPrefab, hitPosition, Quaternion.identity);
+        GameObject instance = VfxPool.Instance.Spawn(definition.hitVfxPrefab, hitPosition, Quaternion.identity);
         PlayVfx(instance);
         if (definition.hitVfxDuration > 0f)
-            Destroy(instance, definition.hitVfxDuration);
+            ReleaseVfx(instance, definition.hitVfxDuration);
         else if (target != null)
             target.RegisterEffectVfx(definition, instance);
     }

@@ -199,7 +199,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             if (hitSomething)
             {
                 DoBlast(hitPos, radius, scale, dmgMult);
-                Destroy(projectileGo);
+                ReleaseVfx(projectileGo);
                 yield break;
             }
 
@@ -209,7 +209,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         if (projectileGo != null)
         {
             DoBlast(projectileGo.transform.position, radius, scale, dmgMult);
-            Destroy(projectileGo);
+            ReleaseVfx(projectileGo);
         }
     }
 
@@ -217,9 +217,10 @@ public class EnemyAbility_ChargeShot : EnemyAbility
     {
         if (blastVfxPrefab != null)
         {
-            var blast = Instantiate(blastVfxPrefab, pos, Quaternion.identity);
+            var blast = VfxPool.Instance.Spawn(blastVfxPrefab, pos, Quaternion.identity);
             blast.transform.localScale = Vector3.one * scale;
-            Destroy(blast, blastVfxDuration);
+            PlayVfx(blast);
+            ReleaseVfx(blast, blastVfxDuration);
         }
 
         var hitEnemies = DamageEnemiesInSphere(pos, radius, damage * damageMultiplier * dmgMult, null);
@@ -287,20 +288,20 @@ public class EnemyAbility_ChargeShot : EnemyAbility
                 if (owner.CanDamage(enemy) && (excludeEnemies == null || !excludeEnemies.Contains(enemy)))
                 {
                     DealDamageTo(enemy, damage * damageMultiplier * dmgMult * sloth02BulletScale);
-                    Destroy(bullet);
+                    ReleaseVfx(bullet);
                     yield break;
                 }
                 var ph = hit.GetComponentInParent<PlayerHealth>();
                 if (ph != null)
                 {
                     DealDamageToPlayer(ph, damage * damageMultiplier * dmgMult * sloth02BulletScale);
-                    Destroy(bullet);
+                    ReleaseVfx(bullet);
                     yield break;
                 }
             }
             yield return null;
         }
-        if (bullet != null) Destroy(bullet);
+        if (bullet != null) ReleaseVfx(bullet);
     }
 
     void StopCharging()
@@ -312,7 +313,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
         if (chargeVfxInstance != null)
         {
-            Destroy(chargeVfxInstance);
+            ReleaseVfx(chargeVfxInstance);
             chargeVfxInstance = null;
         }
     }

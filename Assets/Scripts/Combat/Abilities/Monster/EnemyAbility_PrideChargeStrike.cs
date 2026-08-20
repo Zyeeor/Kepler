@@ -171,14 +171,14 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
     private void CleanupDashVfx()
     {
         if (activeVfx == null) return;
-        Destroy(activeVfx);
+        ReleaseVfx(activeVfx);
         activeVfx = null;
     }
 
     private void CleanupChargeHoldVfx()
     {
         if (chargeVfxInstance == null) return;
-        Destroy(chargeVfxInstance);
+        ReleaseVfx(chargeVfxInstance);
         chargeVfxInstance = null;
     }
 

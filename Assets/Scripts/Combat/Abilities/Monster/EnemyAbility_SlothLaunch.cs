@@ -111,11 +111,10 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
     private void PlayLandingVfxOnSelf()
     {
         if (vfxPrefab == null || owner == null) return;
-        GameObject vfx = Instantiate(vfxPrefab, owner.transform.position, Quaternion.identity);
-        vfx.transform.SetParent(owner.transform, true);
+        GameObject vfx = VfxPool.Instance.Spawn(vfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
         PlayVfx(vfx);
         StopVfxLooping(vfx);
-        Destroy(vfx, Mathf.Max(0.01f, landingVfxDuration));
+        ReleaseVfx(vfx, Mathf.Max(0.01f, landingVfxDuration));
     }
 
     private void PlaceMine(Vector3 pos)

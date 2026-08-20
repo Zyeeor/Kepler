@@ -21,15 +21,25 @@ public class Projectile : MonoBehaviour
     private float lifetime;
     private float hitCheckInterval = 0.05f;
     private float hitCheckTimer;
+    private bool settled;
 
-    void Start()
+    void OnEnable()
+    {
+        ResetForPoolSpawn();
+    }
+
+    /// <summary>Clear runtime state before / when leaving the pool. Safe to call while inactive.</summary>
+    public void ResetForPoolSpawn()
     {
         lifetime = maxLifetime;
         hitCheckTimer = hitCheckInterval;
+        settled = false;
     }
 
     void Update()
     {
+        if (settled) return;
+
         float deltaTime = ownerEnemy != null && ownerEnemy.IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
         float stepDist = speed * deltaTime;
         int obstacleMask = ~((1 << 8) | (1 << 9));
@@ -37,7 +47,7 @@ public class Projectile : MonoBehaviour
         {
             transform.position = wallHit.point;
             SpawnFallbackHitVfx(wallHit.point, Quaternion.LookRotation(wallHit.normal));
-            Destroy(gameObject);
+            ReleaseSelf();
             return;
         }
 
@@ -51,7 +61,7 @@ public class Projectile : MonoBehaviour
         }
 
         lifetime -= deltaTime;
-        if (lifetime <= 0) Destroy(gameObject);
+        if (lifetime <= 0) ReleaseSelf();
     }
 
     void CheckHit()
@@ -120,13 +130,24 @@ public class Projectile : MonoBehaviour
     {
         if (sourceAbility == null)
             SpawnFallbackHitVfx(transform.position, Quaternion.identity);
-        Destroy(gameObject);
+        ReleaseSelf();
     }
 
     void SpawnFallbackHitVfx(Vector3 position, Quaternion rotation)
     {
         if (hitEffectPrefab == null) return;
-        var effect = Instantiate(hitEffectPrefab, position, rotation);
-        Destroy(effect, hitEffectDuration);
+        var effect = VfxPool.Instance.Spawn(hitEffectPrefab, position, rotation);
+        foreach (var ps in effect.GetComponentsInChildren<ParticleSystem>())
+            ps.Play(true);
+        VfxPool.ReleaseOrDestroy(effect, hitEffectDuration);
+    }
+
+    void ReleaseSelf()
+    {
+        if (settled) return;
+        settled = true;
+        sourceAbility = null;
+        ownerEnemy = null;
+        VfxPool.ReleaseOrDestroy(gameObject);
     }
 }

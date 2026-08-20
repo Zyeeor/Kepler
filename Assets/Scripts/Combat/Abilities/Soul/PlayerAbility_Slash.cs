@@ -100,12 +100,12 @@ public class PlayerAbility_Slash : PlayerAbility
             Vector3 localPos = new Vector3(Mathf.Sin(rad) * slashEffectRadius, slashEffectHeight * 0.5f, Mathf.Cos(rad) * slashEffectRadius);
             if (slashEffectPrefab != null)
             {
-                GameObject obj = Instantiate(slashEffectPrefab, arcParent.transform);
+                GameObject obj = VfxPool.Instance.Spawn(slashEffectPrefab, arcParent.transform.position, arcParent.transform.rotation, arcParent.transform);
                 obj.transform.localPosition = localPos;
                 obj.transform.localRotation = Quaternion.Euler(0, angle, 90);
                 obj.transform.localScale = Vector3.one;
                 PlayVfx(obj);
-                Destroy(obj, slashEffectDuration);
+                VfxPool.ReleaseOrDestroy(obj, slashEffectDuration);
             }
             else
             {

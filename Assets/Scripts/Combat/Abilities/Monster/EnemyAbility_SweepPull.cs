@@ -145,6 +145,9 @@ public class EnemyAbility_SweepPull : EnemyAbility
                 hookProj.ownerAbility = this;
                 hookProj.ownerTransform = owner.transform;
                 hookProj.hitMask = owner.isPossessed ? ~0 : targetMask;
+                hookProj.ResetForPoolSpawn();
+                if (hookProj.debugLogging)
+                    Debug.Log($"[Hook] Launched owner={owner.name} position={origin:F2} forward={forward:F2} radius={hookProj.hitRadius:F2}");
             }
         }
         else
@@ -161,6 +164,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
             hookProj.ownerAbility = this;
             hookProj.ownerTransform = owner.transform;
             hookProj.hitMask = owner.isPossessed ? ~0 : targetMask;
+            hookProj.ResetForPoolSpawn();
         }
 
         // Wait for hook to hit or miss

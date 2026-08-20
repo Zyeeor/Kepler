@@ -179,7 +179,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             if (hitSomething)
             {
                 DoBlast(hitPos, radius, scale, shotDamage, primaryHit);
-                Destroy(projectileGo);
+                ReleaseVfx(projectileGo);
                 yield break;
             }
 
@@ -189,7 +189,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         if (projectileGo != null)
         {
             DoBlast(projectileGo.transform.position, radius, scale, shotDamage, null);
-            Destroy(projectileGo);
+            ReleaseVfx(projectileGo);
         }
     }
 
@@ -236,20 +236,20 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
                 if (owner.CanDamage(enemy) && (excludeEnemies == null || !excludeEnemies.Contains(enemy)))
                 {
                     SettleHit(enemy, fragmentDamage);
-                    Destroy(bullet);
+                    ReleaseVfx(bullet);
                     yield break;
                 }
                 var ph = hit.GetComponentInParent<PlayerHealth>();
                 if (ph != null && owner.CanDamageSoul())
                 {
                     SettleHit(ph, fragmentDamage);
-                    Destroy(bullet);
+                    ReleaseVfx(bullet);
                     yield break;
                 }
             }
             yield return null;
         }
-        if (bullet != null) Destroy(bullet);
+        if (bullet != null) ReleaseVfx(bullet);
     }
 
     void StopCharging()
@@ -261,7 +261,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
         if (chargeVfxInstance != null)
         {
-            Destroy(chargeVfxInstance);
+            ReleaseVfx(chargeVfxInstance);
             chargeVfxInstance = null;
         }
     }

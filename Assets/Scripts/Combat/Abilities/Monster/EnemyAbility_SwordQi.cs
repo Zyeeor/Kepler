@@ -278,7 +278,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
                 }
                 else
                 {
-                    if (projVfx != null) Destroy(projVfx);
+                    if (projVfx != null) ReleaseVfx(projVfx);
                     DoExplosion(hitPos, shotDamage, ignoreEnemy);
                     yield break;
                 }
@@ -287,7 +287,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
             yield return null;
         }
 
-        if (projVfx != null) Destroy(projVfx);
+        if (projVfx != null) ReleaseVfx(projVfx);
         if (!pierce)
             DoExplosion(currentPos, shotDamage, ignoreEnemy);
     }

@@ -54,6 +54,9 @@ public class GreedHandProjectile : MonoBehaviour
         flankLeft = leftFlank;
         isDerived = derived;
         hitVfxPrefab = hitVfx;
+        _settled = false;
+        _retargetUsed = false;
+        _reachedFlank = false;
         _spawnTime = Time.time;
         _expiresAt = Time.time + lifetime;
         _spawnPos = transform.position;
@@ -78,7 +81,7 @@ public class GreedHandProjectile : MonoBehaviour
         if (_settled) return;
         if (Time.time >= _expiresAt || target == null || !IsLegalTarget(target))
         {
-            Destroy(gameObject);
+            VfxPool.ReleaseOrDestroy(gameObject);
             return;
         }
 
@@ -129,8 +132,10 @@ public class GreedHandProjectile : MonoBehaviour
 
         if (hitVfxPrefab != null)
         {
-            GameObject vfx = Instantiate(hitVfxPrefab, hitPos, Quaternion.identity);
-            Destroy(vfx, Mathf.Max(0.05f, hitVfxDuration));
+            GameObject vfx = VfxPool.Instance.Spawn(hitVfxPrefab, hitPos, Quaternion.identity);
+            foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
+                ps.Play(true);
+            VfxPool.ReleaseOrDestroy(vfx, Mathf.Max(0.05f, hitVfxDuration));
         }
 
         if (killed)
@@ -151,7 +156,7 @@ public class GreedHandProjectile : MonoBehaviour
                 sourceAbility.SpawnDerivedHandsFromKill(transform.position, this);
         }
 
-        Destroy(gameObject);
+        VfxPool.ReleaseOrDestroy(gameObject);
     }
 
     private static bool IsLegalTarget(Enemy enemy)

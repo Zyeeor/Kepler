@@ -128,10 +128,10 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
     private void PlayBlastVfx(Vector3 position)
     {
         if (blastVfxPrefab == null) return;
-        GameObject blast = Instantiate(blastVfxPrefab, position, Quaternion.identity);
+        GameObject blast = VfxPool.Instance.Spawn(blastVfxPrefab, position, Quaternion.identity);
         PlayVfx(blast);
         StopVfxLooping(blast);
-        Destroy(blast, Mathf.Max(0.01f, blastVfxDuration));
+        ReleaseVfx(blast, Mathf.Max(0.01f, blastVfxDuration));
     }
 
     protected override GameObject SpawnVfx()
@@ -144,10 +144,10 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             StopCoroutine(_vfxMotionRoutine);
             _vfxMotionRoutine = null;
         }
-        if (activeVfx != null) Destroy(activeVfx);
+        if (activeVfx != null) ReleaseVfx(activeVfx);
 
         Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : owner.transform;
-        activeVfx = Instantiate(vfxPrefab, anchor);
+        activeVfx = VfxPool.Instance.Spawn(vfxPrefab, anchor.position, anchor.rotation, anchor);
         activeVfx.transform.localPosition = vfxPositionOffset;
         activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
         Vector3 authoredScale = activeVfx.transform.localScale;
@@ -170,7 +170,7 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
         yield return AnimateDevourVfxPhase(motion, peakPosition, startPosition,
             authoredScale * vfxPeakScale, authoredScale * vfxStartEndScale, returnDuration);
 
-        if (vfx != null) Destroy(vfx);
+        if (vfx != null) ReleaseVfx(vfx);
         if (activeVfx == vfx) activeVfx = null;
         _vfxMotionRoutine = null;
     }
@@ -213,7 +213,7 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             if (to.sqrMagnitude > 0.0001f && Vector3.Angle(owner.transform.forward, to) > angle * 0.5f)
                 continue;
 
-            Destroy(projectile.gameObject);
+            VfxPool.ReleaseOrDestroy(projectile.gameObject);
             return true;
         }
         return false;

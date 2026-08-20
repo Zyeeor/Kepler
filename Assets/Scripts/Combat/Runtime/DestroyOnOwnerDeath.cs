@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Destroy this GameObject when the referenced owner GameObject is destroyed.
-/// Attach to any VFX instantiated by an ability.
+/// Return this GameObject to <see cref="VfxPool"/> (or Destroy if unpooled) when the owner is gone or pooled away.
+/// Attach to any VFX spawned by an ability.
 /// </summary>
 public class DestroyOnOwnerDeath : MonoBehaviour
 {
@@ -10,9 +10,8 @@ public class DestroyOnOwnerDeath : MonoBehaviour
 
     void Update()
     {
-        if (owner == null)
-        {
-            Destroy(gameObject);
-        }
+        // Pooled monsters SetActive(false) instead of Destroy — treat inactive owner as released too.
+        if (owner == null || !owner.activeInHierarchy)
+            VfxPool.ReleaseOrDestroy(gameObject);
     }
 }

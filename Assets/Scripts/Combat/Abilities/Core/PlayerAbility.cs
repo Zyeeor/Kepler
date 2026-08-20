@@ -156,8 +156,16 @@ public abstract class PlayerAbility : MonoBehaviour
         Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : (owner != null ? owner.transform : transform);
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
-        activeVfx = Instantiate(vfxPrefab, pos, rot);
+        activeVfx = VfxPool.Instance.Spawn(vfxPrefab, pos, rot);
         PlayVfx(activeVfx);
+        float duration = 1f;
+        foreach (var ps in activeVfx.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            var main = ps.main;
+            if (main.loop) main.loop = false;
+            if (main.duration > duration) duration = main.duration;
+        }
+        VfxPool.ReleaseOrDestroy(activeVfx, duration);
         return activeVfx;
     }
 
