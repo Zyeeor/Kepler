@@ -7,22 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: BlackFlash
-  m_Shader: {fileID: 4800000, guid: 5b739e600ec1b0449b3375ab46404917, type: 3}
+  m_Name: M-JiDu-2
+  m_Shader: {fileID: 4800000, guid: 2520bb9092e0eaf459e731120f8f11cb, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _COLORSTYLE_BLACKWHITEFLASH
-  m_InvalidKeywords:
-  - _IFBLURFACTOR_ON
-  - _IFLINEUVSCALE_ON
-  - _IFMAINALPHA_ON
-  - _IFREDBLUEFACTOR_ON
-  - _IFVIGNETTEPOWER_ON
-  - _IFVIGNETTESCALE_ON
-  - _IFZHENFU_ON
-  - _IFZHENPIN_ON
-  - _TEXAR_ON
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -57,12 +47,12 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _Logo:
-        m_Texture: {fileID: 2800000, guid: 952e6cda434200247b8852b4b5d1a444, type: 3}
-        m_Scale: {x: 3, y: 3}
-        m_Offset: {x: 0, y: 0.1}
     - _MainTex:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Maintex:
+        m_Texture: {fileID: 2800000, guid: f90ded344b0d417478fb791011cb144b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -80,10 +70,6 @@ Material:
     - _SpecGlossMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Tex:
-        m_Texture: {fileID: 2800000, guid: e26cf22f8c9746d40b85289d87d0f184, type: 3}
-        m_Scale: {x: 300, y: 300}
         m_Offset: {x: 0, y: 0}
     - _texcoord:
         m_Texture: {fileID: 0}
@@ -104,17 +90,18 @@ Material:
     m_Ints: []
     m_Floats:
     - _AlphaClip: 0
+    - _AlphaCutoff: 0.5
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BlurFactor: 0
-    - _BlurFactorK: 0.282
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _ColorStyle: 1
     - _Cull: 2
     - _Cutoff: 0.5
+    - _DarkRange: 0.3
+    - _Dark_intensity: 0.555
+    - _Darksoft: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -123,65 +110,33 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _IfBlurFactor: 1
-    - _IfLineUVScale: 1
-    - _IfMainAlpha: 1
-    - _IfRedBlueFactor: 1
-    - _IfStepFactor: 0
-    - _IfVignettePower: 1
-    - _IfVignetteScale: 1
-    - _Ifzhenfu: 1
-    - _Ifzhenpin: 1
-    - _LineColorScale: 2.94
-    - _LineOffset: 0
-    - _LineTilingU: 1.5
-    - _LineTilingV: 8
-    - _LineUVScale: 0
-    - _LineUVScaleK: 4
-    - _LogoAR: 0
-    - _LogoAlpha: 0
-    - _MainAlpha: 1
-    - _MainAlphaK: 1
+    - _Highlight_range: -0.955
+    - _Highlight_soft: 0.185
     - _Metallic: 0
     - _OcclusionStrength: 1
+    - _OutlineWidth: 0.02
     - _Parallax: 0.005
+    - _QueueControl: -1
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RedBlueFactor: 0
-    - _RedBlueFactorK: 1.3
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _Soft: 0.275
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StepFactor: 0.6
-    - _StepFactorK: 0.5
     - _Surface: 0
-    - _TexAR: 1
-    - _TexAlpha: 0
-    - _TexRotator: 0.075
-    - _VignettePower: 1.5
-    - _VignettePowerK: 1.5
-    - _VignetteScale: 1.5
-    - _VignetteScaleK: 1.5
     - _WorkflowMode: 1
     - _ZWrite: 1
-    - _centerU: 0.5
-    - _centerV: 0.5
-    - _zhenfu: 0
-    - _zhenfuK: 0
-    - _zhenpin: 0
-    - _zhenpinK: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color1: {r: 1, g: 1, b: 1, a: 0}
-    - _Color2: {r: 0, g: 0, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Highlight_Color: {r: 1, g: 1, b: 1, a: 1}
+    - _MainColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Outline_color: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
---- !u!114 &8823154043308034584
+--- !u!114 &5089451827120991455
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
