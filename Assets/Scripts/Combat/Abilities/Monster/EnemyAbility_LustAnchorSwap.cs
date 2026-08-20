@@ -93,7 +93,8 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
                 yield break;
             }
 
-            _state?.PlaceOrReplaceAnchor(start, GetCardParameter("AnchorLifetime", anchorLifetime));
+            _state?.PlaceOrReplaceAnchor(start, owner.transform.rotation,
+                GetCardParameter("AnchorLifetime", anchorLifetime));
         }
         else
         {

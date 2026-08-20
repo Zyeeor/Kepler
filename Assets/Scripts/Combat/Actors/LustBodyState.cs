@@ -100,19 +100,19 @@ public class LustBodyState : MonoBehaviour
         return target.isPossessed ? BodyWeightClass.Light : BodyWeightClass.Medium;
     }
 
-    public LustAnchorMarker PlaceOrReplaceAnchor(Vector3 worldPosition, float lifetime = -1f)
+    public LustAnchorMarker PlaceOrReplaceAnchor(Vector3 worldPosition, Quaternion worldRotation, float lifetime = -1f)
     {
         float life = lifetime > 0f ? lifetime : defaultAnchorLifetime;
         DestroyActiveAnchor();
 
         GameObject go;
         if (anchorPrefab != null)
-            go = Object.Instantiate(anchorPrefab, worldPosition, Quaternion.identity);
+            go = Object.Instantiate(anchorPrefab, worldPosition, worldRotation);
         else
         {
             go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "PF_MON_LUST_ANCHOR";
-            go.transform.position = worldPosition;
+            go.transform.SetPositionAndRotation(worldPosition, worldRotation);
             go.transform.localScale = Vector3.one * 0.55f;
             Collider col = go.GetComponent<Collider>();
             if (col != null) Object.Destroy(col);
