@@ -22,6 +22,7 @@ type Config struct {
 	DBPath    string              // SQLite 文件路径
 	UploadDir string              // UGC 文件上传目录
 	Elite     service.EliteConfig // 精英怪 BD 快照投放参数（TUNABLE）
+	SeedFile  string              // 精英怪种子快照文件路径（空=不 seed）
 }
 
 // Server UGC 内容服务 + 精英怪投放服务。
@@ -44,11 +45,20 @@ func New(cfg Config) (*Server, error) {
 		eliteCfg = service.DefaultEliteConfig()
 	}
 
+	eliteSvc := service.NewEliteService(st, eliteCfg)
+
+	// 种子数据注入：候选库为空时加载预设快照（首位玩家体验保障）
+	if cfg.SeedFile != "" {
+		if err := eliteSvc.SeedIfEmpty(cfg.SeedFile); err != nil {
+			log.Printf("[elite] seed error (non-fatal): %v", err)
+		}
+	}
+
 	return &Server{
 		cfg:        cfg,
 		store:      st,
 		contentSvc: service.NewContentService(st, cfg.UploadDir),
-		eliteSvc:   service.NewEliteService(st, eliteCfg),
+		eliteSvc:   eliteSvc,
 	}, nil
 }
 
@@ -70,6 +80,7 @@ func (s *Server) Handler() http.Handler {
 	// 精英怪 BD 快照（他人 BD 怪物投放）
 	mux.HandleFunc("POST /api/bd-snapshots", s.handleSnapshotUpload)
 	mux.HandleFunc("POST /api/elite/pick", s.handleElitePick)
+	mux.HandleFunc("GET /api/health", s.handleHealth)
 	return logRequests(mux)
 }
 
@@ -371,7 +382,8 @@ func (s *Server) handleSnapshotUpload(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleElitePick(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		PlayerID string `json:"playerId"`
-		Wave     int    `json:"wave"` // 当前波次 N（sourceWave 语义/编码由前台决定，透传比较）
+		Wave     int    `json:"wave"`    // 当前波次 N（sourceWave 语义/编码由前台决定，透传比较）
+		WaveGap  int    `json:"waveGap"` // 越级波次差（客户端难度设置，0=同波次，1=越一级）
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeErr(w, http.StatusBadRequest, "bad request")
@@ -386,7 +398,7 @@ func (s *Server) handleElitePick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snap, relaxed, err := s.eliteSvc.Pick(req.PlayerID, req.Wave)
+	snap, relaxed, err := s.eliteSvc.Pick(req.PlayerID, req.Wave, req.WaveGap)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
@@ -432,4 +444,9 @@ func toSnapshotJSON(snap *store.BuildSnapshot) snapshotJSON {
 		GameTime:       snap.GameTime,
 		Stats:          stats,
 	}
+}
+
+// handleHealth 健康检查（客户端启动探活用）。
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

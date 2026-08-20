@@ -23,6 +23,18 @@ public static class SaveMigrator
 
     public delegate SaveData MigrationFunc(SaveData data);
 
+    static SaveMigrator()
+    {
+        // v1 → v2：新增 runId（精英 BD 快照 upsert 键）。旧档无 runId，无需换算——
+        // 读档恢复时 RunSession.ResumeFromSave 对缺失 runId 自动补生成。
+        migrations[1] = MigrateV1ToV2;
+    }
+
+    static SaveData MigrateV1ToV2(SaveData d)
+    {
+        return d;
+    }
+
     /// <summary>逐版本迁移：fromVersion → SchemaVersion。任一环节缺函数/失败即返回 false。</summary>
     public static bool TryMigrate(SaveData data, int fromVersion, out SaveData migrated)
     {

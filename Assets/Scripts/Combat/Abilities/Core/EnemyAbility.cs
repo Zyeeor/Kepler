@@ -46,6 +46,11 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected float GetCardParameter(string key, float defaultValue)
     {
+        // 精英怪（携带 EliteBuildCarrier）：只从自身历史 BD 快照解析参数，
+        // 不读取当前 Run 的 Card 层（Canonical §23）。
+        var carrier = EliteBuildCarrier.Get(this);
+        if (carrier != null)
+            return carrier.TryGetCardParameter(this, key, out float eliteValue) ? eliteValue : defaultValue;
         return CardManager.Instance != null && CardManager.Instance.TryGetUnlockedAbilityParameter(this, key, out float value)
             ? value
             : defaultValue;

@@ -90,6 +90,14 @@ public class RunSession : MonoBehaviour
     /// <summary>地图种子：对局期间锁定，恢复时注入 MapStreamingSystem（地图确定性重建）。</summary>
     public uint WorldSeed { get; private set; }
 
+    /// <summary>
+    /// 本局 runId（精英 BD 快照 upsert 唯一键 (playerId, runId, sin) 的组成，策划案 §8.1/F6）：
+    /// BeginNewRun 生成，随存档落盘，读档恢复后延续同一 runId。
+    /// </summary>
+    public string RunId { get; private set; }
+
+    static string NewRunId() => "run-" + Guid.NewGuid().ToString("N");
+
     /// <summary>已完成波次索引（-1 = 尚未完成任何波），恢复从下一波开始。</summary>
     public int CompletedWaveIndex { get; private set; } = -1;
 
@@ -159,6 +167,7 @@ public class RunSession : MonoBehaviour
         var gm = GameManager.Instance;
         WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
                                                     : (uint)UnityEngine.Random.Range(1, int.MaxValue);
+        if (string.IsNullOrEmpty(RunId)) RunId = NewRunId(); // 直接 Play 路径也保证有 runId
         CurrentPhase = RunPhase.Opening;
         Debug.Log($"[RunSession] 直接 Play 种子初始化：worldSeed={WorldSeed}（useFixedSeed={gm != null && gm.useFixedSeed}）。");
     }
@@ -181,6 +190,7 @@ public class RunSession : MonoBehaviour
         PossessedBody = null;
         Corpses.Clear();
         HasActiveRun = true;
+        RunId = NewRunId();
         SaveCoordinator.DeleteSave();
         CurrentPhase = RunPhase.Opening; // 新局从开场开始（Opening 占位直通，见 RunFlow）
         Debug.Log($"[RunSession] 新对局开始：worldSeed={WorldSeed}");
@@ -213,6 +223,8 @@ public class RunSession : MonoBehaviour
         PossessedBody = data.possessedBody;
         Corpses.Clear();
         if (data.corpses != null) Corpses.AddRange(data.corpses);
+        // 读档延续同一 runId（老档/缺失字段时补生成，保证精英快照 upsert 键可用）
+        RunId = !string.IsNullOrEmpty(data.runId) ? data.runId : NewRunId();
         HasActiveRun = true;
         // 读档不经过开场/教学：回到波次或选卡补弹（pendingChoice=true → Choice）
         CurrentPhase = PendingChoice ? RunPhase.Choice : RunPhase.Waves;
@@ -240,7 +252,7 @@ public class RunSession : MonoBehaviour
         // （弹卡后任何时刻退出，快照都是玩家最后看到的候选，含双选第二轮/重抽结果）。
 
         SaveCoordinator.SaveSnapshot(completedWaveIndex, WorldSeed, UnlockedEffects,
-            SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak);
+            SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak, RunId);
         Debug.Log($"[RunSession] 波 {completedWaveIndex} 存档完成：位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count}");
     }
 
@@ -299,6 +311,7 @@ public class RunSession : MonoBehaviour
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
         CompletedWaveIndex = -1;
         UnlockedEffects.Clear();
+        RunId = null;
         SaveCoordinator.DeleteSave();
         Debug.Log("[RunSession] 对局结束，进度已清除。");
     }

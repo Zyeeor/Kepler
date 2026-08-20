@@ -27,11 +27,12 @@ func main() {
 	dbPath := flag.String("db", "data/game.db", "SQLite 数据库文件路径")
 	uploadDir := flag.String("upload", "data/ugc", "UGC 文件上传目录")
 	logPath := flag.String("log", "data/server.log", "日志文件路径（追加写入，同时输出到控制台；传空禁用文件日志）")
+	seedFile := flag.String("seedFile", "data/seed_snapshots.json", "精英怪种子快照文件路径（空=不 seed）")
 
 	// 精英怪投放参数（策划案 §6 TUNABLE + §8.2/§8.4 容量，默认值为首版 Baseline）
 	elite := service.DefaultEliteConfig()
 	flag.IntVar(&elite.MinBD, "minBd", elite.MinBD, "精英怪筛选：最低 BD 数量门槛 MIN_BD")
-	flag.IntVar(&elite.WaveGap, "waveGap", elite.WaveGap, "精英怪筛选：波次差 WAVE_GAP")
+	flag.IntVar(&elite.WaveGap, "waveGap", elite.WaveGap, "精英怪筛选：服务端兜底波次差（客户端未传 waveGap 时使用，默认 0=不叠加）")
 	flag.StringVar(&elite.TopBandMode, "topBandMode", elite.TopBandMode, `精英怪筛选：TOP_BAND 模式 "percent" | "topk"`)
 	flag.Float64Var(&elite.TopBandPercent, "topBandPercent", elite.TopBandPercent, "percent 模式：高分档比例（如 0.2 = 前 20%）")
 	flag.IntVar(&elite.TopBandTopK, "topBandTopK", elite.TopBandTopK, "topk 模式：高分档条数")
@@ -60,6 +61,7 @@ func main() {
 		DBPath:    *dbPath,
 		UploadDir: *uploadDir,
 		Elite:     elite,
+		SeedFile:  *seedFile,
 	})
 	if err != nil {
 		log.Fatalf("init server: %v", err)

@@ -22,10 +22,12 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。</summary>
-    public int schemaVersion = 1;
+    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。v2：新增 runId（精英 BD 快照 upsert 键）。</summary>
+    public int schemaVersion = 2;
     /// <summary>写入时间（Unix 秒，仅展示/调试）。</summary>
     public long savedAtUnix;
+    /// <summary>本局 runId（精英 BD 快照 upsert 唯一键组成，读档恢复后延续）。</summary>
+    public string runId;
     /// <summary>地图种子：恢复时注入 MapStreamingSystem.worldSeed，重建完全一致的地图。</summary>
     public uint worldSeed;
     /// <summary>已完成波次索引（-1 = 尚未完成任何波）。恢复从 completedWaveIndex + 1 开始。</summary>

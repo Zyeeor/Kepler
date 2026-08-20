@@ -113,6 +113,9 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 确保不会因创建时机抢跑而覆盖场景中已配置的 MonsterSpawner。幂等。
         MonsterSpawner.EnsureInstance();
 
+        // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
+        EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
+
         // 无房间模式：未被 RoomFlowController 初始化时，等待地图就绪后自动启动
         if (!autoStart) return;
         StartCoroutine(AutoStartRoutine());
@@ -219,6 +222,20 @@ public class WaveManager : SceneSingleton<WaveManager>
 
     /// <summary>当前生效的波次配置（房间模板优先，无房间用自身配置）。</summary>
     List<WaveConfig> ActiveWaves => currentTemplate != null ? currentTemplate.waves : waves;
+
+    /// <summary>当前生效波次总数（精英投放节奏判断用，1-based 波次的边界）。</summary>
+    public int TotalWaveCount => ActiveWaves != null ? ActiveWaves.Count : 0;
+
+    /// <summary>
+    /// 外部来源怪（精英投放）计入本波清点：计入后精英未死亡/未被附身，本波不算清场。
+    /// 仅战斗波次进行中（IsWaveActive）有效。
+    /// </summary>
+    public void RegisterExternalWaveMonster(MonsterActor monster)
+    {
+        if (monster == null || !IsWaveActive) return;
+        waveAlive.Add(monster);
+        EnemiesAlive = waveAlive.Count;
+    }
 
     /// <summary>当前生效的首波前准备时间（房间模板优先，无房间用自身配置）。</summary>
     float ActiveGracePeriod => currentTemplate != null ? currentTemplate.gracePeriod : gracePeriod;
