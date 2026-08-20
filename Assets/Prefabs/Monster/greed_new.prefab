@@ -270,7 +270,7 @@ Transform:
   - {fileID: 8538090499305278930}
   - {fileID: 5574052458263229248}
   - {fileID: 2697619900748645917}
-  m_Father: {fileID: 4202068629033295698}
+  m_Father: {fileID: 5417715533104391790}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2165804896355096499
 GameObject:
@@ -535,7 +535,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5417715533104391790}
-  - {fileID: 7526418190515614158}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3797659131636598871
@@ -699,11 +698,14 @@ MonoBehaviour:
   releaseInterval: 0.2
   detectRange: 10
   handDamage: 15
-  handProjectilePrefab: {fileID: 0}
+  handProjectilePrefab: {fileID: 8044316912354738735, guid: 06fd062bc6d8bf746ac0a5d44d3cd5e3,
+    type: 3}
   handSpawnVfxPrefab: {fileID: 0}
-  handHitVfxPrefab: {fileID: 0}
+  handHitVfxPrefab: {fileID: 1035977224672214417, guid: 1e69e3e21e6d86c45898d16044d351fa,
+    type: 3}
   orbitRadius: 1.4
   orbitHeight: 1.1
+  debugLog: 1
 --- !u!1 &4471553160525775886
 GameObject:
   m_ObjectHideFlags: 0
@@ -1804,6 +1806,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5138616796934438724}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7526418190515614158}
     - targetCorrespondingSourceObject: {fileID: 5465940246521907071, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
         type: 3}
       insertIndex: 0
