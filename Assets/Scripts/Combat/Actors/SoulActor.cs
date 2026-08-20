@@ -177,11 +177,11 @@ public class SoulActor : Actor
         if (possessionAnchor == null) return;
 
         Transform restoreParent = parentBeforePossession;
-        // 兜底（主界面幽灵 bug 根因③）：若锚点怪曾被意外回池，灵魂随其进入 DDOL 场景，
-        // 此时 SetParent(null) 会把灵魂留在 DDOL 根跨场景存活。先移回活动场景再恢复父级。
         bool restoreParentAlive = restoreParent != null;
         if (!restoreParentAlive && gameObject.scene.name == "DontDestroyOnLoad")
         {
+            // MoveGameObjectToScene 要求是根对象，先解除 parent
+            transform.SetParent(null, true);
             var active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (active.IsValid() && active.name != "DontDestroyOnLoad")
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(gameObject, active);
