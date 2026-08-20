@@ -101,8 +101,8 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
 
         // Blast VFX is the maw resolve cue at the snapshotted ground point (not per-hit).
         PlayBlastVfx(point, radius);
-        DamageEnemiesInSphere(point, radius, dmg);
-        TryDamagePlayerInRadius(point, radius, dmg);
+        DamageEnemiesInSphere(point, radius, dmg, null, blastVfxDuration);
+        TryDamagePlayerInRadius(point, radius, dmg, blastVfxDuration);
     }
 
     private bool TryResolveAimPoint(out Vector3 aimPoint)

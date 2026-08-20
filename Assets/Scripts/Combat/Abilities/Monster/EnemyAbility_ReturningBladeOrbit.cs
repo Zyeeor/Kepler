@@ -52,6 +52,7 @@ public class EnemyAbility_ReturningBladeOrbit : EnemyAbility
                 foreach (GameObject blade in blades)
                 {
                     if (blade == null) continue;
+                    CombatHitboxDebug.DrawSphere(drawHitboxes, blade.transform.position, hitRadius, 0f);
                     Collider[] hits = Physics.OverlapSphere(blade.transform.position, hitRadius, ~0, QueryTriggerInteraction.Collide);
                     foreach (Collider hit in hits)
                     {

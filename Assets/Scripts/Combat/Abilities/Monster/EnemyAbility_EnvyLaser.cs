@@ -281,6 +281,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         }
 
         dir.Normalize();
+        CombatHitboxDebug.DrawRay(drawHitboxes, origin, dir, maxDist, 0f);
         RaycastHit[] results = Physics.RaycastAll(origin, dir, maxDist, ~0, QueryTriggerInteraction.Collide);
         System.Array.Sort(results, (a, b) => a.distance.CompareTo(b.distance));
 

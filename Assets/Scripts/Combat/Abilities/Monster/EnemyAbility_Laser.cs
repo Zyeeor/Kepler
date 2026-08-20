@@ -155,6 +155,7 @@ public class EnemyAbility_Laser : EnemyAbility
             : Quaternion.identity) * Quaternion.Euler(beamRotationOffset);
 
         float distance = dir.magnitude;
+        CombatHitboxDebug.DrawRay(drawHitboxes, origin, dir.sqrMagnitude > 0.01f ? dir.normalized : owner.transform.forward, Mathf.Max(0.1f, distance), tickInterval);
         GameObject vfx = SpawnVfxTracked(beamPrefab, pos, rot, tickInterval);
         Vector3 scale = vfx.transform.localScale;
         scale.z *= distance;

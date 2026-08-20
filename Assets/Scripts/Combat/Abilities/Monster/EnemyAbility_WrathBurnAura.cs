@@ -49,9 +49,9 @@ public class EnemyAbility_WrathBurnAura : EnemyAbility
         if (Time.time < _nextTickAt) return;
         _nextTickAt = Time.time + Mathf.Max(0.05f, tickInterval);
         float tickDamage = auraDps * tickInterval;
-        DamageEnemiesInSphere(owner.transform.position, auraRadius, tickDamage, OnEnemyHit);
+        DamageEnemiesInSphere(owner.transform.position, auraRadius, tickDamage, OnEnemyHit, Mathf.Max(0.08f, tickInterval));
         if (!owner.isPossessed)
-            TryDamagePlayerInRadius(owner.transform.position, auraRadius, tickDamage);
+            TryDamagePlayerInRadius(owner.transform.position, auraRadius, tickDamage, Mathf.Max(0.08f, tickInterval));
     }
 
     private void OnEnemyHit(Enemy enemy, Vector3 hitPosition)

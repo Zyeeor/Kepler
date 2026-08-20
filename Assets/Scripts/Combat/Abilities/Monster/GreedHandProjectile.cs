@@ -102,7 +102,10 @@ public class GreedHandProjectile : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(look.normalized, Vector3.up);
 
         if (_reachedFlank && Vector3.Distance(transform.position, target.transform.position) <= hitRadius + 0.35f)
+        {
+            CombatHitboxDebug.DrawSphere(true, transform.position, hitRadius + 0.35f, 0f);
             SettleHit();
+        }
     }
 
     private void SettleHit()

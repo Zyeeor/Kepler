@@ -233,9 +233,9 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
             float radius = GetCardParameter("R", s05BlastRadius);
             if (s05BlastVfx != null)
                 Object.Instantiate(s05BlastVfx, pair.mid, Quaternion.identity);
-            DamageEnemiesInSphere(pair.mid, radius, dmg);
+            DamageEnemiesInSphere(pair.mid, radius, dmg, null, -1f);
             if (!owner.isPossessed)
-                TryDamagePlayerInRadius(pair.mid, radius, dmg);
+                TryDamagePlayerInRadius(pair.mid, radius, dmg, -1f);
         }
     }
 

@@ -147,6 +147,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
         if (owner == null) return null;
         Enemy best = null;
         float bestSqr = detectRange * detectRange;
+        CombatHitboxDebug.DrawSphere(drawHitboxes, from, detectRange, 0f);
         Collider[] hits = Physics.OverlapSphere(from, detectRange, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {

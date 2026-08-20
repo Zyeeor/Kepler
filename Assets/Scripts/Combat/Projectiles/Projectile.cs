@@ -57,6 +57,7 @@ public class Projectile : MonoBehaviour
     void CheckHit()
     {
         float checkRadius = 0.8f;
+        CombatHitboxDebug.DrawSphere(true, transform.position, checkRadius, 0f);
         var hits = Physics.OverlapSphere(transform.position, checkRadius);
         foreach (var hit in hits)
         {

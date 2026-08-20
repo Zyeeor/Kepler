@@ -85,7 +85,7 @@ public abstract class EnemyAbility : MonoBehaviour
     [Header("Damage (if applicable)")]
     public float damage = 0f;
     [Header("Hitbox Debug")]
-    [Tooltip("Draw this ability's runtime physics queries when CombatHitboxDebug.Enabled is true.")]
+    [Tooltip("Legacy per-ability flag (unused for gating). Global toggle lives on GameManager → CombatHitboxDebugSettings.")]
     public bool drawHitboxes;
 
     /// <summary>Cooldown in seconds. 0 = no cooldown. Only meaningful for BasicAttack / Skill / Mobility.</summary>
@@ -444,13 +444,13 @@ public abstract class EnemyAbility : MonoBehaviour
             target.RegisterEffectVfx(definition, instance);
     }
 
-    protected List<Enemy> FindEnemiesInArc(Vector3 origin, Vector3 forward, float range, float angle, int layerMask = ~0)
+    protected List<Enemy> FindEnemiesInArc(Vector3 origin, Vector3 forward, float range, float angle, int layerMask = ~0, float hitboxDebugDuration = -1f)
     {
         List<Enemy> results = new List<Enemy>();
         forward.y = 0f;
         if (forward.sqrMagnitude < 0.0001f) return results;
         forward.Normalize();
-        CombatHitboxDebug.DrawArc(drawHitboxes, origin, forward, range, angle);
+        CombatHitboxDebug.DrawArc(drawHitboxes, origin, forward, range, angle, hitboxDebugDuration);
 
         Collider[] hits = Physics.OverlapSphere(origin, range, layerMask, QueryTriggerInteraction.Collide);
         HashSet<Enemy> unique = new HashSet<Enemy>();
@@ -466,14 +466,14 @@ public abstract class EnemyAbility : MonoBehaviour
         return results;
     }
 
-    protected HashSet<Enemy> DamageEnemiesAlongPath(Vector3 start, Vector3 end, float radius, float amount)
+    protected HashSet<Enemy> DamageEnemiesAlongPath(Vector3 start, Vector3 end, float radius, float amount, float hitboxDebugDuration = -1f)
     {
         HashSet<Enemy> results = new HashSet<Enemy>();
         Vector3 direction = end - start;
         float distance = direction.magnitude;
-        if (distance < 0.0001f) return DamageEnemiesInSphere(start, radius, amount);
+        if (distance < 0.0001f) return DamageEnemiesInSphere(start, radius, amount, null, hitboxDebugDuration);
         direction /= distance;
-        CombatHitboxDebug.DrawCapsule(drawHitboxes, start, end, radius);
+        CombatHitboxDebug.DrawCapsule(drawHitboxes, start, end, radius, hitboxDebugDuration);
 
         RaycastHit[] hits = Physics.SphereCastAll(start, radius, direction, distance, ~0, QueryTriggerInteraction.Collide);
         foreach (RaycastHit hit in hits)
@@ -489,8 +489,9 @@ public abstract class EnemyAbility : MonoBehaviour
     /// Try to find and damage the Player if they are within the given radius from a point.
     /// Returns true if the player was hit. Does NOT depend on targetMask — uses tag lookup.
     /// </summary>
-    protected bool TryDamagePlayerInRadius(Vector3 center, float radius, float amount)
+    protected bool TryDamagePlayerInRadius(Vector3 center, float radius, float amount, float hitboxDebugDuration = -1f)
     {
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, hitboxDebugDuration);
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null) return false;
         float dist = Vector3.Distance(center, playerObj.transform.position);
@@ -511,9 +512,9 @@ public abstract class EnemyAbility : MonoBehaviour
     /// This is used when the player possesses an enemy and needs to hit other enemies.
     /// Falls back to tag-based detection so it works regardless of LayerMask config.
     /// </summary>
-    protected void DamageEnemiesInBox(Vector3 center, Vector3 halfExtents, Quaternion orientation, float amount, System.Action<Enemy, Vector3> onHit = null)
+    protected void DamageEnemiesInBox(Vector3 center, Vector3 halfExtents, Quaternion orientation, float amount, System.Action<Enemy, Vector3> onHit = null, float hitboxDebugDuration = -1f)
     {
-        CombatHitboxDebug.DrawBox(drawHitboxes, center, halfExtents, orientation);
+        CombatHitboxDebug.DrawBox(drawHitboxes, center, halfExtents, orientation, hitboxDebugDuration);
         // Use All layers (~0) so we don't miss enemies due to targetMask misconfiguration
         Collider[] hits = Physics.OverlapBox(center, halfExtents, orientation, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
@@ -531,10 +532,10 @@ public abstract class EnemyAbility : MonoBehaviour
     /// Damage all valid enemy targets within an OverlapSphere, ignoring targetMask.
     /// Returns the set of enemies that were hit.
     /// </summary>
-    protected HashSet<Enemy> DamageEnemiesInSphere(Vector3 center, float radius, float amount, System.Action<Enemy, Vector3> onHit = null)
+    protected HashSet<Enemy> DamageEnemiesInSphere(Vector3 center, float radius, float amount, System.Action<Enemy, Vector3> onHit = null, float hitboxDebugDuration = -1f)
     {
         var hitEnemies = new HashSet<Enemy>();
-        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, hitboxDebugDuration);
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {

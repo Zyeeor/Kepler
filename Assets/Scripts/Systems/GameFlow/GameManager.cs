@@ -48,6 +48,7 @@ public class GameManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
+            CombatHitboxDebugSettings.EnsureOnGameManager();
 
             // 全局音频管理器由常驻 GameManager 统一创建（各场景不挂 AudioManager，
             // 避免场景内实例与常驻单例多实例竞态）。SceneBgm 组件仍留在各场景中，
@@ -104,6 +105,7 @@ public class GameManager : MonoBehaviour
     {
         AudioManager.EnsureInstance();
         AudioSettingsManager.EnsureInstance();
+        CombatHitboxDebugSettings.EnsureOnGameManager();
         soulTime = 15f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;

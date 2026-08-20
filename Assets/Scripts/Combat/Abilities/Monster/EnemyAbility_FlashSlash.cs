@@ -149,6 +149,7 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         // Use OverlapBox along the path center
         Vector3 halfExtents = new Vector3(slashWidth * 0.5f, slashHeight * 0.5f, length * 0.5f);
         Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
+        CombatHitboxDebug.DrawBox(drawHitboxes, mid, halfExtents, rotation, dashTrailDuration);
 
         // When possessed, hit all layers (to damage other enemies).
         // When AI-controlled, only hit targetMask (to avoid friendly fire).

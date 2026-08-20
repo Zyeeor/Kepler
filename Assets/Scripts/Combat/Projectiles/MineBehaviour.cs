@@ -19,7 +19,7 @@ public class MineBehaviour : MonoBehaviour
 
     void Update()
     {
-        CombatHitboxDebug.DrawSphere(drawHitboxes, transform.position, triggerRadius);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, transform.position, triggerRadius, 0f);
         lifetime -= Time.deltaTime;
         if (lifetime <= 0f)
         {
@@ -49,7 +49,7 @@ public class MineBehaviour : MonoBehaviour
     void Explode(Vector3 ignoredTargetPos)
     {
         Vector3 blastPos = transform.position;
-        CombatHitboxDebug.DrawSphere(drawHitboxes, blastPos, blastRadius);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, blastPos, blastRadius, blastVfxDuration);
         if (blastVfxPrefab != null)
         {
             var blast = Instantiate(blastVfxPrefab, blastPos, Quaternion.identity);

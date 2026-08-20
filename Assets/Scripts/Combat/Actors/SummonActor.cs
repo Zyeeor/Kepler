@@ -292,6 +292,7 @@ public class SummonActor : Enemy
         }
 
         Collider[] hits = Physics.OverlapSphere(transform.position, deathExplosionRadius, ~0, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawSphere(true, transform.position, deathExplosionRadius, deathExplosionVfxDuration);
         foreach (Collider hit in hits)
         {
             Enemy enemy = hit.GetComponentInParent<Enemy>();
