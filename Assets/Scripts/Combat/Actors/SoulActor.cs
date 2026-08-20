@@ -13,6 +13,8 @@ public class SoulActor : Actor
 
     [Header("Possession Suppression（附身期间由 PossessionManager 置位）")]
     public float possessYOffset = 0.5f;
+    [Tooltip("未附身（自由灵魂态）时的世界 Y 高度，避免贴地。")]
+    public float hoverHeight = 1f;
 
     /// <summary>附身期间 = true（PossessionManager.SetSuppressed 控制）。</summary>
     public bool IsSuppressed { get; private set; }
@@ -56,6 +58,7 @@ public class SoulActor : Actor
     {
         if (stats == null) stats = GetComponent<PlayerHealth>();
         if (combat == null) combat = GetComponent<PlayerCombat>();
+        if (hoverHeight <= 0f) hoverHeight = 1f;
         base.Awake(); // 挂载默认 Controller（PlayerController.Instance）
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Soul" });
     }
@@ -69,6 +72,8 @@ public class SoulActor : Actor
     {
         if (Controller == NullController.Instance && PlayerController.Instance != null)
             SetController(PlayerController.Instance);
+        if (!IsSuppressed && !IsInPossessionFlight)
+            EnforceHoverHeight();
     }
 
     /// <summary>
@@ -101,6 +106,7 @@ public class SoulActor : Actor
             gameObject.tag = "Player";
             SetController(PlayerController.Instance);
             SetSoulCollidersEnabled(true);
+            EnforceHoverHeight();
         }
     }
 
@@ -120,6 +126,7 @@ public class SoulActor : Actor
             gameObject.tag = "Player";
             SetController(PlayerController.Instance);
             SetSoulCollidersEnabled(true);
+            EnforceHoverHeight();
         }
     }
 
@@ -135,6 +142,21 @@ public class SoulActor : Actor
     public void SetPossessionPosition(Vector3 bodyPosition, float yOffset)
     {
         transform.position = bodyPosition + Vector3.up * yOffset;
+    }
+
+    /// <summary>回到自由灵魂态：保留 XZ，锁定到 <see cref="hoverHeight"/>。</summary>
+    public void PlaceInFreeSoulForm(Vector3 referencePosition)
+    {
+        transform.position = new Vector3(referencePosition.x, hoverHeight, referencePosition.z);
+    }
+
+    /// <summary>未附身时强制 Y = hoverHeight（默认 1），避免贴地。</summary>
+    public void EnforceHoverHeight()
+    {
+        Vector3 p = transform.position;
+        if (Mathf.Abs(p.y - hoverHeight) <= 0.0001f) return;
+        p.y = hoverHeight;
+        transform.position = p;
     }
 
     public void AttachToPossessionAnchor(Transform anchor)
@@ -181,6 +203,8 @@ public class SoulActor : Actor
             if (pm != null) FollowBody(pm.CurrentBody != null ? pm.CurrentBody.transform : null);
             return;
         }
+
+        EnforceHoverHeight();
         base.Update();
     }
 
@@ -253,7 +277,7 @@ public class SoulActor : Actor
 
         if (currentVelocity.sqrMagnitude <= 0.01f) return;
         Vector3 targetPos = ApplySpherecast(transform.position, currentVelocity.normalized, currentVelocity.magnitude * movementDeltaTime);
-        targetPos.y = transform.position.y;
+        targetPos.y = hoverHeight;
         transform.position = targetPos;
     }
 
