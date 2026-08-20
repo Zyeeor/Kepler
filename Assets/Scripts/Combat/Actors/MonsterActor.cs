@@ -237,6 +237,8 @@ public class MonsterActor : Actor
     private Vector3 aiVelocity; // AI 态加速度平滑
     private float aiCurrentTurnSpeed; // AI 态角速度平滑
     public bool IsAbilityFacingLocked { get; set; }
+    /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
+    public bool IsAbilityLocomotionLocked { get; set; }
 
     /// <summary>追击目标（Actor.Update 填充 ActorContext.PlayerTarget；AIController 使用）。</summary>
     protected override Transform PlayerTarget => targetPlayer;
@@ -440,7 +442,7 @@ public class MonsterActor : Actor
     /// </summary>
     protected override void ExecuteMovement(in ControlCommand cmd)
     {
-        if (IsMovementBlocked)
+        if (IsMovementBlocked || IsAbilityLocomotionLocked)
         {
             possessVelocity = Vector3.zero;
             aiVelocity = Vector3.zero;
@@ -1129,6 +1131,8 @@ public class MonsterActor : Actor
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
+        IsAbilityFacingLocked = false;
+        IsAbilityLocomotionLocked = false;
         SetAbilityComponentsEnabled(true);
         CancelAbilityRuntimeState();
         gameObject.tag = "Enemy";
