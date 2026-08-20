@@ -20,6 +20,9 @@ public class EnemyAbility_GreedHands : EnemyAbility
     public GameObject handHitVfxPrefab;
     public float orbitRadius = 1.4f;
     public float orbitHeight = 1.1f;
+    [Header("Debug")]
+    [Tooltip("Log inventory / orbit visual lifecycle for troubleshooting.")]
+    public bool debugLog = true;
 
     public int CurrentHands { get; private set; }
     public int InventoryMax => IsUpgradeUnlocked("GR-A01") ? Mathf.Max(baseInventoryMax, cardInventoryMax) : baseInventoryMax;
@@ -48,6 +51,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
         if (_wasPossessed)
             CurrentHands = Mathf.Clamp(initialPossessedHands, 0, InventoryMax);
         RefreshOrbitVisuals();
+        if (debugLog)
+            Debug.Log($"[GreedHands] Start on '{(owner != null ? owner.name : "<no owner>")}' (root '{transform.root.name}'): possessed={_wasPossessed}, hands={CurrentHands}/{InventoryMax}, handProjectilePrefab={(handProjectilePrefab != null ? handProjectilePrefab.name : "NULL -> sphere fallback")}", this);
     }
 
     public override bool CanTrigger()
@@ -81,6 +86,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
             {
                 _regenTimer = 0f;
                 CurrentHands++;
+                if (debugLog)
+                    Debug.Log($"[GreedHands] '{owner.name}' regen -> hands={CurrentHands}/{InventoryMax}", this);
                 RefreshOrbitVisuals();
             }
         }
@@ -106,6 +113,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
         CurrentHands = 0;
         RefreshOrbitVisuals();
         _regenTimer = 0f;
+        if (debugLog)
+            Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' dump {toRelease} hand(s)", this);
 
         bool flank = IsUpgradeUnlocked("GR-A07");
         bool retarget = IsUpgradeUnlocked("GR-A02");
@@ -207,6 +216,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
         GreedHandProjectile hand = go.GetComponent<GreedHandProjectile>();
         if (hand == null) hand = go.AddComponent<GreedHandProjectile>();
         hand.Launch(this, owner, target, damage > 0f ? damage : handDamage, retarget, spawnOnKill, flank, left, derived, handHitVfxPrefab);
+        if (debugLog)
+            Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' fired hand -> '{(target != null ? target.name : "<none>")}' (flank={flank}, left={left}, derived={derived})", go);
     }
 
     private void RefreshOrbitVisuals()
@@ -234,6 +245,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
             if (projectile != null) Destroy(projectile);
             vis.name = "GreedHandOrbit";
             _orbitVisuals.Add(vis);
+            if (debugLog)
+                Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' orbit visual created ({_orbitVisuals.Count}/{CurrentHands}) from '{(handProjectilePrefab != null ? handProjectilePrefab.name : "sphere fallback")}'", vis);
         }
     }
 
@@ -261,6 +274,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
     public override void ResetForOwnerReuse()
     {
         _dumping = false;
+        _wasPossessed = false;
         CurrentHands = 0;
         _regenTimer = 0f;
         base.ResetForOwnerReuse();
