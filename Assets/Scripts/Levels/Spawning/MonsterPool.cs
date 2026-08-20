@@ -3,6 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// Reuses spawned monster roots. MonsterActor owns its state reset before an instance is reused.
+/// 生命周期（Kimi 评审整改 P2-4）：EnsureInstance 常驻（DDOL，与 AudioManager 同构）——
+/// 池跨场景存活，重进对局零重新实例化；死亡 key 在重建实例时顺手清理（防字典单调增长）。
 /// </summary>
 public class MonsterPool : MonoBehaviour
 {
@@ -11,19 +13,27 @@ public class MonsterPool : MonoBehaviour
     private readonly Dictionary<GameObject, Queue<GameObject>> availableByPrefab = new Dictionary<GameObject, Queue<GameObject>>();
     private readonly Dictionary<GameObject, GameObject> prefabByInstance = new Dictionary<GameObject, GameObject>();
 
-    public static MonsterPool Instance
+    public static MonsterPool Instance => EnsureInstance();
+
+    /// <summary>确保常驻池实例（BootStrapper 或首次刷怪调用）。</summary>
+    public static MonsterPool EnsureInstance()
     {
-        get
+        if (instance != null) return instance;
+
+        instance = FindObjectOfType<MonsterPool>();
+        if (instance == null)
         {
-            if (instance != null) return instance;
-
-            instance = FindObjectOfType<MonsterPool>();
-            if (instance != null) return instance;
-
             GameObject poolRoot = new GameObject("MonsterPool");
             instance = poolRoot.AddComponent<MonsterPool>();
-            return instance;
         }
+        return instance;
+    }
+
+    void Start()
+    {
+        // DDOL 放 Start（与 AudioManager 同构）：Awake 期间（场景加载中）调用 DontDestroyOnLoad
+        // 可能失效导致常驻池随场景卸载销毁；Start 时场景已加载完成，DDOL 可靠。
+        DontDestroyOnLoad(gameObject);
     }
 
     /// <summary>Playable ground plane Y. CapsuleCollider bottoms snap here on spawn.</summary>
@@ -46,6 +56,8 @@ public class MonsterPool : MonoBehaviour
         if (instanceToSpawn == null)
         {
             // Keep inactive until pose + state reset are done so OnEnable never sees a stale transform.
+            // 顺手清理死亡 key（跨场景后旧实例已销毁）：防 prefabByInstance 单调增长
+            CleanDeadKeys();
             instanceToSpawn = Instantiate(prefab);
             instanceToSpawn.SetActive(false);
             prefabByInstance[instanceToSpawn] = prefab;
@@ -124,6 +136,15 @@ public class MonsterPool : MonoBehaviour
     {
         if (monster == null) return;
 
+        // 防附身回收（主界面幽灵 bug 根因①）：被附身怪的子物体锚点下挂着灵魂，
+        // 直接回池会把灵魂连带带入 DDOL 场景，之后 Detach 时灵魂成为 DDOL 根跨场景存活。
+        // 被附身怪不得回池：附身结束走正常死亡→Fade 流程再回收。
+        if (monster.isPossessed)
+        {
+            Debug.LogWarning($"[MonsterPool] 拒绝回收被附身怪 '{monster.name}'（灵魂仍挂在其锚点下，回池会污染 DDOL 场景）。", monster);
+            return;
+        }
+
         GameObject instanceToReturn = FindPooledRoot(monster.transform);
         if (!prefabByInstance.TryGetValue(instanceToReturn, out GameObject prefab))
         {
@@ -170,5 +191,20 @@ public class MonsterPool : MonoBehaviour
             current = current.parent;
         }
         return transformToResolve.root.gameObject;
+    }
+
+    /// <summary>清理 prefabByInstance 中已销毁的实例 key（Unity == 重载判 fake-null）。</summary>
+    void CleanDeadKeys()
+    {
+        var dead = new List<GameObject>();
+        foreach (var kv in prefabByInstance)
+            if (kv.Key == null) dead.Add(kv.Key);
+        for (int i = 0; i < dead.Count; i++)
+            prefabByInstance.Remove(dead[i]);
+        var deadPrefabs = new List<GameObject>();
+        foreach (var kv in availableByPrefab)
+            if (kv.Key == null) deadPrefabs.Add(kv.Key);
+        for (int i = 0; i < deadPrefabs.Count; i++)
+            availableByPrefab.Remove(deadPrefabs[i]);
     }
 }

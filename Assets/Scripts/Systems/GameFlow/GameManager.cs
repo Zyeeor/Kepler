@@ -30,6 +30,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("正式流程开关：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；同时屏蔽调试显示（F2 面板/作弊提示/刷怪面板）。关闭则直接进入当前场景（调试模式）。")]
     public bool useFormalFlow = false;
 
+    [Header("Bullet Time（子弹时间）")]
+    [Tooltip("子弹时间的时间缩放倍率（全局单源：PossessionManager 触发的子弹时间亦读此值）。")]
+    [Range(0.05f, 1f)] public float bulletTimeScale = 0.2f;
+
     public enum GameState
     {
         Soul,        // 灵魂态
@@ -40,6 +44,12 @@ public class GameManager : MonoBehaviour
     
     /// <summary>正式流程（屏蔽调试显示/先进主菜单）。供调试组件查询：调试组件在 Update/OnGUI 开头检查并跳过。</summary>
     public static bool IsFormalFlow => Instance != null && Instance.useFormalFlow;
+
+    /// <summary>
+    /// 游戏状态变更事件（Kimi 评审断环：GameManager 不再直接调用各系统，改为广播；
+    /// 订阅方如 PossessionManager 自取所需状态处理，并在自身销毁时退订）。
+    /// </summary>
+    public static event System.Action<GameState> OnStateChanged;
 
     void Awake()
     {
@@ -78,11 +88,34 @@ public class GameManager : MonoBehaviour
         // 对局状态归 RunSession 管（新局/继续/重开由会话决定初始值），
         // 本层只负责系统级常驻，不再无条件重置（否则"返回主菜单再进入"会清空进度）。
         Debug.Log($"GameManager: Scene loaded - {scene.name}");
+        // 敌方注册表兜底清理：正常路径旧场景怪随卸载触发 OnDisable 逐个注销；
+        // 极端情况（卸载异常/DDOL 提升）残留 fake-null，此处清空（幂等，新场景怪 OnEnable 重新注册）。
+        EnemyRegistry.Clear();
         // 音频管理器丢失自愈（幂等）：常驻实例正常时无操作；若因极端时序被销毁，
         // 在场景加载完成后重建（此时 Start 的 DontDestroyOnLoad 可靠）。
         AudioManager.EnsureInstance();
         // 每次场景加载收敛 AudioListener（新场景相机可能带启用的监听器，且不止一个时需收敛）
         EnsureSingleAudioListener();
+        // DDOL 玩家对象兜底清理（主界面幽灵 bug 防御面）：
+        // - 进主菜单：只销毁无 Showcase 标记的残留 Player（bug 残留），保留正规展示灵魂
+        // - 进对局场景：销毁所有 DDOL Player（含展示灵魂，防双 Player 静态 Instance 竞争）
+        PurgeDdolSouls(keepShowcase: scene.name == "MainMenu");
+    }
+
+    /// <summary>
+    /// 清理 DontDestroyOnLoad 场景中的玩家灵魂对象。正常路径玩家随对局场景卸载销毁，
+    /// 出现在 DDOL 中的 Player 只可能来自：历史 bug 残留（被附身怪回池连带）或主菜单展示模式。
+    /// </summary>
+    static void PurgeDdolSouls(bool keepShowcase)
+    {
+        var souls = FindObjectsOfType<SoulActor>(true);
+        foreach (var s in souls)
+        {
+            if (s == null || s.gameObject.scene.name != "DontDestroyOnLoad") continue;
+            if (keepShowcase && s.GetComponent<SoulMenuShowcase>() != null) continue;
+            Debug.LogWarning($"[GameManager] 清理 DDOL 残留玩家对象 '{s.gameObject.name}'（场景加载兜底）。");
+            Destroy(s.gameObject);
+        }
     }
 
     /// <summary>
@@ -146,23 +179,22 @@ public class GameManager : MonoBehaviour
         {
             case GameState.Soul:
                 currentDrainRate = soulDrainRate;
-                Time.timeScale = 1f;
+                TimeScaleManager.Pop(TimeDomain.BulletTime);   // 退出子弹时间（未开启时幂等）
                 break;
             case GameState.Possessed:
                 currentDrainRate = possessedDrainRate;
-                Time.timeScale = 1f;
+                TimeScaleManager.Pop(TimeDomain.BulletTime);
                 break;
             case GameState.BulletTime:
-                Time.timeScale = 0.2f;   // 子弹时间
+                TimeScaleManager.Push(TimeDomain.BulletTime, bulletTimeScale);   // 子弹时间（单源：bulletTimeScale 字段）
                 break;
             case GameState.GameOver:
-                // 附身编排防御：GameOver 时显式终止飞行协程/附身态，防止协程用 unscaledDeltaTime 继续推进覆盖 GameOver
-                if (PossessionManager.Instance != null) PossessionManager.Instance.OnGameOver();
                 ShowGameOverUI();
                 // Run 级流程：失败打断边 → Failed（终态），UIManager 订阅后弹 GAME OVER 结算
                 RunSession.EnsureInstance().TransitionTo(RunPhase.Failed);
                 break;
         }
+        OnStateChanged?.Invoke(newState);   // 广播状态变更（订阅方如 PossessionManager 自取所需状态处理）
         Debug.Log($"State: {newState}");
     }
     
@@ -172,14 +204,14 @@ public class GameManager : MonoBehaviour
         // UIManager 存在时不本地立即显示（避免双重弹窗），仅停时间冻结战斗（死亡动画暂停展示）。
         if (UIManager.Instance != null)
         {
-            Time.timeScale = 0f;
+            TimeScaleManager.Push(TimeDomain.GameOver, 0f);
             return;
         }
         // UIManager 缺失时的本地回退显示
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
-            Time.timeScale = 0f;
+            TimeScaleManager.Push(TimeDomain.GameOver, 0f);
             Debug.Log("GameOver panel displayed");
 
             // Show and unlock cursor so the player can click UI buttons
@@ -188,19 +220,10 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Time.timeScale = 1f;
+            // 无任何面板可显示：放行时间（原意图保留；正常情况下此路径不可达）
+            TimeScaleManager.Pop(TimeDomain.GameOver);
             Debug.LogWarning("GameOver panel reference is null!");
         }
-    }
-
-    void GameOver()
-    {
-        currentState = GameState.GameOver;
-        Debug.Log("GAME OVER - Soul time depleted!");
-        ShowGameOverUI();
-        // Run 级流程：失败打断边 → Failed（终态），UIManager 订阅后弹 GAME OVER 结算。
-        // 放 ShowGameOverUI 之后：先停战斗态（含本地兜底显示），再推进全局流程。
-        RunSession.EnsureInstance().TransitionTo(RunPhase.Failed);
     }
 
     /// <summary>
@@ -214,6 +237,6 @@ public class GameManager : MonoBehaviour
         gameTimer = 0f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;
-        Time.timeScale = 1f;
+        TimeScaleManager.ResetAll();   // 场景重开：清空全部时间请求，恢复 1
     }
 }

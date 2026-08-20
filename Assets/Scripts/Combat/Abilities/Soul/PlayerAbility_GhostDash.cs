@@ -24,14 +24,12 @@ public class PlayerAbility_GhostDash : PlayerAbility
         newPos.y = owner.transform.position.y;
         owner.transform.position = newPos;
 
-        var enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (var enemyObj in enemies)
+        foreach (var enemy in EnemyRegistry.All)
         {
-            float dist = Vector3.Distance(owner.transform.position, enemyObj.transform.position);
+            if (enemy == null) continue;
+            float dist = Vector3.Distance(owner.transform.position, enemy.transform.position);
             if (dist > 0.5f) continue;
-            var enemy = enemyObj.GetComponent<Enemy>();
-            if (enemy != null)
-                DealDamageToEnemy(enemy, damage);
+            DealDamageToEnemy(enemy, damage);
         }
     }
 }

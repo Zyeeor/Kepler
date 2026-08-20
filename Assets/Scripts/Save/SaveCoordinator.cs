@@ -152,8 +152,15 @@ public static class SaveCoordinator
             }
             if (data.schemaVersion != SchemaVersion)
             {
-                Debug.LogError($"[SaveCoordinator] 存档版本不兼容（{data.schemaVersion} ≠ {SchemaVersion}），已作废。");
-                return null;
+                // 版本不符：走迁移链（SaveMigrator 逐版本升级）；缺迁移函数才作废
+                int from = data.schemaVersion;
+                if (!SaveMigrator.TryMigrate(data, from, out var migrated))
+                {
+                    Debug.LogError($"[SaveCoordinator] 存档版本 {from} 无法迁移至 {SchemaVersion}（缺迁移函数），已作废。");
+                    return null;
+                }
+                Debug.Log($"[SaveCoordinator] 存档已迁移：v{from} → v{SchemaVersion}。");
+                data = migrated;
             }
             return data;
         }

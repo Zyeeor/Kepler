@@ -143,6 +143,10 @@ public class RunSession : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        // 场景挂载路径警告（Kimi 评审整改）：RunSession 应只经 EnsureInstance 创建（DDOL 常驻）。
+        // 场景内挂载的实例不做 DDOL，会随场景卸载销毁、内存态全丢。
+        if (!Application.isPlaying && transform.parent == null)
+            Debug.LogWarning($"[RunSession] 检测到场景内挂载 RunSession：请移除场景实例（BootStrapper 已在启动时 EnsureInstance 创建常驻实例）。", this);
         Instance = this;
     }
 

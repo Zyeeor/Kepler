@@ -4123,6 +4123,8 @@ MonoBehaviour:
   quitGameButton: {fileID: 1703707789}
   quitGameButtonText: {fileID: 1293782723}
   battleSceneName: EnemyAiTest
+  soulShowcasePrefab: {fileID: 6619887426231394227, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5, type: 3}
+  soulSpawnPosition: {x: 0, y: 1, z: 8}
   settingsPanel: {fileID: 634282253}
   confirmDialog: {fileID: 1055795745}
   mainMenuPanel: {fileID: 1003779479}

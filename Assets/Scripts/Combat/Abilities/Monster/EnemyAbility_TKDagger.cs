@@ -141,9 +141,9 @@ public class EnemyAbility_TKDagger : EnemyAbility
             Enemy best = null;
             float bestDist = float.MaxValue;
             Vector3 ownerPos = owner.transform.position;
-            foreach (var e in FindObjectsOfType<Enemy>())
+            foreach (var e in EnemyRegistry.All)
             {
-                if (!owner.CanDamage(e)) continue;
+                if (e == null || !owner.CanDamage(e)) continue;
                 float d = Vector3.Distance(ownerPos, e.transform.position);
                 if (d <= detectRange && d < bestDist) { bestDist = d; best = e; }
             }

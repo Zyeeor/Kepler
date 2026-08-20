@@ -5,10 +5,8 @@ using UnityEngine;
 /// Scene-level possession orchestrator. Possession switches the shared PlayerController
 /// from SoulActor to MonsterActor, while PossessionBehavior resolves right-click targets.
 /// </summary>
-public class PossessionManager : MonoBehaviour
+public class PossessionManager : SceneSingleton<PossessionManager>
 {
-    public static PossessionManager Instance { get; private set; }
-
     [Header("Possession")]
     public float possessFlySpeedMultiplier = 5f;
     public float possessYOffset = 0.5f;
@@ -18,7 +16,7 @@ public class PossessionManager : MonoBehaviour
     public float decayInterval = 1f;
 
     [Header("Bullet Time")]
-    [Range(0.05f, 1f)] public float bulletTimeScale = 0.2f;
+    [Tooltip("子弹时间持续时长（倍率单源在 GameManager.bulletTimeScale）。")]
     [Min(0.01f)] public float bulletTimeDuration = 2f;
 
     public enum SwitchState { Idle, Flying, Possessing, Releasing }
@@ -39,23 +37,32 @@ public class PossessionManager : MonoBehaviour
     private MonsterActor reservedBody;
     private bool handlingGameOver;
     private bool ownsBulletTime;
-    private float bulletTimeRestoreScale = 1f;
     private int lastPossessionInputFrame = -1;
 
-    void Awake()
+    protected override void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
+        base.Awake();   // 防重复注册：已有实例时 Destroy 本对象（Destroy 延迟到帧末，须自行跳过后续初始化）
+        if (Instance != this) return;
         State = SwitchState.Idle;
         soul = FindObjectOfType<SoulActor>();
         behavior = GetComponent<PossessionBehavior>();
         if (behavior == null) behavior = gameObject.AddComponent<PossessionBehavior>();
         behavior.Initialize(this);
+        // 断环（Kimi 评审）：GameOver 通知由 GameManager 状态事件驱动，GameManager 不再认识本类；
+        // 本类订阅常驻 GameManager 的静态事件（场景级单例须在 OnDestroy 退订，防悬空委托）。
+        GameManager.OnStateChanged += HandleGameManagerStateChanged;
+    }
+
+    protected override void OnDestroy()
+    {
+        GameManager.OnStateChanged -= HandleGameManagerStateChanged;   // 场景卸载退订（GameManager 常驻）
+        base.OnDestroy();                                               // 清 Instance
+    }
+
+    void HandleGameManagerStateChanged(GameManager.GameState state)
+    {
+        if (state == GameManager.GameState.GameOver)
+            OnGameOver();
     }
 
     void OnDisable()
@@ -100,21 +107,6 @@ public class PossessionManager : MonoBehaviour
         CurrentBody.currentHealth = 0f;
         Debug.Log("[Possession] Current possessed body expired from decay.");
         NotifyBodyDied();
-    }
-
-    private void ProcessPossessionInput()
-    {
-        if (PlayerController.IsGameplayInputBlocked) return;
-        if (!Input.GetMouseButtonDown(1)) return;
-
-        PlayerController controller = PlayerController.Instance;
-        if (controller == null)
-        {
-            Debug.LogWarning("[PossessionInput] Ignored manager right-click: PlayerController is missing.");
-            return;
-        }
-
-        TryRequestPossessFromInput(controller.GetMouseRay(), "PossessionManager");
     }
 
     public bool TryRequestPossessFromInput(Ray aimRay, string source)
@@ -304,18 +296,18 @@ public class PossessionManager : MonoBehaviour
 
     private IEnumerator BulletTimeRoutine()
     {
-        bulletTimeRestoreScale = Time.timeScale;
         ownsBulletTime = true;
+        // SwitchState(BulletTime) 内部经 TimeScaleManager.Push(BulletTime, GameManager.bulletTimeScale) 生效（单写点+单源）
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.BulletTime);
-        Time.timeScale = bulletTimeScale;
-        Debug.Log($"[Possession] Bullet time started: scale={bulletTimeScale:F2}, duration={bulletTimeDuration:F2}s");
+        float scale = GameManager.Instance != null ? GameManager.Instance.bulletTimeScale : 0.2f;
+        Debug.Log($"[Possession] Bullet time started: scale={scale:F2}, duration={bulletTimeDuration:F2}s");
         yield return new WaitForSecondsRealtime(bulletTimeDuration);
 
         if (ownsBulletTime && State == SwitchState.Possessing && !handlingGameOver)
         {
             ownsBulletTime = false;
-            if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
-            else Time.timeScale = bulletTimeRestoreScale;
+            if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);   // 内部 Pop(BulletTime)
+            else TimeScaleManager.Pop(TimeDomain.BulletTime);
         }
 
         bulletTimeRoutine = null;
@@ -493,9 +485,10 @@ public class PossessionManager : MonoBehaviour
                     ? GameManager.GameState.Possessed
                     : GameManager.GameState.Soul);
             }
-            else if (Mathf.Approximately(Time.timeScale, bulletTimeScale))
+            else
             {
-                Time.timeScale = bulletTimeRestoreScale;
+                // GameManager 缺失或 GameOver 中：直接撤子弹时间请求（GameOver 冻结优先级更高，不受影响）
+                TimeScaleManager.Pop(TimeDomain.BulletTime);
             }
         }
         ownsBulletTime = false;

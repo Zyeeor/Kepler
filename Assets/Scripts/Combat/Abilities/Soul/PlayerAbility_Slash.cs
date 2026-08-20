@@ -33,16 +33,14 @@ public class PlayerAbility_Slash : PlayerAbility
         Vector3 slashOrigin = owner.transform.position + forward * 0.5f;
         CreateSlashArc(slashOrigin, forward, slashRange);
 
-        var enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (var enemyObj in enemies)
+        foreach (var enemy in EnemyRegistry.All)
         {
-            float dist = Vector3.Distance(slashOrigin, enemyObj.transform.position);
+            if (enemy == null || enemy.isDowned || enemy.isPossessed) continue;
+            float dist = Vector3.Distance(slashOrigin, enemy.transform.position);
             if (dist > slashRange) continue;
-            Vector3 toEnemy = (enemyObj.transform.position - owner.transform.position).normalized;
+            Vector3 toEnemy = (enemy.transform.position - owner.transform.position).normalized;
             if (Vector3.Dot(forward, toEnemy) < 0f) continue;
-            var enemy = enemyObj.GetComponent<Enemy>();
-            if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
-                DealDamageToEnemy(enemy, damage);
+            DealDamageToEnemy(enemy, damage);
         }
     }
 

@@ -105,9 +105,9 @@ public class EnemyAbility_ChainPull : EnemyAbility
         Vector3 forward = owner.transform.forward;
         Enemy best = null;
         float bestDist = Mathf.Infinity;
-        foreach (var e in FindObjectsOfType<Enemy>())
+        foreach (var e in EnemyRegistry.All)
         {
-            if (e == owner || e.isDowned || e.isPossessed) continue;
+            if (e == null || e == owner || e.isDowned || e.isPossessed) continue;
             Vector3 to = e.transform.position - origin;
             to.y = 0f;
             float d = to.magnitude;

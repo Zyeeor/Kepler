@@ -179,7 +179,9 @@ public class EnemyAbility_GreedHands : EnemyAbility
     public void SpawnDerivedHandsFromKill(Vector3 origin, GreedHandProjectile parent)
     {
         if (parent == null || parent.isDerived) return;
-        int count = Random.Range(Mathf.Max(1, parent.spawnOnKillMin), Mathf.Max(parent.spawnOnKillMin, parent.spawnOnKillMax) + 1);
+        int count = owner != null
+            ? owner.AiRandomInt(Mathf.Max(1, parent.spawnOnKillMin), Mathf.Max(parent.spawnOnKillMin, parent.spawnOnKillMax) + 1)
+            : Random.Range(Mathf.Max(1, parent.spawnOnKillMin), Mathf.Max(parent.spawnOnKillMin, parent.spawnOnKillMax) + 1);
         bool flank = IsUpgradeUnlocked("GR-A07");
         for (int i = 0; i < count; i++)
         {

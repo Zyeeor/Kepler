@@ -243,7 +243,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             Vector3 bulletSpawnPos = pos + Vector3.up * sloth02BulletYOffset;
             for (int i = 0; i < bulletCount; i++)
             {
-                Vector3 randomDir = Random.onUnitSphere;
+                Vector3 randomDir = owner != null ? owner.AiRandomUnitSphere() : Random.onUnitSphere;
                 randomDir.y = Mathf.Abs(randomDir.y);
                 randomDir.Normalize();
                 var bullet = SpawnVfxTracked(projectilePrefab, bulletSpawnPos, Quaternion.LookRotation(randomDir, Vector3.up));

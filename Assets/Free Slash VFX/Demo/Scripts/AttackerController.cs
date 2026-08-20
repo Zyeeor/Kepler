@@ -76,6 +76,8 @@ namespace MaykerStudio.Demo
             timeScaleSlider.value = Time.timeScale;
             timeScaleSlider.onValueChanged.AddListener((value) =>
             {
+                // 【时间域豁免】第三方特效包 Demo 脚本（SampleScene 独立演示，不参与正式玩法），
+                // 不接入项目 TimeScaleManager（全仓单写点豁免项，仅此一处）。
                 Time.timeScale = value;
                 timeScaleValueTxt.text = value.ToString("0.00");
             });

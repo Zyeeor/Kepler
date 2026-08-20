@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 /// <summary>
+/// 【调试隔离豁免】被生产类 CameraDirector.Awake（EnsureOn 自举挂载）引用，无法 #if 隔离；
+/// 运行时安全由任务 1 补的 IsFormalFlow 大门保证（正式流程禁用 + LateUpdate 兜底防冻结）。
+///
 /// 调试飞行相机（开发工具，挂在主相机上，与 CameraDirector 同对象）：
 ///   - 按 F4 进入自由视角：画面暂停（timeScale=0），WASD 水平平移 / QE 升降 /
 ///     鼠标右键拖拽旋转 / 滚轮沿视线推进 / Shift 加速；
@@ -36,7 +39,6 @@ public class DebugCameraController : MonoBehaviour
     Quaternion _savedRot;
     float _yaw;
     float _pitch;
-    float _timeScaleBefore;
     bool _savedOrthographic;
     float _savedOrthoSize;
 
@@ -65,6 +67,14 @@ public class DebugCameraController : MonoBehaviour
 
     void Update()
     {
+        // Debug 大门：正式流程禁用调试相机（防出包后玩家误按 F4 冻结游戏）。
+        // 若已处于调试态，强制退出还原 timeScale/镜头——否则 LateUpdate 会每帧强制 timeScale=0 冻结游戏。
+        if (GameManager.IsFormalFlow)
+        {
+            if (_active) ExitDebug();
+            return;
+        }
+
         // F4 切换进入/退出
         if (Input.GetKeyDown(KeyCode.F4))
         {
@@ -77,9 +87,13 @@ public class DebugCameraController : MonoBehaviour
     {
         if (!_active) return;
 
-        // 每帧强制暂停（LateUpdate 在所有 Update/协程之后执行，压制 GameManager/PossessionManager
-        // 等每帧写回 timeScale 的逻辑——否则 EnterDebug 的一次性设置下一帧就被覆盖，世界不会真暂停）。
-        Time.timeScale = 0f;
+        // 兜底：正式流程下即使 Update 未及时退出，也拒绝冻结（双保险）
+        if (GameManager.IsFormalFlow)
+        {
+            _active = false;
+            TimeScaleManager.Pop(TimeDomain.DebugCamera);
+            return;
+        }
 
         // 顿帧/子弹时间时调试相机照常可用（unscaled）
         float dt = Time.unscaledDeltaTime;
@@ -152,9 +166,8 @@ public class DebugCameraController : MonoBehaviour
             _savedOrthoSize = _cam.orthographicSize;
             if (_cam.orthographic) _cam.orthographic = false;
         }
-        // 暂停世界（画面立即冻结 = 明显进入反馈；退出时恢复原 timeScale，兼容子弹时间等缩放）
-        _timeScaleBefore = Time.timeScale;
-        Time.timeScale = 0f;
+        // 暂停世界（DebugCamera 域优先级最高，天然压住一切；退出时 Pop 恢复栈）
+        TimeScaleManager.Push(TimeDomain.DebugCamera, 0f);
         _active = true;
         Debug.Log("[DebugCamera] F4 进入调试相机（画面已暂停，临时透视投影）：WASD 平移 / QE 升降 / 左键平移 / 右键旋转 / 中键平移 / 滚轮缩放 / Shift 加速。再按 F4 退出并还原。");
     }
@@ -170,9 +183,9 @@ public class DebugCameraController : MonoBehaviour
             _cam.orthographic = _savedOrthographic;
             _cam.orthographicSize = _savedOrthoSize;
         }
-        Time.timeScale = _timeScaleBefore;
+        TimeScaleManager.Pop(TimeDomain.DebugCamera);
         _active = false;
-        Debug.Log($"[DebugCamera] F4 退出调试相机，镜头/投影（orthographic={_savedOrthographic}）/时间（timeScale={_timeScaleBefore}）已还原。");
+        Debug.Log($"[DebugCamera] F4 退出调试相机，镜头/投影（orthographic={_savedOrthographic}）已还原。");
     }
 
     void OnGUI()

@@ -23,7 +23,7 @@ using System.Collections.Generic;
 /// （RoomFlowController 或 autoShowChoiceUI 打开 CoreChoiceUI，timeScale=0）→
 /// IsDrafting 轮询等待选卡会话结束 → 下一波自动开始（选卡暂停期间不会刷怪）。
 /// </summary>
-public class WaveManager : MonoBehaviour
+public class WaveManager : SceneSingleton<WaveManager>
 {
     /// <summary>当前正在运行的波次索引。</summary>
     public int CurrentWaveIndex { get; private set; } = -1;
@@ -35,9 +35,6 @@ public class WaveManager : MonoBehaviour
     public bool IsWaveActive { get; private set; }
     /// <summary>时间波剩余秒数（仅 Timed 波运行中 &gt;0；数量波/未运行 = 0）。供 UI 倒计时显示。</summary>
     public float TimeWaveRemaining { get; private set; }
-
-    /// <summary>全局单例（场景中挂一个 WaveManager）。</summary>
-    public static WaveManager Instance { get; private set; }
 
     /// <summary>事件：波次开始。</summary>
     public event Action<int, WaveConfig> OnWaveStarted;
@@ -88,15 +85,16 @@ public class WaveManager : MonoBehaviour
     /// <summary>调试跳波标志（DebugSkipWave 置位，波循环下一帧检测后视为清场过波）。</summary>
     private bool debugSkipWave;
 
-    void Awake()
+    protected override void Awake()
     {
-        Instance = this;
+        base.Awake();   // 防重复注册（已有实例则销毁本对象）
+        if (Instance != this) return;
         TimeWaveRemaining = 0f;
     }
 
-    void OnDestroy()
+    protected override void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        base.OnDestroy();   // 清 Instance
     }
 
 #if UNITY_EDITOR

@@ -217,19 +217,17 @@ public class CameraDirector : MonoBehaviour
     private IEnumerator HitStopRoutine(float duration, float timeScale)
     {
         // Don't fight a full pause (menu / death / bullet-time controlled elsewhere).
-        float restore = Time.timeScale;
-        if (restore <= 0.0001f)
+        if (Time.timeScale <= 0.0001f)
         {
             _hitStopRoutine = null;
             yield break;
         }
 
-        Time.timeScale = timeScale;
+        // HitStop 域请求：顿帧期间压住 BulletTime 等低优先级域；结束 Pop 恢复（栈自动仲裁，无需 Approximately 守卫）
+        TimeScaleManager.Push(TimeDomain.HitStop, timeScale);
         yield return new WaitForSecondsRealtime(duration);
 
-        // Only restore if no other system took over the time scale meanwhile.
-        if (Mathf.Approximately(Time.timeScale, timeScale))
-            Time.timeScale = restore;
+        TimeScaleManager.Pop(TimeDomain.HitStop);
         _hitStopRoutine = null;
     }
 

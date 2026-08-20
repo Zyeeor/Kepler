@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -415,3 +416,4 @@ public class MonsterPossessionCheat : MonoBehaviour
         Debug.Log("[MonsterPossessionCheat] " + message);
     }
 }
+#endif

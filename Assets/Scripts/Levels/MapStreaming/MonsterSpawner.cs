@@ -46,6 +46,12 @@ public class MonsterSpawner : MonoBehaviour
     public int TrackedMonsterCount { get; private set; }
 
     /// <summary>
+    /// 全局递增刷怪序号：作为 AI 种子流的 salt（MonsterActor.InitAiRng）。
+    /// 刷怪顺序由 DomainWave 种子流决定（同种子同顺序），故序号随顺序可复现。
+    /// </summary>
+    private int spawnSequence;
+
+    /// <summary>
     /// 波次刷怪随机流（种子确定性）：由 WaveManager 每波设置（WorldSeed 派生），
     /// 取点/群系散射等全部随机走此流——同种子下怪物种类与位置可复现。
     /// 未设置时（直接调用方）回退全局 Random 语义。
@@ -146,6 +152,8 @@ public class MonsterSpawner : MonoBehaviour
             return null;
         }
         monster.aiActiveOverride = true; // 波次怪直接激活索敌
+        // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
+        monster.InitAiRng(spawnSequence++);
         Track(home, monster, prefab, isWaveMonster: true); // 不随 Chunk 回收/写快照，退场由波次系统裁决
         if (logSpawns)
             Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}）。");
@@ -200,6 +208,9 @@ public class MonsterSpawner : MonoBehaviour
     public void RecycleWaveMonster(MonsterActor monster)
     {
         if (monster == null) return;
+        // 时间波清场跳过被附身怪：回收会把灵魂连带带入 DDOL 场景（MonsterPool.Return 也有兜底，
+        // 此处提前跳过以保持追踪数据一致——附身结束走正常死亡流程）。
+        if (monster.isPossessed) return;
         ChunkCoord home = default;
         if (trackInfoByMonster.TryGetValue(monster, out var info))
         {

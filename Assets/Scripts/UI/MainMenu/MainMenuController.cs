@@ -23,6 +23,12 @@ public class MainMenuController : MonoBehaviour
     [Tooltip("开始游戏时加载的战斗场景名")]
     public string battleSceneName = "CombatTest";
 
+    [Header("Soul Showcase (Main Menu)")]
+    [Tooltip("主菜单原生展示灵魂 prefab（Player.prefab）。游戏启动直进主菜单时实例化，让主角一开始就在主界面（背景后可移动）。")]
+    public GameObject soulShowcasePrefab;
+    [Tooltip("原生展示灵魂出生位置（世界坐标；仅当场景中还没有灵魂时生效）。")]
+    public Vector3 soulSpawnPosition = new Vector3(0f, 1f, 8f);
+
     [Header("Sub Panels")]
     public SettingsPanel settingsPanel;
     public ConfirmDialog confirmDialog;
@@ -33,6 +39,10 @@ public class MainMenuController : MonoBehaviour
 
     void Start()
     {
+        // 主界面灵魂展示：对局带回的灵魂已在（DDOL），否则创建原生展示灵魂——
+        // 保证"对局结束前后都在"，游戏启动一开始主界面就有主角。
+        SoulMenuShowcase.SpawnNativeShowcase(soulShowcasePrefab, soulSpawnPosition);
+
         // Initialize sub-panels (they may start inactive, so their own Start won't run)
         if (settingsPanel != null) settingsPanel.Init();
         if (confirmDialog != null) confirmDialog.Init();
@@ -92,6 +102,7 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("MainMenu: Starting game - loading: " + battleSceneName);
         // 新游戏：开启新对局会话（随机种子 + 清旧存档），场景对象据此初始化
         RunSession.EnsureInstance().BeginNewRun();
+        SoulMenuShowcase.ExitShowcase(); // 展示灵魂随主菜单卸载销毁（须在 LoadScene 前，防双 Player 实例竞争）
         SceneManager.LoadScene(battleSceneName);
     }
 
@@ -100,7 +111,10 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("MainMenu: Continuing game - loading: " + battleSceneName);
         // 继续：读档恢复会话（失败则留在主菜单，按钮已按有无存档置灰）
         if (RunSession.EnsureInstance().LoadFromSave())
+        {
+            SoulMenuShowcase.ExitShowcase(); // 同上：进入对局场景前销毁展示灵魂
             SceneManager.LoadScene(battleSceneName);
+        }
     }
 
     public void OnSettings()

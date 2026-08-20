@@ -176,7 +176,18 @@ public class SoulActor : Actor
     {
         if (possessionAnchor == null) return;
 
-        transform.SetParent(parentBeforePossession, true);
+        Transform restoreParent = parentBeforePossession;
+        // 兜底（主界面幽灵 bug 根因③）：若锚点怪曾被意外回池，灵魂随其进入 DDOL 场景，
+        // 此时 SetParent(null) 会把灵魂留在 DDOL 根跨场景存活。先移回活动场景再恢复父级。
+        bool restoreParentAlive = restoreParent != null;
+        if (!restoreParentAlive && gameObject.scene.name == "DontDestroyOnLoad")
+        {
+            var active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            if (active.IsValid() && active.name != "DontDestroyOnLoad")
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(gameObject, active);
+        }
+
+        transform.SetParent(restoreParentAlive ? restoreParent : null, true);
         possessionAnchor = null;
         parentBeforePossession = null;
     }
@@ -281,19 +292,13 @@ public class SoulActor : Actor
         transform.position = targetPos;
     }
 
-    /// <summary>spherecast 预检测：撞墙缩短步长防穿墙。</summary>
+    /// <summary>碰撞移动：CollideAndSlide 滑动（撞墙沿墙切向滑行，不再整段截断）。</summary>
     private Vector3 ApplySpherecast(Vector3 origin, Vector3 dir, float stepDist)
     {
         if (stepDist <= 0f) return origin;
-        Vector3 capsuleCenter = origin + Vector3.up * 0.9f; // capsule center y=0.9
-        float capsuleRadius = 0.4f;
         // 不与 Layer 8(Enemy)、Layer 9(Player) 自身检测，只检测环境（Layer 0=Default）
         int obstacleMask = ~((1 << 8) | (1 << 9));
-        if (Physics.SphereCast(capsuleCenter, capsuleRadius, dir, out RaycastHit hit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
-        {
-            stepDist = Mathf.Max(0f, hit.distance - 0.05f);
-        }
-        return origin + dir * stepDist;
+        return SlideMove(origin, 0.9f, 0.4f, dir * stepDist, obstacleMask);
     }
 
     public override void FillAbilitySlots(System.Collections.Generic.List<AbilitySlotInfo> buffer)

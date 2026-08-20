@@ -52,10 +52,9 @@ public class EnemyAbility_ChainLightning : EnemyAbility
         if (owner.isPossessed)
         {
             var allEnemies = new List<Enemy>();
-            foreach (var obj in GameObject.FindGameObjectsWithTag("Enemy"))
+            foreach (var e in EnemyRegistry.All)
             {
-                var e = obj.GetComponent<Enemy>();
-                if (owner.CanDamage(e))
+                if (e != null && owner.CanDamage(e))
                     allEnemies.Add(e);
             }
 

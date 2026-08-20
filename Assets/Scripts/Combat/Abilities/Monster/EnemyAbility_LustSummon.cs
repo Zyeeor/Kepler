@@ -21,7 +21,7 @@ public class EnemyAbility_LustSummon : EnemyAbility
         int count = Mathf.RoundToInt(GetCardParameter("SummonCount", summonCount));
         for (int i = 0; i < count; i++)
         {
-            Vector2 offset = Random.insideUnitCircle * spawnRadius;
+            Vector2 offset = (owner != null ? owner.AiRandomInsideUnitCircle() : Random.insideUnitCircle) * spawnRadius;
             SpawnVfxTracked(minionPrefab, owner.transform.position + new Vector3(offset.x, 0f, offset.y), Quaternion.identity, minionLifetime);
         }
         EndActivationEffect();

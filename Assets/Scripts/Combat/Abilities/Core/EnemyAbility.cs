@@ -135,6 +135,34 @@ public abstract class EnemyAbility : MonoBehaviour
     protected Enemy owner;
     protected float currentCooldown;
     public float CurrentCooldown { get { return currentCooldown; } }
+
+    // ── Animator 参数缓存（Kimi 评审整改：anim.parameters 每次访问分配新数组，高频路径每帧调用造成 GC）──
+    Animator cachedBoolAnimator;
+    readonly Dictionary<string, bool> cachedAnimParamExists = new Dictionary<string, bool>();
+
+    /// <summary>
+    /// 设置 Animator Bool（仅参数存在时）——参数存在性按 animator 实例缓存：
+    /// 首次对某 animator 查询后记住结果，后续调用不再遍历 anim.parameters（消除每帧 GC 分配）。
+    /// owner 换身/换 animator 时自动重查。
+    /// </summary>
+    protected void SetAnimBoolCached(Animator anim, string paramName, bool value)
+    {
+        if (anim == null) return;
+        if (cachedBoolAnimator != anim)
+        {
+            cachedBoolAnimator = anim;
+            cachedAnimParamExists.Clear();
+        }
+        bool exists;
+        if (!cachedAnimParamExists.TryGetValue(paramName, out exists))
+        {
+            exists = false;
+            foreach (var p in anim.parameters)
+                if (p.name == paramName) { exists = true; break; }
+            cachedAnimParamExists[paramName] = exists;
+        }
+        if (exists) anim.SetBool(paramName, value);
+    }
     protected GameObject activeVfx;
 
     /// <summary>Raised after this ability has successfully started its activation behavior.</summary>
@@ -218,6 +246,11 @@ public abstract class EnemyAbility : MonoBehaviour
     }
 
     /// <summary>Returns true if this ability can be triggered right now.</summary>
+    /// <summary>
+    /// 激活条件查询。【性能规则】CanTrigger 被 AIController 每帧×每怪轮询（AIController.cs 决策循环
+    /// 与 MonsterActor 输入轮询），必须保持 O(1) 纯查询：不得在此调用 FindObjectsOfType /
+    /// FindGameObjectsWithTag 等场景扫描；目标检索一律用 EnemyRegistry（内存注册表）或移入触发/协程路径。
+    /// </summary>
     public virtual bool CanTrigger()
     {
         if (currentCooldown > 0f || owner == null || owner.isDowned)

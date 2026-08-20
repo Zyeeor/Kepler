@@ -53,13 +53,24 @@ public class AIController : MonoBehaviour, IController
         host = null;
     }
 
+    /// <summary>
+    /// 重算决策相位（种子流时序修复）：MonsterSpawner 在 Spawn 后分配 AiRng（InitAiRng），
+    /// 而 OnAttached 时的首次相位计算发生在 InitAiRng 之前（AiRng 为 null 回退全局随机），
+    /// 破坏可复现性。刷出后由 MonsterActor.InitAiRng 回调本方法重算，使首次相位落入种子流。
+    /// </summary>
+    public void ResetDecisionPhase()
+    {
+        if (host != null)
+            ResetDecisionState();
+    }
+
     /// <summary>重建决策状态：决策相位随机化（打散同帧刷怪的行为同步）。攻击就绪态每帧由技能 CD 重算，无需预置。</summary>
     private void ResetDecisionState(){
         bb.Pressed = CommandButtons.None;
         bb.WantMove = false;
         bb.MoveDir = Vector3.zero;
         dormantTickAccum = 0f;
-        nextDecisionTime = Time.time + Random.Range(0f, host.decisionIntervalMax);
+        nextDecisionTime = Time.time + host.AiRandomRange(0f, host.decisionIntervalMax);
     }
 
     private void BuildTree(){
@@ -141,7 +152,7 @@ public class AIController : MonoBehaviour, IController
             bb.MoveDir = Vector3.zero;
             bb.StandoffMove = false; // 移动模式同样每拍重新声明（对峙/追击）
             root.Evaluate(bb);
-            nextDecisionTime = Time.time + Random.Range(host.decisionIntervalMin, host.decisionIntervalMax);
+            nextDecisionTime = Time.time + host.AiRandomRange(host.decisionIntervalMin, host.decisionIntervalMax);
         }
 
         // 移动：决策点之间持续产出（走位节奏独立刷新，行动更自然）；

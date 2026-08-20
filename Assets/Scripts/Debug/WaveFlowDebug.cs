@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using UnityEngine;
 
 /// <summary>
@@ -45,3 +46,4 @@ public class WaveFlowDebug : MonoBehaviour
         GUI.Label(new Rect(20f, Screen.height - h + 44f, w - 20f, 18f), "F5 = 清场跳波（视为击杀当前波全部怪）");
     }
 }
+#endif
