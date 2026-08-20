@@ -429,7 +429,8 @@ MonoBehaviour:
     unlocked: 0
   - effectId: GL-A02
     unlocked: 0
-  vfxPrefab: {fileID: 0}
+  vfxPrefab: {fileID: 8145229131396119196, guid: fd9408ee6311a9f41ae07ab55f335fe6,
+    type: 3}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
   weaponVfxSpawnPoint: {fileID: 0}
@@ -1047,7 +1048,7 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.3, g: 0.55, b: 0.12, a: 1}
+  dissolveEdgeColor: {r: 0.8333246, g: 0.3592842, b: 2.2402449, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!1 &5807367358007265780

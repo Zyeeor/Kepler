@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CardLibrary
   m_EditorClassIdentifier: 
   cards:
-  - cardName: "\u5251\u6C14\u7A7F\u900F"
+  - cardName: "\u5251\u6C14X\u7A7F\u900F"
     effectId: Pride.Pierce
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Sword Qi pierces, X follow-up, double damage.
@@ -24,10 +24,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 21300000, guid: 0b70c6a9168b5b44ab3e56b7affbe8b1, type: 3}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 0ca0ed9878d3e7b469916bf8d9c86453, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: a035db9559bd5f2468b86775c96b32e0,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 12fb3179c1e7cea4681718a4f433400a, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
     effectId: Pride02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
