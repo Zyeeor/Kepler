@@ -43,7 +43,6 @@ public class CoreChoiceUI : MonoBehaviour
     private int picksRemaining = 1;
     private bool doublePick;
     private Action onClosed;
-    private float timeScaleBeforeOpen = 1f;
     private bool _isDrafting;
 
     /// <summary>面板当前是否可见（隐藏查看场景时 = false）。</summary>
@@ -94,9 +93,6 @@ public class CoreChoiceUI : MonoBehaviour
         this.doublePick = doublePick;
         this.picksRemaining = doublePick ? 2 : 1;
 
-        // 暂停特判：记录弹窗打开前 timeScale，关闭时恢复
-        timeScaleBeforeOpen = Time.timeScale;
-
         // Clear old cards
         if (cardParent != null)
         {
@@ -141,8 +137,8 @@ public class CoreChoiceUI : MonoBehaviour
             confirmAllButton.interactable = true;
         }
 
-        // 暂停特判：弹窗期间暂停 + 屏蔽玩家输入（不做全局时间仲裁）
-        Time.timeScale = 0f;
+        // 弹窗期间暂停（Pause 域请求，关闭时 Pop 恢复）+ 屏蔽玩家输入
+        TimeScaleManager.Push(TimeDomain.Pause, 0f);
         PlayerController.SetGameplayInputBlocked(true, "CoreChoiceUI");
     }
 
@@ -271,8 +267,8 @@ public class CoreChoiceUI : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
         // continue 按钮随弹窗关闭隐藏
         if (confirmAllButton != null) confirmAllButton.gameObject.SetActive(false);
-        // 恢复弹窗打开前的 timeScale + 恢复玩家输入
-        Time.timeScale = timeScaleBeforeOpen;
+        // 撤弹窗暂停请求 + 恢复玩家输入
+        TimeScaleManager.Pop(TimeDomain.Pause);
         PlayerController.SetGameplayInputBlocked(false, "CoreChoiceUI");
 
         // 触发方回调（房间流程等）；先摘抄后清空，避免回调内重入 Show

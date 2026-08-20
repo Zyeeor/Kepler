@@ -82,6 +82,10 @@ public class MapStreamingSystem : MonoBehaviour
     [Header("WorldPlan（宏观区域；空 = 全部用 defaultChunkDef）")]
     [Tooltip("主题映射表：按 RegionDef.themeCenter 排序后对连续噪声值做最近邻查表。空列表 = 不启用 WorldPlan。")]
     public List<RegionDef> regionTable = new List<RegionDef>();
+
+    [Header("固定 Chunk 锚点（不受世界种子影响）")]
+    [Tooltip("配置后，这些坐标的 Chunk 固定使用指定模板（手摆布局或固定种子程序生成），与 worldSeed/WorldPlan/模板分配器无关。用于出生点、Boss 房等关键房间。")]
+    public List<ChunkAnchor> fixedAnchors = new List<ChunkAnchor>();
     [Tooltip("区域粒度：每个噪声采样点覆盖的 Chunk 边长（4 = 4×4 Chunk 一块主题区）。注意：2 在连续噪声下同主题邻接率仅 ~50%（棋盘格化），实测 ≥4 才达到 >60% 连续性验收（Phase A 数据裁决）。")]
     [Min(1)] public int regionCellSize = 4;
     [Tooltip("邻接权重加成：候选模板 preferredNeighbors 每命中一个已生成邻居 Def 的权重加成。")]
@@ -158,6 +162,8 @@ public class MapStreamingSystem : MonoBehaviour
     public Vector3 PlayerWorldPosition => MapLocalToWorld(GetPlayerPosition());
 
     readonly Dictionary<ChunkCoord, ChunkRuntime> registry = new Dictionary<ChunkCoord, ChunkRuntime>();
+    /// <summary>固定锚点索引（coord → 锚点）：Awake 构建，GetOrCreateChunk/生成入口查询。</summary>
+    readonly Dictionary<ChunkCoord, ChunkAnchor> anchorMap = new Dictionary<ChunkCoord, ChunkAnchor>();
     /// <summary>宏观区域图：regionTable 非空时首次 GetOrCreateChunk 懒构造；null = 全图 defaultChunkDef。</summary>
     WorldPlan worldPlan;
     /// <summary>全局模板分配器：协调「随机 ↔ 模板」融合与模板全局约束（mustGenerate/maxCount/weight），单局唯一。</summary>
@@ -201,7 +207,34 @@ public class MapStreamingSystem : MonoBehaviour
         if (transform.lossyScale != Vector3.one)
             Debug.LogWarning($"[MapStreamingSystem] 本物体含缩放 {transform.lossyScale}：地图支持平移/旋转，不支持非均匀缩放（视觉 bounds 校正会失真）。建议缩放保持 1。", this);
 
+        BuildAnchorMap();
+
         InitBoundary();
+    }
+
+    /// <summary>
+    /// 固定锚点索引构建（Awake，一次性）：coord → 锚点。重复 coord 后者覆盖 + 警告；无效锚点（layout/chunkDef 皆空）警告跳过。
+    /// </summary>
+    void BuildAnchorMap()
+    {
+        anchorMap.Clear();
+        for (int i = 0; i < fixedAnchors.Count; i++)
+        {
+            var a = fixedAnchors[i];
+            if (a == null)
+            {
+                Debug.LogWarning($"[MapStreamingSystem] fixedAnchors[{i}] 为 null，已跳过。", this);
+                continue;
+            }
+            if (!a.IsValid)
+            {
+                Debug.LogWarning($"[MapStreamingSystem] 固定锚点 {a.coord} 未配置 layout 或 chunkDef（无效），该位置仍走正常随机生成。", this);
+                continue;
+            }
+            if (anchorMap.ContainsKey(a.coord))
+                Debug.LogWarning($"[MapStreamingSystem] 固定锚点坐标 {a.coord} 重复配置：后配置覆盖前配置。", this);
+            anchorMap[a.coord] = a;
+        }
     }
 
     /// <summary>
@@ -639,6 +672,15 @@ public class MapStreamingSystem : MonoBehaviour
     ChunkRuntime GetOrCreateChunk(ChunkCoord coord)
     {
         if (registry.TryGetValue(coord, out var chunk)) return chunk;
+        // 固定锚点优先：命中则用锚点模板 + 固定种子（与 worldSeed/WorldPlan/模板分配器无关）
+        if (anchorMap.TryGetValue(coord, out var anchor) && anchor.IsValid)
+        {
+            var anchorDef = anchor.layout == null ? anchor.chunkDef : defaultChunkDef;
+            chunk = new ChunkRuntime(coord, anchorDef, anchor.fixedSeed);
+            chunk.OnStateChanged += HandleChunkStateChanged;
+            registry.Add(coord, chunk);
+            return chunk;
+        }
         // WorldPlan 懒构造：regionTable 为空时保持全图 defaultChunkDef 现状
         if (worldPlan == null && regionTable != null && regionTable.Count > 0)
             worldPlan = new WorldPlan(worldSeed, regionTable, regionCellSize) { neighborWeightBonus = regionNeighborWeight };
@@ -666,6 +708,12 @@ public class MapStreamingSystem : MonoBehaviour
     /// </summary>
     List<ChunkDirection> GenerateTilesPlaceholder(ChunkRuntime chunk, uint seed)
     {
+        // 固定锚点：走锚点专用入口（手摆布局或固定种子程序生成），隔离全局模板分配器
+        if (anchorMap.TryGetValue(chunk.Coord, out var anchor) && anchor.IsValid)
+        {
+            ChunkTileGenerator.GenerateFixed(chunk, anchor.layout, anchor.chunkDef, anchor.fixedSeed);
+            return chunk.OpenEdges;
+        }
         ChunkTileGenerator.Generate(chunk, chunk.Def, seed, templateAllocator);
         return chunk.OpenEdges;
     }

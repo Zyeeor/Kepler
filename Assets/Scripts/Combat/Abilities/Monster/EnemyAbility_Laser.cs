@@ -73,13 +73,8 @@ public class EnemyAbility_Laser : EnemyAbility
         else if (isFiring)
             StopLaser();
 
-        // Animator (only if parameter exists)
-        var anim = owner.GetComponent<Animator>();
-        if (anim != null)
-        {
-            foreach (var p in anim.parameters)
-                if (p.name == "IsFiring") { anim.SetBool("IsFiring", isFiring); break; }
-        }
+        // Animator（参数存在性缓存：避免每帧遍历 anim.parameters 分配新数组）
+        SetAnimBoolCached(owner.GetComponent<Animator>(), "IsFiring", isFiring);
     }
 
     void UpdateLaser()
@@ -183,7 +178,7 @@ public class EnemyAbility_Laser : EnemyAbility
     {
         Enemy best = null;
         float bestDist = float.MaxValue;
-        foreach (var e in FindObjectsOfType<Enemy>())
+        foreach (var e in EnemyRegistry.All)   // 注册表（O(n) 内存遍历，替代 FindObjectsOfType 全场景扫描）
         {
             if (e == exclude || e == owner || e.isDowned || e.isPossessed) continue;
             float d = Vector3.Distance(origin, e.transform.position);
@@ -196,9 +191,8 @@ public class EnemyAbility_Laser : EnemyAbility
     {
         Enemy nearest = null;
         float nearestDist = float.MaxValue;
-        foreach (var obj in GameObject.FindGameObjectsWithTag("Enemy"))
+        foreach (var e in EnemyRegistry.All)
         {
-            var e = obj.GetComponent<Enemy>();
             if (owner.CanDamage(e))
             {
                 float d = Vector3.Distance(origin, e.transform.position);

@@ -49,11 +49,10 @@ public class EnemyAbility_SummonBolt : EnemyAbility
         {
             Enemy nearest = null;
             float best = searchRange;
-            Enemy[] candidates = FindObjectsOfType<Enemy>();
-            for (int i = 0; i < candidates.Length; i++)
+            // 注册表遍历（替代 FindObjectsOfType 场景扫描；CanTrigger 内仅 O(n) 内存过滤）
+            foreach (var candidate in EnemyRegistry.All)
             {
-                Enemy candidate = candidates[i];
-                if (!owner.CanDamage(candidate)) continue;
+                if (candidate == null || !owner.CanDamage(candidate)) continue;
                 float distance = Vector3.Distance(owner.transform.position, candidate.transform.position);
                 if (distance >= best) continue;
                 best = distance;

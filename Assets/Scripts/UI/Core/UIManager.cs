@@ -3,10 +3,8 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 
-public class UIManager : MonoBehaviour
+public class UIManager : SceneSingleton<UIManager>
 {
-    public static UIManager Instance { get; private set; }
-
     [Header("GameOver UI")]
     public GameObject gameOverPanel;
     public TMP_Text gameOverText;
@@ -41,6 +39,10 @@ public class UIManager : MonoBehaviour
     public Button healthBarToggleButton;
     public TMP_Text healthBarToggleText;
 
+    [Header("Soul Showcase (Main Menu)")]
+    [Tooltip("回主菜单时是否把玩家灵魂带过去展示（主菜单背景后可移动，禁自然衰减）。开启即触发主界面主角展示效果。")]
+    public bool bringSoulToMainMenu = true;
+
     [Header("Settings & Confirm")]
     public SettingsPanel settingsPanel;
     public ConfirmDialog confirmDialog;
@@ -49,17 +51,13 @@ public class UIManager : MonoBehaviour
     [Tooltip("结算面板（胜利/失败）延迟弹出秒数：留出时间看最终战况/死亡动画。")]
     [Min(0f)] public float resultDelaySeconds = 2f;
 
-    void Awake()
+    protected override void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        base.Awake();   // 防重复注册（已有实例则销毁本对象）
+        if (Instance != this) return;
+        // 同步主菜单灵魂展示全局开关：主菜单场景没有 UIManager 实例（场景级单例），
+        // 原生创建路径读不到其实例字段，需经静态桥接跨场景传递。
+        SoulMenuShowcase.GlobalEnabled = bringSoulToMainMenu;
     }
 
     void Start()
@@ -198,20 +196,14 @@ public class UIManager : MonoBehaviour
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        Time.timeScale = 0f;
+        // 结算冻结（GameOver 域已由 GameManager Push；此处保险补 Pause 域，缺失 UI 场景下仍冻结）
+        TimeScaleManager.Push(TimeDomain.Pause, 0f);
     }
 
     /// <summary>失败结算（GameManager 失败路径调用，委托 ShowResult(false)）。</summary>
     public void ShowGameOver()
     {
         ShowResult(false);
-    }
-
-    public void HideGameOver()
-    {
-        if (gameOverPanel != null)
-            gameOverPanel.SetActive(false);
-        Time.timeScale = 1f;
     }
 
     public void OnRestartClicked()
@@ -221,8 +213,8 @@ public class UIManager : MonoBehaviour
         RunSession.EnsureInstance().EndRun();
         // 重置常驻 GameManager 战斗状态：GameManager 为 DontDestroyOnLoad，
         // 场景重载不重建——不 Reset 则 currentState 停在 GameOver，新局附身会被 CanStartPossession 拒绝。
+        // （ResetGame 内部已 TimeScaleManager.ResetAll 清空全部时间请求）
         if (GameManager.Instance != null) GameManager.Instance.ResetGame();
-        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -233,7 +225,7 @@ public class UIManager : MonoBehaviour
         RunSession.EnsureInstance().EndRun();
         // 复位常驻 GameManager：不 Reset 则 currentState 停在 GameOver，主菜单"开始新游戏"后新局附身被拒
         if (GameManager.Instance != null) GameManager.Instance.ResetGame();
-        Time.timeScale = 1f;
+        TryEnterSoulShowcase();
         SceneManager.LoadScene(homeSceneName);
     }
 
@@ -243,23 +235,18 @@ public class UIManager : MonoBehaviour
 
         if (isPaused)
         {
-            Time.timeScale = 0f;
+            TimeScaleManager.Push(TimeDomain.Pause, 0f);
             Debug.Log("UIManager: Game paused");
         }
         else
         {
-            // 选卡会话进行中退出暂停：保持暂停（timeScale=0），继续选卡
-            Time.timeScale = IsDraftingActive() ? 0f : 1f;
+            // 退出暂停：Pop 本 Pause 请求。若选卡会话仍在进行（CoreChoiceUI 自己也 Push 了 Pause 域），
+            // 栈中仍有 Pause 请求 → 保持暂停；否则恢复 1。原 IsDraftingActive 特判由优先级栈天然消解。
+            TimeScaleManager.Pop(TimeDomain.Pause);
             Debug.Log("UIManager: Game resumed");
         }
 
         UpdatePauseButtonText();
-    }
-
-    /// <summary>选卡会话是否进行中（UIManager 视角：CoreChoiceUI 存在且 IsDrafting）。</summary>
-    bool IsDraftingActive()
-    {
-        return CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting;
     }
 
     void UpdatePauseButtonText()
@@ -295,7 +282,7 @@ public class UIManager : MonoBehaviour
 
     void ShowPauseMenu()
     {
-        Time.timeScale = 0f;
+        TimeScaleManager.Push(TimeDomain.Pause, 0f);
         if (pauseMenuPanel != null)
             pauseMenuPanel.SetActive(true);
 
@@ -313,9 +300,8 @@ public class UIManager : MonoBehaviour
 
     void HidePauseMenu()
     {
-        // 选卡会话进行中退出暂停：保持暂停（timeScale=0），继续选卡
-        bool drafting = IsDraftingActive();
-        Time.timeScale = drafting ? 0f : 1f;
+        // 退出暂停菜单：Pop 本 Pause 请求（选卡会话的 Pause 由 CoreChoiceUI 独立 Push，互不干扰）
+        TimeScaleManager.Pop(TimeDomain.Pause);
         if (pauseMenuPanel != null)
             pauseMenuPanel.SetActive(false);
 
@@ -388,7 +374,7 @@ public class UIManager : MonoBehaviour
     private void OnReturnToMenuConfirmed()
     {
         Debug.Log("UIManager: Return to menu CONFIRMED - loading: " + homeSceneName);
-        Time.timeScale = 1f;
+        TimeScaleManager.ResetAll();   // 回主菜单：清空全部时间请求
         SceneManager.LoadScene(homeSceneName);
     }
 
@@ -406,17 +392,24 @@ public class UIManager : MonoBehaviour
         RunSession.EnsureInstance().EndRun();
         // 复位常驻 GameManager：不 Reset 则 currentState 停在 GameOver，主菜单"开始新游戏"后新局附身被拒
         if (GameManager.Instance != null) GameManager.Instance.ResetGame();
-        Time.timeScale = 1f;
+        TryEnterSoulShowcase();
         SceneManager.LoadScene(homeSceneName);
     }
 
-    void OnDestroy()
+    /// <summary>按开关把玩家灵魂带入主菜单展示模式（附身/飞行中自动跳过）。</summary>
+    void TryEnterSoulShowcase()
     {
-        Time.timeScale = 1f;
+        if (bringSoulToMainMenu) SoulMenuShowcase.EnterShowcase();
+    }
+
+    protected override void OnDestroy()
+    {
+        TimeScaleManager.ResetAll();   // 场景卸载：清空时间请求（防 GameOver 冻结跨场景残留）
         // 退订 Run 级流程事件：RunSession 为常驻（DontDestroyOnLoad）对象，
         // 场景重载后旧 UIManager 若不退订，悬空委托会在事件触发时抛"对象已销毁"异常并中断委托链，
         // 导致后续订阅者（新 UIManager）收不到事件（结算面板不弹）。
         if (RunSession.Instance != null)
             RunSession.Instance.OnPhaseChanged -= OnRunPhaseChanged;
+        base.OnDestroy();   // 清 Instance
     }
 }

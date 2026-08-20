@@ -192,11 +192,9 @@ public class SummonActor : Enemy
         {
             Enemy nearest = null;
             float best = 24f;
-            Enemy[] candidates = FindObjectsOfType<Enemy>();
-            for (int i = 0; i < candidates.Length; i++)
+            foreach (var candidate in EnemyRegistry.All)   // 注册表（替代 FindObjectsOfType 全场景扫描）
             {
-                Enemy candidate = candidates[i];
-                if (!CanDamage(candidate)) continue;
+                if (candidate == null || !CanDamage(candidate)) continue;
                 float distance = Vector3.Distance(transform.position, candidate.transform.position);
                 if (distance >= best) continue;
                 best = distance;
@@ -225,10 +223,8 @@ public class SummonActor : Enemy
     {
         Enemy result = null;
         float best = maxRange;
-        Enemy[] candidates = FindObjectsOfType<Enemy>();
-        for (int i = 0; i < candidates.Length; i++)
+        foreach (var candidate in EnemyRegistry.All)
         {
-            Enemy candidate = candidates[i];
             if (candidate == null || candidate == this || candidate == summoner) continue;
             if (candidate is SummonActor) continue;
             if (candidate.isDowned || candidate.Body == BodyState.Fading || candidate.Body == BodyState.Despawned) continue;

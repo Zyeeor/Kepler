@@ -958,8 +958,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catalog: {fileID: 11400000, guid: d995378018fcd4aafa703c3e16e084e6, type: 2}
   spawnOffset: {x: 3, y: 0, z: 0}
+  spawnHeightY: 0
   logAIConfigOnSpawn: 1
   showHint: 1
+  showDebugRanges: 1
 --- !u!4 &146584553
 Transform:
   m_ObjectHideFlags: 0
@@ -5452,6 +5454,7 @@ MonoBehaviour:
   quitButtonOnGameOverText: {fileID: 0}
   healthBarToggleButton: {fileID: 0}
   healthBarToggleText: {fileID: 0}
+  bringSoulToMainMenu: 1
   settingsPanel: {fileID: 1731005095}
   confirmDialog: {fileID: 153670386}
   resultDelaySeconds: 1
@@ -8379,7 +8382,8 @@ MonoBehaviour:
   gameOverPanel: {fileID: 837435964}
   useFixedSeed: 1
   fixedSeed: 12345
-  useFormalFlow: 0
+  useFormalFlow: 1
+  bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -8410,7 +8414,7 @@ MonoBehaviour:
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 0}
   maxRerollsPerCard: 1
-  debugDoublePickOnStart: 1
+  debugDoublePickOnStart: 0
   currentPicks:
   - cardName: 
     effectId: 
@@ -8657,7 +8661,6 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.05
   decayInterval: 1
-  bulletTimeScale: 0.2
   bulletTimeDuration: 2
 --- !u!1 &1934480728
 GameObject:
@@ -8824,6 +8827,7 @@ MonoBehaviour:
   worldSeed: 12345
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   regionTable: []
+  fixedAnchors: []
   regionCellSize: 2
   regionNeighborWeight: 2
   tickInterval: 0.2
@@ -8859,6 +8863,7 @@ MonoBehaviour:
   maxCombatMonsters: 30
   minSpawnDistanceToPlayer: 10
   maxSpawnDistanceToPlayer: 25
+  spawnHeightY: 0
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1

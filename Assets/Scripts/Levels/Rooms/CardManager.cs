@@ -16,10 +16,8 @@ using System.Collections.Generic;
 ///   - Global 软保底（§11）：连续 2 次 Offer 无 Global 后其候选权重提高，每继续 Miss 再提高，出现即重置
 ///   - Known Type Set（§2）：Pride 起始即进入；其余按波次解锁表（§3）推导——由 CompletedWaveIndex 纯函数恢复，无需额外存档
 /// </summary>
-public class CardManager : MonoBehaviour
+public class CardManager : SceneSingleton<CardManager>
 {
-    public static CardManager Instance { get; private set; }
-
     [Header("Card Pool")]
     [Tooltip("卡池资产（SO）。运行时从此抽卡。")]
     public CardLibrary cardLibrary;
@@ -55,6 +53,9 @@ public class CardManager : MonoBehaviour
     // 同一种子下（读档恢复同 worldSeed），整局卡牌序列完全可复现。
     // 每波用独立子种子：SeedSystem.CreateFlow(DomainCard, waveIndex)。
     private int currentWaveCardSeed = -1;
+    // 会话级随机流：DrawCards 时创建一次，本次会话内持续消费
+    // （刷新/重抽复用同一流——正确范式，避免每次新建流取首值的反模式）。
+    private System.Random sessionCardRng;
 
     // ── Known Type 波次解锁表（文档 §3 W1-W8 首版解锁结构，TUNABLE）──
     // W1 Pride+Gluttony → W2 +Wrath → W3 +Sloth → W4 +Greed → W5 +Lust → W6 +Envy；W7/W8 无新增。
@@ -93,17 +94,10 @@ public class CardManager : MonoBehaviour
     /// <summary>本局已解锁效果（存档采集用，只读）。</summary>
     public IReadOnlyCollection<string> UnlockedEffects => unlockedEffects;
 
-    void Awake()
+    protected override void Awake()
     {
-        // 单例防覆盖：GameManager 是 DontDestroyOnLoad 常驻对象，场景二次加载时
-        // 新实例若先 Awake 会把 Instance 覆盖为"随后被销毁的新对象"（伪 null），
-        // 导致选卡系统判定 Instance 为空而显示占位。已有实例时不覆盖。
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
+        base.Awake();   // 防重复注册（场景二次加载时新实例销毁，防止 Instance 被覆盖成随后销毁的对象）
+        if (Instance != this) return;
         // 恢复已解锁卡：优先从对局会话（RunSession，主菜单[继续]已填充；新局为空集）；
         // 兼容旧路径：无会话时回退读档（EnumeratePool 自动排除已取得的卡）。
         int completedWaves = -1;
@@ -235,7 +229,10 @@ public class CardManager : MonoBehaviour
         // Known Type Set 随波次刷新（幂等；补弹路径走 RestoreChoicePicks 不经过这里，由 Awake 恢复推导保证一致）
         if (currentWaveCardSeed >= 0) RefreshKnownTypes(currentWaveCardSeed);
 
-        var rng = CardRandom();
+        // 会话级流：新会话才重建（双选第二轮 keepSession=true 沿用第一轮已推进的流，保持序列连续）
+        if (!keepSession || sessionCardRng == null)
+            sessionCardRng = CardRandom();
+        var rng = sessionCardRng;
         var offered = new HashSet<string>();                 // 本次 Offer 已占用的 effectId（§10.5 去重）
 
         // ── 槽位合法池（已排除已取得的卡）──
@@ -424,7 +421,10 @@ public class CardManager : MonoBehaviour
             rerollCounts[slotIndex] = used + 1;
         }
 
-        var picked = available[CardRandom().Next(0, available.Count)];
+        // 复用会话流持续消费（勿新建流：同 salt 新建流会回到序列首值，同 Count 槽位必取同索引）
+        var rng = sessionCardRng ?? CardRandom();
+        sessionCardRng = rng;
+        var picked = available[rng.Next(0, available.Count)];
         shownThisSession.Add(picked.effectId);
         if (currentPicks != null && slotIndex >= 0 && slotIndex < currentPicks.Length)
             currentPicks[slotIndex] = picked;

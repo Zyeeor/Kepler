@@ -86,8 +86,8 @@ public class BTWeightedSelector : BTNode
                 if (!tried[i]) total += entries[i].Weight;
             if (total <= 0f) return BTNodeState.Failure;
 
-            // 权重采样
-            float r = UnityEngine.Random.value * total;
+            // 权重采样（种子流：宿主怪 AI 子流，同种子可复现）
+            float r = bb.Host.AiRandomValue() * total;
             float acc = 0f;
             int pick = -1;
             for (int i = 0; i < entries.Length; i++)

@@ -73,7 +73,7 @@ Repository 当前实现只能回答：
 
 `OWNER REVIEW PASSED / CURRENT CARD CONTENT TRUTH`
 
-负责73张Card完整逐卡字段、明暗文案、机制、Stack、人工删除历史，以及当前Basic / Global / Type Growth规则。
+负责65张Card完整逐卡字段、明暗文案、机制、Stack、人工删除历史，以及当前Basic / Global / Type Growth规则。
 
 ## `Content/Encounter_CardOffer_Baseline_v1.0.md`
 
@@ -100,7 +100,7 @@ Repository 当前实现只能回答：
 | Rules | `CLOSED` | 无核心规则阻塞 |
 | Monster Core | `CARD-READY / CLOSED` | 七只Roster与三槽稳定 |
 | Starting Carrier | `CONFIRMED` | 开场Soul被分配进傲慢Carrier；玩家首个可操作Body固定傲慢 |
-| Card Content | `OWNER REVIEW PASSED / OWNER DELTA APPLIED` | 73张当前真源；傲慢8、怠惰11、暴食7、嫉妒10、愤怒6、贪婪8、色欲7张 |
+| Card Content | `OWNER REVIEW PASSED / OWNER DELTA APPLIED` | 65张当前真源；傲慢8、怠惰7、暴食7、嫉妒6、愤怒6、贪婪8、色欲7张 |
 | Card Timing | `CONFIRMED` | 删除Opening Card；W1–7后各1次，W8后连续2次，共9次 |
 | Card Scope | `CONFIRMED` | Basic / Global作用普通Enemy + Possessed；Elite完全排除当前Run Card层 |
 | World / Narrative | `R03.1 INTEGRATED` | 核心主题、Reveal、First Clear已收口；深层Ontology故意Open |
@@ -130,7 +130,7 @@ Repository 当前实现只能回答：
 14. `LU-TG01`提高色欲Body基础移速，并使Movement / Attack / Special三槽冷却统一减少30%；冷却缩减为Owner确认值，基础移速增幅留待Playable调校，且不缩短前摇、后摇或敌人最低预警。
 15. 暴食三槽更新：小猫化为约50%体型、持续3秒、移速+100%；基础深渊巨口在脚下快照后0.5秒生成，`GL-A03`解锁远程诱饵落点；吞噬只命中最近Enemy、写入`Overfed`并复制其E槽Skill Ability，复制技能成功使用一次后恢复吞噬，换身清除相关状态。
 16. 暴食牌池维持7张：`GL-A01`使`Overfed`后的下一巨口成对生成；`GL-A02`使Movement后的下一巨口范围+100%；两者可叠加，成对巨口均获得范围加成。`GL-S03`吞噬扇形内全部合法飞行攻击。
-17. 暴食成为无Type Growth的Owner确认例外；当前Type Growth共4张，当前Card总数为73张。
+17. 暴食成为无Type Growth的Owner确认例外；当前Type Growth共2张，当前Card总数为65张。
 18. 愤怒三槽更新：钩索将自身钩向前方；砸地燃烧每秒5点、持续3秒且可点燃黑油；暴怒锁链形成2秒龙卷风，每0.5秒结算一次。`WR-M01`, `WR-M02`, `WR-B01`, `WR-B02`, `WR-S01`, `WR-S03`为当前6张牌池；`WR-B01`低耐久按比例提高伤害、攻击范围并缩短Attack CD，每项最高50%。
 19. 愤怒删除`WR-A01`, `WR-M03`, `WR-S02`, `WR-TG01`；`WR-M03`落点冲击并入`WR-M02`，`WR-S03 终末飓风`使龙卷风时长+2秒。Wrath为无Type Growth的Owner确认例外。
 20. 贪婪三槽更新：基础黑油使玩家 / Possessed Greed加速，`GR-M01`扩大黑油长度与范围并使Enemy减速；魔手每秒生成、库存上限6、按0.2秒间隔释放；Guard吸收所有伤害，基础每100点转1手，`GR-S01`每60点转1手，`GR-S04`使Guard持续3秒并可主动结束。
@@ -139,6 +139,8 @@ Repository 当前实现只能回答：
 23. 新增正式Card：`PR-A04 王命远征`、`EN-M01 镜痕巡猎`、`EN-A05 妒焰渐炽`、`GR-M02 圣路恩赐`、`GR-A07 迂回纳贡`；当前Card总数为73张。
 24. 贪婪`GR-M02`由历史删除状态恢复为新定义的「圣路恩赐」，不沿用旧“黑油减速叠层”语义；愤怒表格“龙卷风时长+2秒”合并回现有`WR-S03 终末飓风`，不新增重复卡。
 25. 废除叠层机制（2026-08-19）：全牌池`Stack Max`统一为1，卡牌唯一获取、不再支持重复叠加。原6张可叠层卡`SL-A02`（原Stack 3）、`SL-S01`、`EN-A04`、`EN-R04`、`EN-S01`、`GR-A01`（原Stack 2）的累计叠层效果合并进单层，`明线/暗线叠层后文本`字段恒置空保留追溯；合并后具体数值档位一律`TUNABLE / PLAYABLE`，开发期公开可调。
+26. 删除怠惰4张卡（2026-08-20）：`SL-A01`、`SL-A02`、`SL-S02`、`SL-TG01`。怠惰从11张减为7张；`SL-TG01`删除后怠惰成为无Type Growth的Owner确认例外（与Gluttony、Wrath、Greed并列）。总牌池从73张减为69张，类型成长卡从4张减为3张。
+27. 嫉妒卡牌裁剪与合并（2026-08-20）：删除 `EN-A04`、`EN-R04`、`EN-TG01`；保留 `EN-R01` 并将 `EN-R02` 的 Mark 写入效率合并进 `EN-R01`。嫉妒从10张减为6张；总牌池从69张减为65张；类型成长卡从3张减为2张。
 
 ---
 

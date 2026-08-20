@@ -104,18 +104,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             StopLaser();
         }
 
-        Animator anim = owner.GetActiveAnimator();
-        if (anim != null)
-        {
-            foreach (AnimatorControllerParameter p in anim.parameters)
-            {
-                if (p.name == "IsFiring")
-                {
-                    anim.SetBool("IsFiring", _isFiring);
-                    break;
-                }
-            }
-        }
+        // Animator（参数存在性缓存：避免每帧遍历 anim.parameters 分配新数组）
+        SetAnimBoolCached(owner.GetActiveAnimator(), "IsFiring", _isFiring);
     }
 
     public override bool CanTrigger()
@@ -240,7 +230,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private void FireMultiEye(Vector3 origin, float tickDamage, List<Enemy> primaryHits)
     {
         List<Enemy> candidates = new List<Enemy>();
-        foreach (Enemy e in FindObjectsOfType<Enemy>())
+        foreach (var e in EnemyRegistry.All)
         {
             if (e == null || !owner.CanDamage(e)) continue;
             if (Vector3.Distance(origin, e.transform.position) > GetEffectiveRange()) continue;

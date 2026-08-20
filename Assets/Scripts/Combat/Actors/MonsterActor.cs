@@ -60,6 +60,55 @@ public class MonsterActor : Actor
     [Header("Identity")]
     public string displayName = "Enemy";
 
+    /// <summary>
+    /// 本怪 AI/技能随机子流（种子确定性）：由 MonsterSpawner 刷出时按刷怪序号分配
+    /// （SeedSystem.CreateFlow(DomainAI, spawnSequence)），同世界种子下同怪行为可复现。
+    /// null 兜底（非波次刷出路径，如场景预摆怪）时回退 UnityEngine.Random 语义。
+    /// </summary>
+    public System.Random AiRng { get; private set; }
+
+    /// <summary>
+    /// 分配 AI 子流（刷出时由刷怪器调用；salt 用全局递增刷怪序号保证可复现）。
+    /// 分配后重算 AI 决策相位：Spawn 链路里 OnAttached 的首次相位计算发生在 InitAiRng 之前
+    /// （当时 AiRng 为 null 回退全局随机），此处用就绪的流重新随机化，保证首个决策相位可复现。
+    /// </summary>
+    public void InitAiRng(int salt)
+    {
+        AiRng = SeedSystem.CreateFlow(SeedSystem.DomainAI, salt);
+        var ai = GetComponent<AIController>();
+        if (ai != null) ai.ResetDecisionPhase();
+    }
+
+    /// <summary>AI 随机（Range 语义）：流为 null 时回退 UnityEngine.Random。</summary>
+    public float AiRandomRange(float min, float max)
+    {
+        return AiRng != null ? AiRng.NextFloat(min, max) : UnityEngine.Random.Range(min, max);
+    }
+
+    /// <summary>AI 随机（value 语义）：流为 null 时回退 UnityEngine.Random。</summary>
+    public float AiRandomValue()
+    {
+        return AiRng != null ? AiRng.NextFloat() : UnityEngine.Random.value;
+    }
+
+    /// <summary>AI 单位球面方向（流为 null 回退 UnityEngine.Random）。</summary>
+    public Vector3 AiRandomUnitSphere()
+    {
+        return AiRng != null ? AiRng.NextUnitSphere() : UnityEngine.Random.onUnitSphere;
+    }
+
+    /// <summary>AI 单位圆盘点（流为 null 回退 UnityEngine.Random）。</summary>
+    public Vector2 AiRandomInsideUnitCircle()
+    {
+        return AiRng != null ? AiRng.NextInsideUnitCircle() : UnityEngine.Random.insideUnitCircle;
+    }
+
+    /// <summary>AI 整数随机（流为 null 回退 UnityEngine.Random）。</summary>
+    public int AiRandomInt(int min, int maxExclusive)
+    {
+        return AiRng != null ? AiRng.Next(min, maxExclusive) : UnityEngine.Random.Range(min, maxExclusive);
+    }
+
     [Header("Dual Stats (Enemy vs Possessed)")]
     [Tooltip("Stats while AI-controlled (enemy). Runtime Actor fields are filled from the active block.")]
     public MonsterStatBlock enemyStats;
@@ -521,19 +570,12 @@ public class MonsterActor : Actor
         MoveWithSpherecast(aiVelocity * Time.deltaTime);
     }
 
-    /// <summary>SphereCast 预检测后的Transform移动（AI与玩家共用）。</summary>
+    /// <summary>碰撞移动（AI与玩家共用）：CollideAndSlide 滑动，撞墙沿墙切向滑行。</summary>
     private void MoveWithSpherecast(Vector3 displacement)
     {
-        float stepDist = displacement.magnitude;
-        if (stepDist < 0.0001f) return;
-        Vector3 dir = displacement / stepDist;
-        Vector3 capsuleCenter = transform.position + Vector3.up * 0.75f;
-        const float capsuleRadius = 0.4f;
+        if (displacement.sqrMagnitude < 0.0001f) return;
         int obstacleMask = ~((1 << 8) | (1 << 9));
-        if (Physics.SphereCast(capsuleCenter, capsuleRadius, dir, out RaycastHit hit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
-            stepDist = Mathf.Max(0f, hit.distance - 0.05f);
-
-        Vector3 targetPos = transform.position + dir * stepDist;
+        Vector3 targetPos = SlideMove(transform.position, 0.75f, 0.4f, displacement, obstacleMask);
         targetPos.y = transform.position.y;
         transform.position = targetPos;
     }
@@ -1064,6 +1106,40 @@ public class MonsterActor : Actor
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
         Debug.Log($"[MonsterState] '{displayName}' downed. Possess window={corpsePossessionWindow:F1}s.");
+    }
+
+    /// <summary>
+    /// 以"附身等待尸体"状态出场（供 PossessionBodyProvider 等直接刷尸体的场景）：
+    /// 直接进入 Downed 尸体态，血量清零、AI 休眠、可被附身；
+    /// 尸体**永不自动消散**（附身窗口无限），只有被附身后按正常流程消散（附身死亡/退出时）。
+    /// </summary>
+    public void SpawnAsPermanentCorpse()
+    {
+        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+
+        currentHealth = 0f;
+        isDowned = true;
+        isPossessed = false;
+        Body = BodyState.Downed;
+        possessionWindowEndsAt = float.PositiveInfinity; // 永久等待附身，不自动消散
+        isPossessionReserved = false;
+        transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
+        foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
+        EnableCorpsePossessionCollider();
+        if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
+        if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
+        UpdateHealthUI();
+
+        Animator animator = GetActiveAnimator();
+        if (animator != null) animator.SetBool("IsDowned", true);
+
+        SetController(NullController.Instance); // 尸体 AI 完全休眠
+        CancelAbilityRuntimeState();
+        SetAbilityComponentsEnabled(false);
+
+        if (corpseRoutine != null) StopCoroutine(corpseRoutine);
+        corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
+        Debug.Log($"[MonsterState] '{displayName}' spawned as permanent possession corpse.");
     }
 
     public void BeginDisappearing(){

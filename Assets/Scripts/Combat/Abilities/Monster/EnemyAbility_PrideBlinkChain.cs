@@ -236,10 +236,8 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     {
         Enemy result = null;
         float bestDistance = searchRange;
-        Enemy[] candidates = FindObjectsOfType<Enemy>();
-        for (int i = 0; i < candidates.Length; i++)
+        foreach (var candidate in EnemyRegistry.All)
         {
-            Enemy candidate = candidates[i];
             if (candidate == null || candidate == exclude || owner == null || !owner.CanDamage(candidate)) continue;
             float distance = Vector3.Distance(origin, GetSkinnedMeshBoundsCenter(candidate));
             if (distance > bestDistance) continue;

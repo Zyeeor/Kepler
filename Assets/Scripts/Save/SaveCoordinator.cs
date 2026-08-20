@@ -17,8 +17,8 @@ using UnityEngine;
 /// </summary>
 public static class SaveCoordinator
 {
-    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。</summary>
-    public const int SchemaVersion = 1;
+    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v2：新增 runId。</summary>
+    public const int SchemaVersion = 2;
 
     static readonly string SavePath = Path.Combine(Application.persistentDataPath, "possess_run_save.json");
 
@@ -59,12 +59,14 @@ public static class SaveCoordinator
     public static void SaveSnapshot(int completedWaveIndex, uint worldSeed, List<string> unlockedEffects,
         Vector3 soulPosition, float soulHealth, float soulTime,
         SaveData.MonsterBodySave possessedBody = null, List<SaveData.MonsterBodySave> corpses = null,
-        bool pendingChoice = false, List<string> choicePicks = null, int globalMissStreak = 0)
+        bool pendingChoice = false, List<string> choicePicks = null, int globalMissStreak = 0,
+        string runId = null)
     {
         var data = new SaveData
         {
             schemaVersion = SchemaVersion,
             savedAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            runId = runId,
             worldSeed = worldSeed,
             completedWaveIndex = completedWaveIndex,
             pendingChoice = pendingChoice,
@@ -152,8 +154,15 @@ public static class SaveCoordinator
             }
             if (data.schemaVersion != SchemaVersion)
             {
-                Debug.LogError($"[SaveCoordinator] 存档版本不兼容（{data.schemaVersion} ≠ {SchemaVersion}），已作废。");
-                return null;
+                // 版本不符：走迁移链（SaveMigrator 逐版本升级）；缺迁移函数才作废
+                int from = data.schemaVersion;
+                if (!SaveMigrator.TryMigrate(data, from, out var migrated))
+                {
+                    Debug.LogError($"[SaveCoordinator] 存档版本 {from} 无法迁移至 {SchemaVersion}（缺迁移函数），已作废。");
+                    return null;
+                }
+                Debug.Log($"[SaveCoordinator] 存档已迁移：v{from} → v{SchemaVersion}。");
+                data = migrated;
             }
             return data;
         }

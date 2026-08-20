@@ -266,6 +266,9 @@ public class LustBodyState : MonoBehaviour
 
     private bool IsTg01Unlocked()
     {
+        // 精英怪：只认自身历史 BD 快照中的 LU-TG01，不看当前 Run 全局解锁（Canonical §23）
+        var carrier = EliteBuildCarrier.Get(this);
+        if (carrier != null) return carrier.HasCard("LU-TG01");
         return CardManager.Instance != null && CardManager.Instance.IsEffectUnlocked("LU-TG01");
     }
 

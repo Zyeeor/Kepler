@@ -98,6 +98,89 @@ public abstract class Actor : MonoBehaviour, IActor
     /// <summary>Abstract: Soul / Monster each map buttons to ability triggers.</summary>
     protected abstract void ExecuteButtons(in ControlCommand cmd);
 
+    // ---- Collision-aware movement (CollideAndSlide) ----
+
+    /// <summary>
+    /// 滑动移动（CollideAndSlide，PhysX 胶囊控制器同源策略）：
+    ///   1. 按 maxStep 把位移分段（高速/低帧率下防穿透薄碰撞体）；
+    ///   2. 每段 SphereCast 沿位移方向预检测；
+    ///   3. 命中 → 前进到命中点前 skin 处，剩余位移沿 hit.normal 切向投影（沿墙滑动）；
+    ///   4. 重复投影方向再 cast（迭代 maxIterations 次），防滑入墙角/双面棱；
+    ///   5. 终点 OverlapSphere 校验：仍在碰撞体内（凸包棱滑入）则回退到命中点前。
+    /// y 恒不改：灵魂飞行/附身怪高度由调用方保持（返回值只含 XZ 位移）。
+    /// </summary>
+    protected static Vector3 SlideMove(Vector3 origin, float capsuleCenterY, float radius,
+        Vector3 displacement, int obstacleMask, float skin = 0.05f, int maxIterations = 2, float maxStep = 0.4f)
+    {
+        Vector3 pos = origin;
+        Vector3 totalRemaining = displacement;
+
+        // 脱困：起点已在碰撞体内（如流送地图把装饰物生成在玩家身上/滑入棱角），
+        // 沿"最近表面点"方向推出 skin，避免 SphereCast 内部起始行为不可靠 + 终点回退锁死。
+        Vector3 capsuleCenter0 = pos + Vector3.up * capsuleCenterY;
+        var startHits = Physics.OverlapSphere(capsuleCenter0, radius, obstacleMask, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < startHits.Length; i++)
+        {
+            var c = startHits[i];
+            if (c == null || c.isTrigger) continue;
+            Vector3 closest = Physics.ClosestPoint(capsuleCenter0, c, c.transform.position, c.transform.rotation);
+            Vector3 pushDir = capsuleCenter0 - closest;
+            float pushDist = pushDir.magnitude;
+            if (pushDist < 0.0001f) pushDir = Vector3.up; // 球心重合兜底
+            else pushDir /= pushDist;
+            pos += pushDir * Mathf.Max(0f, radius - pushDist + skin);
+        }
+
+        // 外层：按 maxStep 分段（高速防穿透）
+        while (totalRemaining.sqrMagnitude > 0.0001f)
+        {
+            Vector3 segment = totalRemaining.magnitude > maxStep
+                ? totalRemaining.normalized * maxStep
+                : totalRemaining;
+            totalRemaining -= segment;
+
+            // 内层：该段内的 cast + 滑动投影（迭代防墙角）
+            Vector3 segRemaining = segment;
+            int iterations = 0;
+            Vector3 lastSafe = pos;
+            while (segRemaining.sqrMagnitude > 0.0001f && iterations < maxIterations)
+            {
+                iterations++;
+                float stepDist = segRemaining.magnitude;
+                Vector3 dir = segRemaining / stepDist;
+                Vector3 capsuleCenter = pos + Vector3.up * capsuleCenterY;
+
+                if (Physics.SphereCast(capsuleCenter, radius, dir, out RaycastHit hit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
+                {
+                    // 前进到命中点前 skin 处
+                    float moveDist = Mathf.Max(0f, hit.distance - skin);
+                    pos += dir * moveDist;
+                    lastSafe = pos;
+                    float leftoverDist = stepDist - moveDist;
+                    if (leftoverDist <= 0.0001f) break;
+
+                    // 剩余位移沿法线切向投影 → 沿墙滑动
+                    Vector3 normal = hit.normal.normalized;
+                    Vector3 leftover = dir * leftoverDist;
+                    Vector3 slide = leftover - normal * Vector3.Dot(leftover, normal);
+                    // 投影后与输入方向反向（撞正墙/墙角）→ 停止，防抖动
+                    if (Vector3.Dot(slide, displacement) <= 0.0001f) break;
+                    segRemaining = slide;
+                }
+                else
+                {
+                    pos += segRemaining;
+                    segRemaining = Vector3.zero;
+                }
+            }
+
+            // 终点校验：若滑入碰撞体（凸包棱/双面），回退到最近安全点。
+            if (Physics.OverlapSphere(pos + Vector3.up * capsuleCenterY, radius, obstacleMask, QueryTriggerInteraction.Ignore).Length > 0)
+                pos = lastSafe;
+        }
+        return pos;
+    }
+
     // ---- IActor implementation ----
 
     public Transform BodyTransform => transform;

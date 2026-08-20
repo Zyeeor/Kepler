@@ -23,7 +23,7 @@ using System.Collections.Generic;
 /// （RoomFlowController 或 autoShowChoiceUI 打开 CoreChoiceUI，timeScale=0）→
 /// IsDrafting 轮询等待选卡会话结束 → 下一波自动开始（选卡暂停期间不会刷怪）。
 /// </summary>
-public class WaveManager : MonoBehaviour
+public class WaveManager : SceneSingleton<WaveManager>
 {
     /// <summary>当前正在运行的波次索引。</summary>
     public int CurrentWaveIndex { get; private set; } = -1;
@@ -35,9 +35,6 @@ public class WaveManager : MonoBehaviour
     public bool IsWaveActive { get; private set; }
     /// <summary>时间波剩余秒数（仅 Timed 波运行中 &gt;0；数量波/未运行 = 0）。供 UI 倒计时显示。</summary>
     public float TimeWaveRemaining { get; private set; }
-
-    /// <summary>全局单例（场景中挂一个 WaveManager）。</summary>
-    public static WaveManager Instance { get; private set; }
 
     /// <summary>事件：波次开始。</summary>
     public event Action<int, WaveConfig> OnWaveStarted;
@@ -88,15 +85,16 @@ public class WaveManager : MonoBehaviour
     /// <summary>调试跳波标志（DebugSkipWave 置位，波循环下一帧检测后视为清场过波）。</summary>
     private bool debugSkipWave;
 
-    void Awake()
+    protected override void Awake()
     {
-        Instance = this;
+        base.Awake();   // 防重复注册（已有实例则销毁本对象）
+        if (Instance != this) return;
         TimeWaveRemaining = 0f;
     }
 
-    void OnDestroy()
+    protected override void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        base.OnDestroy();   // 清 Instance
     }
 
 #if UNITY_EDITOR
@@ -114,6 +112,9 @@ public class WaveManager : MonoBehaviour
         // 放在 Start 而非 Awake：此时场景所有 Awake 已执行完（已有实例已注册），
         // 确保不会因创建时机抢跑而覆盖场景中已配置的 MonsterSpawner。幂等。
         MonsterSpawner.EnsureInstance();
+
+        // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
+        EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
 
         // 无房间模式：未被 RoomFlowController 初始化时，等待地图就绪后自动启动
         if (!autoStart) return;
@@ -221,6 +222,20 @@ public class WaveManager : MonoBehaviour
 
     /// <summary>当前生效的波次配置（房间模板优先，无房间用自身配置）。</summary>
     List<WaveConfig> ActiveWaves => currentTemplate != null ? currentTemplate.waves : waves;
+
+    /// <summary>当前生效波次总数（精英投放节奏判断用，1-based 波次的边界）。</summary>
+    public int TotalWaveCount => ActiveWaves != null ? ActiveWaves.Count : 0;
+
+    /// <summary>
+    /// 外部来源怪（精英投放）计入本波清点：计入后精英未死亡/未被附身，本波不算清场。
+    /// 仅战斗波次进行中（IsWaveActive）有效。
+    /// </summary>
+    public void RegisterExternalWaveMonster(MonsterActor monster)
+    {
+        if (monster == null || !IsWaveActive) return;
+        waveAlive.Add(monster);
+        EnemiesAlive = waveAlive.Count;
+    }
 
     /// <summary>当前生效的首波前准备时间（房间模板优先，无房间用自身配置）。</summary>
     float ActiveGracePeriod => currentTemplate != null ? currentTemplate.gracePeriod : gracePeriod;

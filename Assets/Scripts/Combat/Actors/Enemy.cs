@@ -12,4 +12,14 @@ public class Enemy : MonsterActor
     [Header("Possession")]
     [Tooltip("Optional point where the SoulActor is attached while this enemy is possessed.")]
     public Transform soulAnchorPoint;
+
+    void OnEnable()
+    {
+        EnemyRegistry.Register(this);   // 活跃注册（池化怪 Spawn 激活时注册；索敌/技能扫描读 Registry 替代全场景扫描）
+    }
+
+    void OnDisable()
+    {
+        EnemyRegistry.Unregister(this); // 回池/销毁注销（SetActive(false) 触发）
+    }
 }

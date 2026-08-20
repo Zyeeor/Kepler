@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using UnityEngine;
 
 /// <summary>
@@ -33,6 +34,8 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
 
     void Update()
     {
+        // Debug 大门：正式流程禁用测试刷怪器（防出包后玩家数字键刷怪）
+        if (GameManager.IsFormalFlow) return;
         // 玩家输入被 UI/对话框阻塞时不响应（与 MonsterPossessionCheat 一致）
         if (PlayerController.IsGameplayInputBlocked)
             return;
@@ -146,6 +149,8 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
 
     void OnGUI()
     {
+        // 正式流程下不绘制调试提示面板
+        if (GameManager.IsFormalFlow) return;
         if (!showHint) return;
 
         float width = 360f;
@@ -168,3 +173,4 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
         }
     }
 }
+#endif

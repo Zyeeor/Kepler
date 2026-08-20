@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 /// <summary>
+/// 【调试隔离豁免】被生产类 MapStreamingSystem 引用（自动创建），无法 #if 隔离；
+/// 运行时安全由 GameManager.IsFormalFlow 查询保证（正式流程下不显示/不响应）。
+///
 /// 地图流送调试 HUD（OnGUI，风格与 MonsterSpawner 调试面板一致）：
 /// 玩家坐标 / 所在 Chunk、A/B/C/D 各范围 Chunk 数、任务队列长度、本帧已执行 Job 数、
 /// 时间片使用率、Chunk 总数与状态分布（Active/Dormant/Prepared/Unloaded）、Pin 数、ChunkState 快照数。

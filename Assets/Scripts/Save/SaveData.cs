@@ -12,15 +12,22 @@ using UnityEngine;
 ///   - 灵魂态玩家：位置 / 灵魂 HP / 灵魂时间（soulTime）
 ///
 /// 不存（波间语义天然规避）：进行中的波次瞬态、存活怪细节、投射物/脱手效果、协程状态。
-/// 附身态不恢复：恢复后统一回到灵魂态（旧 Body 由下一波重刷替代，见方案文档待确认项 #3 的简化假设）。
+/// 附身态与尸体**可恢复**（possessedBody / corpses 字段，WaveManager.RestoreBodies 消费）：
+/// 恢复后直接回到附身怪 + 场上尸体照旧。
+///
+/// 【SchemaVersion 纪律（必须遵守）】任何字段增删/语义变更 → SchemaVersion +1，
+/// 并同步在 SaveCoordinator.LoadFromDisk 的 SaveMigrator 挂接对应版本迁移函数（vN→vN+1 链式）。
+/// 同版本号下结构漂移 = 校验形同虚设 + 旧档语义未定义。违反此纪律的提交应被拒绝。
 /// </summary>
 [Serializable]
 public class SaveData
 {
-    /// <summary>存档结构版本：结构变更时递增，读取端校验（不兼容旧档直接提示清理）。</summary>
-    public int schemaVersion = 1;
+    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。v2：新增 runId（精英 BD 快照 upsert 键）。</summary>
+    public int schemaVersion = 2;
     /// <summary>写入时间（Unix 秒，仅展示/调试）。</summary>
     public long savedAtUnix;
+    /// <summary>本局 runId（精英 BD 快照 upsert 唯一键组成，读档恢复后延续）。</summary>
+    public string runId;
     /// <summary>地图种子：恢复时注入 MapStreamingSystem.worldSeed，重建完全一致的地图。</summary>
     public uint worldSeed;
     /// <summary>已完成波次索引（-1 = 尚未完成任何波）。恢复从 completedWaveIndex + 1 开始。</summary>

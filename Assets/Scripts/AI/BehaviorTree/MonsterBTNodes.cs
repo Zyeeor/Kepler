@@ -69,7 +69,7 @@ public class BTAction_BasicAttack : BTAction
 {
     protected override bool Execute(BTBlackboard bb)
     {
-        if (Random.value < bb.Host.attackEagerness)
+        if (bb.Host.AiRandomValue() < bb.Host.attackEagerness)
             bb.Pressed |= CommandButtons.Basic;
         return true;
     }
@@ -84,7 +84,7 @@ public class BTAction_Skill : BTAction
 {
     protected override bool Execute(BTBlackboard bb)
     {
-        if (Random.value < bb.Host.attackEagerness)
+        if (bb.Host.AiRandomValue() < bb.Host.attackEagerness)
             bb.Pressed |= CommandButtons.Skill1;
         return true;
     }
@@ -121,9 +121,9 @@ public class BTAction_MoveToPlayer : BTAction
     void RollStrafe(BTBlackboard bb)
     {
         var host = bb.Host;
-        bb.StrafeDir = Random.value < host.strafeChance ? (Random.value < 0.5f ? -1f : 1f) : 0f;
-        bb.SpeedMul = Random.Range(host.moveSpeedJitterMin, host.moveSpeedJitterMax);
-        bb.StrafeTimer = Random.Range(host.strafeIntervalMin, host.strafeIntervalMax);
+        bb.StrafeDir = host.AiRandomValue() < host.strafeChance ? (host.AiRandomValue() < 0.5f ? -1f : 1f) : 0f;
+        bb.SpeedMul = host.AiRandomRange(host.moveSpeedJitterMin, host.moveSpeedJitterMax);
+        bb.StrafeTimer = host.AiRandomRange(host.strafeIntervalMin, host.strafeIntervalMax);
     }
 
     /// <summary>由走位参数计算移动方向（含速度乘数，产出非归一化向量供 ExecuteMovement 变速）。</summary>
@@ -200,13 +200,13 @@ public class BTAction_Standoff : BTAction
     {
         var cfg = bb.Host.AiConfig;
         // 朝向玩家方向绕 Y 轴随机偏转 ±90°（不背离玩家）
-        float a = UnityEngine.Random.Range(-90f, 90f) * Mathf.Deg2Rad;
+        float a = bb.Host.AiRandomRange(-90f, 90f) * Mathf.Deg2Rad;
         Vector3 toward = bb.TowardPlayerDir;
         float ca = Mathf.Cos(a), sa = Mathf.Sin(a);
         Vector3 dir = new Vector3(toward.x * ca - toward.z * sa, 0f, toward.x * sa + toward.z * ca);
 
-        bb.SpeedMul = UnityEngine.Random.Range(cfg.moveSpeedJitterMin, cfg.moveSpeedJitterMax);
-        bb.StandoffTimer = UnityEngine.Random.Range(cfg.strafeIntervalMin, cfg.strafeIntervalMax);
+        bb.SpeedMul = bb.Host.AiRandomRange(cfg.moveSpeedJitterMin, cfg.moveSpeedJitterMax);
+        bb.StandoffTimer = bb.Host.AiRandomRange(cfg.strafeIntervalMin, cfg.strafeIntervalMax);
         bb.MoveDir = dir * bb.SpeedMul;
     }
 }

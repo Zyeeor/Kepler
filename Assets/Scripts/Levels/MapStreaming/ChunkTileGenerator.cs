@@ -89,6 +89,25 @@ public static class ChunkTileGenerator
     }
 
     /// <summary>
+    /// 固定锚点生成入口（MapStreamingSystem 固定 Chunk 锚点专用）：
+    ///   layout 非空 → 完全按手摆布局逐格生成（内容与种子无关）；
+    ///   否则 chunkDef 非空 → 该 def 程序生成 + 固定 seed（确定性），
+    ///   且不参与全局 ChunkTemplateAllocator（模板约束/计数与锚点隔离）。
+    /// </summary>
+    public static void GenerateFixed(ChunkRuntime chunk, FixedChunkLayout layout, ChunkDef def, uint seed)
+    {
+        if (chunk == null) return;
+        int n = ResolveChunkSize();
+        if (layout != null)
+        {
+            GenerateFromLayout(chunk, layout, n);
+            return;
+        }
+        if (def != null)
+            Generate(chunk, def, seed, null); // allocator=null：纯程序生成，模板分配不参与
+    }
+
+    /// <summary>
     /// 从指定布局逐格映射（模板抽取共用）。
     /// 空格（null）视为可走普通地面；开放边按实际可走性计算（边沿连通由策划保证）。
     /// </summary>

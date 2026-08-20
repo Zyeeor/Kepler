@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7789598629031574560}
   - component: {fileID: 2702344260975453177}
   - component: {fileID: 797532686651583747}
+  - component: {fileID: 8415067950776078021}
   m_Layer: 0
   m_Name: Rage_Build_Pillar_003 (1)
   m_TagString: Untagged
@@ -84,6 +85,29 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &8415067950776078021
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6714744869601828073}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 1.2772484
+  m_Height: 8.505983
+  m_Direction: 1
+  m_Center: {x: -0.051315643, y: 4.2529917, z: -0.03216412}
 --- !u!1 &8826312447928003464
 GameObject:
   m_ObjectHideFlags: 0
