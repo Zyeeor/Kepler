@@ -88,6 +88,13 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount, bool playHitFlash = true)
     {
+        // While possessing a body the soul is suppressed and must not take hit flash/damage;
+        // combat targets the possessed MonsterActor instead.
+        var soul = GetComponent<SoulActor>();
+        if (soul != null && soul.IsSuppressed) return;
+        var pm = PossessionManager.Instance;
+        if (pm != null && pm.State == PossessionManager.SwitchState.Possessing) return;
+
         var combatState = GetComponent<CombatAbilityComponent>();
         if (combatState != null) amount = combatState.ModifyIncomingDamage(amount);
         if (amount <= 0f) return;

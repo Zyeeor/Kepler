@@ -370,7 +370,23 @@ public class MonsterActor : Actor
         Physics.IgnoreLayerCollision(8, 9, true);
 
         RefreshPlayerTarget();
-        if (healthCanvas != null) healthCanvas.gameObject.SetActive(ShowHealthBars);
+        if (healthCanvas == null)
+        {
+            Canvas[] canvases = GetComponentsInChildren<Canvas>(true);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                if (canvases[i] != null && canvases[i].name.IndexOf("Health", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    healthCanvas = canvases[i];
+                    break;
+                }
+            }
+        }
+        if (healthSlider == null && healthCanvas != null)
+            healthSlider = healthCanvas.GetComponentInChildren<Slider>(true);
+        if (healthSlider == null)
+            healthSlider = GetComponentInChildren<Slider>(true);
+        if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
         UpdateHealthUI();
     }
 
@@ -901,7 +917,11 @@ public class MonsterActor : Actor
 
     /// <summary>Only AI-controlled monsters may damage the soul player.</summary>
     public bool CanDamageSoul(){
-        return !isPossessed && Body != BodyState.Fading && Body != BodyState.Despawned;
+        if (isPossessed || Body == BodyState.Fading || Body == BodyState.Despawned) return false;
+        // Soul is invulnerable while a possession body is active (even if a leftover collider overlaps).
+        var pm = PossessionManager.Instance;
+        if (pm != null && pm.State == PossessionManager.SwitchState.Possessing) return false;
+        return true;
     }
 
     public void ApplyOffensiveDamage(MonsterActor target, float amount)
@@ -983,8 +1003,16 @@ public class MonsterActor : Actor
             visualFx.SetDissolve(1f);
             visualFx.SetPossessionHighlight(true);
         }
-        foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = true;
-        foreach (Collider collider in GetComponentsInChildren<Collider>()) collider.enabled = true;
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
+        {
+            if (IsUnderForeignSoul(renderer.transform)) continue;
+            renderer.enabled = true;
+        }
+        foreach (Collider collider in GetComponentsInChildren<Collider>())
+        {
+            if (IsUnderForeignSoul(collider.transform)) continue;
+            collider.enabled = true;
+        }
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(false);
         UpdateHealthUI();
@@ -1017,7 +1045,11 @@ public class MonsterActor : Actor
         possessionWindowEndsAt = Time.time + corpsePossessionWindow;
         isPossessionReserved = false;
         transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
-        foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
+        foreach (Collider collider in GetComponentsInChildren<Collider>(true))
+        {
+            if (IsUnderForeignSoul(collider.transform)) continue;
+            collider.enabled = true;
+        }
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
         // Keep authored materials on corpse; dissolve FX handles fading later.
@@ -1046,7 +1078,11 @@ public class MonsterActor : Actor
         Body = BodyState.Fading;
         possessionWindowEndsAt = 0f;
         SetController(NullController.Instance);
-        foreach (Collider collider in GetComponentsInChildren<Collider>()) collider.enabled = false;
+        foreach (Collider collider in GetComponentsInChildren<Collider>())
+        {
+            if (IsUnderForeignSoul(collider.transform)) continue;
+            collider.enabled = false;
+        }
         corpseRoutine = StartCoroutine(FadeAndReturnRoutine());
         Debug.Log($"[MonsterState] '{displayName}' entered fading state.");
     }
@@ -1109,8 +1145,16 @@ public class MonsterActor : Actor
             visualFx.SetDissolve(1f);
             visualFx.SetPossessionHighlight(false);
         }
-        foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true)) renderer.enabled = true;
-        foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+        {
+            if (IsUnderForeignSoul(renderer.transform)) continue;
+            renderer.enabled = true;
+        }
+        foreach (Collider collider in GetComponentsInChildren<Collider>(true))
+        {
+            if (IsUnderForeignSoul(collider.transform)) continue;
+            collider.enabled = true;
+        }
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
         Animator animator = GetActiveAnimator();
         if (animator != null) animator.SetBool("IsDowned", false);
@@ -1352,6 +1396,20 @@ public class MonsterActor : Actor
         }
     }
 #endif
+
+    /// <summary>
+    /// SoulActor is parented under the body while possessed. Body-wide collider/renderer
+    /// toggles must not touch that foreign hierarchy.
+    /// </summary>
+    private static bool IsUnderForeignSoul(Transform t)
+    {
+        while (t != null)
+        {
+            if (t.GetComponent<SoulActor>() != null) return true;
+            t = t.parent;
+        }
+        return false;
+    }
 
     public void UpdateHealthUI(){
         if (healthSlider != null)
