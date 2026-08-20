@@ -235,7 +235,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
             Vector3 halfExtents = new Vector3(projectileWidth * 0.5f, projectileHeight * 0.5f, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
-            CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot);
+            CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
 
             int layerMask = owner.isPossessed ? ~0 : targetMask;
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
@@ -298,7 +298,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
         int layerMask = owner.isPossessed ? ~0 : targetMask;
         Collider[] hits = Physics.OverlapSphere(center, blastRadius, layerMask, QueryTriggerInteraction.Collide);
-        CombatHitboxDebug.DrawSphere(drawHitboxes, center, blastRadius);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, blastRadius, explosionVfxDuration);
         foreach (var h in hits)
         {
             if (IsOwnerCollider(h)) continue;

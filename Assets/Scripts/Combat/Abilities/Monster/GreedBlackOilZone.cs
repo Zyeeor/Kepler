@@ -114,8 +114,10 @@ public class GreedBlackOilZone : MonoBehaviour
     private void ScanOccupants()
     {
         Vector3 half = new Vector3(width * 0.5f, 0.75f, width * 0.5f);
+        Vector3 boxCenter = transform.position + Vector3.up * 0.5f;
+        CombatHitboxDebug.DrawBox(true, boxCenter, half, Quaternion.identity, 0f);
         int count = Physics.OverlapBoxNonAlloc(
-            transform.position + Vector3.up * 0.5f,
+            boxCenter,
             half,
             _overlapBuffer,
             Quaternion.identity,

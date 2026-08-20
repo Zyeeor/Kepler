@@ -207,6 +207,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         }
 
         RaycastHit[] hits = Physics.SphereCastAll(from, radius, delta / dist, dist, ~0, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawCapsule(drawHitboxes, from, to, radius, 0f);
         for (int i = 0; i < hits.Length; i++)
             TryHitCollider(hits[i].collider, dmg, hitIds);
 
@@ -217,6 +218,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
     private void RegisterRingHits(Vector3 origin, float radius, float width, float dmg, HashSet<int> hitIds)
     {
         float half = Mathf.Max(0.05f, width * 0.5f);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, origin, radius + half, 0f);
         Collider[] hits = Physics.OverlapSphere(origin, radius + half, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {
@@ -241,6 +243,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
 
     private void RegisterSphereHits(Vector3 center, float radius, float dmg, HashSet<int> hitIds)
     {
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, 0f);
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
             TryHitCollider(hits[i], dmg, hitIds);

@@ -152,6 +152,7 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
         else
         {
             // Follow-up may land after target died; still show VFX at snapshot position.
+            CombatHitboxDebug.DrawSphere(drawHitboxes, strike.position, 0.75f, hitEffectDuration);
             Collider[] cols = Physics.OverlapSphere(strike.position, 0.75f);
             for (int i = 0; i < cols.Length; i++)
             {

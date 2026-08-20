@@ -58,6 +58,8 @@ public class EnemyAbility_Slash : EnemyAbility
 
         // Detect all valid targets in the arc
         int layerMask = owner.isPossessed ? ~0 : targetMask;
+        CombatHitboxDebug.DrawArc(drawHitboxes, slashOrigin, forward, slashRange, slashAngle, slashEffectDuration);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, slashOrigin, slashRange, slashEffectDuration);
 
         // Use OverlapSphere with no angle restriction for reliable detection
         Collider[] hits = Physics.OverlapSphere(slashOrigin, slashRange, layerMask, QueryTriggerInteraction.Collide);

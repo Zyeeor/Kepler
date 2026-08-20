@@ -66,6 +66,7 @@ public class WrathBurnField : MonoBehaviour
     private void ApplyTick(float tickDamage)
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawSphere(true, transform.position, radius, Mathf.Max(0.08f, tickInterval));
         HashSet<int> seen = new HashSet<int>();
         foreach (Collider hit in hits)
         {

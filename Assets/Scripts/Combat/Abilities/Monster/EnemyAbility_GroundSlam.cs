@@ -55,6 +55,7 @@ public class EnemyAbility_GroundSlam : EnemyAbility
     {
         Vector3 center = owner != null ? owner.transform.position : transform.position;
         int layerMask = owner.isPossessed ? ~0 : targetMask;
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, Mathf.Max(secondHitDelay, 0.4f));
         Collider[] hits = Physics.OverlapSphere(center, radius, layerMask, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {

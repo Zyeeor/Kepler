@@ -101,7 +101,7 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
             if (IsUpgradeUnlocked("Sloth.LandingBlast"))
             {
                 PlayLandingVfxOnSelf();
-                DamageEnemiesInSphere(land, landingRadius, landingDamage);
+                DamageEnemiesInSphere(land, landingRadius, landingDamage, null, landingVfxDuration);
             }
         }
 

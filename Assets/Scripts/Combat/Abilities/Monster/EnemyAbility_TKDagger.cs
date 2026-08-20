@@ -176,7 +176,7 @@ public class EnemyAbility_TKDagger : EnemyAbility
 
             if (Vector3.Distance(dagger.transform.position, target.position) < 0.8f)
             {
-                CombatHitboxDebug.DrawSphere(drawHitboxes, dagger.transform.position, 0.8f);
+                CombatHitboxDebug.DrawSphere(drawHitboxes, dagger.transform.position, 0.8f, 0f);
                 var enemy = target.GetComponent<Enemy>();
                 if (owner.CanDamage(enemy))
                     DealDamageTo(enemy, damage * damageMultiplier);

@@ -132,9 +132,9 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
         float radius = GetCardParameter("R", m03BlastRadius);
         if (m03BlastVfx != null)
             Object.Instantiate(m03BlastVfx, blastPos, Quaternion.identity);
-        DamageEnemiesInSphere(blastPos, radius, dmg);
+        DamageEnemiesInSphere(blastPos, radius, dmg, null, -1f);
         if (!owner.isPossessed)
-            TryDamagePlayerInRadius(blastPos, radius, dmg);
+            TryDamagePlayerInRadius(blastPos, radius, dmg, -1f);
     }
 
     private IEnumerator MoveOwner(Vector3 start, Vector3 end, float duration)

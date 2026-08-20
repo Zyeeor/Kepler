@@ -130,6 +130,7 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
         if (owner == null) return;
         Vector3 center = owner.transform.position;
         float dmg = tickDamage > 0f ? tickDamage : damage;
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, pullRadius, Mathf.Max(0.08f, tickInterval));
 
         Collider[] hits = Physics.OverlapSphere(center, pullRadius, ~0, QueryTriggerInteraction.Collide);
         HashSet<int> seen = new HashSet<int>();

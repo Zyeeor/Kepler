@@ -124,9 +124,9 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
             if (IsUpgradeUnlocked(CardRangeImpact))
             {
                 PlayLandingImpact(landingPoint);
-                DamageEnemiesInSphere(landingPoint, landingImpactRadius, landingImpactDamage);
+                DamageEnemiesInSphere(landingPoint, landingImpactRadius, landingImpactDamage, null, landingImpactVfxDuration);
                 if (!owner.isPossessed)
-                    TryDamagePlayerInRadius(landingPoint, landingImpactRadius, landingImpactDamage);
+                    TryDamagePlayerInRadius(landingPoint, landingImpactRadius, landingImpactDamage, landingImpactVfxDuration);
             }
         }
 
@@ -144,6 +144,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         }
 
         Vector3 dir = delta / dist;
+        CombatHitboxDebug.DrawCapsule(drawHitboxes, from, to, pathRadius, 0f);
         RaycastHit[] hits = Physics.SphereCastAll(from, pathRadius, dir, dist, ~0, QueryTriggerInteraction.Collide);
         foreach (RaycastHit hit in hits)
             TryDamageColliderOnce(hit.collider);
@@ -153,6 +154,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
 
     private void CollectAndDamageSphere(Vector3 center, float radius)
     {
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, 0f);
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         foreach (Collider hit in hits)
             TryDamageColliderOnce(hit);

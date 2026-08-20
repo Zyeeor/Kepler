@@ -197,8 +197,10 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
 
     private bool TrySwallowProjectile()
     {
-        Collider[] hits = Physics.OverlapSphere(owner.transform.position + owner.transform.forward * (range * 0.5f),
-            projectileSwallowRadius, ~0, QueryTriggerInteraction.Collide);
+        Vector3 center = owner.transform.position + owner.transform.forward * (range * 0.5f);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, projectileSwallowRadius, -1f);
+        CombatHitboxDebug.DrawArc(drawHitboxes, owner.transform.position, owner.transform.forward, range, angle, -1f);
+        Collider[] hits = Physics.OverlapSphere(center, projectileSwallowRadius, ~0, QueryTriggerInteraction.Collide);
         foreach (Collider hit in hits)
         {
             Projectile projectile = hit.GetComponentInParent<Projectile>();

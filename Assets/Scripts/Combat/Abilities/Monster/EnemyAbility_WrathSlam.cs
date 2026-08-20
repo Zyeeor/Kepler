@@ -98,9 +98,9 @@ public class EnemyAbility_WrathSlam : EnemyAbility
 
         Vector3 center = owner.transform.position;
         PlaySlamImpact(center, slamRadius);
-        DamageEnemiesInSphere(center, slamRadius, slamDamage);
+        DamageEnemiesInSphere(center, slamRadius, slamDamage, null, slamImpactVfxDuration);
         if (!owner.isPossessed)
-            TryDamagePlayerInRadius(center, slamRadius, slamDamage);
+            TryDamagePlayerInRadius(center, slamRadius, slamDamage, slamImpactVfxDuration);
 
         SpawnOrRefreshBurnField(center, fieldRadius);
         EndActivationEffect();

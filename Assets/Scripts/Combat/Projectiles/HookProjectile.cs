@@ -72,6 +72,7 @@ public class HookProjectile : MonoBehaviour
     {
         Vector3 displacement = to - from;
         float distance = displacement.magnitude;
+        CombatHitboxDebug.DrawCapsule(true, from, to, hitRadius, 0f);
         if (distance > 0.0001f)
         {
             RaycastHit[] sweptHits = Physics.SphereCastAll(from, hitRadius, displacement / distance, distance, hitMask, QueryTriggerInteraction.Collide);
