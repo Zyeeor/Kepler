@@ -15,6 +15,16 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
     public float jumpDuration = 0.45f;
     public float landingRadius = 2.5f;
     public float landingDamage = 20f;
+
+    [Header("Landing VFX")]
+    [Tooltip("VFX played only when Sloth.LandingBlast is unlocked and the launch lands.")]
+    public GameObject landingVfxPrefab;
+    [Tooltip("Optional Transform the landing VFX follows. Falls back to the Sloth owner when unassigned.")]
+    public Transform landingVfxSpawnPoint;
+    [Tooltip("Local position offset from the Landing VFX Spawn Point.")]
+    public Vector3 landingVfxPositionOffset;
+    [Tooltip("Local Euler rotation offset from the Landing VFX Spawn Point.")]
+    public Vector3 landingVfxRotationOffset;
     [Tooltip("Landing explosion VFX lifetime before it is destroyed.")]
     public float landingVfxDuration = 1f;
 
@@ -44,7 +54,14 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
     protected override GameObject SpawnVfx()
     {
         SpawnWeaponVfx();
-        return null;
+        if (vfxPrefab == null) return null;
+
+        Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : owner.transform;
+        activeVfx = Instantiate(vfxPrefab, anchor);
+        activeVfx.transform.localPosition = vfxPositionOffset;
+        activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
+        PlayVfx(activeVfx);
+        return activeVfx;
     }
 
     protected override void OnTrigger()
@@ -110,9 +127,12 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
 
     private void PlayLandingVfxOnSelf()
     {
-        if (vfxPrefab == null || owner == null) return;
-        GameObject vfx = Instantiate(vfxPrefab, owner.transform.position, Quaternion.identity);
-        vfx.transform.SetParent(owner.transform, true);
+        if (landingVfxPrefab == null || owner == null) return;
+
+        Transform anchor = landingVfxSpawnPoint != null ? landingVfxSpawnPoint : owner.transform;
+        GameObject vfx = Instantiate(landingVfxPrefab, anchor);
+        vfx.transform.localPosition = landingVfxPositionOffset;
+        vfx.transform.localRotation = Quaternion.Euler(landingVfxRotationOffset);
         PlayVfx(vfx);
         StopVfxLooping(vfx);
         Destroy(vfx, Mathf.Max(0.01f, landingVfxDuration));

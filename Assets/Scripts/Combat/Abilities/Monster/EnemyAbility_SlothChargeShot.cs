@@ -10,10 +10,34 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 {
     [Header("Projectile")]
     public GameObject projectilePrefab;
+    [Tooltip("Optional projectile spawn Transform. Falls back to the owner's forward/up offset when unassigned.")]
+    public Transform projectileSpawnPoint;
     public float projectileWidth = 1.5f;
     public float projectileHeight = 2f;
     public float projectileSpeed = 30f;
     public float maxRange = 15f;
+
+    [Header("Impact VFX")]
+    [Tooltip("Optional VFX spawned on every Enemy damaged by the charged-shot blast.")]
+    public GameObject impactVfxPrefab;
+    public float impactVfxDuration = 1f;
+
+    [Header("Shoot Feedback (Combat Effect Manager)")]
+    [Tooltip("Post-process / shake / hit-stop played when the charged shot is released. Fires for possessed Sloth only.")]
+    public HitFeedbackParams shootFeedback = new HitFeedbackParams
+    {
+        shakeOnHit = false,
+        hitStopOnHit = false,
+        postProcessOnHit = false
+    };
+
+    [Header("Shoot Recoil")]
+    [Tooltip("Optional Transform that receives local-position recoil when the charged shot is released.")]
+    public Transform recoilTarget;
+    [Tooltip("Local displacement at full charge. Use negative Z for backward recoil.")]
+    public Vector3 maxRecoilOffset = new Vector3(0f, 0f, -0.2f);
+    public float recoilKickDuration = 0.05f;
+    public float recoilReturnDuration = 0.15f;
 
     [Header("Charge")]
     public float maxChargeTime = 2f;
@@ -24,6 +48,10 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     public float minDamage = 2f;
     public float maxDamage = 100f;
     public GameObject chargeVfxPrefab;
+    [Tooltip("Optional Transform the charge VFX follows. Falls back to the Sloth owner when unassigned.")]
+    public Transform chargeVfxSpawnPoint;
+    [Tooltip("Local position offset from the Charge VFX Spawn Point.")]
+    public Vector3 chargeVfxPositionOffset;
 
     [Header("Targeting")]
     public LayerMask targetMask = -1;
@@ -40,6 +68,9 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     private float chargeTimer;
     private float lastChargeTime;
     private GameObject chargeVfxInstance;
+    private Coroutine recoilRoutine;
+    private Vector3 recoilBasePosition;
+    private bool hasRecoilBasePosition;
 
     private void OnEnable()
     {
@@ -86,8 +117,13 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
                 if (chargeVfxPrefab != null)
                 {
-                    chargeVfxInstance = SpawnVfxTracked(chargeVfxPrefab, owner.transform.position, Quaternion.identity);
-                    if (chargeVfxInstance != null) chargeVfxInstance.transform.SetParent(owner.transform, true);
+                    Transform anchor = chargeVfxSpawnPoint != null ? chargeVfxSpawnPoint : owner.transform;
+                    chargeVfxInstance = Instantiate(chargeVfxPrefab, anchor);
+                    if (chargeVfxInstance != null)
+                    {
+                        chargeVfxInstance.transform.localPosition = chargeVfxPositionOffset;
+                        PlayVfx(chargeVfxInstance);
+                    }
                 }
             }
 
@@ -125,14 +161,63 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         if (damage > 0f) shotDamage = Mathf.Max(shotDamage, damage * Mathf.Lerp(1f, maxDamage / Mathf.Max(1f, minDamage), t));
 
         Vector3 forward = owner.transform.forward;
-        Vector3 origin = owner.transform.position + forward * 1f + Vector3.up * 1f;
+        Vector3 origin = projectileSpawnPoint != null
+            ? projectileSpawnPoint.position
+            : owner.transform.position + forward * 1f + Vector3.up * 1f;
 
         var go = SpawnVfxTracked(projectilePrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
-        go.transform.localScale = Vector3.one * scale;
+        go.transform.localScale *= scale;
+        foreach (ParticleSystem particleSystem in go.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+        }
         StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, shotDamage));
+
+        if (owner.isPossessed && shootFeedback != null && shootFeedback.HasAnyEnabled)
+            CombatEffectManager.PlayHitFeedback(shootFeedback, owner.transform);
+
+        if (recoilTarget != null)
+        {
+            if (recoilRoutine != null) StopCoroutine(recoilRoutine);
+            if (hasRecoilBasePosition) recoilTarget.transform.localPosition = recoilBasePosition;
+            recoilRoutine = StartCoroutine(PlayRecoil(t));
+        }
 
         var anim = owner.GetComponent<Animator>();
         if (anim != null) anim.SetTrigger("Basic");
+    }
+
+    private IEnumerator PlayRecoil(float chargeFraction)
+    {
+        if (recoilTarget == null) yield break;
+
+        recoilBasePosition = recoilTarget.transform.localPosition;
+        hasRecoilBasePosition = true;
+        Vector3 basePosition = recoilBasePosition;
+        Vector3 recoilPosition = basePosition + maxRecoilOffset * chargeFraction;
+        float kickDuration = Mathf.Max(0.01f, recoilKickDuration);
+        float returnDuration = Mathf.Max(0.01f, recoilReturnDuration);
+
+        float elapsed = 0f;
+        while (elapsed < kickDuration && recoilTarget != null)
+        {
+            elapsed += AbilityDeltaTime;
+            recoilTarget.transform.localPosition = Vector3.Lerp(basePosition, recoilPosition, Mathf.Clamp01(elapsed / kickDuration));
+            yield return null;
+        }
+
+        elapsed = 0f;
+        while (elapsed < returnDuration && recoilTarget != null)
+        {
+            elapsed += AbilityDeltaTime;
+            recoilTarget.transform.localPosition = Vector3.Lerp(recoilPosition, basePosition, Mathf.Clamp01(elapsed / returnDuration));
+            yield return null;
+        }
+
+        if (recoilTarget != null) recoilTarget.transform.localPosition = basePosition;
+        hasRecoilBasePosition = false;
+        recoilRoutine = null;
     }
 
     IEnumerator ProjectileTravel(GameObject projectileGo, Vector3 forward, Vector3 origin, float radius, float scale, float shotDamage)
@@ -195,7 +280,21 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
     void DoBlast(Vector3 pos, float radius, float scale, float shotDamage, Enemy scatterIgnore)
     {
-        DamageEnemiesInSphere(pos, radius, shotDamage, null);
+        HashSet<Enemy> hitEnemies = DamageEnemiesInSphere(pos, radius, shotDamage, null);
+        foreach (Enemy hitEnemy in hitEnemies)
+        {
+            if (impactVfxPrefab == null) continue;
+
+            GameObject impact = SpawnVfxTracked(impactVfxPrefab, hitEnemy.transform.position, Quaternion.identity, impactVfxDuration);
+            if (impact == null) continue;
+
+            impact.transform.localScale *= scale;
+            foreach (ParticleSystem particleSystem in impact.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            }
+        }
         TryDamagePlayerInRadius(pos, radius, shotDamage);
 
         if (scatterIgnore == null || !IsUpgradeUnlocked("Sloth.Scatter") || projectilePrefab == null)
@@ -271,6 +370,10 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     protected override void OnDisable()
     {
         if (isCharging) StopCharging();
+        if (recoilRoutine != null) StopCoroutine(recoilRoutine);
+        if (recoilTarget != null && hasRecoilBasePosition) recoilTarget.transform.localPosition = recoilBasePosition;
+        recoilRoutine = null;
+        hasRecoilBasePosition = false;
         base.OnDisable();
     }
 }
