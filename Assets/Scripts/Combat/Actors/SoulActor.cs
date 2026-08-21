@@ -199,8 +199,6 @@ public class SoulActor : Actor
         // 此时灵魂会留在 DDOL 根跨场景存活。先移回活动场景再恢复父级。
         if (!restoreParentAlive && gameObject.scene.name == "DontDestroyOnLoad")
         {
-            // MoveGameObjectToScene 要求是根对象，先解除 parent
-            transform.SetParent(null, true);
             var active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (active.IsValid() && active.name != "DontDestroyOnLoad")
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(gameObject, active);
