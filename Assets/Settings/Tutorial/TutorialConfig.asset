@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 397816be634d445a837a5a8591d0e856, type: 3}
+  m_Name: TutorialConfig
+  m_EditorClassIdentifier: 
+  steps:
+  - id: TUT-01
+    title: "\u7075\u9B42\u79FB\u52A8"
+    text: "\u6309 WASD \u79FB\u52A8\u4F60\u7684\u7075\u9B42(\u865A\u5F71\u5F62\u6001\u53EF\u81EA\u7531\u6F02\u79FB)"
+    textKey: 
+    startFacts: 
+    completeFacts: 0b000000
+    blocking: 0
+    remindInterval: 12
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: TUT-02
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: TUT-02
+    title: "\u4E09\u69FD\u6218\u6597\u754C\u9762"
+    text: "{BASIC} \u666E\u653B,{SKILL} \u91CA\u653E\u6280\u80FD,{SKILL1} \u53D1\u8D77\u9644\u8EAB.\u8FD9\u5C31\u662F\u4F60\u7684\u4E09\u69FD\u6218\u6597\u754C\u9762"
+    textKey: 
+    startFacts: 04000000
+    completeFacts: 0600000007000000
+    blocking: 0
+    remindInterval: 12
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: TUT-03
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: TUT-03
+    title: "\u51FB\u6740\u602A\u7269"
+    text: "\u51FB\u8D25\u602A\u7269({BASIC} \u666E\u653B,{SKILL} \u6280\u80FD),\u602A\u7269\u5012\u4E0B\u540E\u5C38\u4F53\u53EF\u88AB\u9644\u8EAB"
+    textKey: 
+    startFacts: 04000000
+    completeFacts: 00000000
+    blocking: 0
+    remindInterval: 10
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: TUT-04
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: TUT-04
+    title: "\u9644\u8EAB\u5C38\u4F53"
+    text: "\u9760\u8FD1\u5012\u4E0B\u7684\u5C38\u4F53,\u6309 {SKILL1} \u9644\u8EAB.\u9644\u8EAB\u540E\u4F60\u5C06\u4F7F\u7528\u602A\u7269\u7684\u80FD\u529B\u6218\u6597"
+    textKey: 
+    startFacts: 00000000
+    completeFacts: 02000000
+    blocking: 0
+    remindInterval: 8
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: TUT-05
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 1
+  - id: TUT-05
+    title: "\u4E3B\u52A8\u6362\u8EAB"
+    text: "\u6309 {RELEASE} \u8131\u79BB\u5F53\u524D\u8EAB\u4F53,\u6216\u76F4\u63A5\u5BF9\u53E6\u4E00\u5177\u5C38\u4F53\u6309
+      {SKILL1},\u5373\u53EF\u6362\u8EAB"
+    textKey: 
+    startFacts: 02000000
+    completeFacts: 08000000
+    blocking: 0
+    remindInterval: 15
+    timeoutSeconds: 90
+    persistAcrossRuns: 1
+    nextStepId: 
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: "TUT-MONSTER-\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
+    title: "\u50B2\u6162\xB7\u7EC8\u5203\u7EDD\u5F71"
+    text: "\u50B2\u6162\u64C5\u957F\u6B63\u9762\u5F3A\u653B:{SKILL} \u6280\u80FD\u9020\u6210\u9AD8\u989D\u4F24\u5BB3,{BASIC}
+      \u666E\u653B\u8FDE\u51FB.\u8BD5\u8BD5\u5B83\u7684\u624B\u611F!"
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    timeoutSeconds: 12
+    persistAcrossRuns: 0
+    nextStepId: 
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0

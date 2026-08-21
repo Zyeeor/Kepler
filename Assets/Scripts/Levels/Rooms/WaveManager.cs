@@ -134,12 +134,12 @@ public class WaveManager : SceneSingleton<WaveManager>
         if (!session.HasActiveRun)
             session.InitWorldSeed();
 
-        // RunFlow 占位直通：新局阶段链 Opening → Tutorial → Waves（教学/开场内容未实现，空转推进）。
+        // RunFlow 阶段推进：新局 Opening → Tutorial（Waves 的推进由 WaveRoutine 内的教学波门决定，
+        // 教学系统未配置/关闭时波门恒开，行为等价于原直通）。
         // 读档恢复时阶段已为 Waves/Choice（LoadFromSave 设置），不受影响。
         if (session.CurrentPhase == RunPhase.Opening)
         {
             session.TransitionTo(RunPhase.Tutorial);
-            session.TransitionTo(RunPhase.Waves);
         }
 
         float waited = 0f;
@@ -325,6 +325,17 @@ public class WaveManager : SceneSingleton<WaveManager>
     IEnumerator WaveRoutine()
     {
         Debug.Log($"[WaveManager] WaveRoutine START: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
+
+        // 教学波门：首波开始前等待教学系统开门（教学未配置/关闭时恒开，无感知）。
+        // 兜底超时强制放行，防教学异常卡死开局（读档恢复也走此门，但门默认开 → 无感）。
+        float gateWait = 0f;
+        while (!TutorialController.WaveStartGateOpen && gateWait < 30f)
+        {
+            gateWait += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (gateWait >= 30f)
+            Debug.LogWarning("[WaveManager] 教学波门等待超时（30s），强制放行。");
 
         // Grace period（读档恢复时跳过：存档点本身就在波间，无需再次等待）
         if (resumeFromWaveIndex < 0 && ActiveGracePeriod > 0f)

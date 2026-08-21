@@ -27,6 +27,19 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public event System.Action<MonsterActor> OnPossessionStarted;
     public event System.Action OnPossessionEnded;
     public event System.Action<MonsterActor> OnBodyDiedWhilePossessing;
+    /// <summary>附身结束（带原因细分；教学 TUT-05 用 VoluntaryRelease 判定"主动脱离"）。</summary>
+    public event System.Action<PossessionEndReason> OnPossessionEndedEx;
+
+    /// <summary>附身结束原因（OnPossessionEndedEx 参数）。</summary>
+    public enum PossessionEndReason
+    {
+        /// <summary>玩家主动脱离（RequestRelease / 换身 Detach）。</summary>
+        VoluntaryRelease,
+        /// <summary>附身中身体死亡（被迫脱离）。</summary>
+        BodyDied,
+        /// <summary>系统重置（读档/场景切换等非玩家行为）。</summary>
+        SystemReset,
+    }
 
     private Coroutine flyRoutine;
     private Coroutine bulletTimeRoutine;
@@ -411,7 +424,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
     }
 
-    private void CommitRelease(bool recycleBody, bool startCooldown)
+    private void CommitRelease(bool recycleBody, bool startCooldown, PossessionEndReason reason = PossessionEndReason.VoluntaryRelease)
     {
         MonsterActor oldBody = CurrentBody;
         CurrentBody = null;
@@ -453,6 +466,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (startCooldown) CooldownRemaining = possessCooldown;
         Debug.Log("[Possession] Returned to soul form.");
         OnPossessionEnded?.Invoke();
+        OnPossessionEndedEx?.Invoke(reason);
     }
 
     private void CancelFlightToSoul()
@@ -505,7 +519,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         MonsterActor dead = CurrentBody;
         Debug.Log("[Possession] Possessed body died.");
-        CommitRelease(recycleBody: true, startCooldown: true);
+        CommitRelease(recycleBody: true, startCooldown: true, PossessionEndReason.BodyDied);
         OnBodyDiedWhilePossessing?.Invoke(dead);
     }
 
@@ -518,7 +532,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             flyRoutine = null;
         }
         StopBulletTime();
-        if (State == SwitchState.Possessing) CommitRelease(recycleBody: false, startCooldown: false);
+        if (State == SwitchState.Possessing) CommitRelease(recycleBody: false, startCooldown: false, PossessionEndReason.SystemReset);
         else if (State == SwitchState.Flying) CancelFlightToSoul();
         State = SwitchState.Idle;
     }

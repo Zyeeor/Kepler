@@ -2375,8 +2375,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: R
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4131aa951d735064a9e2653d4b641206, type: 2}
-  m_sharedMaterial: {fileID: 1716486389330315616, guid: 4131aa951d735064a9e2653d4b641206,
+  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
+  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2548,7 +2548,7 @@ MonoBehaviour:
       weight: 2
     - def: {fileID: 11400000, guid: f60718293a4b5c6d7e8f90a1b2c3d4e5, type: 2}
       weight: 2
-    - def: {fileID: 11400000, guid: c8f1e2d3a4b5c60718293d4e5f6a7b8, type: 2}
+    - def: {fileID: 11400000, guid: 758e4224f80f4acdbc77df951c582695, type: 2}
       weight: 1
     totalCount: 8
     duration: 35
@@ -2567,7 +2567,7 @@ MonoBehaviour:
       weight: 2
     - def: {fileID: 11400000, guid: d4e5f60718293a4b5c6d7e8f90a1b2c3, type: 2}
       weight: 1
-    - def: {fileID: 11400000, guid: c8f1e2d3a4b5c60718293d4e5f6a7b8, type: 2}
+    - def: {fileID: 11400000, guid: 758e4224f80f4acdbc77df951c582695, type: 2}
       weight: 2
     totalCount: 9
     duration: 40
@@ -2586,7 +2586,7 @@ MonoBehaviour:
       weight: 2
     - def: {fileID: 11400000, guid: d4e5f60718293a4b5c6d7e8f90a1b2c3, type: 2}
       weight: 2
-    - def: {fileID: 11400000, guid: c8f1e2d3a4b5c60718293d4e5f6a7b8, type: 2}
+    - def: {fileID: 11400000, guid: 758e4224f80f4acdbc77df951c582695, type: 2}
       weight: 2
     totalCount: 11
     duration: 45
@@ -2605,7 +2605,7 @@ MonoBehaviour:
       weight: 2
     - def: {fileID: 11400000, guid: d4e5f60718293a4b5c6d7e8f90a1b2c3, type: 2}
       weight: 2
-    - def: {fileID: 11400000, guid: c8f1e2d3a4b5c60718293d4e5f6a7b8, type: 2}
+    - def: {fileID: 11400000, guid: 758e4224f80f4acdbc77df951c582695, type: 2}
       weight: 2
     totalCount: 12
     duration: 60
@@ -5332,8 +5332,8 @@ MonoBehaviour:
 
 '
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4131aa951d735064a9e2653d4b641206, type: 2}
-  m_sharedMaterial: {fileID: 1716486389330315616, guid: 4131aa951d735064a9e2653d4b641206,
+  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
+  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -7389,8 +7389,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Space
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4131aa951d735064a9e2653d4b641206, type: 2}
-  m_sharedMaterial: {fileID: 1716486389330315616, guid: 4131aa951d735064a9e2653d4b641206,
+  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
+  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -8390,6 +8390,7 @@ MonoBehaviour:
   gameOverPanel: {fileID: 837435964}
   useFixedSeed: 1
   fixedSeed: 12345
+  forceTutorial: 1
   useFormalFlow: 1
   bulletTimeScale: 0.2
 --- !u!4 &1807762708
@@ -9583,8 +9584,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Monster Name
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4131aa951d735064a9e2653d4b641206, type: 2}
-  m_sharedMaterial: {fileID: 1716486389330315616, guid: 4131aa951d735064a9e2653d4b641206,
+  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
+  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -10219,6 +10220,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2117743002}
   m_CullTransparentMesh: 1
+--- !u!1 &7700000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7700000002}
+  - component: {fileID: 7700000003}
+  m_Layer: 0
+  m_Name: TutorialSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7700000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7700000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7700000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7700000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4278bdc978694ba4aa5c153ec4779b87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: e23cca30eaf040699e4a330a85464c2a, type: 2}
+  openingCarrierPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
+    type: 3}
+  openingCarrierSpawnOffset: {x: 0, y: 0, z: 5}
+  ui: {fileID: 0}
+  bannerFont: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
 --- !u!1 &9988776601
 GameObject:
   m_ObjectHideFlags: 0
@@ -11060,3 +11111,4 @@ SceneRoots:
   - {fileID: 396728510}
   - {fileID: 1638854451}
   - {fileID: 9988776609}
+  - {fileID: 7700000002}

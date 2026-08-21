@@ -16,6 +16,9 @@ public class PlayerController : MonoBehaviour, IController
     public static bool IsGameplayInputBlocked { get; private set; }
     public static Vector3 CurrentMoveDirection { get; private set; }
 
+    /// <summary>命令产出事件（每帧有按钮按下时触发一次；教学系统 InputGlyphProvider/提示依赖它）。</summary>
+    public static event System.Action<ControlCommand> OnCommandProduced;
+
     [Header("Input")]
     public LayerMask groundLayer = -1;
     [Tooltip("全局鼠标点击诊断日志（每次点击 2 条，高频；默认关闭，排查 UI 输入问题时可临时开启）。")]
@@ -158,13 +161,15 @@ public class PlayerController : MonoBehaviour, IController
             cmd.AimPoint = aim;
         }
 
-        // 按钮位
-        if (Input.GetMouseButtonDown(0)) cmd.Pressed |= CommandButtons.Basic;
-        if (Input.GetMouseButtonDown(1)) cmd.Pressed |= CommandButtons.Skill1; // right-click possession / body switch
-        if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
-        if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Mobility;
-        if (Input.GetKeyDown(KeyCode.E)) cmd.Pressed |= CommandButtons.Skill3;  // possessed-monster bullet time
-        if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release; // F=脱离
+        // 按钮位（键位单源：GameInputBindings；改键只改一处）
+        if (GameInputBindings.GetDown(CommandButtons.Basic)) cmd.Pressed |= CommandButtons.Basic;
+        if (GameInputBindings.GetDown(CommandButtons.Skill1)) cmd.Pressed |= CommandButtons.Skill1; // right-click possession / body switch
+        if (GameInputBindings.GetDown(CommandButtons.Skill2)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
+        if (GameInputBindings.GetDown(CommandButtons.Mobility)) cmd.Pressed |= CommandButtons.Mobility;
+        if (GameInputBindings.GetDown(CommandButtons.Skill3)) cmd.Pressed |= CommandButtons.Skill3;  // possessed-monster bullet time
+        if (GameInputBindings.GetDown(CommandButtons.Release)) cmd.Pressed |= CommandButtons.Release; // F=脱离
+
+        if (cmd.Pressed != 0) OnCommandProduced?.Invoke(cmd);
     }
 
     /// <summary>从鼠标位置构造射线（附身发起 RequestPossess 用）。</summary>
