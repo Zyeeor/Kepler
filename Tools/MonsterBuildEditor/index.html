@@ -15,6 +15,11 @@
       bdData 只含 MonsterType / TypeGrowth 卡；stack 恒 1；bdCount = bdData.length
   sin 编码：EliteMonsterCatalog.WireName(SinType) —— 小写枚举名
   monsterType：EliteMonsterCatalog.Entry.displayName —— 透传字段
+  上传：POST {serverUrl}/api/user-bd（server.go handleUserBDUpload）——
+  严格校验（elite.go validateUserBD）通过后存文件到 userBD/{playerId}/bd-{runId}.json
+  并实时进入投放候选池；内容重复不入库（返回 duplicates 计数）；数据有误返回 400；
+  服务器不可达提示离线。服务器重启时 ImportUserBD 遍历顶层与 {playerId} 子目录，
+  按内容指纹（sin + 排序 cardId 集合）去重加载。
 
   本工具只在本地生成文件，不发起任何网络请求。
   Repository 实现事实（如 Assets/Configs/CardLibrary.asset 的 effectId 现状）按 Canonical Authority Order
@@ -361,10 +366,14 @@
         <div class="box" style="margin-bottom:16px">
           <h3>保存</h3>
           <div class="in">
-            <button class="big" id="btnDownload" style="margin-bottom:9px">保存构筑数据（.json）</button>
+            <div style="margin-bottom:9px">
+              <span style="font-size:12px;color:#9a8f7d">服务器地址</span><br>
+              <input id="serverUrl" spellcheck="false" style="width:100%;max-width:260px;box-sizing:border-box;margin-top:4px;padding:7px 10px;border-radius:8px;border:1px solid #4a4235;background:#231f18;color:#e8dcc4;font-size:13px" placeholder="http://127.0.0.1:8080">
+            </div>
+            <button class="big" id="btnUpload" style="margin-bottom:9px">上传构筑到服务器</button>
             <button class="ghost" id="btnMd" style="margin-bottom:9px">导出可读清单（.md）</button>
             <button class="ghost" id="btnCopy">复制到剪贴板</button>
-            <p class="hint">全部在本地完成，不会联网上传任何内容。</p>
+            <p class="hint">上传前请先启动服务器（默认 <code>http://127.0.0.1:8080</code>）。上传的构筑经服务器校验后保存到 <code>Server/data/userBD/{playerId}/</code> 并<b>实时进入精英怪候选池</b>；内容重复的构筑不会重复入库；数据有误会提示重新构筑；服务器未启动会提示不可达。</p>
           </div>
         </div>
         <div class="box">
@@ -1340,12 +1349,45 @@ function buildMarkdown(){
   return L.join("\n");
 }
 
-function doSave(){
-  const p = buildPayload();
-  if (!p.snapshots.length) return flash("还没有装配任何躯体卡牌，无法保存。", false);
-  save(`bd-snapshots-${p.runId || "run"}.json`, JSON.stringify(p, null, 2), "application/json");
+/* ── 上传构筑到服务器（POST /api/user-bd）──
+   服务器严格校验：通过 → 存文件到 userBD/{playerId}/ 并实时进入投放候选池；
+   数据有误 → 400（提示重新构筑）；服务器未启动/不可达 → 提示离线。 */
+function serverUrl(){
+  const v = ($("#serverUrl").value || "").trim() || "http://127.0.0.1:8080";
+  localStorage.setItem("mbe_serverUrl", v);
+  return v.replace(/\/+$/, ""); // 去尾部斜杠
 }
-$("#btnDownload").onclick = doSave;
+
+async function doUpload(){
+  const p = buildPayload();
+  if (!p.snapshots.length) return flash("还没有装配任何躯体卡牌，无法上传。", false);
+  renderOut();
+  flash("正在上传……", true);
+  try {
+    const resp = await fetch(serverUrl() + "/api/user-bd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(p),
+    });
+    const j = await resp.json().catch(() => null);
+    if (resp.ok && j && j.ok) {
+      const parts = [`新怪 ${j.stored} 只已入池`];
+      if (j.duplicates > 0) parts.push(`${j.duplicates} 只内容重复（已在池中）`);
+      flash(`上传成功：${parts.join("，")}。`, true);
+    } else {
+      flash(`数据有误，请重新构筑（${j && j.msg ? j.msg : "服务器校验失败"}）`, false);
+    }
+  } catch (_) {
+    flash("当前服务器不可达，请确认服务器已启动（地址：<b>" + serverUrl() + "</b>）", false);
+  }
+}
+$("#btnUpload").onclick = doUpload;
+
+/* 服务器地址初始化与记忆（localStorage） */
+(function initServerUrl(){
+  const saved = localStorage.getItem("mbe_serverUrl");
+  if (saved) $("#serverUrl").value = saved;
+})();
 $("#btnCopy").onclick = async () => {
   try { await navigator.clipboard.writeText($("#out").value); flash("构筑数据已复制到剪贴板。", true); }
   catch { flash("剪贴板不可用，请展开「查看 / 编辑原始数据」手动复制。", false); }
@@ -1355,6 +1397,8 @@ $("#btnImport").onclick = () => {
   let p;
   try { p = JSON.parse($("#out").value); }
   catch (e) { return flash("数据格式有误，无法解析：" + e.message, false); }
+  // 兼容种子文件格式 {"seeds":[{playerId,runId,snapshots}]}：取第一条种子记录还原
+  if (p && Array.isArray(p.seeds) && p.seeds.length && !p.snapshots) p = p.seeds[0];
   if (!p || !Array.isArray(p.snapshots)) return flash("数据缺少 snapshots 列表，无法还原。", false);
 
   MONSTERS.forEach(m => state.picked[m.key].clear());

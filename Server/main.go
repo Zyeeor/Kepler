@@ -28,6 +28,7 @@ func main() {
 	uploadDir := flag.String("upload", "data/ugc", "UGC 文件上传目录")
 	logPath := flag.String("log", "data/server.log", "日志文件路径（追加写入，同时输出到控制台；传空禁用文件日志）")
 	seedFile := flag.String("seedFile", "data/seed_snapshots.json", "精英怪种子快照文件路径（空=不 seed）")
+	userBDDir := flag.String("userBDDir", "data/userBD", "用户 BD 构筑导入目录（MonsterBuildEditor 工具导出 JSON；每次启动导入，重复导入自动去重）")
 
 	// 精英怪投放参数（策划案 §6 TUNABLE + §8.2/§8.4 容量，默认值为首版 Baseline）
 	elite := service.DefaultEliteConfig()
@@ -62,6 +63,7 @@ func main() {
 		UploadDir: *uploadDir,
 		Elite:     elite,
 		SeedFile:  *seedFile,
+		UserBDDir: *userBDDir,
 	})
 	if err != nil {
 		log.Fatalf("init server: %v", err)

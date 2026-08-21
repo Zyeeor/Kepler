@@ -97,6 +97,11 @@ public class SnapshotEntry
     public int bdCount;
     public List<BdCardEntry> bdData;
     public int sourceWave;
+    /// <summary>
+    /// 独立阶段标记（Meta §6.7）：普通波 = "wave"，Final = "final"（不借用虚构 Wave 编号）。
+    /// sourceWave 始终记真实已完成波数；服务器当前忽略此未知字段，schema 支持后消费。
+    /// </summary>
+    public string stage;
     public long gameTime;
 }
 
