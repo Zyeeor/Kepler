@@ -1535,7 +1535,7 @@ public class MonsterActor : Actor
 
     /// <summary>
     /// AI keeps Basic/Skill1 semantics. A possessed monster uses left-click Basic, Q Skill,
-    /// Space mobility, right-click corpse switching, E bullet time, and F release.
+    /// Space mobility, right-click corpse switching, and F release. Bullet Time starts automatically after possession.
     /// </summary>
     protected override void ExecuteButtons(in ControlCommand cmd)
     {
@@ -1571,7 +1571,6 @@ public class MonsterActor : Actor
         }
         if ((cmd.Pressed & CommandButtons.Skill2) != 0) PlayerTriggerSkill();
         if ((cmd.Pressed & CommandButtons.Mobility) != 0) PlayerTriggerMobility();
-        if ((cmd.Pressed & CommandButtons.Skill3) != 0 && manager != null) manager.TriggerBulletTime();
         if ((cmd.Pressed & CommandButtons.Release) != 0 && manager != null && manager.CurrentBody == this)
             manager.RequestRelease(force: false);
     }
