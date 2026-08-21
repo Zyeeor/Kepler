@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_SeYv Variant
+  m_Shader: {fileID: 4800000, guid: 2520bb9092e0eaf459e731120f8f11cb, type: 3}
+  m_Parent: {fileID: 2100000, guid: fd95bd60076507448a2ffde3fb99ef59, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Dark_intensity: 0.554
+    - _Darksoft: 0.426
+    - _Highlight_range: -0.838
+    - _OutlineWidth: 0
+    m_Colors:
+    - _MainColor: {r: 1.4980394, g: 0.87306076, b: 0.7678628, a: 1}
+    - _Outline_color: {r: 1, g: 0.95283014, b: 0.95283014, a: 1}
+  m_BuildTextureStacks: []

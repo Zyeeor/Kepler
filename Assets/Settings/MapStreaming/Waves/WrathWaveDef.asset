@@ -15,7 +15,7 @@ MonoBehaviour:
   id: wave_wrath
   spawnWeight: 1
   monsters:
-  - prefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
+  - prefab: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7,
       type: 3}
     count: 1
   statMult:

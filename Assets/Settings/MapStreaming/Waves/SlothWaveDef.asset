@@ -15,7 +15,7 @@ MonoBehaviour:
   id: wave_sloth
   spawnWeight: 1
   monsters:
-  - prefab: {fileID: 3923155230589149752, guid: db85ea08bfd4b473f911b8e1cd9e477f,
+  - prefab: {fileID: 1827098444623938932, guid: ccfe57e3a23d2b24584ac09f7333c19c,
       type: 3}
     count: 1
   statMult:

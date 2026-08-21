@@ -55,14 +55,18 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   overlapBufferSize: 32
+  autoCalibrateToVisual: 1
+  minStandingHeight: 2
   moveSpeedMultiplier: 1
+  spikeHazardPrefab: {fileID: 0}
+  spikeInterval: 2
+  spikeHazardLifetime: 0.4
   spikeDamage: 25
   lavaBaseDamagePerStack: 5
   lavaStackInterval: 0.5
   lavaMaxStacks: 5
   lavaEffectDuration: 3
-  lavaFireVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
-    type: 3}
+  lavaFireVfxPrefab: {fileID: 0}
 --- !u!65 &4282341533252485584
 BoxCollider:
   m_ObjectHideFlags: 0

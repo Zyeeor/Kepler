@@ -1,7 +1,7 @@
 # 01_DESIGN_CANONICAL — v1.1
 
 **Project:** Possession<br>
-**Date:** 2026-08-15<br>
+**Date:** 2026-08-20<br>
 **Status:** `CANONICAL / RULES CLOSED`<br>
 **Purpose:** 当前权威 Gameplay Behavior Contract。<br>
 **Not included:** 代码架构、迁移、资产复用判断、最终数值平衡。
@@ -27,7 +27,7 @@
 
 > **Reverse-BD / Roguelike Build**
 
-当前核心阶段不依赖大型局外成长、真实异步在线生态、UGC/AIGC或复杂长期经济。
+当前核心阶段不依赖大型局外成长、复杂长期经济或UGC/AIGC。当前提供的局外内容仅为两个展示型系统——卡牌图鉴与荣誉殿堂，二者只记录与展示，不提供战斗加成。Elite的「他人构筑」投放属于核心玩法的数据侧，不属于局外界面。
 
 新玩家 / 评审应在约30秒内理解：
 
@@ -947,16 +947,31 @@ New Save使用嵌入式真实战斗教学。
 - 第一次真实Death Relay；
 - 第一次自然进入Soul / Shrine。
 
+教学阶段分层：
+
+- TUT-01 / 02在初始Pride取得控制后的短准备段进行；
+- TUT-03 / 04 / 05嵌入正常Wave与真实战斗；
+- TUT-06 / 07按真实Death Relay、Soul / Shrine条件延迟触发，不阻塞基础Run；
+- Tutorial运行时贯穿整个Run，不因离开`RunPhase.Tutorial`停止。
+
+教学系统行为：
+
+- 数据驱动Step，开始条件、完成条件、阻塞、提醒、超时、目标失效和恢复策略可配置；
+- 默认不暂停、不锁输入，不永久阻塞Run；
+- 关闭教学时隐藏表现并立即放行所有阻塞条件；
+- 玩家提前完成动作时可追溯判定，完成处理幂等；
+- 首个教学Corpse与下一合法Body机会需有最低Encounter保障；
+- 按键提示读取实际Input Binding，不在文案中写死键位；
+- 已完成Step跨Run持久化，未完成Step不保存半步状态；
+- 支持重看、提示开关、重置教学与调试。
+
 首次Possess每种Monster：
 
-> 一次性、不暂停，只解释该Body独特机制。
+> 一次性、不暂停，先解释该Body最独特的核心机制；三槽详情可展开查看。
 
-教学完成状态持久化。
+具体Step、表现、持久化与验收见：
 
-支持：
-
-- 重看教学；
-- 教学提示开关。
+> `Content/Tutorial_Delivery_Baseline_v1.0.md`
 
 ---
 
@@ -1022,6 +1037,19 @@ Result最低：
 - Restart；
 - Return / Lobby。
 
+First Clear按Presentation Canonical执行Self-Declaration、Functional Summary、Model / Version / Instance与System Confirmation。程序需保存本Run原始统计，并通过可配置评分生成1个主倾向、1个次倾向和1句行为方式描述；不得把评分写成医学、心理或人格诊断。
+
+最低原始统计包括：
+
+- 每个Sin的有效Body控制时长、Possession次数、三槽使用次数与Card投资；
+- Run时长、到达Wave与Final到达 / 完成；
+- 总Possession、主动离身、Death Relay、Soul / Shrine；
+- Bullet Time次数 / 时长；
+- Elite Fatal / Possession；
+- 使用过的不同Sin数量。
+
+精确权重、阈值、句式与ID格式由配置和Playable收口，不冻结在Gameplay规则中。
+
 Restart直接新开一局。
 
 Review / Demo Anti-block与正式结果严格分离。
@@ -1041,16 +1069,35 @@ Review跳段：
 
 至少持久化：
 
-- Tutorial状态；
+- Tutorial Step完成状态、首次Possess过的Monster类型与教学提示开关；
 - Settings；
-- 必要非Run状态；
-- R03.1允许的最小Narrative Recognition（若实现）。
+- First Clear / Certification状态；
+- 每Profile唯一旁白的播放记录；
+- R03.1允许的最小Narrative Recognition与prior certification；
+- 必要非Run状态。
+
+Run-local叙事状态至少包括当前Narrative Access、每Run唯一旁白记录、Trigger计数与本RunAnalytics。Restart只清Run-local状态；重置教学不清First Clear；只有明确清除全部进度才清Profile。
 
 当前一个Standard Difficulty基线。
 
 额外Difficulty / Assist：
 
 > Future，除非后续明确提升优先级。
+
+---
+
+# 29.1 Meta Progression（局外系统）
+
+当前Demo的局外界面系统只有卡牌图鉴与荣誉殿堂两个；两者只记录与展示，不提供任何战斗加成。
+
+- 卡牌图鉴：三态「未知 / 已知 / 已解锁」，记录Card的发现、取得、取得次数与双线显示，通用卡独立成页，进度分母为当前有效Card总数；
+- 荣誉殿堂：以 `playerId + runId + sin` 为记录身份，每局每只携带Card≥1的Sin记一条，长期永久保留并独立于Elite投放候选库，异步战绩来自Elite战果回传；
+- Elite投放链路属于核心玩法数据侧：在线真实快照优先、无网/空候选库使用本地Preset兜底，跨Sin用标准化Build深度，快照 `bdData` 为Card ID清单（stack恒1）；
+- UGC创作平台（浏览、编辑器、下载后可玩）本期不开发。
+
+具体行为、数据字段与验收见：
+
+> `Content/Meta_Progression_Systems_Baseline_v1.0.md`
 
 ---
 

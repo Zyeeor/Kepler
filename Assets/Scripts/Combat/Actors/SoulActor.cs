@@ -31,6 +31,9 @@ public class SoulActor : Actor
     private Vector3 currentVelocity;          // 加速度平滑（移动手感）
     private Transform possessionAnchor;
     private Transform parentBeforePossession;
+    // 附身前灵魂的世界 scale（自由态通常 =1）。附身期间以它为基准每帧修正 localScale，
+    // 防止锚点父链 scale 或怪 scale 变化（如暴食小猫化 0.5↔1）连带缩放灵魂并在释放时固化。
+    private Vector3 worldScaleBeforePossession = Vector3.one;
 
 
     /// <summary>移动速度：SoulActor 自身配置优先，否则读 PlayerPassiveManager 当前移速（含被动加成）。</summary>
@@ -166,7 +169,11 @@ public class SoulActor : Actor
 
         DetachFromPossessionAnchor();
         parentBeforePossession = transform.parent;
+        worldScaleBeforePossession = transform.lossyScale;
         possessionAnchor = anchor;
+        // SetParent(worldPositionStays=true) 会按父链 lossyScale 自动反算 localScale，保持灵魂世界 scale 不变。
+        // 注意：此处【不能】强制设置 localScale —— anchor 父链（怪模型 FBX 内部节点）scale 往往 ≠ 1，
+        // 强制 localScale=1 会使灵魂世界 scale 变成 anchor.lossyScale 倍，导致附身任意怪都变大。
         transform.SetParent(anchor, true);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
@@ -178,6 +185,18 @@ public class SoulActor : Actor
 
         Transform restoreParent = parentBeforePossession;
         bool restoreParentAlive = restoreParent != null;
+
+        // 先解除父子关系：无论当前是锚点子物体还是场景根，SetParent(null) 后本对象
+        // 必为所在场景的根节点，之后 MoveGameObjectToScene 才允许调用（其入参必须是场景根）。
+        // 若先调 MoveGameObjectToScene 再 SetParent(null)，灵魂仍是锚点子物体时会抛
+        // "Gameobject is not a root in a scene"，导致后续恢复逻辑全部中断（玩家消失 bug）。
+        transform.SetParent(null, true);
+        // 灵魂现为场景根，localScale == 世界 scale。直接按附身前世界 scale 恢复，
+        // 确保自由灵魂态回到附身前大小（若附身期间怪 scale 变化已被 Update 修正，此处即为附身前值）。
+        transform.localScale = worldScaleBeforePossession;
+
+        // 兜底（主界面幽灵 bug 根因③）：若锚点怪曾被意外回池，灵魂随其进入 DDOL 场景，
+        // 此时灵魂会留在 DDOL 根跨场景存活。先移回活动场景再恢复父级。
         if (!restoreParentAlive && gameObject.scene.name == "DontDestroyOnLoad")
         {
             // MoveGameObjectToScene 要求是根对象，先解除 parent
@@ -187,9 +206,15 @@ public class SoulActor : Actor
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(gameObject, active);
         }
 
-        transform.SetParent(restoreParentAlive ? restoreParent : null, true);
+        if (restoreParentAlive)
+        {
+            // 恢复到原父级：SetParent(worldPositionStays=true) 保持当前世界 scale，并按新父链自动反算 localScale。
+            transform.SetParent(restoreParent, true);
+        }
+
         possessionAnchor = null;
         parentBeforePossession = null;
+        worldScaleBeforePossession = Vector3.one;
     }
 
     /// <summary>
@@ -210,6 +235,17 @@ public class SoulActor : Actor
         // 抑制期：不消费输入，仅跟随被附身怪头顶（目标由 PossessionManager.CurrentBody 提供）
         if (IsSuppressed)
         {
+            // 附身期间锚点父链 scale 可能变化（如暴食小猫化 0.5↔1），灵魂作为子物体会被连带缩放。
+            // 每帧按附身前世界 scale 反算 localScale，保证灵魂世界 scale 恒定（不受怪缩放污染）。
+            if (transform.parent != null)
+            {
+                Vector3 parentLossy = transform.parent.lossyScale;
+                transform.localScale = new Vector3(
+                    worldScaleBeforePossession.x / parentLossy.x,
+                    worldScaleBeforePossession.y / parentLossy.y,
+                    worldScaleBeforePossession.z / parentLossy.z);
+            }
+
             var pm = PossessionManager.Instance;
             if (pm != null) FollowBody(pm.CurrentBody != null ? pm.CurrentBody.transform : null);
             return;

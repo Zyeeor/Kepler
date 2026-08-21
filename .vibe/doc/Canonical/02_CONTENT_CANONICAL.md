@@ -708,7 +708,24 @@ Repository存在大量环境资产，仅作为Production Evidence。
 - `TUT-07`：首次真实Soul / Shrine；
 - `TUT-MONSTER-*`：首次Possess某Monster，只说明独特机制。
 
-不暂停的微教学优先。
+Delivery分层：
+
+- `TUT-01 / 02`：初始Pride取得控制后的短准备段；
+- `TUT-03 / 04 / 05`：正常Wave与真实战斗；
+- `TUT-06 / 07`：真实条件延迟触发，可跨Run等待；
+- `TUT-MONSTER-*`：每Profile首次Possess对应Monster触发，先显示核心机制，三槽详情可展开。
+
+Content与Encounter最低保障：
+
+- 首个教学Enemy为合法普通Enemy，威胁受控；
+- 首个教学Corpse在首次Possession完成、教学关闭或保障失效前不被普通清理移除；
+- `TUT-05`只在存在下一具合法Body机会时提示；
+- 教学目标失效时重新等待合法目标；
+- 不为TUT-06 / 07强制制造玩家死亡。
+
+不暂停的微教学优先；具体Step与表现见：
+
+> `Content/Tutorial_Delivery_Baseline_v1.0.md`
 
 ---
 
@@ -722,16 +739,19 @@ Repository存在大量环境资产，仅作为Production Evidence。
 - Restart；
 - Return / Lobby。
 
-强烈建议保留的验证数据：
+正式Result / Functional Summary所需原始数据：
 
-- Run时长；
-- Failure Stage / Reason；
-- 换身次数；
-- Body使用分布；
-- Card选择；
+- Run时长、到达Wave、Failure Stage / Reason与Final到达 / 完成；
+- 每个Sin的有效Body控制时长、Possession次数与三槽使用次数；
+- 每个Sin的Card投资与Card选择；
+- 总换身、主动离身、Death Relay、Soul进入与Shrine恢复；
+- 低耐久主动离身；
+- Bullet Time使用次数与总时长；
 - 投资Monster后续出现；
 - Elite击杀 / Possession；
-- Final到达 / 完成。
+- 使用过的不同Sin数量。
+
+程序保存原始数据；主 / 次倾向权重、行为描述阈值与词库保持配置化。
 
 Review Jump与正式Run数据必须隔离。
 

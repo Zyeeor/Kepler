@@ -1,0 +1,225 @@
+{
+  "main": {
+    "id": "3534d65d7265928f",
+    "type": "split",
+    "children": [
+      {
+        "id": "71c52e1035c69636",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cac54304064c9397",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "新标签页"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "daff58d80e702041",
+    "type": "split",
+    "children": [
+      {
+        "id": "b6698b2fd5a06d13",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "05525e7bc8724781",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "5750d0c0c49f7e31",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "ad548565669bce7f",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9579fa96ff592b5c",
+    "type": "split",
+    "children": [
+      {
+        "id": "0703255c988428d8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "db2c69ff99f0cfc5",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "反向链接"
+            }
+          },
+          {
+            "id": "62ea5ed4f5541837",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "出链"
+            }
+          },
+          {
+            "id": "5dbaf26b40bf4ee3",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "b2b1cd489f4f544d",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "d84a7d7ba611691a",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "cac54304064c9397",
+  "lastOpenFiles": [
+    "Docs/03_Decision_Log/DEC-CANON-20260821-006.md",
+    "Assets/Scenes/Art/Att_ALiang-0814.unity.meta",
+    "Assets/Art folder/VFX/VFX-Tex/Mask/Mask-02.png.meta",
+    "Assets/Art folder/VFX/VFX-Tex/MaterialCopies/PM-P-1_PM-Glow-B_glow03 5.mat",
+    "Assets/Art folder/VFX/VFX-Tex/MaterialCopies/PM-P-1_PM-Glow-B_glow03 5.mat.meta",
+    "Assets/Art folder/VFX/Mesh/Plane-1.fbx",
+    "Assets/Art folder/VFX/Mesh/Plane-1.fbx.meta",
+    "Assets/Art folder/VFX/VFX-Tex/Hit/Ef_ci_ys_004.png",
+    "Assets/Art folder/VFX/VFX-Tex/Hit/Ef_ci_ys_004.png.meta",
+    "Assets/Art folder/VFX/VFX-Tex/Hit/爆点47.png",
+    "Assets/Scripts/Presentation/Combat/Editor.meta",
+    "Assets/Art folder/VFX/VFX-Tex/Hit/爆点47.png.meta",
+    "Assets/Settings/MapStreaming/Waves/GluttonyWaveDef.asset.meta",
+    "Assets/Art folder/Role Model/JiDu-2/JIDU_01_BC.png",
+    "Assets/Art folder/Role Model/JiDu-2/JIDU_01_N.png",
+    "Assets/Art folder/Role Model/DaiDuo/Daiduo_01_N.png",
+    "Assets/Art folder/Role Model/DaiDuo/Daiduo_01_R.png",
+    "Assets/Art folder/Role Model/DaiDuo/Daiduo_01_BC.png",
+    "Assets/Art folder/Role Model/AoMang/AOman_normal.png",
+    "Assets/Art folder/Role Model/AoMang/AOman_albedo.png",
+    "Assets/Art folder/UI/CardFolder/暴食/远方圣餐/远方圣餐_背景1.png",
+    "Docs/03_Decision_Log/DEC-CANON-20260820-005.md",
+    "Docs/00_Project/Source/NARRATIVE_TUTORIAL_SYSTEM_DECISION_UPDATE_BUNDLE_2026-08-20.md",
+    "Docs/00_Project/Source/NARRATIVE_TUTORIAL_SYSTEM_OWNER_SOURCE_2026-08-20.md",
+    "Server/docs/system-design.md",
+    "Server/docs/api-guide.md",
+    "Server/README.md",
+    "Docs/03_Decision_Log/DEC-CANON-20260820-004.md",
+    "Docs/03_Decision_Log/DEC-CANON-20260820-003.md",
+    "Docs/03_Decision_Log/DEC-CANON-20260819-002.md",
+    "音频配置指南.md",
+    "Docs/双套数值与表现系统-测试配置说明.md",
+    "波次玩法配置指南.md",
+    "Docs/00_Project/Source/MONSTER_DESIGN_NEW_OWNER_DELTA_2026-08-18.md",
+    "Docs/商店卡池-Tag驱动动态权重-策划案.md",
+    "Docs/战斗表现管理-策划配置说明.md",
+    "Docs/Archive/System/Game_Flow_and_Save_Guide.md",
+    "Docs/00_Project/Source/LUST_CARD_UPDATE_2026-08-17.md"
+  ]
+}

@@ -1,7 +1,7 @@
 # 03_PRESENTATION_CANONICAL — v1.1
 
 **Project:** Possession<br>
-**Date:** 2026-08-15<br>
+**Date:** 2026-08-20<br>
 **Status:** `CANONICAL / CURRENT PRESENTATION BASELINE`<br>
 **Primary world source:** R03.1 Integrated World / Narrative<br>
 **Repository Fact Snapshot:** `EXTERNAL / REFRESH SEPARATELY`<br>
@@ -101,6 +101,26 @@ System语气：
 > **System层是隐藏功能真相；Mythic层是系统用于引出意义与目标、并被Candidate真实体验的表层结构。**
 
 Reveal是设计好的Milestone，不是Glitch。
+
+## 3.4 Voice Delivery
+
+当前Demo使用两个独立Presentation Voice Channel：
+
+- `Mythic Voice`：众神 / 神谕式声音，承担Meaning / Goal Elicitation；
+- `System Voice`：冷静、礼貌、程序化的电子声音，承担隐藏功能真相。
+
+两个声音：
+
+- 不自动定义为两个独立世界实体或人格；
+- 不争论、不吐槽玩家、不形成善恶对话；
+- 可以先后描述同一Gameplay事实；
+- 最终本体关系保持Open。
+
+首个成功Run必须交付System / Certification / Version / Instance / User Distillation核心功能真相；后续Run仅通过Certified Lineage / Version Trials低频深化，不重复第一次反转。
+
+旁白数量、台词、音频与具体触发事件保持配置化。详细Delivery Contract见：
+
+> `Content/Narrative_Voice_Delivery_Baseline_v1.0.md`
 
 ---
 
@@ -230,13 +250,13 @@ Card再放大这种行为。
 
 Access每Run重置，单调上升。
 
-| Access | 主要阶段 | Mythic侧 | System侧允许信息 |
+| Access | 信息层级参考阶段（非硬编码触发） | Mythic侧 | System侧允许信息 |
 |---|---|---|---|
-| A0 | 开场CG中初始Carrier分配前 | 无身、残缺、王座、试炼 | sequence / initial condition；禁止蒸馏泄底 |
-| A1 | 初始Pride Carrier分配完成 / 玩家取得控制 | 承形 / 借形 | carrier / transfer / initialization |
-| A2 | 首个合法Post-Wave Card | 罪域继续塑造试炼 | domain weight / sampling / behavioral pattern |
-| A3 | Elite / 高价值转移 | 高阶冠冕 / 稳定之形 | capability package / cross-carrier stability / awareness monitoring |
-| A4 | Final | 王座认证 / 完整 | certification / callable / User-derived / version / instance / registry / distillation |
+| A0 | 开场 / 初始Carrier分配前 | 无身、残缺、王座、试炼 | sequence / initial condition；禁止蒸馏泄底 |
+| A1 | 初始Pride Carrier分配完成后的早期Run | 承形 / 借形 | carrier / transfer / initialization |
+| A2 | 早期构筑与行为采样开始 | 罪域继续塑造试炼 | domain weight / sampling / behavioral pattern |
+| A3 | 中局System显著进入 | 高阶冠冕 / 稳定之形 | capability package / cross-carrier stability / awareness monitoring |
+| A4 | Final / Closure | 王座认证 / 完整 | certification / callable / User-derived / version / instance / registry / distillation |
 
 关键修正：
 
@@ -244,28 +264,48 @@ Access每Run重置，单调上升。
 - 玩家第一个可操作状态已经是A1的Pride Body；
 - 初始Carrier分配本身就是本Run第一次Possession事件；
 - `Opening Card`已删除，不再存在“Opening Card是否推进Access”的问题；
-- Failure次数不推进Reveal。
+- Failure次数不推进Reveal；
+- A0–A4继续定义信息权限，但具体由Wave、Elite、Card、Possession或自定义事件中的哪一个推进，属于可配置Delivery映射；
+- Narrative Access、旁白Trigger和Card / UI Display Mode彼此解耦；
+- Elite / 高价值转移仍是A3的合法候选条件与递进叙事窗口，但不再作为底层硬编码的唯一推进条件。
+
+---
+
+# 8.1 Access Delivery Contract
+
+系统必须允许策划在不修改代码的情况下：
+
+- 配置事件与第N次条件；
+- 使用AND / OR组合；
+- 推进到指定Access；
+- 只播放旁白而不推进Access；
+- 只切换Card / UI显示模式而不推进Access；
+- 调整已获得Card是否同步切换包装文本。
+
+具体Wave、Elite次数、Card次数与映射均为`PRODUCTION / PLAYABLE CONFIGURATION`，不冻结在Canonical。
 
 ---
 
 # 9. Run Narrative Skeleton
+
+以下是信息递进参考骨架，不是硬编码触发表；A1–A4的实际推进事件由Narrative Access Profile配置。
 
 ```text
 A0：Opening Cinematic — Candidate / Soul无稳定Carrier / 王座承诺
 ↓
 System分配Pride Carrier
 ↓
-Initial Possession完成 → A1
+Configured Early-Run Access Rule → A1
 ↓
 玩家以Pride开始可操作Tutorial / Combat
 ↓
 Body use / switch / decay
 ↓
-W1结束首个合法Post-Wave Card → A2
+Configured Sampling Access Rule（可引用Wave / Card / Possession）→ A2
 ↓
-Elite / high-value transfer → A3
+Configured Mid-Run Access Rule（可引用Wave / Elite / Card / Possession）→ A3
 ↓
-Final begins → A4
+Configured Final / Closure Access Rule → A4
 ↓
 First Clear
 ↓
@@ -313,7 +353,20 @@ Functional Summary：
 
 不创建人格雷达或医学 / 心理诊断。
 
-玩家选择不改变胜负、Build或结局。
+玩家选择不改变胜负、Build、Functional Summary评分、结局或能力。Self-Declaration只表达玩家如何理解当前的“我”；程序预留三个可配置Text Key，可选保存选择供后续Recognition使用。
+
+Functional Summary读取本Run原始统计，至少覆盖：
+
+- 每个Sin的有效Body控制时长、Possession、三槽使用与Card投资；
+- 主动离身、Death Relay、Soul / Shrine与低耐久换身；
+- Bullet Time；
+- Elite Fatal / Possession；
+- Run时长、Wave与Final完成；
+- 使用过的不同Sin数量。
+
+主 / 次倾向权重、行为句式、阈值与平局处理必须配置化。Model / Version / Instance使用可替换模板生成，最终格式保持Open。
+
+First Clear最低表现可复用Result UI、普通按钮、阶段文本与黑屏，不要求新场景、角色立绘、额外3D资产或复杂CG。
 
 ---
 
@@ -361,7 +414,9 @@ Card保持两套完整玩家语言。
 
 两套语言严格描述同一Gameplay。黑色幽默只来自两套严肃语言的反差。
 
-普通UI默认不同时展示两版；Narrative Access决定当前使用哪一版或哪一侧占主导。
+普通UI默认不同时展示两版。具体版本由可配置Display Profile决定，可选择Neutral、Mythic、System或Follow Access，并可按界面覆盖。
+
+Card ID、图标、分类、Gameplay效果与中性机制摘要始终稳定；Mythic / System名称与包装描述可以切换。已获得Card是否同步切换由配置决定，不要求在Canonical写死具体Access或事件节点。
 
 当前Card无稀有度，因此Presentation不得使用“普通 / 稀有 / 史诗 / 传说”的颜色语义误导玩家。
 
@@ -748,11 +803,20 @@ Gameplay信息优先于装饰。
 
 # 28. Audio
 
-当前Repository未证明完整Gameplay Audio / BGM。
+当前Repository未证明完整正式Gameplay Audio / BGM / Voice资产。
 
 因此：
 
 > `TARGET REQUIREMENT, NOT CURRENT ASSET`
+
+音频系统最低分离：
+
+- Voice：Mythic / System旁白，独立通道；
+- BGM：支持场景或Run状态映射与淡入淡出；
+- Gameplay SFX：战斗、世界与Hazard；
+- UI：菜单、Card与提示。
+
+Voice不得占用普通Gameplay SFX池；必须支持多句组合、优先级、繁忙策略、BGM Duck与可选文字承载。具体资产数量、最终音色与混音参数不冻结。
 
 P0事件至少覆盖：
 
@@ -811,6 +875,8 @@ BGM至少支持：
 - God / System最终玩家称谓。
 
 最终术语修改不得改变Gameplay定义。
+
+程序与UI不得把最终术语写死在Gameplay逻辑中。每个稳定Concept Key需要支持Neutral / Mythic / System映射；最终词汇通过统一配置表或Localization资源替换，不要求改代码或Prefab。
 
 ---
 
@@ -894,16 +960,26 @@ P0事件在BGM / Environment下仍可辨认。
 - Boss与七罪最终关系；
 - 长期Meta。
 
+## Delivery Contract已闭合
+
+- Mythic / System双Voice Channel；
+- 首通核心揭示、后续Run低频Recognition；
+- Narrative Access / Trigger / Display解耦；
+- 可配置Cue、Card显示、Text / Audio ID、术语映射与调试；
+- First Clear最低Run Analytics；
+- 数据驱动Tutorial Delivery。
+
 ## 已有结构、但具体资产仍待生产
 
 - Shrine最终名字；
+- Elite世界名称；
 - God / System最终玩家称谓；
 - 三条Self-Declaration最终文案；
 - Functional Summary高层结构已确认，精确计分阈值 / 文案仍待定；
 - Model / Version / Instance存在已确认，最终ID格式待定；
-- 最终UI Copy；
-- 最终VFX / Audio Art Direction细节。
+- 具体Access / Cue / Card Display映射；
+- 最终旁白、UI Copy、字幕策略、VFX / Audio Art Direction与资产。
 
-这些Presentation资产进入双线文本 / 表现生产，不要求重新开启Worldbuilding Deep Loop。
+这些Presentation资产进入配置、双线文本 / 表现生产与Playable验证，不要求重新开启Worldbuilding Deep Loop，也不阻塞底层系统开发。
 
 ---
