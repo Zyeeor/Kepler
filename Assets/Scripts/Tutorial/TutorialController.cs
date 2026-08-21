@@ -184,6 +184,15 @@ public class TutorialController : SceneSingleton<TutorialController>
         if (openingCarrierStarted) yield break;
         openingCarrierStarted = true;
 
+        // 等开场降落演出（OpeningLandingSequence）完成后再刷载体：
+        // 载体在降落途中刷出会触发飞行附身、打断降落演出。未配置/关闭时 LandingComplete 恒 true（无感）。
+        float landingWait = 0f;
+        while (!OpeningLandingSequence.LandingComplete && landingWait < 10f)
+        {
+            landingWait += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
         if (openingCarrierPrefab == null)
         {
             Debug.LogWarning("[TutorialController] 未配置 openingCarrierPrefab，跳开场载体流程（玩家将保持未附身状态）。");

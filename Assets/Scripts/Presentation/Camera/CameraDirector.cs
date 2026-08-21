@@ -62,6 +62,9 @@ public class CameraDirector : MonoBehaviour
     private CinemachineFollow _follow;
     private CinemachineImpulseSource _impulseSource;
     private Coroutine _hitStopRoutine;
+    private LensSettings _savedLens;                                    // 透视演出前保存的完整 Lens，恢复时写回
+    private CinemachineBrain.LensModeOverrideSettings _savedBrainLensModeOverride; // 演出前 Brain 的投影覆盖设置，恢复时写回
+    private bool _lensOverrideActive;                                   // 透视演出覆盖是否生效（防重复/错误恢复）
 
     /// <summary>Follow target. Setting it re-points the Cinemachine virtual camera.</summary>
     public Transform Target
@@ -72,6 +75,27 @@ public class CameraDirector : MonoBehaviour
             target = value;
             ApplyTarget();
         }
+    }
+
+    /// <summary>直距（镜头到目标）。运行时演出可读写；Inspector 的 [Range] 仅约束编辑期拖拽。</summary>
+    public float FollowDistance
+    {
+        get => followDistance;
+        set { followDistance = value; ApplyFraming(); }
+    }
+
+    /// <summary>俯仰角（度）：45=经典俯视；负值=仰视（摄像机在目标下方），供开场演出"仰视→俯视"过渡。</summary>
+    public float PitchAngle
+    {
+        get => pitchAngle;
+        set { pitchAngle = value; ApplyFraming(); }
+    }
+
+    /// <summary>跟随阻尼（越大越平滑滞后）。演出切位前临时设 0 可让摄像机瞬时贴位（无滑移）。</summary>
+    public float FollowDamping
+    {
+        get => followDamping;
+        set { followDamping = value; ApplyFraming(); }
     }
 
     void Awake()
@@ -303,9 +327,64 @@ public class CameraDirector : MonoBehaviour
         }
     }
 
-    /// <summary>Current orthographic size.</summary>
+    /// <summary>
+    /// 临时把虚拟相机切为透视投影（等同 F4 调试相机手感）。
+    /// 项目主相机为正交投影（无纵深，物体等大平移），开场演出（降落+拉远+仰视）在正交下不自然；
+    /// 切透视后 FollowDistance/PitchAngle 插值才有真实纵深感。演出结束调用 EndPerspectiveLens 完整还原。
+    ///
+    /// 关键：CinemachineBrain.LensModeOverride.Enabled 默认 false——不打开它，虚拟相机 Lens.ModeOverride
+    /// 不会被推给主相机（Brain 仅在 Enabled=true 时写 cam.orthographic）。本方法临时打开并在结束还原。
+    /// </summary>
+    public void BeginPerspectiveLens(float fov = 60f)
+    {
+        if (virtualCamera == null || _lensOverrideActive) return;
+        _savedLens = virtualCamera.Lens;
+        var lens = _savedLens;
+        lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+        lens.FieldOfView = fov;
+        virtualCamera.Lens = lens;
+
+        var brain = FindBrain();
+        if (brain != null)
+        {
+            _savedBrainLensModeOverride = brain.LensModeOverride;
+            var brainOverride = brain.LensModeOverride;
+            brainOverride.Enabled = true; // 打开投影模式覆盖开关，演出期间推透视
+            brain.LensModeOverride = brainOverride;
+        }
+        _lensOverrideActive = true;
+    }
+
+    /// <summary>结束透视演出，完整还原演出前的 Lens 与 Brain 投影覆盖设置。幂等。</summary>
+    public void EndPerspectiveLens()
+    {
+        if (!_lensOverrideActive) return;
+        if (virtualCamera != null) virtualCamera.Lens = _savedLens;
+        var brain = FindBrain();
+        if (brain != null)
+        {
+            brain.LensModeOverride = _savedBrainLensModeOverride;
+            // Brain 仅在 LensModeOverride.Enabled=true 时推投影模式（CinemachineBrain 762-772 行）；
+            // 恢复 Enabled=false 后主相机停在透视态，需手动推回正交（项目主相机恒正交）。
+            if (brain.OutputCamera != null)
+            {
+                brain.OutputCamera.orthographic = true;
+                brain.OutputCamera.orthographicSize = _savedLens.OrthographicSize;
+            }
+        }
+        _lensOverrideActive = false;
+    }
+
+    CinemachineBrain FindBrain()
+    {
+        // CM 3.1.6 中 CinemachineCamera 无 OutputCamera 属性；项目单主相机单 Brain，直接取活动 Brain。
+        return CinemachineBrain.ActiveBrainCount > 0 ? CinemachineBrain.GetActiveBrain(0) : null;
+    }
+
+    /// <summary>Current orthographic size. Setter 供演出（透视→正交视觉匹配过渡）缓动。</summary>
     public float OrthoSize
     {
         get => virtualCamera != null ? virtualCamera.Lens.OrthographicSize : 0f;
+        set => SetOrthoSize(value);
     }
 }
