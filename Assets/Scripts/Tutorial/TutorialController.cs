@@ -256,6 +256,22 @@ public class TutorialController : SceneSingleton<TutorialController>
     {
         // Debug 运行时快捷键宿主（Shift+T 查看 / Shift+Y 重置），依赖方向 Tutorial→Tutorial 无污染
         TutorialDebugPanel.TickRuntimeHotkeys();
+
+        PollWasmMovement();
+    }
+
+    // WASD 移动边沿检测（TUT-01 完成条件）：纯移动帧不产生 ControlCommand.Pressed，
+    // 故由本组件轮询原始输入轴做"静止 → 移动"首帧报告；暂停（选卡 timeScale=0）时不采集。
+    bool wasMovingLastFrame;
+    void PollWasmMovement()
+    {
+        if (!started || Time.timeScale == 0f) return;
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+        bool moving = Mathf.Abs(h) > 0.1f || Mathf.Abs(v) > 0.1f;
+        if (moving && !wasMovingLastFrame)
+            TutorialFactBus.Report(TutorialFact.InputMovementPressed);
+        wasMovingLastFrame = moving;
     }
 
     // ---------------- 事实判定 ----------------
@@ -272,7 +288,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         EvaluateAll();
     }
 
-    /// <summary>命令事件 → 输入事实（TUT-02 三槽认知；WASD 移动不产生 Pressed，走 Update 轮询）。</summary>
+    /// <summary>命令事件 → 输入事实（TUT-02 三槽认知；WASD 移动不产生 Pressed，走 PollWasmMovement 轮询）。</summary>
     void OnCommandProduced(ControlCommand cmd)
     {
         if ((cmd.Pressed & CommandButtons.Mobility) != 0)
@@ -281,20 +297,6 @@ public class TutorialController : SceneSingleton<TutorialController>
             TutorialFactBus.Report(TutorialFact.InputBasicPressed);
         if ((cmd.Pressed & CommandButtons.Skill2) != 0)
             TutorialFactBus.Report(TutorialFact.InputSkillPressed);
-    }
-
-    // WASD 移动边沿检测（TUT-01 完成条件）：纯移动帧不产生 ControlCommand.Pressed，
-    // 故由本组件轮询原始输入轴做"静止 → 移动"首帧报告；暂停（选卡 timeScale=0）时不采集。
-    bool wasMovingLastFrame;
-    void Update()
-    {
-        if (!started || Time.timeScale == 0f) return;
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
-        bool moving = Mathf.Abs(h) > 0.1f || Mathf.Abs(v) > 0.1f;
-        if (moving && !wasMovingLastFrame)
-            TutorialFactBus.Report(TutorialFact.InputMovementPressed);
-        wasMovingLastFrame = moving;
     }
 
     /// <summary>
