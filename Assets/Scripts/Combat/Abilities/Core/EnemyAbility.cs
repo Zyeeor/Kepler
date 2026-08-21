@@ -141,6 +141,9 @@ public abstract class EnemyAbility : MonoBehaviour
     protected float currentCooldown;
     public float CurrentCooldown { get { return currentCooldown; } }
 
+    /// <summary>能力归属的怪物（Run Analytics 采集用：判断是否当前玩家控制的身体触发）。</summary>
+    public MonsterActor OwnerMonster => owner;
+
     // ── Animator 参数缓存（Kimi 评审整改：anim.parameters 每次访问分配新数组，高频路径每帧调用造成 GC）──
     Animator cachedBoolAnimator;
     readonly Dictionary<string, bool> cachedAnimParamExists = new Dictionary<string, bool>();
@@ -172,6 +175,12 @@ public abstract class EnemyAbility : MonoBehaviour
 
     /// <summary>Raised after this ability has successfully started its activation behavior.</summary>
     public event Action<EnemyAbility> Activated;
+
+    /// <summary>
+    /// 全局触发广播（Run Analytics 采集用）：任何能力 Trigger 成功时触发（含 AI 与玩家控制）。
+    /// 采集器内部按 IsOwnedByPlayer 过滤玩家控制期间的能力使用。
+    /// </summary>
+    public static event Action<EnemyAbility> OnAnyTriggered;
 
     /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
     private bool _hitFeedbackFiredThisAttack;
@@ -284,6 +293,7 @@ public abstract class EnemyAbility : MonoBehaviour
             Invoke(nameof(SpawnVfx), vfxDelay);
         OnTrigger();
         Activated?.Invoke(this);
+        OnAnyTriggered?.Invoke(this);   // Run Analytics：全局触发广播（采集器内部过滤玩家控制）
     }
 
     /// <summary>Begins this ability's configured Activation Effect. Effect duration controls the state lifetime.</summary>

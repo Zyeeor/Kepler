@@ -35,6 +35,11 @@ public class CardManager : SceneSingleton<CardManager>
     [Header("Current Picks (read-only)")]
     public CardData[] currentPicks = new CardData[3];
 
+    /// <summary>
+    /// 卡牌解锁广播（Run Analytics 采集用）：UnlockEffect 成功后触发（含选卡与调试解锁）。
+    /// </summary>
+    public static event System.Action<CardData> OnEffectUnlocked;
+
     // Track which effects have been permanently unlocked this run（已取得的卡；本局不再出现——最新需求：所有卡都只会出现一次）
     private HashSet<string> unlockedEffects = new HashSet<string>();
     // Known Type Set（§2）：本 Run 已合法遭遇的 Sin 类型（Pride 起始即进入，其余按波次解锁表推导）
@@ -495,6 +500,7 @@ public class CardManager : SceneSingleton<CardManager>
             count++;
         }
         Debug.Log($"[CardManager] Unlock '{effectId}': {count} existing instances");
+        OnEffectUnlocked?.Invoke(data);   // Run Analytics：解锁广播（采集器统计 Card 投资）
     }
 
     /// <summary>Investment 累计（§6）：取得该 Sin 的 Monster-Type / Type Growth 卡时 +1。</summary>

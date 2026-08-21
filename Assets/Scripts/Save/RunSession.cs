@@ -175,6 +175,8 @@ public class RunSession : MonoBehaviour
                                                     : (uint)UnityEngine.Random.Range(1, int.MaxValue);
         if (string.IsNullOrEmpty(RunId)) RunId = NewRunId(); // 直接 Play 路径也保证有 runId
         StartedFromMainMenu = false; // 直接 Play/重开路径：不触发新人引导
+        // Run Analytics：直接 Play 也启动采集（幂等；主菜单新局路径由 BeginNewRun 负责）
+        RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Opening;
         Debug.Log($"[RunSession] 直接 Play 种子初始化：worldSeed={WorldSeed}（useFixedSeed={gm != null && gm.useFixedSeed}）。");
     }
@@ -200,6 +202,8 @@ public class RunSession : MonoBehaviour
         RunId = NewRunId();
         StartedFromMainMenu = true; // 主菜单"新游戏"：新人引导唯一合法触发入口
         SaveCoordinator.DeleteSave();
+        // Run Analytics：新局启动采集器并重置统计（常驻单例自动创建）
+        RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Opening; // 新局从开场开始（Opening 占位直通，见 RunFlow）
         Debug.Log($"[RunSession] 新对局开始：worldSeed={WorldSeed}");
     }
@@ -316,6 +320,9 @@ public class RunSession : MonoBehaviour
     /// </summary>
     public void EndRun()
     {
+        // Run Analytics：中途结束（返回主菜单/重开/直接 Play 退出）时兜底结算未终结的对局
+        if (RunStatsCollector.Instance != null)
+            RunStatsCollector.Instance.EndRunEarly();
         HasActiveRun = false;
         StartedFromMainMenu = false;
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
