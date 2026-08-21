@@ -27,7 +27,7 @@
 
 > **Reverse-BD / Roguelike Build**
 
-当前核心阶段不依赖大型局外成长、真实异步在线生态、UGC/AIGC或复杂长期经济。
+当前核心阶段不依赖大型局外成长、复杂长期经济或UGC/AIGC。当前提供的局外内容仅为两个展示型系统——卡牌图鉴与荣誉殿堂，二者只记录与展示，不提供战斗加成。Elite的「他人构筑」投放属于核心玩法的数据侧，不属于局外界面。
 
 新玩家 / 评审应在约30秒内理解：
 
@@ -1083,6 +1083,21 @@ Run-local叙事状态至少包括当前Narrative Access、每Run唯一旁白记�
 额外Difficulty / Assist：
 
 > Future，除非后续明确提升优先级。
+
+---
+
+# 29.1 Meta Progression（局外系统）
+
+当前Demo的局外界面系统只有卡牌图鉴与荣誉殿堂两个；两者只记录与展示，不提供任何战斗加成。
+
+- 卡牌图鉴：三态「未知 / 已知 / 已解锁」，记录Card的发现、取得、取得次数与双线显示，通用卡独立成页，进度分母为当前有效Card总数；
+- 荣誉殿堂：以 `playerId + runId + sin` 为记录身份，每局每只携带Card≥1的Sin记一条，长期永久保留并独立于Elite投放候选库，异步战绩来自Elite战果回传；
+- Elite投放链路属于核心玩法数据侧：在线真实快照优先、无网/空候选库使用本地Preset兜底，跨Sin用标准化Build深度，快照 `bdData` 为Card ID清单（stack恒1）；
+- UGC创作平台（浏览、编辑器、下载后可玩）本期不开发。
+
+具体行为、数据字段与验收见：
+
+> `Content/Meta_Progression_Systems_Baseline_v1.0.md`
 
 ---
 

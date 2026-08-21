@@ -99,6 +99,12 @@ Repository 当前实现只能回答：
 
 负责TUT-01–07与Monster微教学的运行时步骤、Encounter保障、动态按键、持久化、异常兜底、表现与验收合同。
 
+## `Content/Meta_Progression_Systems_Baseline_v1.0.md`
+
+`CANONICAL META PROGRESSION CONTRACT / EXACT COPY & VALUES OPEN`
+
+负责局外界面系统（卡牌图鉴、荣誉殿堂）、Elite投放数据链路与共享基础设施的行为、数据字段和验收；明确UGC创作平台本期不开发。
+
 ## `04_FINAL_CLOSURE_AUDIT.md`
 
 记录本轮最终Owner Decision、五轴Closure与入仓Gate；它是审计证据，不高于01–03的设计真源。
@@ -119,6 +125,7 @@ Repository 当前实现只能回答：
 | Presentation Contracts | `DELIVERY CONTRACT CLOSED / COPY & AUDIO OPEN` | 双线、双Voice、可配置Access / Cue / Display与教学Delivery Contract已闭合；最终文案音频仍待生产 |
 | Encounter / Spawn | `BASELINE + TUNABLE` | 首版算法已给出，需接当前Spawner并Playable验证 |
 | Elite Content | `CORE CONTRACT CLOSED / PRESET CONTENT OPEN` | Historical Build Snapshot已定；具体Fake Profile可后续补 |
+| Meta Progression | `META PROGRESSION CONTRACT CLOSED / EXACT COPY & VALUES OPEN` | 卡牌图鉴、荣誉殿堂、Elite数据链路行为已闭合；UGC平台本期不开发 |
 | Exact Numbers | `TUNABLE / PLAYABLE` | 不阻塞Canonical |
 | Boss / long-term Meta | `DEFERRED / OPEN` | 不阻塞当前Demo Canonical |
 
@@ -160,6 +167,11 @@ Repository 当前实现只能回答：
 32. First Clear读取本Run原始统计；主 / 次倾向评分、行为句式和Model / Version / Instance格式配置化。Self-Declaration只表达玩家态度，不改变胜负、Build、评分、结局或能力。
 33. Tutorial Delivery采用数据驱动Step：TUT-01 / 02为开场准备段，TUT-03–05嵌入Waves，TUT-06 / 07与Monster微教学延迟触发；关闭教学自动放行，Step完成跨Run持久化。
 34. 最终Cue、音频、文案数量与具体触发节点不作为Canonical硬指标；程序必须提供Text / Audio / Cue / Access / Tutorial / Debug配置入口，供策划后续增删和Playable调校。
+35. 局外界面系统收敛为卡牌图鉴与荣誉殿堂两个；两者只记录与展示，不提供战斗加成。
+36. 卡牌图鉴三态（未知/已知/已解锁）：未知仅剪影；已知可见卡面＋名称＋效果说明；已解锁额外可见取得标记/时间/次数。通用卡独立成页，进度分母为当前有效Card总数。
+37. 荣誉殿堂记录身份为`playerId + runId + sin`，每局每只携带Card≥1的Sin记一条；长期永久保留，独立于会FIFO淘汰的Elite投放候选库；异步战绩依赖Elite战果回传。
+38. Elite无网/空候选库时使用本地Preset兜底；跨Sin比较用标准化Build深度；快照`bdData`为Card ID清单（stack恒1），旧「层数」表述作废。
+39. UGC创作平台（浏览界面、编辑器、下载后可玩）本期不开发，服务器已有内容存储能力可保留但不对玩家开放前端。
 
 ---
 
