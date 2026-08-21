@@ -6215,7 +6215,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.3
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -9373,7 +9373,8 @@ MonoBehaviour:
   gameOverPanel: {fileID: 837435964}
   useFixedSeed: 0
   fixedSeed: 12345
-  useFormalFlow: 0
+  forceTutorial: 0
+  useFormalFlow: 1
   bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
@@ -11873,11 +11874,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: pride_new
-      objectReference: {fileID: 0}
-    - target: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5432388710610514242, guid: 7576bcb0b248840af8e004111454a76e,
         type: 3}
