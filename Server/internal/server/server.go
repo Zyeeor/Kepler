@@ -23,6 +23,7 @@ type Config struct {
 	UploadDir string              // UGC 文件上传目录
 	Elite     service.EliteConfig // 精英怪 BD 快照投放参数（TUNABLE）
 	SeedFile  string              // 精英怪种子快照文件路径（空=不 seed）
+	UserBDDir string              // 用户 BD 构筑导入目录（MonsterBuildEditor 工具导出 JSON；每次启动导入，upsert 幂等去重）
 }
 
 // Server UGC 内容服务 + 精英怪投放服务。
@@ -54,6 +55,14 @@ func New(cfg Config) (*Server, error) {
 		}
 	}
 
+	// 用户 BD 导入：每次启动扫描 userBD 目录（MonsterBuildEditor 工具导出构筑），
+	// upsert 入库——重复导入由唯一键 (playerId, runId, sin) 幂等去重，不产生重复行
+	if cfg.UserBDDir != "" {
+		if err := eliteSvc.ImportUserBD(cfg.UserBDDir); err != nil {
+			log.Printf("[elite] userBD import error (non-fatal): %v", err)
+		}
+	}
+
 	return &Server{
 		cfg:        cfg,
 		store:      st,
@@ -80,6 +89,7 @@ func (s *Server) Handler() http.Handler {
 	// 精英怪 BD 快照（他人 BD 怪物投放）
 	mux.HandleFunc("POST /api/bd-snapshots", s.handleSnapshotUpload)
 	mux.HandleFunc("POST /api/elite/pick", s.handleElitePick)
+	mux.HandleFunc("POST /api/user-bd", s.handleUserBDUpload)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
 	return logRequests(mux)
 }
@@ -100,8 +110,16 @@ func (w *statusWriter) WriteHeader(code int) {
 }
 
 // logRequests 访问日志中间件：记录每个请求的方法、路径、状态码、耗时、来源地址。
+// 同时处理 CORS（MonsterBuildEditor 工具为浏览器页面，直连本服务需跨源许可与 OPTIONS 预检）。
 func logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w}
 		next.ServeHTTP(sw, r)
@@ -253,7 +271,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		Type:       creationType,
 		Page:       page,
 		PageSize:   pageSize,
-		SortBy:     q.Get("sortBy"), // downloads | rating | created_at（store 层白名单）
+		SortBy:     q.Get("sortBy"),                // downloads | rating | created_at（store 层白名单）
 		Descending: q.Get("descending") != "false", // 默认降序（与 api-guide 一致），仅 descending=false 时升序
 	})
 	if err != nil {
@@ -374,6 +392,34 @@ func (s *Server) handleSnapshotUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "accepted": accepted})
+}
+
+// handleUserBDUpload MonsterBuildEditor 工具在线上传构筑（严格校验 → 存文件 → 实时入池）。
+//
+// 数据校验失败返回 400（前台提示"数据有误，重新构筑"）；重复内容不算错误（返回 duplicates 计数）。
+func (s *Server) handleUserBDUpload(w http.ResponseWriter, r *http.Request) {
+	var req service.UploadSnapshotsRequest
+	if err := decodeJSON(r, &req); err != nil {
+		log.Printf("[elite] userBD upload REJECTED: bad JSON body from %s: %v", r.RemoteAddr, err)
+		writeErr(w, http.StatusBadRequest, "数据有误，请求体不是合法 JSON")
+		return
+	}
+
+	stored, dups, err := s.eliteSvc.UploadUserBD(s.cfg.UserBDDir, &req)
+	if err != nil {
+		var ve *service.ValidationError
+		if errors.As(err, &ve) {
+			writeErr(w, http.StatusBadRequest, "数据有误，请重新构筑："+ve.Msg)
+			return
+		}
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":         true,
+		"stored":     stored, // 新入库（实时进入投放候选池）
+		"duplicates": dups,   // 内容重复（已在池中，不计错误）
+	})
 }
 
 // handleElitePick 第 N 波请求精英怪（策划案 §3/§5）。

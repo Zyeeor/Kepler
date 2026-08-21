@@ -44,6 +44,9 @@ type EliteStore interface {
 	// TopWaveCandidates 兜底候选（§5）：全库（排除请求者、bdCount >= minBD）中
 	// sourceWave 等于全库最高值的条目，按 bdCount 降序。
 	TopWaveCandidates(minBD int, excludePlayerID string) ([]*BuildSnapshot, error)
+	// ListAllSnapshots 全库快照（按 id 升序；userBD 目录导入的内容指纹去重用，
+	// 受全局容量上限约束，规模可控）。
+	ListAllSnapshots() ([]*BuildSnapshot, error)
 }
 
 // snapshotColumns 快照查询列。
@@ -173,6 +176,16 @@ func (s *SQLiteStore) TopWaveCandidates(minBD int, excludePlayerID string) ([]*B
 		  AND source_wave = (SELECT MAX(source_wave) FROM monster_build_snapshots WHERE player_id != ?)
 		ORDER BY bd_count DESC, id ASC
 		LIMIT 1000`, minBD, excludePlayerID, excludePlayerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanSnapshots(rows)
+}
+
+// ListAllSnapshots 全库快照（按 id 升序）。
+func (s *SQLiteStore) ListAllSnapshots() ([]*BuildSnapshot, error) {
+	rows, err := s.db.Query(`SELECT ` + snapshotColumns + ` FROM monster_build_snapshots ORDER BY id ASC`)
 	if err != nil {
 		return nil, err
 	}
