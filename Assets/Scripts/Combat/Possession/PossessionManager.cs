@@ -397,6 +397,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         Debug.Log("[Possession] Possessed " + target.displayName);
         OnPossessionStarted?.Invoke(target);
+        TriggerBulletTime();
     }
 
     private void DetachCurrentBodyForSwitch()

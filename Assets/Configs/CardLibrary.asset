@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: CardLibrary
   m_EditorClassIdentifier: 
   cards:
-  - cardName: "\u5251\u6C14\u7A7F\u900F"
-    effectId: Pride.Pierce
+  - cardName: "\u5341\u5B57\u5723\u88C1"
+    effectId: PR-A02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Sword Qi pierces, X follow-up, double damage.
+    description: Sword Qi becomes a cross-shaped slash with one shared hit instance.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -28,10 +28,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
-    effectId: Pride02
+  - cardName: "\u738B\u51A0\u52BF"
+    effectId: PR-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Fires three Sword Qi blades in a spread.
+    description: Fires three Sword Qi blades in a fixed spread.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -43,10 +43,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
-    effectId: Pride01
+  - cardName: "\u738B\u547D\u8FDC\u5F81"
+    effectId: PR-A04
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Sword Qi becomes long-range.
+    description: Increases the legal range of Sword Qi.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -58,10 +58,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u84C4\u529B\u7A81\u8FDB"
-    effectId: Pride.ChargeEmpowered
+  - cardName: "\u738B\u5EA7\u4E4B\u6B65"
+    effectId: PR-M01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Charge farther; damage scales up to +100%.
+    description: Increases dash distance and front strike damage.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.ChargeStrike
@@ -75,10 +75,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u7A7F\u68AD\u9644\u52A0\u6C14\u5203"
-    effectId: Pride.BlinkSwordQi
+  - cardName: "\u5F81\u670D\u8005\u4E4B\u5F84"
+    effectId: PR-X01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Each blink also fires Sword Qi along blink direction.
+    description: Each blink creates one linear Sword Qi slash along its path.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.BlinkChain
@@ -90,10 +90,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u7A7F\u68AD+2"
-    effectId: Pride.BlinkCountPlusTwo
+  - cardName: "\u738B\u6743\u5DE1\u730E"
+    effectId: PR-S01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Blink Chain strikes 6 times.
+    description: Blink Chain performs two additional strikes.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.BlinkChain
@@ -107,40 +107,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: Parasidic Mine
-    effectId: Sloth01
+  - cardName: "\u8FDF\u6765\u7684\u5730\u9E23"
+    effectId: SL-M02
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Enemy died from eneergy blast will spawn a mine automaticlally
-    abilityPrefab: {fileID: 6423168399959792756, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-      type: 3}
-    targetAbilityTags: []
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: Shatter Blast
-    effectId: Sloth02
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Based on charge time, blast will spread more blasts upon impact
-    abilityPrefab: {fileID: 4365737887685492572, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-      type: 3}
-    targetAbilityTags: []
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u843D\u5730\u7206\u70B8"
-    effectId: Sloth.LandingBlast
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Landing explosion on hop.
+    description: Creates an immediate ground blast after a legal landing.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Sloth.Launch
@@ -152,11 +122,10 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u84C4\u529B\u6563\u5C04"
-    effectId: Sloth.Scatter
+  - cardName: "\u5723\u9AB8\u5206\u88C2"
+    effectId: SL-A03
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: On enemy hit, scatter fragments that ignore the first target. Count
-      scales with charge time.
+    description: After the cannon blast, fires charged-time-scaled scatter fragments.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Sloth.ChargeShot
@@ -168,44 +137,13 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u5E03\u7F6E\u5730\u96F7"
-    effectId: Sloth.LandingMine
+  - cardName: "\u9057\u4E0B\u7684\u5B88\u671B\u8005"
+    effectId: SL-M01
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Place a mine at the takeoff point before jumping. Other monsters
-      trigger an explosion.
+    description: Places a short-lived mine at the takeoff point before jumping.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Sloth.Launch
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u65E0\u4EBA\u673A\u7ECF\u6D4E"
-    effectId: Sloth.DroneEconomy
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Drone HP cost -50%, lifetime +10%.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Sloth.Drone
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 2
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u65E0\u4EBA\u673A\u6B7B\u4EA1\u7206\u70B8"
-    effectId: Sloth.DroneDeathBlast
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
-    description: Drone explodes toward enemies on death.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Sloth.Drone
     grantedEffectTags: []
     abilityParameters: []
     category: 2
@@ -230,58 +168,6 @@ MonoBehaviour:
       type: 3}
     backgroundSprite: {fileID: 21300000, guid: 12fb3179c1e7cea4681718a4f433400a, type: 3}
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
-  - cardName: "3\u9053\u5251\u6C14\u6563\u5C04"
-    effectId: Pride02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Fires three Sword Qi blades in a spread.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.SwordQi
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u6C14\u5203\u53D8\u8FDC\u7A0B"
-    effectId: Pride01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Sword Qi becomes long-range.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.SwordQi
-    grantedEffectTags: []
-    abilityParameters: []
-    category: 2
-    monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u84C4\u529B\u7A81\u8FDB"
-    effectId: Pride.ChargeEmpowered
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Charge farther; damage scales up to +100%.
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Pride.ChargeStrike
-    - Ability.Monster.Lust.Anchor
-    grantedEffectTags: []
-    abilityParameters:
-    - key: BlastDelay
-      value: 0.15
-    - key: Dmg
-      value: 30
-    - key: R
-      value: 2.5
-    category: 2
-    monsterType: 7
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
   - cardName: "\u540C\u6B32\u4E4B\u5F71"
     effectId: LU-M05
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -438,23 +324,6 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u5992\u795E\u51DD\u89C6"
-    effectId: EN-A04
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: "\u6FC0\u5149\u53EF\u4EE5\u7EF4\u6301\u66F4\u4E45\uFF0C\u8FDE\u63A5\u671F\u95F4\u7684\u8F6C\u5411\u4E5F\u66F4\u7A33\u5B9A\u3002"
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Envy.Laser
-    grantedEffectTags: []
-    abilityParameters:
-    - key: ConnectDuration
-      value: 12
-    category: 2
-    monsterType: 4
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
   - cardName: "\u5992\u7130\u6E10\u70BC"
     effectId: EN-A05
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
@@ -506,40 +375,6 @@ MonoBehaviour:
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
-  - cardName: "\u4F24\u75D5\u544A\u89E3"
-    effectId: EN-R02
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: "\u6FC0\u5149\u9020\u6210\u7684\u4F24\u5BB3\u4F1A\u66F4\u5FEB\u586B\u5165\u5370\u8BB0\u3002"
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Envy.Laser
-    grantedEffectTags: []
-    abilityParameters:
-    - key: MarkWriteRatio
-      value: 0.35
-    category: 2
-    monsterType: 4
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u51DD\u89C6\u672A\u7EC8"
-    effectId: EN-R04
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: "\u6FC0\u5149\u65AD\u5F00\u540E\uFF0C\u5370\u8BB0\u4F1A\u6682\u65F6\u4FDD\u7559\uFF1B\u91CD\u65B0\u8FDE\u63A5\u53EF\u4EE5\u7EE7\u7EED\u5199\u5165\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u7528\u96F7\u66B4\u5151\u73B0\u3002"
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Envy.Laser
-    grantedEffectTags: []
-    abilityParameters:
-    - key: MarkGraceDuration
-      value: 2.5
-    category: 2
-    monsterType: 4
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
   - cardName: "\u96F7\u9706\u4F5C\u8BC1"
     effectId: EN-S01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
@@ -554,26 +389,6 @@ MonoBehaviour:
     - key: FollowUpDelay
       value: 1
     category: 2
-    monsterType: 4
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
-  - cardName: "\u4E07\u5992\u8FDC\u8BC1"
-    effectId: EN-TG01
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
-    description: "\u5AC9\u5992\u7684\u6FC0\u5149\u4E0E\u96F7\u66B4\u90FD\u80FD\u4F5C\u7528\u5230\u66F4\u8FDC\u7684\u4F4D\u7F6E\u3002"
-    abilityPrefab: {fileID: 0}
-    targetAbilityTags:
-    - Ability.Monster.Envy.Laser
-    - Ability.Monster.Envy.Thunderstorm
-    grantedEffectTags: []
-    abilityParameters:
-    - key: AttackRangeBonus
-      value: 4
-    - key: SpecialRangeBonus
-      value: 4
-    category: 3
     monsterType: 4
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}

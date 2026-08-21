@@ -562,17 +562,38 @@ public class CardManager : SceneSingleton<CardManager>
     void UnlockOnAbility(EnemyAbility a, string effectId)
     {
         if (a.upgrades == null) a.upgrades = new List<EnemyAbility.UpgradeSlot>();
+        string runtimeEffectId = ResolveLegacyUpgradeId(effectId);
         foreach (var slot in a.upgrades)
         {
-            if (slot != null && !string.IsNullOrEmpty(slot.effectId) && slot.effectId.Equals(effectId, System.StringComparison.OrdinalIgnoreCase))
+            if (slot != null && !string.IsNullOrEmpty(slot.effectId) && slot.effectId.Equals(runtimeEffectId, System.StringComparison.OrdinalIgnoreCase))
             {
                 slot.unlocked = true;
-                Debug.Log($"[CardManager] UnlockOnAbility: set existing slot '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
+                Debug.Log($"[CardManager] UnlockOnAbility: set existing slot '{runtimeEffectId}' for card '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
                 return;
             }
         }
-        a.upgrades.Add(new EnemyAbility.UpgradeSlot { effectId = effectId, unlocked = true });
-        Debug.Log($"[CardManager] UnlockOnAbility: added new slot '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
+        a.upgrades.Add(new EnemyAbility.UpgradeSlot { effectId = runtimeEffectId, unlocked = true });
+        Debug.Log($"[CardManager] UnlockOnAbility: added new slot '{runtimeEffectId}' for card '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
+    }
+
+    // Canonical CardIds are the public pool/save identifiers. These Pride/Sloth
+    // abilities still expose their original prefab upgrade IDs, so resolve only
+    // at the ability slot boundary while keeping CardLibrary canonical.
+    static string ResolveLegacyUpgradeId(string effectId)
+    {
+        switch (effectId)
+        {
+            case "PR-A01": return "Pride02";
+            case "PR-A02": return "Pride.Pierce";
+            case "PR-A04": return "Pride01";
+            case "PR-M01": return "Pride.ChargeEmpowered";
+            case "PR-S01": return "Pride.BlinkCountPlusTwo";
+            case "PR-X01": return "Pride.BlinkSwordQi";
+            case "SL-A03": return "Sloth.Scatter";
+            case "SL-M01": return "Sloth.LandingMine";
+            case "SL-M02": return "Sloth.LandingBlast";
+            default: return effectId;
+        }
     }
 
     /// <summary>Check if an effect has been unlocked.</summary>

@@ -5,7 +5,7 @@ using UnityEngine;
 /// Bit-mask of command buttons held/pressed this frame.
 /// Values mirror the current player bindings:
 ///   LeftClick = Basic, RightClick = corpse possession/body switch,
-///   Q = possessed-monster skill, Space = mobility, E = bullet time, F = release.
+///   Q = possessed-monster skill, Space = mobility, F = release.
 /// Interact and Possess are legacy reserved bits and are not emitted by PlayerController.
 /// </summary>
 [Flags]
