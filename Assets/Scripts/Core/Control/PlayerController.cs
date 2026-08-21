@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System;
 using System.Collections.Generic;
 
 /// <summary>
@@ -15,6 +16,9 @@ public class PlayerController : MonoBehaviour, IController
     public static PlayerController Instance { get; private set; }
     public static bool IsGameplayInputBlocked { get; private set; }
     public static Vector3 CurrentMoveDirection { get; private set; }
+
+    /// <summary>Raised after player input has been translated into a non-empty command.</summary>
+    public static event Action<ControlCommand> OnCommandProduced;
 
     [Header("Input")]
     public LayerMask groundLayer = -1;
@@ -164,6 +168,9 @@ public class PlayerController : MonoBehaviour, IController
         if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
         if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Mobility;
         if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release; // F=脱离
+
+        if (cmd.Pressed != CommandButtons.None)
+            OnCommandProduced?.Invoke(cmd);
     }
 
     /// <summary>从鼠标位置构造射线（附身发起 RequestPossess 用）。</summary>
