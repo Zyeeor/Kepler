@@ -163,7 +163,6 @@ public class PlayerController : MonoBehaviour, IController
         if (Input.GetMouseButtonDown(1)) cmd.Pressed |= CommandButtons.Skill1; // right-click possession / body switch
         if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
         if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Mobility;
-        if (Input.GetKeyDown(KeyCode.E)) cmd.Pressed |= CommandButtons.Skill3;  // possessed-monster bullet time
         if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release; // F=脱离
     }
 
