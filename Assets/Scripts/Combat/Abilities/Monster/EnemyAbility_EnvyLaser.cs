@@ -95,6 +95,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
                 _pierceTimer = 0f;
                 _connectedThisBurst.Clear();
                 currentCooldown = 0f;
+
+                Animator[] animators = owner.GetComponentsInChildren<Animator>(false);
+                for (int i = 0; i < animators.Length; i++)
+                    animators[i].SetTrigger("Basic");
             }
 
             UpdateLaser();

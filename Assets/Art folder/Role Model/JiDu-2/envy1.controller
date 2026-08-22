@@ -14,10 +14,10 @@ AnimatorStateMachine:
     m_Position: {x: 30, y: 230, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4702957508965866685}
-    m_Position: {x: -300, y: 460, z: 0}
+    m_Position: {x: -330, y: 430, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 7220632368896569721}
-    m_Position: {x: 400, y: 470, z: 0}
+    m_Position: {x: 360, y: 450, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1610525408826346282}
     m_Position: {x: 30, y: 390, z: 0}
@@ -123,9 +123,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.17241487
+  m_TransitionDuration: 0.62210083
   m_TransitionOffset: 0
-  m_ExitTime: 0.033906825
+  m_ExitTime: 0.21600649
   m_HasExitTime: 0
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -243,7 +243,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: "envy\u2019"
+  m_Name: envy1
   serializedVersion: 5
   m_AnimatorParameters:
   - m_Name: Speed
@@ -363,7 +363,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: DashSlash
-  m_Speed: 2
+  m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -3749642003375581908}
