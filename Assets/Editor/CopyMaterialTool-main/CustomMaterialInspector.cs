@@ -91,7 +91,7 @@ namespace CopyMaterial.Editor
 
             GUILayout.EndHorizontal();
             GUI.enabled = true;
-            if (IsGameobject)
+            if (IsGameobject && MeshRenderer != null)
             {
                 try
                 {

@@ -44,7 +44,6 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     private Coroutine flyRoutine;
     private Coroutine bulletTimeRoutine;
     private float possessStartTime;
-    private float possessionDecayTimer;
     private SoulActor soul;
     private PossessionBehavior behavior;
     private MonsterActor reservedBody;
@@ -109,12 +108,11 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (State != SwitchState.Possessing || CurrentBody == null) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
 
-        possessionDecayTimer += Time.deltaTime;
-        if (possessionDecayTimer < decayInterval) return;
-
-        possessionDecayTimer -= decayInterval;
-        float decayAmount = CurrentBody.maxHealth * possessionDecayPercent;
-        CurrentBody.currentHealth -= decayAmount;
+        // 平滑扣血：每帧按 deltaTime 连续扣血，避免 1s 一跳的视觉跳变。
+        // 总速率：每 decayInterval 秒扣 maxHealth * possessionDecayPercent（与跳变一致）。
+        if (decayInterval <= 0f) return;
+        float decayRate = CurrentBody.maxHealth * possessionDecayPercent / decayInterval;
+        CurrentBody.currentHealth -= decayRate * Time.deltaTime;
         if (CurrentBody.currentHealth > 0f) return;
 
         CurrentBody.currentHealth = 0f;
@@ -368,7 +366,6 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         reservedBody = null;
         CurrentBody = target;
         State = SwitchState.Possessing;
-        possessionDecayTimer = 0f;
         possessStartTime = Time.time;
 
         if (soul != null)
@@ -393,6 +390,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             PlayerPassiveManager.Instance.OnEnemyPossessed(target as Enemy);
 
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Show(target);
+        if (PlayerHealth.Instance != null) PlayerHealth.Instance.BindActor(target);
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
 
         Debug.Log("[Possession] Possessed " + target.displayName);
@@ -421,6 +419,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         }
 
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Hide();
+        if (PlayerHealth.Instance != null) PlayerHealth.Instance.UnbindActor();
         SetCameraTarget(soul != null ? soul.transform : null);
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
     }
@@ -458,6 +457,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Hide();
         if (PlayerHealth.Instance != null)
         {
+            PlayerHealth.Instance.UnbindActor();
             PlayerHealth.Instance.maxHealth = PlayerHealth.Instance.soulMaxHealth;
             PlayerHealth.Instance.UpdateHealthUI();
         }
