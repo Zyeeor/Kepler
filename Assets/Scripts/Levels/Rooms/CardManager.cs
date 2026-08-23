@@ -582,25 +582,14 @@ public class CardManager : SceneSingleton<CardManager>
         Debug.Log($"[CardManager] UnlockOnAbility: added new slot '{runtimeEffectId}' for card '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
     }
 
-    // Canonical CardIds are the public pool/save identifiers. These Pride/Sloth
-    // abilities still expose their original prefab upgrade IDs, so resolve only
-    // at the ability slot boundary while keeping CardLibrary canonical.
+    // Ability slots are stored with Canonical Card IDs. Keeping the value unchanged
+    // ensures save data, CardLibrary, prefabs, normal monsters, and Elite snapshots
+    // all resolve the same upgrade identifier.
     static string ResolveLegacyUpgradeId(string effectId)
     {
-        switch (effectId)
-        {
-            case "PR-A01": return "Pride02";
-            case "PR-A02": return "Pride.Pierce";
-            case "PR-A04": return "Pride01";
-            case "PR-M01": return "Pride.ChargeEmpowered";
-            case "PR-S01": return "Pride.BlinkCountPlusTwo";
-            case "PR-X01": return "Pride.BlinkSwordQi";
-            case "SL-A03": return "Sloth.Scatter";
-            case "SL-M01": return "Sloth.LandingMine";
-            case "SL-M02": return "Sloth.LandingBlast";
-            default: return effectId;
-        }
+        return effectId;
     }
+
 
     /// <summary>Check if an effect has been unlocked.</summary>
     public bool IsEffectUnlocked(string effectId)

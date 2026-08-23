@@ -84,7 +84,20 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.SwordQi", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.SwordQi");
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride");
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.Cut", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride.Cut");
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.ExecutionSpeed", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride.ExecutionSpeed");
+        EnsureUpgrade("PR-A01");
+
+        EnsureUpgrade("PR-A02");
+        EnsureUpgrade("PR-A03");
+        EnsureUpgrade("PR-A04");
+        EnsureUpgrade("PR-TG01");
         SetActivationDisplay(false);
+
     }
 
     public override bool CanTrigger()
@@ -120,11 +133,14 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (forward.sqrMagnitude < 0.0001f) forward = owner.transform.forward;
         forward.Normalize();
 
-        float effectiveMaxRange = IsUpgradeUnlocked("Pride01") ? pride01MaxRange : maxRange;
+        float effectiveMaxRange = IsUpgradeUnlocked("PR-A04") ? pride01MaxRange : maxRange;
+
         float shotDamage = overrideDamage > 0f ? overrideDamage : GetShotDamage();
 
-        bool pierce = IsUpgradeUnlocked("Pride.Pierce");
-        if (IsUpgradeUnlocked("Pride02"))
+        bool pierce = IsUpgradeUnlocked("PR-A02");
+        if (IsUpgradeUnlocked("PR-A01"))
+
+
         {
             StartCoroutine(LaunchProjectile(forward, effectiveMaxRange, shotDamage, pierce, ignoreEnemy));
             Vector3 left = Quaternion.Euler(0f, -pride02SpreadAngle, 0f) * forward;
@@ -168,12 +184,14 @@ public class EnemyAbility_SwordQi : EnemyAbility
         fireDirection.Normalize();
 
         float effectiveMaxRange = maxRange;
-        if (IsUpgradeUnlocked("Pride01"))
+        if (IsUpgradeUnlocked("PR-A04"))
             effectiveMaxRange = pride01MaxRange;
 
-        bool pride02 = IsUpgradeUnlocked("Pride02");
+        bool pride02 = IsUpgradeUnlocked("PR-A01");
         float shotDamage = GetShotDamage();
-        bool pierce = IsUpgradeUnlocked("Pride.Pierce");
+        bool pierce = IsUpgradeUnlocked("PR-A02");
+
+
 
         if (pride02)
         {
@@ -193,11 +211,17 @@ public class EnemyAbility_SwordQi : EnemyAbility
 
     private float GetShotDamage()
     {
-        float shotDamage = damage;
-        if (IsUpgradeUnlocked("Pride.Pierce"))
-            shotDamage *= pierceDamageMultiplier;
-        return shotDamage;
+        return IsUpgradeUnlocked("PR-A02") ? damage * pierceDamageMultiplier : damage;
     }
+
+
+    private void EnsureUpgrade(string effectId)
+    {
+        if (upgrades == null) upgrades = new List<UpgradeSlot>();
+        if (upgrades.Exists(slot => slot != null && string.Equals(slot.effectId, effectId, System.StringComparison.OrdinalIgnoreCase))) return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
+
 
     IEnumerator LaunchProjectile(Vector3 forward, float effectiveMaxRange, float shotDamage, bool pierce, Enemy ignoreEnemy = null)
     {
@@ -212,25 +236,32 @@ public class EnemyAbility_SwordQi : EnemyAbility
         GameObject projectilePrefabToUse = pierce && pierceVfxPrefab != null ? pierceVfxPrefab : projectileVfxPrefab;
         Vector3 projectilePositionOffset = pierce ? pierceVfxPositionOffset : projectileVfxPositionOffset;
         Vector3 projectileRotationOffset = pierce ? pierceVfxRotationOffset : projectileVfxRotationOffset;
+        Quaternion projectileFacing = Quaternion.LookRotation(forward, Vector3.up);
+        Vector3 visualOffset = projectileFacing * projectilePositionOffset;
+        Quaternion visualRotation = projectileFacing * Quaternion.Euler(projectileRotationOffset);
         if (projectilePrefabToUse != null)
         {
-            Vector3 spawnPos = currentPos + owner.transform.TransformDirection(projectilePositionOffset);
-            Quaternion projRot = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(projectileRotationOffset);
-            projVfx = SpawnVfxTracked(projectilePrefabToUse, spawnPos, projRot);
+            projVfx = SpawnVfxTracked(projectilePrefabToUse, currentPos + visualOffset, visualRotation);
             projVfx.transform.localScale *= projectileVfxScale;
         }
 
+
         while (traveled < effectiveMaxRange)
         {
-            float step = projectileSpeed * AbilityDeltaTime;
+            float speedMultiplier = IsUpgradeUnlocked("PR-TG01")
+                ? GetCardParameter("AttackExpandSpeedMultiplier", 1.15f)
+                : 1f;
+            float step = projectileSpeed * speedMultiplier * AbilityDeltaTime;
             traveled += step;
+
             currentPos = origin + forward * Mathf.Min(traveled, effectiveMaxRange);
 
             if (projVfx != null)
             {
-                projVfx.transform.position = currentPos;
-                projVfx.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+                projVfx.transform.position = currentPos + visualOffset;
+                projVfx.transform.rotation = visualRotation;
             }
+
 
             Vector3 halfExtents = new Vector3(projectileWidth * 0.5f, projectileHeight * 0.5f, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
@@ -238,8 +269,12 @@ public class EnemyAbility_SwordQi : EnemyAbility
             CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
 
             int layerMask = owner.isPossessed ? ~0 : targetMask;
+            if (IsUpgradeUnlocked("PR-A03"))
+                CutIncomingProjectiles(checkCenter, forward, projectileWidth * 0.5f);
+
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
             bool hitSomething = false;
+
             Vector3 hitPos = currentPos;
 
             foreach (var h in hits)
@@ -318,7 +353,22 @@ public class EnemyAbility_SwordQi : EnemyAbility
         }
     }
 
+    private void CutIncomingProjectiles(Vector3 center, Vector3 forward, float radius)
+    {
+        Collider[] candidates = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            Projectile projectile = candidates[i].GetComponentInParent<Projectile>();
+            if (projectile == null || projectile.ownerEnemy == owner) continue;
+            Vector3 incoming = projectile.transform.forward;
+            incoming.y = 0f;
+            if (incoming.sqrMagnitude > 0.0001f && Vector3.Dot(incoming.normalized, forward) >= 0f) continue;
+            VfxPool.ReleaseOrDestroy(projectile.gameObject);
+        }
+    }
+
     private bool IsOwnerCollider(Collider collider)
+
     {
         return collider == null || owner == null ||
                collider.transform.IsChildOf(owner.transform) ||

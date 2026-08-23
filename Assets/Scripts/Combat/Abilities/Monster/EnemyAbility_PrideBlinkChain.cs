@@ -130,7 +130,8 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
             if (currentTarget != null && !currentTarget.isDowned)
                 DealDamageTo(currentTarget, damage * damageMultiplier);
 
-            if (IsUpgradeUnlocked("Pride.BlinkSwordQi"))
+            if (IsUpgradeUnlocked("PR-X01"))
+
             {
                 EnemyAbility_SwordQi swordQi = owner.GetComponentInChildren<EnemyAbility_SwordQi>(true);
                 // Blade must not be absorbed by the enemy just slashed.
@@ -205,7 +206,15 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         EndActivationEffect();
     }
 
+    private void EnsureUpgrade(string effectId)
+    {
+        if (upgrades == null) upgrades = new List<UpgradeSlot>();
+        if (upgrades.Exists(slot => slot != null && string.Equals(slot.effectId, effectId, System.StringComparison.OrdinalIgnoreCase))) return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
+
     private void SetActivationDisplays(bool visible)
+
     {
         if (activationDisplayA != null) activationDisplayA.SetActive(visible);
         if (activationDisplayB != null) activationDisplayB.SetActive(visible);

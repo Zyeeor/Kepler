@@ -14,7 +14,7 @@ AnimatorStateMachine:
     m_Position: {x: 30, y: 230, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4702957508965866685}
-    m_Position: {x: -330, y: 430, z: 0}
+    m_Position: {x: -250, y: 450, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 7220632368896569721}
     m_Position: {x: 360, y: 450, z: 0}
@@ -243,7 +243,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: envy1
+  m_Name: tanlan
   serializedVersion: 5
   m_AnimatorParameters:
   - m_Name: Speed
@@ -362,7 +362,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: DashSlash
+  m_Name: hand
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -378,7 +378,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 1827226128182048838, guid: 01670cbce34835048a9c5a751c5a58de,
+  m_Motion: {fileID: 1827226128182048838, guid: 6775b983ce3b789488a1258a0d89f203,
     type: 3}
   m_Tag: 
   m_SpeedParameter: 
@@ -447,7 +447,7 @@ BlendTree:
   m_Name: Blend Tree
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 1827226128182048838, guid: 26033d092156a5f46862da5c7edac4f9,
+    m_Motion: {fileID: 1827226128182048838, guid: 41c7bb7b323b572418538b52353f8be0,
       type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
@@ -456,7 +456,7 @@ BlendTree:
     m_DirectBlendParameter: speed
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 1827226128182048838, guid: 26033d092156a5f46862da5c7edac4f9,
+    m_Motion: {fileID: 1827226128182048838, guid: 41c7bb7b323b572418538b52353f8be0,
       type: 3}
     m_Threshold: 8
     m_Position: {x: 0, y: 0}

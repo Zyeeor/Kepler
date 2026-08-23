@@ -9,8 +9,9 @@ public class GreedHandProjectile : MonoBehaviour
     public Enemy ownerAtFire;
     public Enemy target;
     public float damage = 15f;
-    public float moveSpeed = 14f;
-    public float hitRadius = 0.45f;
+    public float moveSpeed = 20f;
+    public float hitRadius = 0.8f;
+
     public float lifetime = 6f;
     public bool allowRetargetOnce;
     public bool canSpawnOnKill;
@@ -21,16 +22,26 @@ public class GreedHandProjectile : MonoBehaviour
     public float flankArcDuration = 0.35f;
     public float flankSideDistance = 2.2f;
     public GameObject hitVfxPrefab;
-    public float hitVfxDuration = 0.8f;
+    public float hitVfxDuration = 1f;
+
     public bool isDerived;
 
+    private const float BaseCurveAngle = 20f;
+    private const float FlankTurnSpeed = 90f;
+    private const float MinimumFlightDuration = 0.3f;
+
+
     private float _expiresAt;
-    private float _spawnTime;
-    private Vector3 _spawnPos;
-    private Vector3 _flankWaypoint;
-    private bool _reachedFlank;
+    private float _canHitAt;
+    private float _curveBiasEndsAt;
+    private float _homingTurnRate;
+    private float _homingCurveStrength;
+
+    private Vector3 _travelDirection;
+
     private bool _retargetUsed;
     private bool _settled;
+
 
     public void Launch(
         EnemyAbility_GreedHands ability,
@@ -42,7 +53,12 @@ public class GreedHandProjectile : MonoBehaviour
         bool useFlank,
         bool leftFlank,
         bool derived,
-        GameObject hitVfx)
+        GameObject hitVfx,
+        float impactDuration,
+        float homingMoveSpeed,
+        float homingTurnRate,
+        float homingCurveStrength)
+
     {
         sourceAbility = ability;
         ownerAtFire = firedBy;
@@ -54,26 +70,33 @@ public class GreedHandProjectile : MonoBehaviour
         flankLeft = leftFlank;
         isDerived = derived;
         hitVfxPrefab = hitVfx;
+        hitVfxDuration = Mathf.Max(0.05f, impactDuration);
+        moveSpeed = Mathf.Max(0f, homingMoveSpeed);
+        _homingTurnRate = Mathf.Max(0f, homingTurnRate);
+        _homingCurveStrength = Mathf.Clamp01(homingCurveStrength);
         _settled = false;
+
         _retargetUsed = false;
-        _reachedFlank = false;
-        _spawnTime = Time.time;
         _expiresAt = Time.time + lifetime;
-        _spawnPos = transform.position;
-        if (flankArc && target != null)
-        {
-            Vector3 toTarget = target.transform.position - _spawnPos;
-            toTarget.y = 0f;
-            if (toTarget.sqrMagnitude < 0.01f) toTarget = firedBy != null ? firedBy.transform.forward : Vector3.forward;
-            toTarget.Normalize();
-            Vector3 side = Vector3.Cross(Vector3.up, toTarget) * (flankLeft ? -1f : 1f);
-            _flankWaypoint = _spawnPos + side * flankSideDistance + toTarget * (flankSideDistance * 0.35f);
-            _flankWaypoint.y = _spawnPos.y;
-        }
-        else
-        {
-            _reachedFlank = true;
-        }
+        _canHitAt = Time.time + MinimumFlightDuration;
+        _curveBiasEndsAt = Time.time + (flankArc ? Mathf.Max(0f, flankArcDuration) : 0f);
+
+
+        Vector3 toTarget = target != null
+            ? target.transform.position + Vector3.up * 0.6f - transform.position
+            : (firedBy != null ? firedBy.transform.forward : Vector3.forward);
+        if (toTarget.sqrMagnitude < 0.01f)
+            toTarget = firedBy != null ? firedBy.transform.forward : Vector3.forward;
+        toTarget.Normalize();
+
+        Vector3 side = Vector3.Cross(Vector3.up, toTarget);
+        if (side.sqrMagnitude < 0.01f) side = Vector3.right;
+        if (flankLeft) side = -side;
+        float curveAngle = flankArc
+            ? Mathf.Clamp(flankSideDistance * 25f, BaseCurveAngle, 75f)
+            : BaseCurveAngle;
+        _travelDirection = (toTarget + side.normalized * Mathf.Tan(curveAngle * Mathf.Deg2Rad)).normalized;
+
     }
 
     private void Update()
@@ -85,30 +108,44 @@ public class GreedHandProjectile : MonoBehaviour
             return;
         }
 
-        Vector3 goal;
-        if (flankArc && !_reachedFlank)
+        float deltaTime = ownerAtFire != null && ownerAtFire.IsPlayerControlled
+            ? Time.unscaledDeltaTime
+            : Time.deltaTime;
+        Vector3 goal = target.transform.position + Vector3.up * 0.6f;
+        Vector3 toGoal = goal - transform.position;
+        if (toGoal.sqrMagnitude > 0.001f)
         {
-            goal = _flankWaypoint;
-            if ((transform.position - _flankWaypoint).sqrMagnitude <= 0.08f * 0.08f
-                || Time.time - _spawnTime >= flankArcDuration)
-                _reachedFlank = true;
-        }
-        else
-        {
-            goal = target.transform.position + Vector3.up * 0.6f;
+            float turnSpeed = flankArc && Time.time < _curveBiasEndsAt
+                ? FlankTurnSpeed
+                : _homingTurnRate;
+            Vector3 desiredDirection = Vector3.Slerp(
+                _travelDirection,
+                toGoal.normalized,
+                _homingCurveStrength).normalized;
+
+            _travelDirection = Vector3.RotateTowards(
+                _travelDirection,
+                desiredDirection,
+                turnSpeed * Mathf.Deg2Rad * deltaTime,
+                1f);
+            transform.position += _travelDirection * (moveSpeed * deltaTime);
         }
 
-        transform.position = Vector3.MoveTowards(transform.position, goal, moveSpeed * Time.deltaTime);
-        Vector3 look = goal - transform.position;
+
+        Vector3 look = _travelDirection;
         look.y = 0f;
         if (look.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(look.normalized, Vector3.up);
 
-        if (_reachedFlank && Vector3.Distance(transform.position, target.transform.position) <= hitRadius + 0.35f)
+        if (Time.time >= _canHitAt
+            && Vector3.Distance(transform.position, target.transform.position) <= hitRadius)
         {
-            CombatHitboxDebug.DrawSphere(true, transform.position, hitRadius + 0.35f, 0f);
+            CombatHitboxDebug.DrawSphere(true, transform.position, hitRadius, 0f);
+
             SettleHit();
         }
+
+
     }
 
     private void SettleHit()
@@ -117,7 +154,8 @@ public class GreedHandProjectile : MonoBehaviour
         _settled = true;
 
         Enemy hitTarget = target;
-        Vector3 hitPos = hitTarget.transform.position + Vector3.up * 0.5f;
+        Vector3 hitPos = transform.position;
+
         if (sourceAbility != null)
             sourceAbility.SettleHandHit(hitTarget, damage);
         else
@@ -133,6 +171,8 @@ public class GreedHandProjectile : MonoBehaviour
         if (hitVfxPrefab != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(hitVfxPrefab, hitPos, Quaternion.identity);
+
+
             foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
                 ps.Play(true);
             VfxPool.ReleaseOrDestroy(vfx, Mathf.Max(0.05f, hitVfxDuration));

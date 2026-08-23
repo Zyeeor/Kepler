@@ -562,7 +562,7 @@ MonoBehaviour:
   boltVfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
     type: 3}
   boltVfxPositionOffset: {x: 0, y: 0, z: 0}
-  boltVfxRotationOffset: {x: 0, y: -90, z: 90}
+  boltVfxRotationOffset: {x: 0, y: 0, z: 0}
   hitEffectPrefab: {fileID: 1600531901824256160, guid: f4a4b36476c3e424a9c1ddd5405afd74,
     type: 3}
   hitEffectDuration: 0.5
@@ -1953,6 +1953,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: JiDu - Run
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 077dd4c98a4745a4eafd7dde682d6dc8,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1555527031470753292, guid: 077dd4c98a4745a4eafd7dde682d6dc8,
         type: 3}

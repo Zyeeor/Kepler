@@ -132,6 +132,12 @@ MonoBehaviour:
   upgrades:
   - effectId: Sloth.Scatter
     unlocked: 0
+  - effectId: SL-A03
+    unlocked: 0
+  - effectId: SL-A04
+    unlocked: 0
+  - effectId: SL-A05
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -833,6 +839,10 @@ MonoBehaviour:
     unlocked: 0
   - effectId: Sloth.DroneDeathBlast
     unlocked: 0
+  - effectId: SL-S01
+    unlocked: 0
+  - effectId: SL-S03
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1197,6 +1207,10 @@ MonoBehaviour:
   - effectId: Sloth.LandingBlast
     unlocked: 0
   - effectId: Sloth.LandingMine
+    unlocked: 0
+  - effectId: SL-M01
+    unlocked: 0
+  - effectId: SL-M02
     unlocked: 0
   vfxPrefab: {fileID: 7274247396609794175, guid: 0513ef01dbf0c8c4aa7467ffab2fc104,
     type: 3}
