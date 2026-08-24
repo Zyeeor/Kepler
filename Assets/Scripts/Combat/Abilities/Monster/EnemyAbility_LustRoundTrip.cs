@@ -80,7 +80,42 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
     protected override void OnTrigger()
     {
         CacheState();
+        if (owner is BossSevenfoldActor)
+        {
+            StartCoroutine(BossSpreadRoutine());
+            return;
+        }
         StartCoroutine(AttackRoutine(owner != null ? owner.transform.position : Vector3.zero, ResolveAimDirection(), 1f, true));
+    }
+
+    private IEnumerator BossSpreadRoutine()
+    {
+        if (owner == null)
+        {
+            EndActivationEffect();
+            yield break;
+        }
+
+        BossSevenfoldActor boss = owner as BossSevenfoldActor;
+        Vector3 origin = owner.transform.position;
+        Vector3 center = boss.GetBossTargetPosition() - origin;
+        center.y = 0f;
+        if (center.sqrMagnitude < 0.0001f) center = ResolveAimDirection();
+        else center.Normalize();
+        int count = Mathf.Clamp(boss.CombatPhase, 1, 3);
+        const float spread = 24f;
+        Animator anim = owner.GetActiveAnimator();
+        if (anim != null) anim.SetTrigger("Basic");
+
+        for (int i = 0; i < count; i++)
+        {
+            float angle = count == 1 ? 0f : Mathf.Lerp(-spread, spread, i / (float)(count - 1));
+            Vector3 direction = Quaternion.Euler(0f, angle, 0f) * center;
+            StartCoroutine(AttackRoutine(origin, direction, 1f, false));
+        }
+
+        yield return null;
+        EndActivationEffect();
     }
 
     /// <summary>Anchor mirror cast: no HP cost / no recurse / independent hit registry.</summary>

@@ -104,6 +104,9 @@ public class EnemyAbility_SwordQi : EnemyAbility
     {
         if (owner.isPossessed)
             return base.CanTrigger();
+        if (owner is BossSevenfoldActor)
+            return base.CanTrigger() && ((PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null)
+                || PlayerHealth.Instance != null);
         return base.CanTrigger() && owner != null && owner.targetPlayer != null;
     }
 
@@ -243,7 +246,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (projectilePrefabToUse != null)
         {
             projVfx = SpawnVfxTracked(projectilePrefabToUse, currentPos + visualOffset, visualRotation);
-            projVfx.transform.localScale *= projectileVfxScale;
+            projVfx.transform.localScale *= projectileVfxScale * OwnerCombatScaleMultiplier;
         }
 
 

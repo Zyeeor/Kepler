@@ -3,8 +3,12 @@ using UnityEngine;
 /// <summary>Chooses a clear ground point on a ring around the current player body.</summary>
 public sealed class BossTeleportPlanner : MonoBehaviour
 {
+    [Tooltip("Fail-safe minimum separation from the player. Keep this high enough to avoid body overlap.")]
     public float minPlayerDistance = 5f;
-    public float preferredDistance = 10f;
+    [Tooltip("Default void-walk landing separation. The Boss Actor overrides this at runtime from its Void Walk Landing section.")]
+    public float preferredDistance = 5f;
+    [Tooltip("Farthest allowed void-walk landing separation. The Boss Actor overrides this at runtime from its Void Walk Landing section.")]
+    public float maxPlayerDistance = 6f;
     public int candidateCount = 10;
     public float clearanceRadius = 1.2f;
     public float clearanceHeight = 3.5f;
@@ -16,7 +20,8 @@ public sealed class BossTeleportPlanner : MonoBehaviour
         for (int i = 0; i < candidateCount; i++)
         {
             float angle = (i / (float)candidateCount + boss.AiRandomValue()) * Mathf.PI * 2f;
-            float radius = boss.AiRandomRange(minPlayerDistance, preferredDistance + 3f);
+            float radius = boss.AiRandomRange(Mathf.Max(minPlayerDistance, preferredDistance - 2f),
+                Mathf.Max(preferredDistance, maxPlayerDistance));
             Vector3 probe = playerPosition + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
             if (!Physics.Raycast(probe + Vector3.up * 12f, Vector3.down, out RaycastHit groundHit, 30f, mask,
                     QueryTriggerInteraction.Ignore))
@@ -45,8 +50,9 @@ public sealed class BossTeleportPlanner : MonoBehaviour
     public bool TryPlan(Vector3 bossPosition, Vector3 playerPosition, Vector3 candidate, out Vector3 result)
     {
         result = candidate;
-        result.y = bossPosition.y;
-        if ((result - playerPosition).sqrMagnitude < minPlayerDistance * minPlayerDistance) return false;
+        Vector3 fromPlayer = result - playerPosition;
+        fromPlayer.y = 0f;
+        if (fromPlayer.sqrMagnitude < minPlayerDistance * minPlayerDistance) return false;
         return true;
     }
 }

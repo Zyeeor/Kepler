@@ -1364,6 +1364,7 @@ public class MonsterActor : Actor
         IsBossBattleReserveBody = true;
         currentHealth = maxHealth;
         UpdateHealthUI();
+        BossReserveCorpseVisualFx.EnsureFor(this);
         Debug.Log($"[MonsterState] '{displayName}' registered as Boss battle reserve body ({sinType}).");
     }
 
@@ -1376,6 +1377,7 @@ public class MonsterActor : Actor
         IsBossBattleReserveBody = true;
         currentHealth = Mathf.Clamp(preservedHealth, 1f, maxHealth);
         UpdateHealthUI();
+        BossReserveCorpseVisualFx.EnsureFor(this);
     }
 
     public virtual void BeginDisappearing(){
@@ -1387,6 +1389,8 @@ public class MonsterActor : Actor
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
 
+        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         isPossessed = false;
         isDowned = true;
@@ -1433,6 +1437,8 @@ public class MonsterActor : Actor
         isDowned = false;
         isPossessed = false;
         ResetEliteRuntimeState();
+        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         isPossessable = true;
         lastDamageSource = null;
@@ -1495,6 +1501,8 @@ public class MonsterActor : Actor
     public void ResetForPool(){
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
+        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         bossDamageContext = false;
         possessVelocity = Vector3.zero;

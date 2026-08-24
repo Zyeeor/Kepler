@@ -136,6 +136,19 @@ public class MonsterPool : MonoBehaviour
     {
         if (monster == null) return;
 
+        // A composite Boss prefab can contain legacy MonsterActor components on its
+        // visual source parts. Resolve the pooled root before checking Boss state so a
+        // child fade can never deactivate an undefeated Boss root.
+        GameObject instanceToReturn = FindPooledRoot(monster.transform);
+        BossSevenfoldActor rootBoss = instanceToReturn != null
+            ? instanceToReturn.GetComponent<BossSevenfoldActor>()
+            : null;
+        if (rootBoss != null && !rootBoss.IsDefeated)
+        {
+            Debug.LogWarning($"[MonsterPool] 拒绝回收尚未死亡的 Boss '{monster.name}'。", monster);
+            return;
+        }
+
         if (monster is BossSevenfoldActor boss && !boss.IsDefeated)
         {
             Debug.LogWarning($"[MonsterPool] 拒绝回收尚未死亡的 Boss '{monster.name}'。", monster);
@@ -151,7 +164,6 @@ public class MonsterPool : MonoBehaviour
             return;
         }
 
-        GameObject instanceToReturn = FindPooledRoot(monster.transform);
         if (!prefabByInstance.TryGetValue(instanceToReturn, out GameObject prefab))
         {
             Destroy(instanceToReturn);

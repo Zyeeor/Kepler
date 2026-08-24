@@ -94,11 +94,12 @@ public sealed class RunSpawnDirector : MonoBehaviour
     public int SpawnBossBattleReserveBodies()
     {
         PruneBossBattleReserveBodies();
-        if (normalPrefabs == null || normalPrefabs.Count == 0 || MonsterPool.Instance == null) return 0;
+        if (MonsterPool.Instance == null) return 0;
 
         int spawned = 0;
         Vector3 center = GetBossBattleReserveCenter();
-        MonsterSpawner spawner = MonsterSpawner.Instance;
+        Vector3 forward = GetBossBattleReserveForward();
+        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
         for (int i = 0; i < BossBattleReserveOrder.Length; i++)
         {
             SinType sin = BossBattleReserveOrder[i];
@@ -111,20 +112,14 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 continue;
             }
 
-            float angle = (Mathf.PI * 2f * i) / BossBattleReserveOrder.Length;
-            Vector3 position;
-            if (spawner != null && spawner.TryGetWaveSpawnPosition(out position))
-            {
-                // Prefer the shared legal, loaded-tile spawn query. Reserve bodies are
-                // still not registered in MonsterSpawner, so they do not consume quota.
-            }
-            else
-            {
-                // Test scenes without MapStreamingSystem still get a deterministic field
-                // ring instead of silently losing a required reserve slot.
-                position = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 5f;
-            }
-            GameObject instance = MonsterPool.Instance.Spawn(prefab, position, Quaternion.Euler(0f, angle * Mathf.Rad2Deg + 180f, 0f));
+            // Keep every fixed reserve body visible and reachable: a compact 4+3 array
+            // immediately beside the current player body, in canonical sin order.
+            int row = i / 4;
+            int column = i % 4;
+            int columnsInRow = row == 0 ? 4 : 3;
+            float horizontal = (column - (columnsInRow - 1) * 0.5f) * 3f;
+            Vector3 position = center + forward * (3.5f + row * 3f) + right * horizontal;
+            GameObject instance = MonsterPool.Instance.Spawn(prefab, position, Quaternion.LookRotation(-forward, Vector3.up));
             if (instance == null) continue;
 
             MonsterActor body = instance.GetComponentInChildren<MonsterActor>(true);
@@ -277,7 +272,17 @@ public sealed class RunSpawnDirector : MonoBehaviour
         MonsterActor actor = MonsterSpawner.Instance.SpawnWaveMonster(bossPrefab, position);
         if (actor == null) return false;
         actor.ApplySpawnDifficultySnapshot(SpawnOrigin.Boss, CurrentTier);
-        if (actor is BossSevenfoldActor boss) boss.BeginTakeover();
+        if (actor is BossSevenfoldActor boss)
+        {
+            // Debug key [8] is an explicit Boss battle entry, not another wave spawn.
+            // Stop the ordinary wave loop and move the run into Final when that edge is legal.
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null) waveManager.StopWaves();
+            boss.BeginTakeover();
+            RunSession session = RunSession.Instance;
+            if (session != null && session.CurrentPhase == RunPhase.Waves)
+                session.TransitionTo(RunPhase.Final);
+        }
         spawnedBossCount++;
         return true;
     }
@@ -320,6 +325,16 @@ public sealed class RunSpawnDirector : MonoBehaviour
         return Vector3.zero;
     }
 
+    Vector3 GetBossBattleReserveForward()
+    {
+        Transform anchor = PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null
+            ? PossessionManager.Instance.CurrentBody.transform
+            : (PlayerHealth.Instance != null ? PlayerHealth.Instance.transform : null);
+        Vector3 forward = anchor != null ? anchor.forward : Vector3.forward;
+        forward.y = 0f;
+        return forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+    }
+
     MonsterActor FindBossBattleReserveBody(SinType sin)
     {
         for (int i = 0; i < bossBattleReserveBodies.Count; i++)
@@ -350,6 +365,12 @@ public sealed class RunSpawnDirector : MonoBehaviour
             MonsterActor actor = prefab.GetComponentInChildren<MonsterActor>(true);
             if ((actor != null && actor.sinType == sin) || PrefabNameMatchesSin(prefab.name, sin)) return prefab;
         }
+
+        // The reserve is a fixed seven-body encounter rule, not a by-product of the
+        // current wave table. The production Resources catalog is the stable fallback.
+        EliteMonsterCatalog catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
+        EliteMonsterCatalog.Entry entry = catalog != null ? catalog.Find(sin) : null;
+        if (entry != null && entry.prefab != null) return entry.prefab;
         return null;
     }
 

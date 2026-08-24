@@ -20,6 +20,7 @@ public sealed class BossCombatBrain : MonoBehaviour
     {
         profiles.Clear();
         if (abilities == null) return;
+        float rangeScale = owner != null ? owner.BossCombatScaleMultiplier : 1f;
         for (int i = 0; i < abilities.Length; i++)
         {
             EnemyAbility ability = abilities[i];
@@ -34,45 +35,107 @@ public sealed class BossCombatBrain : MonoBehaviour
                 requiresLineOfSight = true,
                 baseWeight = 1f,
             };
-            ConfigureRange(profile, ability);
+            ConfigureRange(profile, ability, rangeScale);
             profiles.Add(profile);
         }
     }
 
-    static void ConfigureRange(BossAbilityProfile profile, EnemyAbility ability)
+    static void ConfigureRange(BossAbilityProfile profile, EnemyAbility ability, float scale)
     {
-        string typeName = ability.GetType().Name;
-        if (typeName.Contains("GluttonyDevour") || typeName.Contains("GluttonyAbyssMaw"))
+        if (ability is EnemyAbility_PrideBlinkChain blink)
         {
             profile.minRange = 0f;
-            profile.maxRange = 4.5f;
-            profile.preferredRange = 2.2f;
+            profile.maxRange = blink.searchRange;
+            profile.preferredRange = blink.searchRange * 0.65f;
         }
-        else if (typeName.Contains("WrathSlam"))
+        else if (ability is EnemyAbility_SwordQi swordQi)
         {
             profile.minRange = 0f;
-            profile.maxRange = 7f;
-            profile.preferredRange = 4f;
+            profile.maxRange = swordQi.maxRange;
+            profile.preferredRange = swordQi.maxRange * 0.6f;
         }
-        else if (typeName.Contains("GreedGuard"))
+        else if (ability is EnemyAbility_EnvyLaser laser)
         {
             profile.minRange = 0f;
-            profile.maxRange = 12f;
-            profile.preferredRange = 7f;
+            profile.maxRange = laser.maxRange;
+            profile.preferredRange = laser.maxRange * 0.7f;
         }
-        else if (typeName.Contains("SwordQi") || typeName.Contains("EnvyLaser")
-                 || typeName.Contains("SlothChargeShot") || typeName.Contains("LustRoundTrip"))
+        else if (ability is EnemyAbility_SlothChargeShot chargeShot)
         {
-            profile.minRange = 4f;
-            profile.maxRange = 26f;
-            profile.preferredRange = 13f;
+            profile.minRange = 0f;
+            profile.maxRange = chargeShot.maxRange;
+            profile.preferredRange = chargeShot.maxRange * 0.7f;
         }
-        else if (ability.type == EnemyAbility.AbilityType.Skill)
+        else if (ability is EnemyAbility_GreedHands greedHands)
         {
-            profile.minRange = 2f;
-            profile.maxRange = 20f;
-            profile.preferredRange = 9f;
+            profile.minRange = 0f;
+            profile.maxRange = greedHands.detectRange;
+            profile.preferredRange = greedHands.detectRange * 0.65f;
         }
+        else if (ability is EnemyAbility_WrathChainStorm chainStorm)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = chainStorm.pullRadius;
+            profile.preferredRange = chainStorm.pullRadius * 0.7f;
+        }
+        else if (ability is EnemyAbility_LustSoulPull soulPull)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = soulPull.pullMaxDistance;
+            profile.preferredRange = soulPull.pullMaxDistance * 0.7f;
+        }
+        else if (ability is EnemyAbility_GluttonyDevour devour)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = devour.range;
+            profile.preferredRange = devour.range * 0.7f;
+        }
+        else if (ability is EnemyAbility_GluttonyAbyssMaw abyssMaw)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = abyssMaw.maxAimDistance;
+            profile.preferredRange = abyssMaw.maxAimDistance * 0.6f;
+        }
+        else if (ability is EnemyAbility_WrathSlam wrathSlam)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = wrathSlam.radius;
+            profile.preferredRange = wrathSlam.radius * 0.7f;
+        }
+        else if (ability is EnemyAbility_SlothDrone)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = float.MaxValue;
+            profile.preferredRange = 0f;
+            profile.requiresLineOfSight = false;
+        }
+        else if (ability is EnemyAbility_LustRoundTrip roundTrip)
+        {
+            profile.minRange = 0f;
+            profile.maxRange = roundTrip.mistRange;
+            profile.preferredRange = roundTrip.mistRange * 0.65f;
+        }
+        else
+        {
+            string typeName = ability.GetType().Name;
+            if (typeName.Contains("GreedGuard"))
+            {
+                profile.minRange = 0f;
+                profile.maxRange = 12f;
+                profile.preferredRange = 7f;
+            }
+            else if (ability.type == EnemyAbility.AbilityType.Skill)
+            {
+                profile.minRange = 2f;
+                profile.maxRange = 20f;
+                profile.preferredRange = 9f;
+            }
+        }
+
+        float effectiveScale = ability is EnemyAbility_EnvyLaser ? 1f : Mathf.Max(1f, scale);
+        profile.minRange *= effectiveScale;
+        profile.maxRange *= effectiveScale;
+        profile.preferredRange *= effectiveScale;
     }
 
 
@@ -84,27 +147,46 @@ public sealed class BossCombatBrain : MonoBehaviour
 
     void Update()
     {
-        if (owner == null || owner.IsDefeated || !owner.CanAct) return;
+        if (owner == null || owner.IsDefeated || !owner.CanAct || owner.IsAbilitySequenceLocked) return;
         if (Time.unscaledTime < nextDecisionTime) return;
         nextDecisionTime = Time.unscaledTime + decisionInterval;
         Vector3 targetPosition = owner.GetBossTargetPosition();
         EnemyAbility choice = ChooseAbility(targetPosition);
+        float distance = Vector3.Distance(owner.transform.position, targetPosition);
+        if (owner.TryRequestTacticalTeleport(targetPosition, distance, choice != null, failedDecisionCount))
+        {
+            failedDecisionCount = 0;
+            return;
+        }
         if (choice == null)
         {
             failedDecisionCount++;
-            if (failedDecisionCount >= 4 && owner.TryTeleportTowardsTarget(owner.GetBossTargetPosition()))
+            if (failedDecisionCount >= 3 && owner.TryTeleportTowardsTarget(targetPosition))
                 failedDecisionCount = 0;
             return;
         }
         failedDecisionCount = 0;
         owner.FaceBossTarget(targetPosition);
         choice.Trigger();
+        owner.CompleteVoidWalkFollowUp(choice);
         Record(choice, FindFamily(choice));
         decisionIndex++;
     }
 
     public EnemyAbility ChooseAbility(Vector3 targetPosition)
     {
+        if (owner.HasVoidWalkFollowUp)
+        {
+            owner.TryGetVoidWalkFollowUp(targetPosition, out EnemyAbility followUp);
+            return followUp;
+        }
+
+        for (int i = 0; i < profiles.Count; i++)
+        {
+            EnemyAbility_SlothDrone drone = profiles[i] != null ? profiles[i].ability as EnemyAbility_SlothDrone : null;
+            if (drone != null && !drone.HasActiveDrone && drone.CanTrigger()) return drone;
+        }
+
         float distance = Vector3.Distance(owner.transform.position, targetPosition);
         BossAbilityProfile best = null;
         float bestScore = 0f;

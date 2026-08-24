@@ -17,6 +17,7 @@ public class VfxPool : MonoBehaviour
     /// <summary>Invalidates pending delayed releases when an instance is re-rented or released early.</summary>
     private readonly Dictionary<GameObject, int> releaseEpochByInstance =
         new Dictionary<GameObject, int>();
+    private readonly HashSet<GameObject> deferredReleases = new HashSet<GameObject>();
 
     public static VfxPool Instance
     {
@@ -81,6 +82,22 @@ public class VfxPool : MonoBehaviour
     {
         if (instance == null) return;
 
+        // Effect cleanup can run from a child OnDisable while its owner root is
+        // still being deactivated. Unity rejects SetParent during that transition;
+        // defer exactly one frame, then perform the normal pooled release.
+        if (IsUnderInactiveParent(instance.transform))
+        {
+            DeferReleaseUntilNextFrame(instance);
+            return;
+        }
+
+        ReleaseImmediately(instance);
+    }
+
+    private void ReleaseImmediately(GameObject instance)
+    {
+        if (instance == null) return;
+
         if (!prefabByInstance.TryGetValue(instance, out GameObject prefab))
         {
             Destroy(instance);
@@ -102,6 +119,26 @@ public class VfxPool : MonoBehaviour
         }
 
         available.Enqueue(instance);
+    }
+
+    private bool IsUnderInactiveParent(Transform child)
+    {
+        return child != null && child.parent != null && !child.parent.gameObject.activeInHierarchy;
+    }
+
+    private void DeferReleaseUntilNextFrame(GameObject instance)
+    {
+        if (!deferredReleases.Add(instance)) return;
+        int epoch = BumpReleaseEpoch(instance);
+        StartCoroutine(ReleaseAfterOwnerDeactivation(instance, epoch));
+    }
+
+    private IEnumerator ReleaseAfterOwnerDeactivation(GameObject instance, int epoch)
+    {
+        yield return null;
+        deferredReleases.Remove(instance);
+        if (instance == null || !IsCurrentEpoch(instance, epoch)) yield break;
+        ReleaseImmediately(instance);
     }
 
     /// <summary>Delayed release. Cancelled automatically if the instance is re-spawned or released early.</summary>
