@@ -438,6 +438,13 @@ public abstract class EnemyAbility : MonoBehaviour
     protected void DealDamageTo(Enemy target, float amount)
     {
         if (target == null || owner == null) return;
+        // 战果回传归因（Meta §6.5）：精英能力命中玩家当前附身身体 → 先记录伤害来源再结算
+        // （伤害可能同步致命，Body Fatal 事件处理时归因窗口内必须已有记录）
+        if (PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody == target as MonsterActor)
+        {
+            var eliteSource = EliteBuildCarrier.Get(owner);
+            if (eliteSource != null) EliteBuildDirector.NoteEliteDamagedPlayer(eliteSource);
+        }
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
         owner.ApplyOffensiveDamage(target, amount);
         TryPlayHitFeedback(target != null ? target.transform : null);
@@ -447,6 +454,10 @@ public abstract class EnemyAbility : MonoBehaviour
     protected void DealDamageToPlayer(PlayerHealth player, float amount)
     {
         if (player == null || owner == null || !owner.CanDamageSoul()) return;
+        // 战果回传归因（Meta §6.5）：精英能力命中魂 → 先记录伤害来源再结算
+        // （TakeDamage 可能同步触发 Soul Death → Run Fail，事件处理时归因窗口内必须已有记录）
+        var eliteSource = EliteBuildCarrier.Get(owner);
+        if (eliteSource != null) EliteBuildDirector.NoteEliteDamagedPlayer(eliteSource);
         player.TakeDamage(amount);
         TryPlayHitFeedback(player != null ? player.transform : null);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());

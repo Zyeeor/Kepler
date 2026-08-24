@@ -19,6 +19,7 @@
 - **纯 HTTP JSON API**：无 WS / KCP / Protobuf，Unity 用 `UnityWebRequest` 即可对接
 - **无账号体系**：客户端本地持久化匿名 ID（UGC 侧 GUID；精英怪侧设备特征码）
 - **精英怪四步筛选**：BD 数量门槛 → 波次差（越级难度）→ 玩家隔离 → TOP_BAND 高档内加权随机；候选为空时三级兜底（放宽波次差 → 最高波次档最大 BD → 本波不投放）
+- **战果回传**：精英在他人游戏中的五类战果事件（`spawned` / `fatal` / `possessed` / `bodyFatal` / `runFail`，设计依据：Meta_Progression §6.5）批量上报 `POST /api/elite/events`，按构筑主人 `(ownerPlayerId, ownerRunId, sin)` 聚合计数；`GET /api/elite/stats?playerId=` 查询聚合（荣誉殿堂「异步战绩」数据出口）；无主事件（本地 Preset）与非法 sin/type 逐条跳过，不整批失败
 - **透传存储原则**：`bdData` 结构、`sourceWave` 语义由前台定义，后台只存不解析
 - **容量治理**：多局独立保留；全局 FIFO 上限 + 每玩家上限（参数可配）
 - **可扩展**：存储接口化（SQLite → MySQL 零改动业务），文件存储可换 OSS
@@ -74,6 +75,9 @@ go run ./test/ugctest
 
 # 精英怪投放端到端测试（自包含，无需预启动服务器）
 go run ./test/elitepicktest
+
+# 战果回传端到端测试（事件上报 → 校验跳过 → 按构筑主人聚合 → 战绩查询；自包含）
+go run ./test/eliteeventtest
 ```
 
 ## 项目结构
@@ -86,7 +90,8 @@ go run ./test/elitepicktest
 │   └── store/               # 存储层：Store/EliteStore 接口 + SQLite 实现
 ├── test/
 │   ├── ugctest/             # UGC 端到端测试（HTTP）
-│   └── elitepicktest/       # 精英怪投放端到端测试（自包含）
+│   ├── elitepicktest/       # 精英怪投放端到端测试（自包含）
+│   └── eliteeventtest/      # 战果回传端到端测试（自包含）
 ├── data/                    # 运行时数据（game.db + ugc 文件）
 └── docs/                    # system-design.md + api-guide.md
 ```
@@ -99,6 +104,7 @@ go run ./test/elitepicktest
 | `subscriptions` | 订阅关系（player_id + creation_id 唯一） |
 | `creation_reviews` | 评分评论（creation_id + player_id 唯一，评分自动算均值） |
 | `monster_build_snapshots` | 精英怪 BD 快照候选库（player_id + run_id + sin 唯一 upsert） |
+| `elite_build_stats` | 战果回传聚合（owner_player_id + owner_run_id + sin 唯一；deployed/fatal/possessed/body_fatal/run_fail 计数器） |
 
 ## 部署
 

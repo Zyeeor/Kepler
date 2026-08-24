@@ -71,9 +71,10 @@ func upload(base, player, run string, snaps ...snapIn) int {
 	return out.Accepted
 }
 
-// pick 模拟第 N 波精英怪请求。
+// pick 模拟第 N 波精英怪请求（waveGap=1：越一级波次差——测试各步断言按 WAVE_GAP=1 语义编写；
+// 当前设计 waveGap 完全由客户端指定，服务端默认 0 不再叠加，故请求须显式携带）。
 func pick(base, player string, wave int) pickResp {
-	body, _ := json.Marshal(map[string]any{"playerId": player, "wave": wave})
+	body, _ := json.Marshal(map[string]any{"playerId": player, "wave": wave, "waveGap": 1})
 	resp, err := http.Post(base+"/api/elite/pick", "application/json", bytes.NewReader(body))
 	if err != nil {
 		panic(err)

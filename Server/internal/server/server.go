@@ -90,6 +90,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/bd-snapshots", s.handleSnapshotUpload)
 	mux.HandleFunc("POST /api/elite/pick", s.handleElitePick)
 	mux.HandleFunc("POST /api/user-bd", s.handleUserBDUpload)
+
+	// 战果回传（策划案 §6.5：精英在他人游戏中的战果 → 按构筑主人聚合）
+	mux.HandleFunc("POST /api/elite/events", s.handleEliteEvents)
+	mux.HandleFunc("GET /api/elite/stats", s.handleEliteStats)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
 	return logRequests(mux)
 }
@@ -490,6 +494,63 @@ func toSnapshotJSON(snap *store.BuildSnapshot) snapshotJSON {
 		GameTime:       snap.GameTime,
 		Stats:          stats,
 	}
+}
+
+// handleEliteEvents 战果回传（策划案 §6.5）：精英在他人游戏中的战果事件批量上报，
+// 按构筑主人 (ownerPlayerId, ownerRunId, sin) 聚合。无主/非法条目逐条跳过，不整批失败。
+func (s *Server) handleEliteEvents(w http.ResponseWriter, r *http.Request) {
+	var req service.RecordEventsRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeErr(w, http.StatusBadRequest, "bad request")
+		return
+	}
+
+	accepted, err := s.eliteSvc.RecordEvents(&req)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "accepted": accepted})
+}
+
+// handleEliteStats 查询构筑主人的异步战绩聚合（荣誉殿堂数据出口，§5.4/§5.8）。
+// query: playerId = 构筑主人（非回报者）。
+func (s *Server) handleEliteStats(w http.ResponseWriter, r *http.Request) {
+	owner := r.URL.Query().Get("playerId")
+	stats, err := s.eliteSvc.OwnerEliteStats(owner)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	out := make([]eliteStatsJSON, 0, len(stats))
+	for _, st := range stats {
+		out = append(out, eliteStatsJSON{
+			OwnerPlayerID: st.OwnerPlayerID,
+			OwnerRunID:    st.OwnerRunID,
+			Sin:           st.Sin,
+			Deployed:      st.Deployed,
+			Fatal:         st.Fatal,
+			Possessed:     st.Possessed,
+			BodyFatal:     st.BodyFatal,
+			RunFail:       st.RunFail,
+			UpdatedAt:     st.UpdatedAt,
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"playerId": owner, "stats": out})
+}
+
+// eliteStatsJSON 对外（HTTP）的战绩聚合结构，camelCase。
+type eliteStatsJSON struct {
+	OwnerPlayerID string `json:"ownerPlayerId"`
+	OwnerRunID    string `json:"ownerRunId"`
+	Sin           string `json:"sin"`
+	Deployed      int    `json:"deployed"`  // 被投放次数
+	Fatal         int    `json:"fatal"`     // 被其他玩家击杀次数
+	Possessed     int    `json:"possessed"` // 被其他玩家 Possess 次数
+	BodyFatal     int    `json:"bodyFatal"` // 造成 Body Fatal 次数
+	RunFail       int    `json:"runFail"`   // 直接导致 Run Fail 次数
+	UpdatedAt     int64  `json:"updatedAt"`
 }
 
 // handleHealth 健康检查（客户端启动探活用）。
