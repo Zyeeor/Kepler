@@ -132,6 +132,10 @@ public class RunSession : MonoBehaviour
     /// <summary>场上可附身尸体（存档点采样，downed 且窗口内）。</summary>
     public readonly List<SaveData.MonsterBodySave> Corpses = new List<SaveData.MonsterBodySave>();
 
+    public float ActiveCombatSeconds { get; private set; }
+    public bool BossSpawned { get; private set; }
+    public bool BossDefeated { get; private set; }
+
     /// <summary>
     /// 确保会话实例存在（主菜单/对局场景均可调用）。
     /// 自动创建常驻对象，无需在场景中挂载。
@@ -189,6 +193,11 @@ public class RunSession : MonoBehaviour
         SoulTime = 0f;
         PossessedBody = null;
         Corpses.Clear();
+        PossessionImprintManager.EnsureInstance().BeginNewRun();
+        RunSpawnDirector.EnsureInstance().RestoreRuntime(0f, false, false);
+        ActiveCombatSeconds = 0f;
+        BossSpawned = false;
+        BossDefeated = false;
         HasActiveRun = true;
         RunId = NewRunId();
         SaveCoordinator.DeleteSave();
@@ -223,6 +232,11 @@ public class RunSession : MonoBehaviour
         PossessedBody = data.possessedBody;
         Corpses.Clear();
         if (data.corpses != null) Corpses.AddRange(data.corpses);
+        ActiveCombatSeconds = data.activeCombatSeconds;
+        BossSpawned = data.bossSpawned;
+        BossDefeated = data.bossDefeated;
+        PossessionImprintManager.EnsureInstance().LoadFromSave(data.possessionImprints, data.greedBonusProgress);
+        RunSpawnDirector.EnsureInstance().RestoreRuntime(ActiveCombatSeconds, BossSpawned, BossDefeated);
         // 读档延续同一 runId（老档/缺失字段时补生成，保证精英快照 upsert 键可用）
         RunId = !string.IsNullOrEmpty(data.runId) ? data.runId : NewRunId();
         HasActiveRun = true;
@@ -248,11 +262,16 @@ public class RunSession : MonoBehaviour
         CompletedWaveIndex = completedWaveIndex;
         PendingChoice = pendingChoice;
         SampleBodies();
+        ActiveCombatSeconds = RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : ActiveCombatSeconds;
+        BossSpawned = RunSpawnDirector.Instance != null && RunSpawnDirector.Instance.BossSpawned;
+        BossDefeated = RunSpawnDirector.Instance != null && RunSpawnDirector.Instance.BossDefeated;
         // 候选卡不在此采样：CardManager 每次抽卡/重抽/恢复后已实时同步 ChoicePicks
         // （弹卡后任何时刻退出，快照都是玩家最后看到的候选，含双选第二轮/重抽结果）。
 
         SaveCoordinator.SaveSnapshot(completedWaveIndex, WorldSeed, UnlockedEffects,
-            SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak, RunId);
+            SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak, RunId,
+            ActiveCombatSeconds, PossessionImprintManager.EnsureInstance().CaptureStates(),
+            PossessionImprintManager.EnsureInstance().GreedBonusProgress, BossSpawned, BossDefeated);
         Debug.Log($"[RunSession] 波 {completedWaveIndex} 存档完成：位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count}");
     }
 
@@ -312,6 +331,11 @@ public class RunSession : MonoBehaviour
         CompletedWaveIndex = -1;
         UnlockedEffects.Clear();
         RunId = null;
+        PossessionImprintManager.EnsureInstance().EndRun();
+        RunSpawnDirector.EnsureInstance().RestoreRuntime(0f, false, false);
+        ActiveCombatSeconds = 0f;
+        BossSpawned = false;
+        BossDefeated = false;
         SaveCoordinator.DeleteSave();
         Debug.Log("[RunSession] 对局结束，进度已清除。");
     }

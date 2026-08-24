@@ -112,6 +112,22 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 放在 Start 而非 Awake：此时场景所有 Awake 已执行完（已有实例已注册），
         // 确保不会因创建时机抢跑而覆盖场景中已配置的 MonsterSpawner。幂等。
         MonsterSpawner.EnsureInstance();
+        RunSpawnDirector director = RunSpawnDirector.EnsureInstance();
+        var directorPrefabs = new List<GameObject>();
+        for (int wi = 0; wi < ActiveWaves.Count; wi++)
+        {
+            WaveConfig wave = ActiveWaves[wi];
+            if (wave == null || wave.weightedTable == null) continue;
+            for (int ei = 0; ei < wave.weightedTable.Count; ei++)
+            {
+                MonsterWaveDef def = wave.weightedTable[ei] != null ? wave.weightedTable[ei].def : null;
+                if (def == null || def.monsters == null) continue;
+                for (int mi = 0; mi < def.monsters.Count; mi++)
+                    if (def.monsters[mi] != null && def.monsters[mi].prefab != null && !directorPrefabs.Contains(def.monsters[mi].prefab))
+                        directorPrefabs.Add(def.monsters[mi].prefab);
+            }
+        }
+        director.SetNormalPrefabs(directorPrefabs);
 
         // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
         EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
@@ -442,15 +458,13 @@ public class WaveManager : SceneSingleton<WaveManager>
             var session = RunSession.EnsureInstance();
             session.TransitionTo(RunPhase.Final);
 
-            // Final 占位：复用最后一波的编队配置，打一波普通怪（清完 = 胜利）。
-            // 三阶段压力战实现后替换为 RunFinalPressurePhases()。
-            var lastWave = ActiveWaves.Count > 0 ? ActiveWaves[ActiveWaves.Count - 1] : null;
-            if (lastWave != null && lastWave.weightedTable != null && lastWave.weightedTable.Count > 0)
-            {
-                yield return RunFinalPlaceholderWave(lastWave);
-            }
-
-            session.TransitionTo(RunPhase.Result);
+            // Contract ENG-POSS-001: Final remains active until the exact 480s combat-time
+            // Sevenfold boss is defeated; no early victory after the ordinary waves.
+            RunSpawnDirector finalDirector = RunSpawnDirector.EnsureInstance();
+            while (finalDirector != null && !finalDirector.BossDefeated)
+                yield return null;
+            if (finalDirector != null && finalDirector.BossDefeated)
+                session.TransitionTo(RunPhase.Result);
         }
     }
 

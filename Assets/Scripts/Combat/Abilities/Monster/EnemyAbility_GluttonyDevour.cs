@@ -123,6 +123,9 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
 
         if (owner.isPossessed)
             _state?.TryCopySkillFrom(target, this);
+        else if (owner is BossSevenfoldActor boss && boss.AffixAssimilator != null
+                 && PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null)
+            boss.AffixAssimilator.Assimilate(PossessionManager.Instance.CurrentBody);
     }
 
     private void PlayBlastVfx(Vector3 position)

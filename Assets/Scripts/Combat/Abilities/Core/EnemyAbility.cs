@@ -133,7 +133,10 @@ public abstract class EnemyAbility : MonoBehaviour
         {
             float spd = owner != null ? owner.attackSpeed : 1f;
             if (spd <= 0f) spd = 0.01f;
-            return cooldown / spd;
+            float value = cooldown / spd;
+            if (PossessionImprintManager.Instance != null)
+                value *= PossessionImprintManager.Instance.GetCooldownMultiplier(owner);
+            return value;
         }
     }
 
@@ -176,6 +179,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
     private bool _hitFeedbackFiredThisAttack;
     private bool _hitAudioFiredThisAttack;
+    readonly HashSet<Enemy> lustCheckedTargets = new HashSet<Enemy>();
 
     protected virtual void Awake()
     {
@@ -274,6 +278,7 @@ public abstract class EnemyAbility : MonoBehaviour
         currentCooldown = EffectiveCooldown;
         _hitFeedbackFiredThisAttack = false;
         _hitAudioFiredThisAttack = false;
+        lustCheckedTargets.Clear();
         if (!string.IsNullOrWhiteSpace(castAudioName))
             CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
         if (debugLogCooldown)
@@ -430,6 +435,7 @@ public abstract class EnemyAbility : MonoBehaviour
         if (target == null || owner == null) return;
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
         owner.ApplyOffensiveDamage(target, amount);
+        TryApplyLustCharm(target);
         TryPlayHitFeedback(target != null ? target.transform : null);
         ApplyConfiguredEffectsTo(target.Combat);
     }
@@ -437,11 +443,23 @@ public abstract class EnemyAbility : MonoBehaviour
     protected void DealDamageToPlayer(PlayerHealth player, float amount)
     {
         if (player == null || owner == null || !owner.CanDamageSoul()) return;
+        if (!owner.isPossessed) amount *= Mathf.Max(0f, owner.spawnDamageMultiplier);
         player.TakeDamage(amount);
         TryPlayHitFeedback(player != null ? player.transform : null);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
         // Also trigger lifesteal for the owner enemy
         owner.OnDealtDamage(amount);
+    }
+
+    void TryApplyLustCharm(Enemy target)
+    {
+        if (target == null || owner == null || !owner.isPossessed || !lustCheckedTargets.Add(target)) return;
+        PossessionImprintManager manager = PossessionImprintManager.Instance;
+        float chance = manager != null ? manager.GetLustControlChance() : 0f;
+        if (chance <= 0f || owner.AiRandomValue() >= chance) return;
+        CharmController charm = target.GetComponent<CharmController>();
+        if (charm == null) charm = target.gameObject.AddComponent<CharmController>();
+        charm.Apply(target, 2.5f);
     }
 
     /// <summary>

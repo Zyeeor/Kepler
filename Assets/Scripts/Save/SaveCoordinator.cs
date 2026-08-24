@@ -18,7 +18,7 @@ using UnityEngine;
 public static class SaveCoordinator
 {
     /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v2：新增 runId。</summary>
-    public const int SchemaVersion = 2;
+    public const int SchemaVersion = 3;
 
     static readonly string SavePath = Path.Combine(Application.persistentDataPath, "possess_run_save.json");
 
@@ -60,7 +60,12 @@ public static class SaveCoordinator
         Vector3 soulPosition, float soulHealth, float soulTime,
         SaveData.MonsterBodySave possessedBody = null, List<SaveData.MonsterBodySave> corpses = null,
         bool pendingChoice = false, List<string> choicePicks = null, int globalMissStreak = 0,
-        string runId = null)
+        string runId = null,
+        float activeCombatSeconds = 0f,
+        List<PossessionImprintState> possessionImprints = null,
+        float greedBonusProgress = 0f,
+        bool bossSpawned = false,
+        bool bossDefeated = false)
     {
         var data = new SaveData
         {
@@ -75,6 +80,10 @@ public static class SaveCoordinator
             soulTime = soulTime,
             possessedBody = possessedBody,
             globalMissStreak = globalMissStreak,
+            activeCombatSeconds = activeCombatSeconds,
+            greedBonusProgress = greedBonusProgress,
+            bossSpawned = bossSpawned,
+            bossDefeated = bossDefeated,
         };
         if (unlockedEffects != null)
             data.unlockedEffects.AddRange(unlockedEffects);
@@ -82,6 +91,8 @@ public static class SaveCoordinator
             data.corpses.AddRange(corpses);
         if (choicePicks != null)
             data.choicePicks.AddRange(choicePicks);
+        if (possessionImprints != null)
+            data.possessionImprints.AddRange(possessionImprints);
 
         try
         {
