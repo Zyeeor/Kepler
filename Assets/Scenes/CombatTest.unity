@@ -1033,17 +1033,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e3812b2ea358c14fb4c3a07b827dee4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dialogPanel: {fileID: 153670385}
-  titleText: {fileID: 222914296}
-  messageText: {fileID: 2064786316}
-  confirmButton: {fileID: 957872670}
-  confirmButtonText: {fileID: 878893381}
-  cancelButton: {fileID: 690202923}
-  cancelButtonText: {fileID: 143699216}
-  defaultTitle: Confirm
-  defaultMessage: Are you sure?
-  defaultConfirmLabel: Confirm
-  defaultCancelLabel: Cancel
 --- !u!114 &153670387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13203,6 +13192,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: greed_new
       objectReference: {fileID: 0}
+    - target: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4202068629033295698, guid: 46df1b33623c493681a5cf633b8fdc40,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -15047,9 +15041,13 @@ MonoBehaviour:
     category: 0
     monsterType: 0
     foregroundSprite: {fileID: 0}
+    extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    extraBorderSprites: []
   - cardName: 
     textKey: 
     effectId: 
@@ -15062,9 +15060,13 @@ MonoBehaviour:
     category: 0
     monsterType: 0
     foregroundSprite: {fileID: 0}
+    extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    extraBorderSprites: []
   - cardName: 
     textKey: 
     effectId: 
@@ -15077,9 +15079,13 @@ MonoBehaviour:
     category: 0
     monsterType: 0
     foregroundSprite: {fileID: 0}
+    extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    extraBorderSprites: []
 --- !u!114 &1807762710
 MonoBehaviour:
   m_ObjectHideFlags: 0
