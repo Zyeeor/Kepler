@@ -60,6 +60,19 @@ public class TextCatalog : ScriptableObject
         return key;
     }
 
+    /// <summary>按 key + 载体解析文本（旁白字幕等：以 Subtitle 载体身份解析，而非条目自身载体）。无命中返回 key。</summary>
+    public string Get(string key, NarrativeCarrier carrier)
+    {
+        if (string.IsNullOrEmpty(key)) return "";
+        var list = entries;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i] != null && list[i].key == key)
+                return list[i].ResolveFor(carrier);
+        }
+        return key;
+    }
+
     /// <summary>占位符格式化（{0}/{1}…）；格式异常时回退原文，不抛异常。</summary>
     static string SafeFormat(string template, object[] args)
     {
@@ -90,13 +103,39 @@ public class TextEntry
     [TextArea(1, 4)]
     public string systemText;
 
-    /// <summary>当前生效文本（按 Display Profile；v1 恒为默认文本）。</summary>
+    /// <summary>载体分类（Display Profile 载体覆盖用；默认 General 全局跟随）。</summary>
+    public NarrativeCarrier carrier = NarrativeCarrier.General;
+
+    /// <summary>当前生效文本（经 NarrativeDisplay 按载体/偏好/Access 解析；未就绪回退 neutral=默认文本）。</summary>
     public string DefaultText
     {
         get
         {
-            // TODO(display-profile)：接入 Narrative Access 后按 Access 返回 mythic/system
-            return string.IsNullOrEmpty(text) ? key : text;
+            // 原 TODO(display-profile)：已接入 NarrativeDisplay（门面未就绪时恒返回 neutral，零回归）
+            if (NarrativeDisplay.IsReady)
+            {
+                var pref = NarrativeDisplay.EffectiveLine(carrier);
+                if (pref == TextLinePreference.Mythic) return MythicText;
+                if (pref == TextLinePreference.System) return SystemText;
+            }
+            return NeutralText;
         }
+    }
+
+    /// <summary>显式线访问（载体固定线/对照调试用；空线回退 neutral，再回退 key）。</summary>
+    public string NeutralText => string.IsNullOrEmpty(text) ? key : text;
+    public string MythicText => string.IsNullOrEmpty(mythicText) ? NeutralText : mythicText;
+    public string SystemText => string.IsNullOrEmpty(systemText) ? NeutralText : systemText;
+
+    /// <summary>以指定载体身份解析（旁白字幕等跨载体引用用；不读条目自身 carrier）。</summary>
+    public string ResolveFor(NarrativeCarrier forCarrier)
+    {
+        if (NarrativeDisplay.IsReady)
+        {
+            var pref = NarrativeDisplay.EffectiveLine(forCarrier);
+            if (pref == TextLinePreference.Mythic) return MythicText;
+            if (pref == TextLinePreference.System) return SystemText;
+        }
+        return NeutralText;
     }
 }

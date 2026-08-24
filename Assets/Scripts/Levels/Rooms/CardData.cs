@@ -76,19 +76,20 @@ public class CardData
     [Tooltip("边框层（broader）素材；null = 使用卡 prefab 默认素材。")]
     public Sprite borderSprite;
 
-    /// <summary>生效卡名：textKey 命中目录时取目录值，否则内联 cardName。</summary>
+    /// <summary>生效卡名：textKey 命中目录时取目录值，否则内联 cardName。
+    /// 以 NarrativeCarrier.Card 身份解析（DisplayProfile 的 Card 载体覆盖 + Access 线映射生效）。</summary>
     public string ResolveCardName()
     {
         if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
-            return TextCatalog.Instance.Get(textKey + ".name");
+            return TextCatalog.Instance.Get(textKey + ".name", NarrativeCarrier.Card);
         return cardName;
     }
 
-    /// <summary>生效卡描述：textKey 命中目录时取目录值，否则内联 description。</summary>
+    /// <summary>生效卡描述：textKey 命中目录时取目录值，否则内联 description（同 Card 载体身份）。</summary>
     public string ResolveDescription()
     {
         if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
-            return TextCatalog.Instance.Get(textKey + ".desc");
+            return TextCatalog.Instance.Get(textKey + ".desc", NarrativeCarrier.Card);
         return description;
     }
 }

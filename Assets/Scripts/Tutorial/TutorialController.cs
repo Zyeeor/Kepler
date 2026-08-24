@@ -16,6 +16,9 @@ using UnityEngine;
 /// </summary>
 public class TutorialController : SceneSingleton<TutorialController>
 {
+    /// <summary>是否有激活中的教学提示（叙事调度器高压门只读查询：关键教学提示不被旁白遮挡）。</summary>
+    public static bool HasActivePrompt => Instance != null && Instance.activeSteps.Count > 0;
+
     [Header("配置")]
     [Tooltip("教学 Step 配置资产（策划编辑；留空 = 教学系统不工作，战斗不受影响）")]
     public TutorialConfig config;

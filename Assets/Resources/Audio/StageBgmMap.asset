@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1136f741a9ccfd4fadb719148f5dd42, type: 3}
+  m_Name: StageBgmMap
+  m_EditorClassIdentifier: 
+  waveTiers:
+  - waveNumber: 1
+    slot:
+      action: 1
+      clip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
+      fadeOverride: 0
+  - waveNumber: 5
+    slot:
+      action: 1
+      clip: {fileID: 8300000, guid: 888f6b6cc10d2b34fbe5fbb1a9402c1a, type: 3}
+      fadeOverride: 0
+  combat:
+    action: 1
+    clip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
+    fadeOverride: 0
+  choice:
+    action: 1
+    clip: {fileID: 8300000, guid: 888f6b6cc10d2b34fbe5fbb1a9402c1a, type: 3}
+    fadeOverride: 0
+  final:
+    action: 1
+    clip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
+    fadeOverride: 0
+  result:
+    action: 2
+    clip: {fileID: 8300000, guid: 888f6b6cc10d2b34fbe5fbb1a9402c1a, type: 3}
+    fadeOverride: 0
+  fail:
+    action: 2
+    clip: {fileID: 0}
+    fadeOverride: 0
+  soul:
+    action: 1
+    clip: {fileID: 8300000, guid: 888f6b6cc10d2b34fbe5fbb1a9402c1a, type: 3}
+    fadeOverride: 0
+  elite:
+    action: 1
+    clip: {fileID: 8300000, guid: 888f6b6cc10d2b34fbe5fbb1a9402c1a, type: 3}
+    fadeOverride: 0

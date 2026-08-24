@@ -72,6 +72,21 @@ public class CoreChoiceUI : MonoBehaviour
             confirmAllButton.interactable = true;
             confirmAllButton.gameObject.SetActive(false);
         }
+        // Display 偏好变化（Access 推进/Cue 切换载体）：弹窗打开期间即时刷新卡面文本（契约 §4 syncOwnedCardsOnAccessChange）
+        NarrativeDisplay.OnDisplayPreferenceChanged += HandleDisplayPreferenceChanged;
+    }
+
+    void OnDestroy()
+    {
+        // 场景对象订阅静态事件必须成对退订（NarrativeDisplay 静态门面常驻，防悬空委托）
+        NarrativeDisplay.OnDisplayPreferenceChanged -= HandleDisplayPreferenceChanged;
+    }
+
+    void HandleDisplayPreferenceChanged()
+    {
+        if (!_isDrafting || cards == null || cards.Length == 0) return;
+        if (!NarrativeDisplay.SyncOwnedCardsOnAccessChange) return;
+        RefreshCards(); // 重建卡面（重新走 ResolveCardName/ResolveDescription，按新 Access/载体偏好解析）
     }
 
     /// <summary>

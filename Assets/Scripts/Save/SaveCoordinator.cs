@@ -17,8 +17,8 @@ using UnityEngine;
 /// </summary>
 public static class SaveCoordinator
 {
-    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v4：新增色欲浮点吸血进度。</summary>
-    public const int SchemaVersion = 4;
+    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v4：新增战斗 imprint/贪婪/色欲/boss 字段。v5：新增 narrative。</summary>
+    public const int SchemaVersion = 5;
 
     static readonly string SavePath = Path.Combine(Application.persistentDataPath, "possess_run_save.json");
 
@@ -66,7 +66,8 @@ public static class SaveCoordinator
         float greedBonusProgress = 0f,
         float lustHealProgress = 0f,
         bool bossSpawned = false,
-        bool bossDefeated = false)
+        bool bossDefeated = false,
+        NarrativeRunSave narrative = null)
     {
         var data = new SaveData
         {
@@ -86,6 +87,7 @@ public static class SaveCoordinator
             lustHealProgress = lustHealProgress,
             bossSpawned = bossSpawned,
             bossDefeated = bossDefeated,
+            narrative = narrative,
         };
         if (unlockedEffects != null)
             data.unlockedEffects.AddRange(unlockedEffects);

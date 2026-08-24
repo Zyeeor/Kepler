@@ -1640,7 +1640,7 @@ MonoBehaviour:
   maxHealth: 150
   currentHealth: 150
   displayName: "\u6124\u6012"
-  sinType: 0
+  sinType: 5
   isPossessable: 1
   enemyStats:
     maxHealth: 150

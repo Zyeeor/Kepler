@@ -13,12 +13,20 @@ MonoBehaviour:
   m_Name: TextCatalog
   m_EditorClassIdentifier: 
   entries:
-  - key: ui.settings.sfx
-    text: 'SFX/UI: {0}%'
+  - key: ui.settings.voice
+    text: 'Voice: {0}%'
     mythicText: 
     systemText: 
   - key: ui.settings.music
     text: 'Music: {0}%'
+    mythicText: 
+    systemText: 
+  - key: ui.settings.sfx
+    text: 'SFX: {0}%'
+    mythicText: 
+    systemText: 
+  - key: ui.settings.ui
+    text: 'UI: {0}%'
     mythicText: 
     systemText: 
   - key: ui.dialog.title

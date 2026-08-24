@@ -7542,7 +7542,7 @@ MonoBehaviour:
   spawnHeightY: 0
   logAIConfigOnSpawn: 0
   showHint: 0
-  showDebugRanges: 1
+  showDebugRanges: 0
 --- !u!4 &438339684
 Transform:
   m_ObjectHideFlags: 0
@@ -14042,10 +14042,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settingsPanel: {fileID: 1731005094}
-  sfxSlider: {fileID: 1955493869}
+  voiceSlider: {fileID: 0}
   musicSlider: {fileID: 47050285}
-  sfxLabel: {fileID: 1168605123}
+  sfxSlider: {fileID: 1955493869}
+  uiSlider: {fileID: 0}
+  voiceLabel: {fileID: 0}
   musicLabel: {fileID: 170477594}
+  sfxLabel: {fileID: 1168605123}
+  uiLabel: {fileID: 0}
   closeButton: {fileID: 98437697}
   closeButtonText: {fileID: 1130805877}
 --- !u!114 &1731005096
@@ -14422,6 +14426,7 @@ MonoBehaviour:
   debugDoublePickOnStart: 1
   currentPicks:
   - cardName: 
+    textKey: 
     effectId: 
     image: {fileID: 0}
     description: 
@@ -14436,6 +14441,7 @@ MonoBehaviour:
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
   - cardName: 
+    textKey: 
     effectId: 
     image: {fileID: 0}
     description: 
@@ -14450,6 +14456,7 @@ MonoBehaviour:
     backgroundSprite: {fileID: 0}
     borderSprite: {fileID: 0}
   - cardName: 
+    textKey: 
     effectId: 
     image: {fileID: 0}
     description: 

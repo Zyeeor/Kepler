@@ -51,6 +51,9 @@ public class UIManager : SceneSingleton<UIManager>
     [Tooltip("结算面板（胜利/失败）延迟弹出秒数：留出时间看最终战况/死亡动画。")]
     [Min(0f)] public float resultDelaySeconds = 2f;
 
+    /// <summary>结算挂起计数（>0 时延迟弹结算面板；First Clear 八步序列等"结算前演出"用）。</summary>
+    public static int ResultSuspendCount;
+
     protected override void Awake()
     {
         base.Awake();   // 防重复注册（已有实例则销毁本对象）
@@ -138,6 +141,9 @@ public class UIManager : SceneSingleton<UIManager>
     {
         if (resultDelaySeconds > 0f)
             yield return new WaitForSecondsRealtime(resultDelaySeconds);
+        // 结算挂起：等待 First Clear 等"结算前演出"结束（ResultSuspendCount 归零）
+        while (ResultSuspendCount > 0)
+            yield return null;
         resultDelayCoroutine = null;
         ShowResult(won);
     }

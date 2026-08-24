@@ -255,6 +255,8 @@ public class RunSession : MonoBehaviour
         StartedFromMainMenu = false; // 读档路径：不触发新人引导（阶段直接为 Waves/Choice）
         // 读档不经过开场/教学：回到波次或选卡补弹（pendingChoice=true → Choice）
         CurrentPhase = PendingChoice ? RunPhase.Choice : RunPhase.Waves;
+        // 叙事调度 Run-local 状态恢复（旧档 narrative=null → 按新局初始化）
+        NarrativeScheduler.Instance?.RestoreSnapshot(data.narrative);
         Debug.Log($"[RunSession] 读档恢复对局：已完成波 {CompletedWaveIndex + 1}，worldSeed={WorldSeed}，解锁卡 {UnlockedEffects.Count} 张（阶段={CurrentPhase}）。");
         return true;
     }
@@ -285,7 +287,8 @@ public class RunSession : MonoBehaviour
             SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak, RunId,
             ActiveCombatSeconds, PossessionImprintManager.EnsureInstance().CaptureStates(),
             PossessionImprintManager.EnsureInstance().GreedBonusProgress,
-            PossessionImprintManager.EnsureInstance().LustHealProgress, BossSpawned, BossDefeated);
+            PossessionImprintManager.EnsureInstance().LustHealProgress, BossSpawned, BossDefeated,
+            NarrativeScheduler.Instance?.CaptureSnapshot());
         Debug.Log($"[RunSession] 波 {completedWaveIndex} 存档完成：位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count}");
     }
 

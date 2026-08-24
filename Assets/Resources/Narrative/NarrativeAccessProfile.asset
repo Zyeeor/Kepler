@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42391f0053c568642bfc9a297d7e5993, type: 3}
+  m_Name: NarrativeAccessProfile
+  m_EditorClassIdentifier: 
+  rules:
+  - ruleId: carrier.assign
+    trigger:
+      eventType: 2
+      nth: 1
+      nthMode: 0
+      join: 0
+      conditions: []
+    targetAccess: 1
+    fireOnce: 1
+  - ruleId: card.first
+    trigger:
+      eventType: 7
+      nth: 1
+      nthMode: 0
+      join: 0
+      conditions: []
+    targetAccess: 2
+    fireOnce: 1
+  - ruleId: elite.first
+    trigger:
+      eventType: 13
+      nth: 1
+      nthMode: 0
+      join: 0
+      conditions:
+      - type: 1
+        param: 2
+    targetAccess: 3
+    fireOnce: 1
+  - ruleId: final.begin
+    trigger:
+      eventType: 3
+      nth: 1
+      nthMode: 0
+      join: 0
+      conditions:
+      - type: 0
+        param: Final
+    targetAccess: 4
+    fireOnce: 1
