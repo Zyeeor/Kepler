@@ -151,9 +151,12 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(go);
             return null;
         }
+        monster.ResolveSinIdentityFromHint(prefab.name + " " + monster.displayName);
         monster.aiActiveOverride = true; // 波次怪直接激活索敌
         // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
         monster.InitAiRng(spawnSequence++);
+        RunSpawnDirector director = RunSpawnDirector.Instance;
+        monster.ApplySpawnDifficultySnapshot(SpawnOrigin.PeriodicPressure, director != null ? director.CurrentTier : 0);
         Track(home, monster, prefab, isWaveMonster: true); // 不随 Chunk 回收/写快照，退场由波次系统裁决
         if (logSpawns)
             Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}）。");
@@ -208,6 +211,12 @@ public class MonsterSpawner : MonoBehaviour
     public void RecycleWaveMonster(MonsterActor monster)
     {
         if (monster == null) return;
+        if (monster is BossSevenfoldActor)
+        {
+            // Boss owns its own death/fade/pool lifecycle. Wave cleanup must never
+            // recycle it while the takeover or encounter is still active.
+            return;
+        }
         // 时间波清场跳过被附身怪：回收会把灵魂连带带入 DDOL 场景（MonsterPool.Return 也有兜底，
         // 此处提前跳过以保持追踪数据一致——附身结束走正常死亡流程）。
         if (monster.isPossessed) return;

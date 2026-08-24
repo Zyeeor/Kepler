@@ -1,0 +1,172 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 834c49e0c807bb545990518d3751934b, type: 3}
+  m_Name: EliteMonsterCatalog
+  m_EditorClassIdentifier: 
+  entries:
+  - sin: 1
+    displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
+    prefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e, type: 3}
+  - sin: 2
+    displayName: "\u6020\u60F0-\u673A\u68B0\u4E4B\u7075"
+    prefab: {fileID: 1827098444623938932, guid: ccfe57e3a23d2b24584ac09f7333c19c, type: 3}
+  - sin: 3
+    displayName: "\u66B4\u98DF-\u9B54\u732B"
+    prefab: {fileID: 4750602423163319368, guid: 60ee0a829a7a04ba9bbf8cd652f5c562, type: 3}
+  - sin: 4
+    displayName: "\u5AC9\u5992"
+    prefab: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342, type: 3}
+  - sin: 5
+    displayName: "\u6124\u6012"
+    prefab: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7, type: 3}
+  - sin: 6
+    displayName: "\u8D2A\u5A6A-\u4E07\u624B\u85CF\u4E3B"
+    prefab: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40, type: 3}
+  - sin: 7
+    displayName: "\u8272\u6B32-\u7075\u5FF5\u5E08"
+    prefab: {fileID: 2259565064542781952, guid: adf557850b8644449a273ddc69a83bd5, type: 3}
+  presetSnapshots:
+  - presetName: pride-deep
+    sin: 1
+    cardIds:
+    - PR-A01
+    - PR-A02
+    - PR-A04
+    - PR-M01
+    - PR-S01
+    - PR-X01
+    - PR-TG01
+    sourceWave: 8
+    weight: 1
+  - presetName: pride-mid
+    sin: 1
+    cardIds:
+    - PR-A01
+    - PR-M01
+    - PR-S01
+    sourceWave: 6
+    weight: 1
+  - presetName: sloth-deep
+    sin: 2
+    cardIds:
+    - SL-M01
+    - SL-M02
+    - SL-A03
+    - SL-A04
+    - SL-S01
+    - SL-S03
+    sourceWave: 8
+    weight: 1
+  - presetName: sloth-mid
+    sin: 2
+    cardIds:
+    - SL-A03
+    - SL-M01
+    - SL-S01
+    sourceWave: 6
+    weight: 1
+  - presetName: gluttony-deep
+    sin: 3
+    cardIds:
+    - GL-A01
+    - GL-A02
+    - GL-A03
+    - GL-M01
+    - GL-S01
+    - GL-S03
+    sourceWave: 8
+    weight: 1
+  - presetName: gluttony-mid
+    sin: 3
+    cardIds:
+    - GL-A02
+    - GL-M01
+    - GL-S01
+    sourceWave: 6
+    weight: 1
+  - presetName: envy-deep
+    sin: 4
+    cardIds:
+    - EN-A01
+    - EN-A03
+    - EN-A05
+    - EN-M01
+    - EN-R01
+    - EN-S01
+    sourceWave: 8
+    weight: 1
+  - presetName: envy-mid
+    sin: 4
+    cardIds:
+    - EN-A01
+    - EN-A03
+    - EN-S01
+    sourceWave: 6
+    weight: 1
+  - presetName: wrath-deep
+    sin: 5
+    cardIds:
+    - WR-M01
+    - WR-M02
+    - WR-B01
+    - WR-B02
+    - WR-S01
+    - WR-S03
+    sourceWave: 8
+    weight: 1
+  - presetName: wrath-mid
+    sin: 5
+    cardIds:
+    - WR-B01
+    - WR-M02
+    - WR-S01
+    sourceWave: 6
+    weight: 1
+  - presetName: greed-deep
+    sin: 6
+    cardIds:
+    - GR-M01
+    - GR-A01
+    - GR-A02
+    - GR-A03
+    - GR-A07
+    - GR-S01
+    - GR-S04
+    sourceWave: 8
+    weight: 1
+  - presetName: greed-mid
+    sin: 6
+    cardIds:
+    - GR-A01
+    - GR-M01
+    - GR-S01
+    sourceWave: 6
+    weight: 1
+  - presetName: lust-deep
+    sin: 7
+    cardIds:
+    - LU-M03
+    - LU-M05
+    - LU-S05
+    - LU-A03
+    - LU-S06
+    - LU-TG01
+    sourceWave: 8
+    weight: 1
+  - presetName: lust-mid
+    sin: 7
+    cardIds:
+    - LU-A03
+    - LU-S05
+    - LU-S06
+    sourceWave: 6
+    weight: 1

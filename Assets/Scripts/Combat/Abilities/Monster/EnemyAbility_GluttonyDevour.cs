@@ -123,6 +123,9 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
 
         if (owner.isPossessed)
             _state?.TryCopySkillFrom(target, this);
+        else if (owner is BossSevenfoldActor boss && boss.AffixAssimilator != null
+                 && PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null)
+            boss.AffixAssimilator.Assimilate(PossessionManager.Instance.CurrentBody);
     }
 
     private void PlayBlastVfx(Vector3 position)
@@ -197,10 +200,12 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
 
     private bool TrySwallowProjectile()
     {
-        Vector3 center = owner.transform.position + owner.transform.forward * (range * 0.5f);
-        CombatHitboxDebug.DrawSphere(drawHitboxes, center, projectileSwallowRadius, -1f);
-        CombatHitboxDebug.DrawArc(drawHitboxes, owner.transform.position, owner.transform.forward, range, angle, -1f);
-        Collider[] hits = Physics.OverlapSphere(center, projectileSwallowRadius, ~0, QueryTriggerInteraction.Collide);
+        float effectiveRange = ScaleAbilityRadius(range);
+        float effectiveSwallowRadius = ScaleAbilityRadius(projectileSwallowRadius);
+        Vector3 center = owner.transform.position + owner.transform.forward * (effectiveRange * 0.5f);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, effectiveSwallowRadius, -1f);
+        CombatHitboxDebug.DrawArc(drawHitboxes, owner.transform.position, owner.transform.forward, effectiveRange, angle, -1f);
+        Collider[] hits = Physics.OverlapSphere(center, effectiveSwallowRadius, ~0, QueryTriggerInteraction.Collide);
         foreach (Collider hit in hits)
         {
             Projectile projectile = hit.GetComponentInParent<Projectile>();

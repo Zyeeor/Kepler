@@ -22,8 +22,8 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。v2：新增 runId（精英 BD 快照 upsert 键）。</summary>
-    public int schemaVersion = 2;
+    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。v4：新增色欲浮点吸血进度。</summary>
+    public int schemaVersion = 4;
     /// <summary>写入时间（Unix 秒，仅展示/调试）。</summary>
     public long savedAtUnix;
     /// <summary>本局 runId（精英 BD 快照 upsert 唯一键组成，读档恢复后延续）。</summary>
@@ -50,6 +50,13 @@ public class SaveData
     public MonsterBodySave possessedBody;
     /// <summary>场上可附身尸体（downed 且窗口内），恢复时刷出为尸体状态。</summary>
     public List<MonsterBodySave> corpses = new List<MonsterBodySave>();
+    /// <summary>Effective combat clock used by RunSpawnDirector; pauses and card choice are excluded.</summary>
+    public float activeCombatSeconds;
+    public List<PossessionImprintState> possessionImprints = new List<PossessionImprintState>();
+    public float greedBonusProgress;
+    public float lustHealProgress;
+    public bool bossSpawned;
+    public bool bossDefeated;
 
     /// <summary>怪物身体快照（附身怪/尸体共用）：prefabId 存 prefab 名，恢复时在波表按名解析。</summary>
     [Serializable]

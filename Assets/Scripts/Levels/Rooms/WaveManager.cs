@@ -112,6 +112,22 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 放在 Start 而非 Awake：此时场景所有 Awake 已执行完（已有实例已注册），
         // 确保不会因创建时机抢跑而覆盖场景中已配置的 MonsterSpawner。幂等。
         MonsterSpawner.EnsureInstance();
+        RunSpawnDirector director = RunSpawnDirector.EnsureInstance();
+        var directorPrefabs = new List<GameObject>();
+        for (int wi = 0; wi < ActiveWaves.Count; wi++)
+        {
+            WaveConfig wave = ActiveWaves[wi];
+            if (wave == null || wave.weightedTable == null) continue;
+            for (int ei = 0; ei < wave.weightedTable.Count; ei++)
+            {
+                MonsterWaveDef def = wave.weightedTable[ei] != null ? wave.weightedTable[ei].def : null;
+                if (def == null || def.monsters == null) continue;
+                for (int mi = 0; mi < def.monsters.Count; mi++)
+                    if (def.monsters[mi] != null && def.monsters[mi].prefab != null && !directorPrefabs.Contains(def.monsters[mi].prefab))
+                        directorPrefabs.Add(def.monsters[mi].prefab);
+            }
+        }
+        director.SetNormalPrefabs(directorPrefabs);
 
         // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
         EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
@@ -326,16 +342,17 @@ public class WaveManager : SceneSingleton<WaveManager>
     {
         Debug.Log($"[WaveManager] WaveRoutine START: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
 
-        // 教学波门：首波开始前等待教学系统开门（教学未配置/关闭时恒开，无感知）。
-        // 兜底超时强制放行，防教学异常卡死开局（读档恢复也走此门，但门默认开 → 无感）。
+        // 教学/开场降落双门：首波开始前等待教学系统与开场演出（OpeningLandingSequence 降落完成）都开门。
+        // 未配置/关闭时恒开（无感知）；读档恢复不走开场演出，LandingComplete 默认 true → 无感。
+        // 兜底超时强制放行，防教学/演出异常卡死开局。
         float gateWait = 0f;
-        while (!TutorialController.WaveStartGateOpen && gateWait < 30f)
+        while ((!TutorialController.WaveStartGateOpen || !OpeningLandingSequence.LandingComplete) && gateWait < 60f)
         {
             gateWait += Time.unscaledDeltaTime;
             yield return null;
         }
-        if (gateWait >= 30f)
-            Debug.LogWarning("[WaveManager] 教学波门等待超时（30s），强制放行。");
+        if (gateWait >= 60f)
+            Debug.LogWarning("[WaveManager] 教学/开场降落波门等待超时（60s），强制放行。");
 
         // Grace period（读档恢复时跳过：存档点本身就在波间，无需再次等待）
         if (resumeFromWaveIndex < 0 && ActiveGracePeriod > 0f)
@@ -453,15 +470,13 @@ public class WaveManager : SceneSingleton<WaveManager>
             var session = RunSession.EnsureInstance();
             session.TransitionTo(RunPhase.Final);
 
-            // Final 占位：复用最后一波的编队配置，打一波普通怪（清完 = 胜利）。
-            // 三阶段压力战实现后替换为 RunFinalPressurePhases()。
-            var lastWave = ActiveWaves.Count > 0 ? ActiveWaves[ActiveWaves.Count - 1] : null;
-            if (lastWave != null && lastWave.weightedTable != null && lastWave.weightedTable.Count > 0)
-            {
-                yield return RunFinalPlaceholderWave(lastWave);
-            }
-
-            session.TransitionTo(RunPhase.Result);
+            // Contract ENG-POSS-001: Final remains active until the exact 480s combat-time
+            // Sevenfold boss is defeated; no early victory after the ordinary waves.
+            RunSpawnDirector finalDirector = RunSpawnDirector.EnsureInstance();
+            while (finalDirector != null && !finalDirector.BossDefeated)
+                yield return null;
+            if (finalDirector != null && finalDirector.BossDefeated)
+                session.TransitionTo(RunPhase.Result);
         }
     }
 

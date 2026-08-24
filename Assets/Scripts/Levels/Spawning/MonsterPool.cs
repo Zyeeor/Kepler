@@ -136,6 +136,12 @@ public class MonsterPool : MonoBehaviour
     {
         if (monster == null) return;
 
+        if (monster is BossSevenfoldActor boss && !boss.IsDefeated)
+        {
+            Debug.LogWarning($"[MonsterPool] 拒绝回收尚未死亡的 Boss '{monster.name}'。", monster);
+            return;
+        }
+
         // 防附身回收（主界面幽灵 bug 根因①）：被附身怪的子物体锚点下挂着灵魂，
         // 直接回池会把灵魂连带带入 DDOL 场景，之后 Detach 时灵魂成为 DDOL 根跨场景存活。
         // 被附身怪不得回池：附身结束走正常死亡→Fade 流程再回收。

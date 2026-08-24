@@ -55,7 +55,7 @@ public class EnemyAbility_Laser : EnemyAbility
         if (owner.isPossessed)
             wantFire = Input.GetMouseButton(0);
         else
-            wantFire = owner.targetPlayer != null && Vector3.Distance(owner.transform.position, owner.targetPlayer.position) <= maxRange;
+            wantFire = owner.targetPlayer != null && Vector3.Distance(owner.transform.position, owner.targetPlayer.position) <= EffectiveRange;
 
         if (wantFire && CanTrigger())
         {
@@ -107,7 +107,7 @@ public class EnemyAbility_Laser : EnemyAbility
         }
         else
         {
-            if (owner.targetPlayer == null || Vector3.Distance(origin, owner.targetPlayer.position) > maxRange)
+            if (owner.targetPlayer == null || Vector3.Distance(origin, owner.targetPlayer.position) > EffectiveRange)
             { StopLaser(); return; }
 
             Vector3 targetPos = owner.targetPlayer.position + Vector3.up * 1f;
@@ -182,7 +182,7 @@ public class EnemyAbility_Laser : EnemyAbility
         {
             if (e == exclude || e == owner || e.isDowned || e.isPossessed) continue;
             float d = Vector3.Distance(origin, e.transform.position);
-            if (d <= maxRange && d < bestDist) { bestDist = d; best = e; }
+            if (d <= EffectiveRange && d < bestDist) { bestDist = d; best = e; }
         }
         return best;
     }
@@ -196,7 +196,7 @@ public class EnemyAbility_Laser : EnemyAbility
             if (owner.CanDamage(e))
             {
                 float d = Vector3.Distance(origin, e.transform.position);
-                if (d <= maxRange && d < nearestDist) { nearestDist = d; nearest = e; }
+                if (d <= EffectiveRange && d < nearestDist) { nearestDist = d; nearest = e; }
             }
         }
         return nearest;
@@ -209,6 +209,8 @@ public class EnemyAbility_Laser : EnemyAbility
         currentTarget = null;
         if (hitVfx != null) { ReleaseVfx(hitVfx, hitImpactDuration); hitVfx = null; }
     }
+
+    private float EffectiveRange => ScaleAbilityRadius(maxRange);
 
     public override bool CanTrigger()
     {

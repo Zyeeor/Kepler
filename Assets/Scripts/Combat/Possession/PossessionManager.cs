@@ -23,10 +23,10 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public SwitchState State { get; private set; }
     public MonsterActor CurrentBody { get; private set; }
     public float CooldownRemaining { get; private set; }
-    /// <summary>当前是否正在被动流逝附身 Body 的耐久（表现层读取，如血条燃烧特效）。</summary>
-    public bool IsBodyDecaying { get; private set; }
 
     public event System.Action<MonsterActor> OnPossessionStarted;
+    /// <summary>Single post-commit event consumed by run-level systems. Transaction ids are idempotency keys.</summary>
+    public event System.Action<MonsterActor, PossessionGrantReason, long> PossessionCommitted;
     public event System.Action OnPossessionEnded;
     public event System.Action<MonsterActor> OnBodyDiedWhilePossessing;
     /// <summary>附身结束（带原因细分；教学 TUT-05 用 VoluntaryRelease 判定"主动脱离"）。</summary>
@@ -51,7 +51,14 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     private MonsterActor reservedBody;
     private bool handlingGameOver;
     private bool ownsBulletTime;
+    private long possessionTransactionId;
+    private bool nextPossessionIsDeathRelay;
+    private PossessionGrantReason reservedGrantReason = PossessionGrantReason.PlayerPossession;
     private int lastPossessionInputFrame = -1;
+    private bool bossBattleSwitchMode;
+
+    /// <summary>Boss 战允许在附身尸体之间立即切换，不受常规冷却和最短附身时间限制。</summary>
+    public bool IsBossBattleSwitchMode => bossBattleSwitchMode;
 
     protected override void Awake()
     {
@@ -62,6 +69,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         behavior = GetComponent<PossessionBehavior>();
         if (behavior == null) behavior = gameObject.AddComponent<PossessionBehavior>();
         behavior.Initialize(this);
+        PossessionImprintManager.EnsureInstance().Attach(this);
         // 断环（Kimi 评审）：GameOver 通知由 GameManager 状态事件驱动，GameManager 不再认识本类；
         // 本类订阅常驻 GameManager 的静态事件（场景级单例须在 OnDestroy 退订，防悬空委托）。
         GameManager.OnStateChanged += HandleGameManagerStateChanged;
@@ -107,16 +115,15 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         if (CooldownRemaining > 0f) CooldownRemaining -= Time.deltaTime;
 
-        IsBodyDecaying = false;
         if (State != SwitchState.Possessing || CurrentBody == null) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
+        if (CurrentBody.IsBossBattleReserveBody) return;
 
-        // 平滑扣血：每帧按 deltaTime 连续扣血，避免 1s 一跳的视觉跳变。
-        // 总速率：每 decayInterval 秒扣 maxHealth * possessionDecayPercent（与跳变一致）。
         if (decayInterval <= 0f) return;
-        IsBodyDecaying = true;
-        float decayRate = CurrentBody.maxHealth * possessionDecayPercent / decayInterval;
-        CurrentBody.currentHealth -= decayRate * Time.deltaTime;
+        float decayAmount = CurrentBody.maxHealth * possessionDecayPercent / decayInterval * Time.deltaTime;
+        if (PossessionImprintManager.Instance != null)
+            decayAmount *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(CurrentBody);
+        CurrentBody.currentHealth -= decayAmount;
         if (CurrentBody.currentHealth > 0f) return;
 
         CurrentBody.currentHealth = 0f;
@@ -164,7 +171,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             return false;
         }
 
-        if (State == SwitchState.Idle && CooldownRemaining > 0f)
+        if (!bossBattleSwitchMode && State == SwitchState.Idle && CooldownRemaining > 0f)
         {
             reason = "possession cooldown remaining=" + CooldownRemaining.ToString("F2");
             return false;
@@ -198,7 +205,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         return true;
     }
 
-    public bool BeginPossessionFlight(MonsterActor target)
+    public bool BeginPossessionFlight(MonsterActor target, PossessionGrantReason grantReason = PossessionGrantReason.PlayerPossession)
     {
         if (!CanStartPossession(out string stateReason))
         {
@@ -225,6 +232,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             return false;
         }
         reservedBody = target;
+        reservedGrantReason = grantReason;
 
         if (State == SwitchState.Possessing)
         {
@@ -242,7 +250,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void RequestRelease(bool force)
     {
         if (State != SwitchState.Possessing) return;
-        if (!force && Time.time - possessStartTime < minPossessTime)
+        if (!bossBattleSwitchMode && !force && Time.time - possessStartTime < minPossessTime)
         {
             Debug.Log("[Possession] Release rejected: min possession time remaining=" + (minPossessTime - (Time.time - possessStartTime)).ToString("F2"));
             return;
@@ -252,9 +260,19 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     }
 
     /// <summary>
+    /// Toggles the boss battle possession rules. The mode is owned by the boss encounter
+    /// so normal waves retain their cooldown and minimum-possession-time behavior.
+    /// </summary>
+    public void SetBossBattleSwitchMode(bool enabled)
+    {
+        bossBattleSwitchMode = enabled;
+        if (enabled) CooldownRemaining = 0f;
+    }
+
+    /// <summary>
     /// Debug/test helper: instantly possess a living body, skipping downed-window validation and flight.
     /// </summary>
-    public bool DebugForcePossess(MonsterActor target)
+    public bool DebugForcePossess(MonsterActor target, PossessionGrantReason grantReason = PossessionGrantReason.Debug)
     {
         if (target == null)
         {
@@ -296,7 +314,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         }
 
         CooldownRemaining = 0f;
-        CommitPossession(target);
+        CommitPossession(target, grantReason);
         Debug.Log($"[Possession] DebugForcePossess committed: target='{target.displayName}'");
         return true;
     }
@@ -316,7 +334,10 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.BulletTime);
         float scale = GameManager.Instance != null ? GameManager.Instance.bulletTimeScale : 0.2f;
         Debug.Log($"[Possession] Bullet time started: scale={scale:F2}, duration={bulletTimeDuration:F2}s");
-        yield return new WaitForSecondsRealtime(bulletTimeDuration);
+        float effectiveDuration = PossessionImprintManager.Instance != null
+            ? PossessionImprintManager.Instance.GetBulletTimeDuration(bulletTimeDuration)
+            : bulletTimeDuration;
+        yield return new WaitForSecondsRealtime(effectiveDuration);
 
         if (ownsBulletTime && State == SwitchState.Possessing && !handlingGameOver)
         {
@@ -360,10 +381,21 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             yield break;
         }
 
-        CommitPossession(target);
+        PossessionGrantReason reason = nextPossessionIsDeathRelay ? PossessionGrantReason.DeathRelay : reservedGrantReason;
+        CommitPossession(target, reason);
     }
 
-    private void CommitPossession(MonsterActor target)
+    /// <summary>Explicit initial assignment entry point; only the opening flow should call this.</summary>
+    public bool CommitInitialAssignment(MonsterActor target)
+    {
+        if (target == null || State == SwitchState.Possessing) return false;
+        if (soul == null) soul = FindObjectOfType<SoulActor>();
+        if (soul == null) return false;
+        CommitPossession(target, PossessionGrantReason.InitialAssignment);
+        return true;
+    }
+
+    private void CommitPossession(MonsterActor target, PossessionGrantReason reason)
     {
         if (target == null) return;
 
@@ -390,15 +422,14 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         target.SetController(PlayerController.Instance);
         SetCameraTarget(target.transform);
 
-        if (PlayerPassiveManager.Instance != null && target is Enemy)
-            PlayerPassiveManager.Instance.OnEnemyPossessed(target as Enemy);
-
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Show(target);
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.BindActor(target);
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);
 
         Debug.Log("[Possession] Possessed " + target.displayName);
         OnPossessionStarted?.Invoke(target);
+        nextPossessionIsDeathRelay = false;
+        PossessionCommitted?.Invoke(target, reason, ++possessionTransactionId);
         TriggerBulletTime();
     }
 
@@ -411,7 +442,10 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             if (oldBody.Combat != null) oldBody.Combat.RemoveLooseTags(this);
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            oldBody.BeginDisappearing();
+            if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
+                oldBody.ReturnToBossBattleReserve();
+            else
+                oldBody.BeginDisappearing();
         }
 
         if (soul != null)
@@ -442,7 +476,13 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         {
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            if (recycleBody) oldBody.BeginDisappearing();
+            if (recycleBody)
+            {
+                if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
+                    oldBody.ReturnToBossBattleReserve();
+                else
+                    oldBody.BeginDisappearing();
+            }
         }
 
         if (soul != null)
@@ -523,6 +563,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (State != SwitchState.Possessing || CurrentBody == null) return;
 
         MonsterActor dead = CurrentBody;
+        nextPossessionIsDeathRelay = true;
         Debug.Log("[Possession] Possessed body died.");
         CommitRelease(recycleBody: true, startCooldown: true, PossessionEndReason.BodyDied);
         OnBodyDiedWhilePossessing?.Invoke(dead);
@@ -531,6 +572,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void OnGameOver()
     {
         handlingGameOver = true;
+        bossBattleSwitchMode = false;
         if (flyRoutine != null)
         {
             StopCoroutine(flyRoutine);

@@ -105,13 +105,14 @@ public class EnemyAbility_ChainPull : EnemyAbility
         Vector3 forward = owner.transform.forward;
         Enemy best = null;
         float bestDist = Mathf.Infinity;
+        float effectiveCastRange = ScaleAbilityRadius(castRange);
         foreach (var e in EnemyRegistry.All)
         {
             if (e == null || e == owner || e.isDowned || e.isPossessed) continue;
             Vector3 to = e.transform.position - origin;
             to.y = 0f;
             float d = to.magnitude;
-            if (d > castRange || d < 0.01f) continue;
+            if (d > effectiveCastRange || d < 0.01f) continue;
             float angle = Vector3.Angle(forward, to);
             if (angle > fanAngle * 0.5f) continue;
             if (d < bestDist) { bestDist = d; best = e; }

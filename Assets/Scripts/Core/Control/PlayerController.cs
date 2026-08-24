@@ -1,7 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using System;
 using System.Collections.Generic;
 
 /// <summary>
@@ -16,14 +16,13 @@ public class PlayerController : MonoBehaviour, IController
     public static PlayerController Instance { get; private set; }
     public static bool IsGameplayInputBlocked { get; private set; }
     public static Vector3 CurrentMoveDirection { get; private set; }
+    public static event System.Action<ControlCommand> OnCommandProduced;
 
     /// <summary>
     /// 命令产出事件：Tick 产出含按钮按下（Pressed != None）的 ControlCommand 时广播。
     /// 订阅方：TutorialController（按键 → 教学输入事实转译，TUT-01/02 完成条件）。
     /// 仅按钮位触发；WASD 移动不产生事件（走订阅方轮询）。
     /// </summary>
-    public static event System.Action<ControlCommand> OnCommandProduced;
-
     [Header("Input")]
     public LayerMask groundLayer = -1;
     [Tooltip("全局鼠标点击诊断日志（每次点击 2 条，高频；默认关闭，排查 UI 输入问题时可临时开启）。")]
@@ -172,7 +171,6 @@ public class PlayerController : MonoBehaviour, IController
         if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
         if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Mobility;
         if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release; // F=脱离
-
         // 命令产出广播（教学输入事实转译；仅按钮按下帧触发，struct 按值传递零 GC）
         if (cmd.Pressed != CommandButtons.None)
             OnCommandProduced?.Invoke(cmd);

@@ -28,10 +28,24 @@ public static class SaveMigrator
         // v1 → v2：新增 runId（精英 BD 快照 upsert 键）。旧档无 runId，无需换算——
         // 读档恢复时 RunSession.ResumeFromSave 对缺失 runId 自动补生成。
         migrations[1] = MigrateV1ToV2;
+        migrations[2] = MigrateV2ToV3;
+        migrations[3] = MigrateV3ToV4;
     }
 
     static SaveData MigrateV1ToV2(SaveData d)
     {
+        return d;
+    }
+
+    static SaveData MigrateV2ToV3(SaveData d)
+    {
+        if (d.possessionImprints == null) d.possessionImprints = new List<PossessionImprintState>();
+        return d;
+    }
+
+    static SaveData MigrateV3ToV4(SaveData d)
+    {
+        // New LustHealProgress is a run-local fractional remainder; old saves start at zero.
         return d;
     }
 

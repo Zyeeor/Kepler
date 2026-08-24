@@ -61,10 +61,12 @@ public class EnemyAbility_ChainLightning : EnemyAbility
             var hitSet = new HashSet<Enemy>();
             Enemy currentTarget = null;
             float nearestDist = float.MaxValue;
+            float effectiveSearchRadius = ScaleAbilityRadius(searchRadius);
+            float effectiveChainRange = ScaleAbilityRadius(chainRange);
             foreach (var e in allEnemies)
             {
                 float d = Vector3.Distance(origin, e.transform.position);
-                if (d <= searchRadius && d < nearestDist) { nearestDist = d; currentTarget = e; }
+                if (d <= effectiveSearchRadius && d < nearestDist) { nearestDist = d; currentTarget = e; }
             }
 
             Vector3 lastPos = origin;
@@ -86,7 +88,7 @@ public class EnemyAbility_ChainLightning : EnemyAbility
                 {
                     if (hitSet.Contains(e)) continue;
                     float d = Vector3.Distance(currentTarget.transform.position, e.transform.position);
-                    if (d <= chainRange && d < minDist) { minDist = d; nextTarget = e; }
+                    if (d <= effectiveChainRange && d < minDist) { minDist = d; nextTarget = e; }
                 }
 
                 lastPos = hitPos;
@@ -100,7 +102,7 @@ public class EnemyAbility_ChainLightning : EnemyAbility
                 }
                 else
                 {
-                    Debug.Log($"[ChainLightning] No more targets in chainRange={chainRange}");
+                    Debug.Log($"[ChainLightning] No more targets in chainRange={effectiveChainRange}");
                 }
             }
             Debug.Log($"[ChainLightning] Total chains: {chainIdx}");
@@ -132,6 +134,7 @@ public class EnemyAbility_ChainLightning : EnemyAbility
             : Quaternion.identity) * Quaternion.Euler(boltVfxRotationOffset);
 
         GameObject vfx = Instantiate(boltVfxPrefab, pos, rot);
+        vfx.transform.localScale *= OwnerCombatScaleMultiplier;
         foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
         {
             var main = ps.main;

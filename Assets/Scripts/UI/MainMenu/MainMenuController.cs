@@ -33,6 +33,11 @@ public class MainMenuController : MonoBehaviour
     public SettingsPanel settingsPanel;
     public ConfirmDialog confirmDialog;
 
+    [Header("Hall of Fame (auto-created)")]
+    [Tooltip("荣誉殿堂面板（纯代码 UI，Start 时自动创建；留空自动生成，无需场景配置）。")]
+    public HallOfFamePanel hallOfFamePanel;
+    Button hallOfFameButton;
+
     [Header("Panels to hide when sub panel opens")]
     public GameObject mainMenuPanel;
     private bool subPanelOpened = false;
@@ -63,7 +68,40 @@ public class MainMenuController : MonoBehaviour
         if (quitGameButton != null)
             quitGameButton.onClick.AddListener(OnQuitGame);
 
+        EnsureHallOfFameEntry();
+
         ShowCursor();
+    }
+
+    /// <summary>
+    /// 荣誉殿堂入口：克隆设置按钮生成（与主菜单美术按钮同风格、零场景编辑），
+    /// 面板本体为纯代码 UI（HallOfFamePanel.EnsureInstance 自建 Overlay Canvas）。
+    /// </summary>
+    void EnsureHallOfFameEntry()
+    {
+        if (hallOfFamePanel == null) hallOfFamePanel = HallOfFamePanel.EnsureInstance();
+        if (hallOfFameButton != null || settingsButton == null) return;
+
+        var clone = Instantiate(settingsButton.gameObject, settingsButton.transform.parent);
+        clone.name = "HallOfFameButton";
+        clone.SetActive(true);
+        hallOfFameButton = clone.GetComponent<Button>();
+        if (hallOfFameButton != null)
+        {
+            // Instantiate 只复制场景持久化监听（设置按钮监听为运行时注册，不会带入克隆）
+            hallOfFameButton.onClick.AddListener(OnHallOfFame);
+        }
+        var label = clone.GetComponentInChildren<TMPro.TMP_Text>();
+        if (label != null) label.text = "荣誉殿堂";
+        clone.transform.SetSiblingIndex(settingsButton.transform.GetSiblingIndex() + 1);
+    }
+
+    public void OnHallOfFame()
+    {
+        if (hallOfFamePanel == null) hallOfFamePanel = HallOfFamePanel.EnsureInstance();
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        subPanelOpened = true;
+        hallOfFamePanel.Show();
     }
 
     void Update()
@@ -158,7 +196,8 @@ public class MainMenuController : MonoBehaviour
         {
             bool sVisible = settingsPanel != null && settingsPanel.IsVisible();
             bool cVisible = confirmDialog != null && confirmDialog.IsVisible();
-            if (!sVisible && !cVisible)
+            bool hVisible = hallOfFamePanel != null && hallOfFamePanel.IsVisible();
+            if (!sVisible && !cVisible && !hVisible)
             {
                 if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
                 subPanelOpened = false;

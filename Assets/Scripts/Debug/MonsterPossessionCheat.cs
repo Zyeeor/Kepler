@@ -31,6 +31,8 @@ public class MonsterPossessionCheat : MonoBehaviour
     [Header("Input")]
     public bool enableCheats = true;
     public bool showOnScreenHint = true;
+    [Tooltip("When enabled, this instance only handles the Boss summon hotkey [8].")]
+    public bool bossSummonOnly;
 
     private MonsterActor lastCheatBody;
     private string lastStatus = "MonsterPossessionCheat ready.";
@@ -54,6 +56,14 @@ public class MonsterPossessionCheat : MonoBehaviour
             return;
         }
 
+        if (number == 8)
+        {
+            TrySummonBoss();
+            return;
+        }
+
+        if (bossSummonOnly) return;
+
         if (TryGetHeldSkillType(out EnemyAbility.AbilityType skillType))
         {
             TryUnlockBuildEntry(skillType, number);
@@ -65,13 +75,13 @@ public class MonsterPossessionCheat : MonoBehaviour
 
     void OnGUI()
     {
-        if (!enableCheats || !showOnScreenHint || GameManager.IsFormalFlow) return; // 正式流程屏蔽屏幕提示
+        if (!enableCheats || !showOnScreenHint || bossSummonOnly || GameManager.IsFormalFlow) return; // 正式流程屏蔽屏幕提示
 
         const float width = 560f;
         List<string> buildLines = BuildHintLines(out string skillLabel);
         float height = 70f + (catalog != null && catalog.monsters != null ? Mathf.Min(catalog.monsters.Count, 9) * 16f : 0f) + buildLines.Count * 16f + 28f;
         GUI.Box(new Rect(10f, 10f, width, height), "Monster Possession Cheat");
-        GUI.Label(new Rect(18f, 32f, width - 24f, 20f), "0 random enemy | 1-9 spawn+possess | hold LMB/Q/Space + 1-9 unlock");
+        GUI.Label(new Rect(18f, 32f, width - 24f, 20f), "0 random enemy | 1-7 spawn+possess | 8 summon Boss | hold LMB/Q/Space + 1-9 unlock");
         float y = 52f;
         if (catalog != null && catalog.monsters != null)
         {
@@ -200,10 +210,13 @@ public class MonsterPossessionCheat : MonoBehaviour
             return;
         }
 
+        monster.ResolveSinIdentityFromHint(entry.prefab.name + " " + entry.displayName);
         if (immortalCheatBodies) monster.suppressPossessionDrain = true;
         if (CardManager.Instance != null) CardManager.Instance.ApplyAllUnlocksTo(go);
 
-        if (!PossessionManager.Instance.DebugForcePossess(monster))
+        // Cheat 1-7 is the test path for the real possession/imprint feature, so it must
+        // publish PlayerPossession rather than the manager's non-progression Debug reason.
+        if (!PossessionManager.Instance.DebugForcePossess(monster, PossessionGrantReason.PlayerPossession))
         {
             SetStatus($"Spawned '{monster.displayName}' but force-possess failed.");
             return;
@@ -224,6 +237,20 @@ public class MonsterPossessionCheat : MonoBehaviour
         lastCheatBody = monster;
         string label = !string.IsNullOrEmpty(entry.displayName) ? entry.displayName : monster.displayName;
         SetStatus($"Possessed [{number}] {label}{(immortalCheatBodies ? " (damage immune)" : "")}");
+    }
+
+    private void TrySummonBoss()
+    {
+        RunSpawnDirector director = RunSpawnDirector.EnsureInstance();
+        if (director.bossPrefab == null)
+        {
+            SetStatus("Boss prefab is not bound in the active combat scene.");
+            return;
+        }
+        if (director.DebugSpawnBossNow())
+            SetStatus("Boss summoned with key [8].");
+        else
+            SetStatus("Boss summon failed (already spawned, no legal spawn point, or quota full).");
     }
 
     private void ApplyDamageImmune(MonsterActor monster)

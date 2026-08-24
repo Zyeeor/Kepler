@@ -82,8 +82,9 @@ public class EnemyAbility_WrathSlam : EnemyAbility
         if (aim.sqrMagnitude > 0.0001f)
             yield return RotatePossessedOwnerTowards(aim.normalized, aimTurnSpeed);
 
-        Animator anim = owner != null ? owner.GetActiveAnimator() : null;
-        if (anim != null) anim.SetTrigger("Basic");
+        foreach (Animator animator in owner.GetComponentsInChildren<Animator>(false))
+            animator.SetTrigger("Basic");
+
 
         yield return AbilityWait(firstHitDelay);
         if (owner == null)

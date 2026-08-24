@@ -46,6 +46,14 @@ public class EliteNetClient
     public Task<ElitePickResp> Pick(string playerId, int wave, int waveGap)
         => PostJson<ElitePickResp>("/api/elite/pick", new ElitePickReq { playerId = playerId, wave = wave, waveGap = waveGap });
 
+    /// <summary>战果回传（Meta §6.5）：精英在他人游戏中的战果事件批量上报，按构筑主人聚合（荣誉殿堂异步战绩数据源）。</summary>
+    public Task<ReportEventsResp> ReportEvents(ReportEventsReq body)
+        => PostJson<ReportEventsResp>("/api/elite/events", body);
+
+    /// <summary>查询异步战绩聚合（荣誉殿堂 §5.7 联网刷新；playerId = 本机玩家 = 构筑主人）。</summary>
+    public Task<EliteStatsResp> FetchStats(string playerId)
+        => GetJson<EliteStatsResp>("/api/elite/stats?playerId=" + Uri.EscapeDataString(playerId));
+
     // ── HTTP 基础设施（同 ServerApiCheat 模式）──
 
     static Task SendAsync(UnityWebRequest req)
@@ -65,6 +73,23 @@ public class EliteNetClient
             req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
             req.downloadHandler = new DownloadHandlerBuffer();
             req.SetRequestHeader("Content-Type", "application/json");
+            req.timeout = timeoutSeconds;
+            await SendAsync(req);
+
+            string text = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            if (req.result != UnityWebRequest.Result.Success)
+                throw new Exception($"{label} failed: {req.error} (HTTP {req.responseCode}) body: {text}");
+            if (logRawResponses)
+                Debug.Log($"[EliteNetClient] <- {label}: {text}");
+            return JsonUtility.FromJson<T>(text);
+        }
+    }
+
+    async Task<T> GetJson<T>(string path)
+    {
+        string label = "GET " + path;
+        using (var req = UnityWebRequest.Get(serverUrl + path))
+        {
             req.timeout = timeoutSeconds;
             await SendAsync(req);
 
@@ -152,4 +177,57 @@ public class ElitePickResp
     /// <summary>是否命中投放。JsonUtility 无法区分 "snapshot":null 与默认实例，双重判断（同 ServerApiCheat.LogPick）。</summary>
     public bool HasSnapshot => snapshot != null
         && !(snapshot.snapshotId == 0 && string.IsNullOrEmpty(snapshot.sin));
+}
+
+// ── 战果回传 Wire DTO（Meta §6.5）──
+
+/// <summary>单条战果事件（客户端埋点）。owner 三键 = 快照来源玩家身份，服务端按其聚合。</summary>
+[Serializable]
+public class EliteEventEntry
+{
+    public long snapshotId;
+    public string ownerPlayerId;
+    public string ownerRunId;
+    public string sin;
+    /// <summary>事件类型（§6.5 五类）：spawned / fatal / possessed / bodyFatal / runFail。</summary>
+    public string type;
+    public int wave;
+    public long gameTime;
+}
+
+[Serializable]
+public class ReportEventsReq
+{
+    /// <summary>回报玩家（观测用，不参与聚合键）。</summary>
+    public string playerId;
+    public List<EliteEventEntry> events;
+}
+
+[Serializable]
+public class ReportEventsResp
+{
+    public bool ok;
+    public int accepted;
+}
+
+/// <summary>异步战绩聚合条目（GET /api/elite/stats 返回项；荣誉殿堂 §5.4 异步字段，字段名与原始表现分开）。</summary>
+[Serializable]
+public class EliteStatsItem
+{
+    public string ownerPlayerId;
+    public string ownerRunId;
+    public string sin;
+    public int deployed;    // 被投放次数
+    public int fatal;       // 被其他玩家击杀次数
+    public int possessed;   // 被其他玩家 Possess 次数
+    public int bodyFatal;   // 造成 Body Fatal 次数
+    public int runFail;     // 直接导致 Run Fail 次数
+    public long updatedAt;
+}
+
+[Serializable]
+public class EliteStatsResp
+{
+    public string playerId;
+    public List<EliteStatsItem> stats;
 }

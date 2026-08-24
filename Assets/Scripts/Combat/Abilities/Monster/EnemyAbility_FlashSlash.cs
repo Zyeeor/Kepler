@@ -147,7 +147,8 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         direction.Normalize();
 
         // Use OverlapBox along the path center
-        Vector3 halfExtents = new Vector3(slashWidth * 0.5f, slashHeight * 0.5f, length * 0.5f);
+        float scale = OwnerCombatScaleMultiplier;
+        Vector3 halfExtents = new Vector3(slashWidth * 0.5f * scale, slashHeight * 0.5f * scale, length * 0.5f);
         Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
         CombatHitboxDebug.DrawBox(drawHitboxes, mid, halfExtents, rotation, dashTrailDuration);
 

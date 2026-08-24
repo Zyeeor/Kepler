@@ -16,7 +16,8 @@ public class MonsterActor : Actor
 
     /// <summary>Current combat/lifecycle state. Downed bodies remain possessable only during their configured window.</summary>
     public BodyState Body { get; private set; } = BodyState.Active;
-    public bool CanBePossessed => Body == BodyState.Downed && !isPossessed && !isPossessionReserved && Time.time < possessionWindowEndsAt;
+    public bool CanBePossessed => isPossessable && Body == BodyState.Downed && !isPossessed && !isPossessionReserved
+        && (!IsBossBattleReserveBody || currentHealth > 0f) && Time.time < possessionWindowEndsAt;
     public bool CanCompleteReservedPossession => Body == BodyState.Downed && !isPossessed && isPossessionReserved;
     public float PossessionWindowRemaining => Body == BodyState.Downed && !isPossessionReserved ? Mathf.Max(0f, possessionWindowEndsAt - Time.time) : 0f;
 
@@ -59,6 +60,10 @@ public class MonsterActor : Actor
 
     [Header("Identity")]
     public string displayName = "Enemy";
+    [Tooltip("Run-level sin identity used by possession imprints and Boss visual composition.")]
+    public SinType sinType = SinType.None;
+    [Tooltip("Bosses and other special actors cannot be possessed.")]
+    public bool isPossessable = true;
 
     /// <summary>
     /// 本怪 AI/技能随机子流（种子确定性）：由 MonsterSpawner 刷出时按刷怪序号分配
@@ -200,6 +205,8 @@ public class MonsterActor : Actor
     // HP cost is set on each Basic / Skill / Mobility ability entry below.
 
     [Header("Visual")]
+    [Tooltip("Optional visual-only root. Imprint size growth never scales the Actor root, colliders or navigation; ability hitboxes use the same multiplier explicitly.")]
+    public Transform visualScaleRoot;
     public Color bodyColor = Color.red;
     public Color weakenedColor = new Color(1f, 0.5f, 0f);
     public Color downedColor = new Color(0.3f, 0.3f, 0.3f);
@@ -214,6 +221,10 @@ public class MonsterActor : Actor
     public bool suppressPossessionDrain;
     public bool isPossessed = false;
     public bool playerDetected = false;
+    /// <summary>Runtime-only body supplied by the Boss fight. It keeps an infinite possession window.</summary>
+    public bool IsBossBattleReserveBody { get; private set; }
+    /// <summary>Current possessed-body scale used by ability visuals and hitboxes.</summary>
+    public float PossessionCombatScaleMultiplier { get; private set; } = 1f;
     [Tooltip("流送 AI 激活开关：false 时 AI 完全休眠（不产出指令，仅 0.5s 低频维持索敌目标缓存）。由 MonsterSpawner 按 Chunk 状态机驱动；附身中的怪永不休眠。默认 true，非流送场景（调试刷怪等）行为不变。")]
     public bool aiActiveOverride = true;
 
@@ -225,6 +236,7 @@ public class MonsterActor : Actor
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
     private bool isPossessionReserved;
+    private bool bossDamageContext;
     private Coroutine corpseRoutine;
     private Renderer[] bodyRenderers;
     private BoxCollider corpsePossessionCollider;
@@ -283,8 +295,18 @@ public class MonsterActor : Actor
     private Color originalColor;
     private Vector3 lastFramePosition;
     private Vector3 possessVelocity; // 附身玩家态加速度平滑
+    private Vector3 authoredVisualScale = Vector3.one;
+    private bool authoredVisualScaleCaptured;
+    private float authoredPossessedMaxHealth;
     private Vector3 aiVelocity; // AI 态加速度平滑
     private float aiCurrentTurnSpeed; // AI 态角速度平滑
+    [Header("Spawn Snapshot")]
+    public SpawnOrigin spawnOrigin = SpawnOrigin.PeriodicPressure;
+    public int spawnDifficultyTier;
+    public float baseSpawnMaxHealth;
+    public float spawnHealthMultiplier = 1f;
+    public float spawnDamageMultiplier = 1f;
+    [NonSerialized] public MonsterActor lastDamageSource;
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
     public bool IsAbilityLocomotionLocked { get; set; }
@@ -301,10 +323,16 @@ public class MonsterActor : Actor
     }
 
     protected override void Awake(){
+        ResolveSinIdentityIfUnset();
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
         meshRenderer = GetComponent<Renderer>();
+        if (visualScaleRoot != null)
+        {
+            authoredVisualScale = visualScaleRoot.localScale;
+            authoredVisualScaleCaptured = true;
+        }
         bodyAnimator = GetComponent<Animator>();
         if (bodyAnimator != null) originalAnimatorUpdateMode = bodyAnimator.updateMode;
         initialLocalPosition = transform.localPosition;
@@ -359,6 +387,37 @@ public class MonsterActor : Actor
             else if (a.type == EnemyAbility.AbilityType.Passive && !passiveAbilities.Contains(a))
                 passiveAbilities.Add(a);
         }
+    }
+
+    void ResolveSinIdentityIfUnset()
+    {
+        if (sinType != SinType.None) return;
+        string id = transform.root != null ? transform.root.name.ToLowerInvariant() : name.ToLowerInvariant();
+        if (id.Contains("pride")) sinType = SinType.Pride;
+        else if (id.Contains("wrath")) sinType = SinType.Wrath;
+        else if (id.Contains("gluttony")) sinType = SinType.Gluttony;
+        else if (id.Contains("greed")) sinType = SinType.Greed;
+        else if (id.Contains("envy")) sinType = SinType.Envy;
+        else if (id.Contains("lust")) sinType = SinType.Lust;
+        else if (id.Contains("sloth")) sinType = SinType.Sloth;
+    }
+
+    /// <summary>
+    /// Assigns the run-level sin without editing shared source prefabs. The hint is an
+    /// authoritative spawn identity, so it intentionally repairs a stale serialized value
+    /// left on a pooled/runtime instance instead of only filling None.
+    /// </summary>
+    public void ResolveSinIdentityFromHint(string hint)
+    {
+        if (string.IsNullOrEmpty(hint)) return;
+        string id = hint.ToLowerInvariant();
+        if (id.Contains("pride") || id.Contains("傲慢")) sinType = SinType.Pride;
+        else if (id.Contains("wrath") || id.Contains("愤怒")) sinType = SinType.Wrath;
+        else if (id.Contains("gluttony") || id.Contains("暴食")) sinType = SinType.Gluttony;
+        else if (id.Contains("greed") || id.Contains("贪婪")) sinType = SinType.Greed;
+        else if (id.Contains("envy") || id.Contains("嫉妒")) sinType = SinType.Envy;
+        else if (id.Contains("lust") || id.Contains("色欲")) sinType = SinType.Lust;
+        else if (id.Contains("sloth") || id.Contains("怠惰")) sinType = SinType.Sloth;
     }
 
     public void RegisterAbility(EnemyAbility a)
@@ -701,6 +760,8 @@ public class MonsterActor : Actor
                 {
                     entry.ability.Trigger();
                     float basicCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && PossessionImprintManager.Instance != null)
+                        basicCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
                     if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
                     {
                         Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
@@ -718,6 +779,8 @@ public class MonsterActor : Actor
                 {
                     entry.ability.Trigger();
                     float skillCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && PossessionImprintManager.Instance != null)
+                        skillCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
                     if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
                     {
                         Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
@@ -735,6 +798,8 @@ public class MonsterActor : Actor
                 {
                     entry.ability.Trigger();
                     float mobilityCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
+                    if (isPossessed && PossessionImprintManager.Instance != null)
+                        mobilityCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
                     if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
                     {
                         Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
@@ -752,7 +817,9 @@ public class MonsterActor : Actor
     /// 用于修正 AI 追击走位（侧移/对峙 ±90°）导致的攻击方向偏移。
     /// </summary>
     void FaceAttackTarget(){
-        Transform target = targetPlayer;
+        Transform target = CharmController.IsCharmedMonster(this) && targetEnemy != null
+            ? targetEnemy.transform
+            : targetPlayer;
         if (target == null) return;
         Vector3 toTarget = target.position - transform.position;
         toTarget.y = 0f;
@@ -799,6 +866,8 @@ public class MonsterActor : Actor
             }
         }
         cost *= a.GetHpCostMultiplier();
+        if (PossessionImprintManager.Instance != null)
+            cost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
@@ -822,6 +891,26 @@ public class MonsterActor : Actor
         }
     }
 
+    /// <summary>Settles damage from the Sevenfold boss against its reserved possessed body.</summary>
+    public void TakeBossDamage(float amount)
+    {
+        if (!IsBossBattleReserveBody)
+        {
+            TakeDamage(amount);
+            return;
+        }
+
+        bossDamageContext = true;
+        try
+        {
+            TakeDamage(amount);
+        }
+        finally
+        {
+            bossDamageContext = false;
+        }
+    }
+
     public virtual void TakeDamage(float amount)
     {
         TakeDamage(amount, allowGreedGuardAbsorb: true);
@@ -829,6 +918,7 @@ public class MonsterActor : Actor
 
     public virtual void TakeDamage(float amount, bool allowGreedGuardAbsorb)
     {
+        if (IsBossBattleReserveBody && !bossDamageContext) return;
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsUntargetable(this) || IsDamageImmune(this)) return;
         if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
@@ -867,6 +957,11 @@ public class MonsterActor : Actor
         if (currentHealth <= 0)
         {
             currentHealth = 0;
+            if (RunSpawnDirector.Instance != null)
+            {
+                RunSpawnDirector.Instance.RecordFatal(new MonsterFatalEvent(
+                    this, lastDamageSource, FatalCause.PlayerDamage, spawnOrigin, Time.frameCount));
+            }
             Die();
         }
     }
@@ -877,6 +972,7 @@ public class MonsterActor : Actor
     /// </summary>
     public void TakeEnvironmentalDamage(float amount)
     {
+        if (IsBossBattleReserveBody) return;
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (IsDamageImmune(this)) return;
         // GR-M02: own normal black oil ignores terrain damage (no Guard convert credit).
@@ -909,6 +1005,7 @@ public class MonsterActor : Actor
 
     public void OnDealtDamage(float amount)
     {
+        if (amount <= 0f) return;
         // Enemy-specific lifesteal passive (e.g. from prefab)
         foreach (var a in passiveAbilities) { if (a is EnemyAbility_Lifesteal ls) ls.OnOwnerDealtDamage(amount); }
 
@@ -922,6 +1019,9 @@ public class MonsterActor : Actor
                 Heal(heal);
             }
         }
+
+        if (isPossessed && PossessionImprintManager.Instance != null)
+            PossessionImprintManager.Instance.ApplyLustLifesteal(this, amount);
     }
 
     /// <summary>
@@ -930,9 +1030,11 @@ public class MonsterActor : Actor
     /// </summary>
     public bool CanDamage(MonsterActor target)
     {
+        bool selfPlayerFaction = isPossessed || CharmController.IsCharmedMonster(this);
+        bool targetPlayerFaction = target != null && (target.isPossessed || CharmController.IsCharmedMonster(target));
         return target != null && target != this && !target.isDowned &&
                target.Body != BodyState.Fading && target.Body != BodyState.Despawned &&
-               isPossessed != target.isPossessed &&
+               selfPlayerFaction != targetPlayerFaction &&
                !IsUntargetable(target);
     }
 
@@ -961,7 +1063,8 @@ public class MonsterActor : Actor
 
     /// <summary>Only AI-controlled monsters may damage the soul player.</summary>
     public bool CanDamageSoul(){
-        if (isPossessed || Body == BodyState.Fading || Body == BodyState.Despawned) return false;
+        if (isPossessed || CharmController.IsCharmedMonster(this)
+            || Body == BodyState.Fading || Body == BodyState.Despawned) return false;
         // Soul is invulnerable while a possession body is active (even if a leftover collider overlaps).
         var pm = PossessionManager.Instance;
         if (pm != null && pm.State == PossessionManager.SwitchState.Possessing) return false;
@@ -974,8 +1077,23 @@ public class MonsterActor : Actor
         // Lust LU-S06: pulled sources cannot damage the player's Possessed Body during pull + grace.
         if (LustPullDamageGate.ShouldBlock(this, target)) return;
         if (Combat != null) amount = Combat.ModifyOutgoingDamage(amount);
-        target.TakeDamage(amount);
-        OnDealtDamage(amount);
+        if (isPossessed && PossessionImprintManager.Instance != null)
+            amount *= PossessionImprintManager.Instance.GetOutgoingDamageMultiplier(this);
+        else if (!isPossessed)
+            amount *= Mathf.Max(0f, spawnDamageMultiplier);
+        target.lastDamageSource = this;
+        float healthBefore = target.currentHealth;
+        if (target.IsBossBattleReserveBody && target.isPossessed)
+        {
+            if (!(this is BossSevenfoldActor)) return;
+            target.TakeBossDamage(amount);
+        }
+        else
+        {
+            target.TakeDamage(amount);
+        }
+        float actualDamage = Mathf.Clamp(healthBefore - target.currentHealth, 0f, amount);
+        OnDealtDamage(actualDamage);
 
         float totalBurnPercent = 0f;
         GameObject burnVfx = null;
@@ -1026,6 +1144,7 @@ public class MonsterActor : Actor
     }
 
     public void OnPossessed(){
+        float reservedHealth = currentHealth;
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -1043,7 +1162,18 @@ public class MonsterActor : Actor
         if (bodyAnimator != null) bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
         isPossessionReserved = false;
         EnsureDualStatsMigrated();
-        ApplyStatBlock(possessedStats.HasConfiguredHealth ? possessedStats : enemyStats, refillVitals: true);
+        ApplyStatBlock(possessedStats.HasConfiguredHealth ? possessedStats : enemyStats,
+            refillVitals: !IsBossBattleReserveBody);
+        if (IsBossBattleReserveBody)
+        {
+            // ApplyStatBlock may temporarily clamp to the authored base max. Restore the
+            // reserve's absolute HP before the global imprint multiplier is applied.
+            currentHealth = Mathf.Max(1f, reservedHealth);
+            currentTenacity = maxTenacity;
+        }
+        authoredPossessedMaxHealth = maxHealth;
+        if (PossessionImprintManager.Instance != null)
+            PossessionImprintManager.Instance.ApplyBodyEffects(this);
         SetRendererFade(1f);
         if (visualFx != null)
         {
@@ -1077,6 +1207,7 @@ public class MonsterActor : Actor
         // Cheat immortality must not linger on bodies left as normal enemies.
         ClearCheatDefenseEffects();
         EnvyMarkTarget.ClearMarksFromSource(this as Enemy);
+        ResetPossessionVisualScale();
     }
 
     private void EnterHitState(){
@@ -1086,6 +1217,13 @@ public class MonsterActor : Actor
     }
 
     protected virtual void Die(){
+        if (!isPossessable)
+        {
+            isDowned = true;
+            Body = BodyState.Downed;
+            BeginDisappearing();
+            return;
+        }
         isDowned = true;
         isPossessed = false;
         Body = BodyState.Downed;
@@ -1131,6 +1269,7 @@ public class MonsterActor : Actor
     {
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
 
+        IsBossBattleReserveBody = false;
         currentHealth = 0f;
         isDowned = true;
         isPossessed = false;
@@ -1156,7 +1295,35 @@ public class MonsterActor : Actor
         Debug.Log($"[MonsterState] '{displayName}' spawned as permanent possession corpse.");
     }
 
-    public void BeginDisappearing(){
+    /// <summary>
+    /// Boss-only reserve body: it is a permanent corpse while unused, but keeps a real
+    /// possessed-body HP pool so Boss damage can consume the slot instead of time decay.
+    /// </summary>
+    public void SpawnAsBossBattleReserveCorpse()
+    {
+        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        EnsureDualStatsMigrated();
+        ApplyStatBlock(possessedStats.HasConfiguredHealth ? possessedStats : enemyStats, refillVitals: true);
+        IsBossBattleReserveBody = true;
+        SpawnAsPermanentCorpse();
+        IsBossBattleReserveBody = true;
+        currentHealth = maxHealth;
+        UpdateHealthUI();
+        Debug.Log($"[MonsterState] '{displayName}' registered as Boss battle reserve body ({sinType}).");
+    }
+
+    /// <summary>Returns a living Boss reserve body to its permanent corpse state without restoring HP.</summary>
+    public void ReturnToBossBattleReserve()
+    {
+        if (!IsBossBattleReserveBody || currentHealth <= 0f) return;
+        float preservedHealth = currentHealth;
+        SpawnAsPermanentCorpse();
+        IsBossBattleReserveBody = true;
+        currentHealth = Mathf.Clamp(preservedHealth, 1f, maxHealth);
+        UpdateHealthUI();
+    }
+
+    public virtual void BeginDisappearing(){
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
@@ -1165,6 +1332,7 @@ public class MonsterActor : Actor
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
 
+        IsBossBattleReserveBody = false;
         isPossessed = false;
         isDowned = true;
         Body = BodyState.Fading;
@@ -1209,6 +1377,9 @@ public class MonsterActor : Actor
         isWeakened = false;
         isDowned = false;
         isPossessed = false;
+        IsBossBattleReserveBody = false;
+        isPossessable = true;
+        lastDamageSource = null;
         ClearCheatDefenseEffects();
         isPossessionReserved = false;
         playerDetected = false;
@@ -1221,10 +1392,13 @@ public class MonsterActor : Actor
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
+        bossDamageContext = false;
         IsAbilityFacingLocked = false;
         IsAbilityLocomotionLocked = false;
         SetAbilityComponentsEnabled(true);
         CancelAbilityRuntimeState();
+        ApplyStatBlock(enemyStats, refillVitals: true);
+        ResetPossessionVisualScale();
         gameObject.tag = "Enemy";
         SetRendererFade(1f);
         // Root world pose is owned by MonsterPool.Spawn (applied after this reset).
@@ -1261,6 +1435,8 @@ public class MonsterActor : Actor
     public void ResetForPool(){
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
+        IsBossBattleReserveBody = false;
+        bossDamageContext = false;
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
@@ -1269,6 +1445,54 @@ public class MonsterActor : Actor
             StopCoroutine(corpseRoutine);
             corpseRoutine = null;
         }
+    }
+
+    /// <summary>Applies a run spawn snapshot from authored base stats exactly once.</summary>
+    public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier)
+    {
+        spawnOrigin = origin;
+        spawnDifficultyTier = Mathf.Max(0, tier);
+        baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
+        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier);
+        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier);
+        maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
+        currentHealth = maxHealth;
+        currentTenacity = maxTenacity;
+    }
+
+    /// <summary>Called by the imprint manager after the possessed stat block is applied.</summary>
+    public void ApplyPossessionImprintStats(float healthMultiplier)
+    {
+        if (!isPossessed || healthMultiplier <= 0f) return;
+        float preservedHealth = currentHealth;
+        float oldMax = Mathf.Max(0.0001f, maxHealth);
+        float healthRatio = Mathf.Clamp01(currentHealth / oldMax);
+        float baseMax = authoredPossessedMaxHealth > 0f ? authoredPossessedMaxHealth : oldMax;
+        maxHealth = baseMax * healthMultiplier;
+        currentHealth = IsBossBattleReserveBody
+            ? Mathf.Clamp(preservedHealth, 1f, maxHealth)
+            : maxHealth * healthRatio;
+        currentTenacity = Mathf.Min(currentTenacity, maxTenacity);
+        UpdateHealthUI();
+    }
+
+    public void ApplyPossessionVisualScale(float multiplier)
+    {
+        PossessionCombatScaleMultiplier = Mathf.Max(1f, multiplier);
+        if (visualScaleRoot == null) return;
+        if (!authoredVisualScaleCaptured)
+        {
+            authoredVisualScale = visualScaleRoot.localScale;
+            authoredVisualScaleCaptured = true;
+        }
+        visualScaleRoot.localScale = authoredVisualScale * PossessionCombatScaleMultiplier;
+    }
+
+    public void ResetPossessionVisualScale()
+    {
+        PossessionCombatScaleMultiplier = 1f;
+        if (visualScaleRoot != null && authoredVisualScaleCaptured)
+            visualScaleRoot.localScale = authoredVisualScale;
     }
 
     /// <summary>

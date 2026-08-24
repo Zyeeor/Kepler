@@ -47,12 +47,13 @@ public class EnemyAbility_MobilityDash : EnemyAbility
         owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
 
         float travelled = 0f;
+        float effectiveCollisionRadius = ScaleAbilityRadius(collisionRadius);
         int obstacleMask = ~((1 << 8) | (1 << 9));
         while (owner != null && travelled < dashDistance)
         {
             float step = Mathf.Min(dashSpeed * AbilityDeltaTime, dashDistance - travelled);
             Vector3 castOrigin = owner.transform.position + Vector3.up * 0.75f;
-            if (Physics.SphereCast(castOrigin, collisionRadius, direction, out RaycastHit hit, step, obstacleMask, QueryTriggerInteraction.Ignore))
+            if (Physics.SphereCast(castOrigin, effectiveCollisionRadius, direction, out RaycastHit hit, step, obstacleMask, QueryTriggerInteraction.Ignore))
             {
                 step = Mathf.Max(0f, hit.distance - 0.05f);
                 if (step <= 0f) break;

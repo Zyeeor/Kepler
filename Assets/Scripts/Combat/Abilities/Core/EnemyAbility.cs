@@ -133,7 +133,10 @@ public abstract class EnemyAbility : MonoBehaviour
         {
             float spd = owner != null ? owner.attackSpeed : 1f;
             if (spd <= 0f) spd = 0.01f;
-            return cooldown / spd;
+            float value = cooldown / spd;
+            if (PossessionImprintManager.Instance != null)
+                value *= PossessionImprintManager.Instance.GetCooldownMultiplier(owner);
+            return value;
         }
     }
 
@@ -143,6 +146,32 @@ public abstract class EnemyAbility : MonoBehaviour
 
     /// <summary>能力归属的怪物（Run Analytics 采集用：判断是否当前玩家控制的身体触发）。</summary>
     public MonsterActor OwnerMonster => owner;
+
+    /// <summary>Scale used by possessed-body ability visuals and hitboxes.</summary>
+    protected float OwnerCombatScaleMultiplier
+    {
+        get
+        {
+            MonsterActor monster = owner as MonsterActor;
+            return monster != null ? Mathf.Max(1f, monster.PossessionCombatScaleMultiplier) : 1f;
+        }
+    }
+
+    protected float ScaleAbilityRadius(float value)
+    {
+        return Mathf.Max(0f, value) * OwnerCombatScaleMultiplier;
+    }
+
+    protected Vector3 ScaleAbilitySize(Vector3 value)
+    {
+        return value * OwnerCombatScaleMultiplier;
+    }
+
+    protected void ScaleAbilityObject(GameObject instance)
+    {
+        if (instance == null) return;
+        instance.transform.localScale *= OwnerCombatScaleMultiplier;
+    }
 
     // ── Animator 参数缓存（Kimi 评审整改：anim.parameters 每次访问分配新数组，高频路径每帧调用造成 GC）──
     Animator cachedBoolAnimator;
@@ -185,7 +214,6 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
     private bool _hitFeedbackFiredThisAttack;
     private bool _hitAudioFiredThisAttack;
-
     protected virtual void Awake()
     {
         owner = GetComponentInParent<Enemy>();
@@ -321,6 +349,7 @@ public abstract class EnemyAbility : MonoBehaviour
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
         activeVfx = VfxPool.Instance.Spawn(vfxPrefab, pos, rot);
+        ScaleAbilityObject(activeVfx);
         PlayVfx(activeVfx);
         float duration = ResolveVfxPlayDuration(activeVfx);
         VfxPool.ReleaseOrDestroy(activeVfx, duration);
@@ -336,6 +365,7 @@ public abstract class EnemyAbility : MonoBehaviour
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
         GameObject instance = VfxPool.Instance.Spawn(weaponVfxPrefab, pos, rot);
+        ScaleAbilityObject(instance);
         PlayVfx(instance);
         float duration = ResolveVfxPlayDuration(instance);
         VfxPool.ReleaseOrDestroy(instance, duration);
@@ -346,6 +376,7 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (prefab == null) return null;
         GameObject go = VfxPool.Instance.Spawn(prefab, position, rotation);
+        ScaleAbilityObject(go);
         PlayVfx(go);
         Projectile projectile = go.GetComponent<Projectile>();
         if (projectile == null) projectile = go.AddComponent<Projectile>();
@@ -415,6 +446,7 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (prefab == null || owner == null) return null;
         GameObject go = VfxPool.Instance.Spawn(prefab, pos, rot);
+        ScaleAbilityObject(go);
         PlayVfx(go);
         DestroyOnOwnerDeath tracker = go.GetComponent<DestroyOnOwnerDeath>();
         if (tracker == null) tracker = go.AddComponent<DestroyOnOwnerDeath>();
@@ -438,6 +470,13 @@ public abstract class EnemyAbility : MonoBehaviour
     protected void DealDamageTo(Enemy target, float amount)
     {
         if (target == null || owner == null) return;
+        // 战果回传归因（Meta §6.5）：精英能力命中玩家当前附身身体 → 先记录伤害来源再结算
+        // （伤害可能同步致命，Body Fatal 事件处理时归因窗口内必须已有记录）
+        if (PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody == target as MonsterActor)
+        {
+            var eliteSource = EliteBuildCarrier.Get(owner);
+            if (eliteSource != null) EliteBuildDirector.NoteEliteDamagedPlayer(eliteSource);
+        }
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
         owner.ApplyOffensiveDamage(target, amount);
         TryPlayHitFeedback(target != null ? target.transform : null);
@@ -447,6 +486,11 @@ public abstract class EnemyAbility : MonoBehaviour
     protected void DealDamageToPlayer(PlayerHealth player, float amount)
     {
         if (player == null || owner == null || !owner.CanDamageSoul()) return;
+        // 战果回传归因（Meta §6.5）：精英能力命中魂 → 先记录伤害来源再结算
+        // （TakeDamage 可能同步触发 Soul Death → Run Fail，事件处理时归因窗口内必须已有记录）
+        var eliteSource = EliteBuildCarrier.Get(owner);
+        if (eliteSource != null) EliteBuildDirector.NoteEliteDamagedPlayer(eliteSource);
+        if (!owner.isPossessed) amount *= Mathf.Max(0f, owner.spawnDamageMultiplier);
         player.TakeDamage(amount);
         TryPlayHitFeedback(player != null ? player.transform : null);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
@@ -513,6 +557,7 @@ public abstract class EnemyAbility : MonoBehaviour
     protected List<Enemy> FindEnemiesInArc(Vector3 origin, Vector3 forward, float range, float angle, int layerMask = ~0, float hitboxDebugDuration = -1f)
     {
         List<Enemy> results = new List<Enemy>();
+        range = ScaleAbilityRadius(range);
         forward.y = 0f;
         if (forward.sqrMagnitude < 0.0001f) return results;
         forward.Normalize();
@@ -535,6 +580,7 @@ public abstract class EnemyAbility : MonoBehaviour
     protected HashSet<Enemy> DamageEnemiesAlongPath(Vector3 start, Vector3 end, float radius, float amount, float hitboxDebugDuration = -1f)
     {
         HashSet<Enemy> results = new HashSet<Enemy>();
+        radius = ScaleAbilityRadius(radius);
         Vector3 direction = end - start;
         float distance = direction.magnitude;
         if (distance < 0.0001f) return DamageEnemiesInSphere(start, radius, amount, null, hitboxDebugDuration);
@@ -557,6 +603,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// </summary>
     protected bool TryDamagePlayerInRadius(Vector3 center, float radius, float amount, float hitboxDebugDuration = -1f)
     {
+        radius = ScaleAbilityRadius(radius);
         CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, hitboxDebugDuration);
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null) return false;
@@ -580,6 +627,7 @@ public abstract class EnemyAbility : MonoBehaviour
     /// </summary>
     protected void DamageEnemiesInBox(Vector3 center, Vector3 halfExtents, Quaternion orientation, float amount, System.Action<Enemy, Vector3> onHit = null, float hitboxDebugDuration = -1f)
     {
+        halfExtents = ScaleAbilitySize(halfExtents);
         CombatHitboxDebug.DrawBox(drawHitboxes, center, halfExtents, orientation, hitboxDebugDuration);
         // Use All layers (~0) so we don't miss enemies due to targetMask misconfiguration
         Collider[] hits = Physics.OverlapBox(center, halfExtents, orientation, ~0, QueryTriggerInteraction.Collide);
@@ -601,6 +649,7 @@ public abstract class EnemyAbility : MonoBehaviour
     protected HashSet<Enemy> DamageEnemiesInSphere(Vector3 center, float radius, float amount, System.Action<Enemy, Vector3> onHit = null, float hitboxDebugDuration = -1f)
     {
         var hitEnemies = new HashSet<Enemy>();
+        radius = ScaleAbilityRadius(radius);
         CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, hitboxDebugDuration);
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
