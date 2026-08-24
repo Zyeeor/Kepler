@@ -297,6 +297,8 @@ public class MonsterActor : Actor
     private Vector3 possessVelocity; // 附身玩家态加速度平滑
     private Vector3 authoredVisualScale = Vector3.one;
     private bool authoredVisualScaleCaptured;
+    private readonly List<Transform> fallbackVisualScaleRoots = new List<Transform>();
+    private readonly List<Vector3> fallbackAuthoredVisualScales = new List<Vector3>();
     private float authoredPossessedMaxHealth;
     private Vector3 aiVelocity; // AI 态加速度平滑
     private float aiCurrentTurnSpeed; // AI 态角速度平滑
@@ -306,10 +308,17 @@ public class MonsterActor : Actor
     public float baseSpawnMaxHealth;
     public float spawnHealthMultiplier = 1f;
     public float spawnDamageMultiplier = 1f;
+    private float eliteHealthMultiplier = 1f;
+    private float eliteAttackDamageMultiplier = 1f;
+    private float eliteVisualScaleMultiplier = 1f;
+    private bool eliteRuntimeApplied;
     [NonSerialized] public MonsterActor lastDamageSource;
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
     public bool IsAbilityLocomotionLocked { get; set; }
+
+    /// <summary>True after the Elite runtime profile is applied or while its build carrier exists.</summary>
+    public bool IsElite => eliteRuntimeApplied || EliteBuildCarrier.Get(this) != null;
 
     /// <summary>追击目标（Actor.Update 填充 ActorContext.PlayerTarget；AIController 使用）。</summary>
     protected override Transform PlayerTarget => targetPlayer;
@@ -332,6 +341,10 @@ public class MonsterActor : Actor
         {
             authoredVisualScale = visualScaleRoot.localScale;
             authoredVisualScaleCaptured = true;
+        }
+        else
+        {
+            CaptureFallbackVisualScaleRoots();
         }
         bodyAnimator = GetComponent<Animator>();
         if (bodyAnimator != null) originalAnimatorUpdateMode = bodyAnimator.updateMode;
@@ -1145,6 +1158,11 @@ public class MonsterActor : Actor
 
     public void OnPossessed(){
         float reservedHealth = currentHealth;
+        float reservedMaxHealth = maxHealth;
+        float reservedHealthRatio = reservedMaxHealth > 0f
+            ? Mathf.Clamp01(reservedHealth / reservedMaxHealth)
+            : 1f;
+        bool preserveEliteHealth = IsElite && reservedHealth > 0f;
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -1163,13 +1181,19 @@ public class MonsterActor : Actor
         isPossessionReserved = false;
         EnsureDualStatsMigrated();
         ApplyStatBlock(possessedStats.HasConfiguredHealth ? possessedStats : enemyStats,
-            refillVitals: !IsBossBattleReserveBody);
+            refillVitals: !IsBossBattleReserveBody && !preserveEliteHealth);
         if (IsBossBattleReserveBody)
         {
             // ApplyStatBlock may temporarily clamp to the authored base max. Restore the
             // reserve's absolute HP before the global imprint multiplier is applied.
             currentHealth = Mathf.Max(1f, reservedHealth);
             currentTenacity = maxTenacity;
+        }
+        else if (preserveEliteHealth)
+        {
+            // A voluntarily detached Elite keeps its current/max ratio when possessed
+            // again, even if the possessed stat block has a different absolute max HP.
+            currentHealth = maxHealth * reservedHealthRatio;
         }
         authoredPossessedMaxHealth = maxHealth;
         if (PossessionImprintManager.Instance != null)
@@ -1217,6 +1241,14 @@ public class MonsterActor : Actor
     }
 
     protected virtual void Die(){
+        // An Elite left behind by a voluntary release is a permanent corpse, but an
+        // Elite that is currently possessed must still follow the normal body-death
+        // path so hostile attacks can make it dissipate.
+        if (IsElite && !isPossessed)
+        {
+            KeepAsPermanentEliteCorpse();
+            return;
+        }
         if (!isPossessable)
         {
             isDowned = true;
@@ -1293,6 +1325,21 @@ public class MonsterActor : Actor
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
         Debug.Log($"[MonsterState] '{displayName}' spawned as permanent possession corpse.");
+    }
+
+    /// <summary>
+    /// Keeps an Elite body permanently downed without resetting its runtime state. This is
+    /// used both after an Elite dies and when the player switches away from an Elite body.
+    /// </summary>
+    public void KeepAsPermanentEliteCorpse()
+    {
+        if (!IsElite || Body == BodyState.Fading || Body == BodyState.Despawned) return;
+
+        float preservedHealth = Mathf.Clamp(currentHealth, 0f, Mathf.Max(0f, maxHealth));
+        SpawnAsPermanentCorpse();
+        currentHealth = preservedHealth;
+        UpdateHealthUI();
+        MonsterSpawner.Instance?.ReleaseTracking(this);
     }
 
     /// <summary>
@@ -1377,6 +1424,7 @@ public class MonsterActor : Actor
         isWeakened = false;
         isDowned = false;
         isPossessed = false;
+        ResetEliteRuntimeState();
         IsBossBattleReserveBody = false;
         isPossessable = true;
         lastDamageSource = null;
@@ -1430,7 +1478,11 @@ public class MonsterActor : Actor
         RefreshPlayerTarget();
         SetController(GetComponent<AIController>());
         UpdateHealthUI();
+        OnResetForSpawn();
     }
+
+    /// <summary>Hook for specialized actors that need to reset additional runtime state when pooled.</summary>
+    protected virtual void OnResetForSpawn() { }
 
     public void ResetForPool(){
         SetController(NullController.Instance);
@@ -1440,6 +1492,7 @@ public class MonsterActor : Actor
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
+        ResetEliteRuntimeState();
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -1447,17 +1500,66 @@ public class MonsterActor : Actor
         }
     }
 
-    /// <summary>Applies a run spawn snapshot from authored base stats exactly once.</summary>
+    /// <summary>Applies or refreshes a run spawn snapshot while preserving current health ratio.</summary>
     public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier)
     {
+        float previousMaxHealth = maxHealth;
+        float previousHealthRatio = previousMaxHealth > 0f
+            ? Mathf.Clamp01(currentHealth / previousMaxHealth)
+            : 1f;
         spawnOrigin = origin;
         spawnDifficultyTier = Mathf.Max(0, tier);
         baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
-        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier);
-        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier);
+        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier) * eliteHealthMultiplier;
+        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier) * eliteAttackDamageMultiplier;
         maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
-        currentHealth = maxHealth;
+        currentHealth = maxHealth * previousHealthRatio;
         currentTenacity = maxTenacity;
+        if (!isPossessed && enemyStats.HasConfiguredHealth)
+            collisionDamage = enemyStats.collisionDamage * eliteAttackDamageMultiplier;
+    }
+
+    /// <summary>
+    /// Applies the Elite multipliers on top of the current wave difficulty snapshot.
+    /// Health is rescaled by the existing current/max ratio instead of being refilled.
+    /// </summary>
+    public void ApplyEliteRuntimeModifiers(float healthMultiplier, float attackDamageMultiplier, float visualScaleMultiplier)
+    {
+        EnsureDualStatsMigrated();
+        float previousMaxHealth = maxHealth;
+        float previousHealthRatio = previousMaxHealth > 0f
+            ? Mathf.Clamp01(currentHealth / previousMaxHealth)
+            : 1f;
+
+        eliteHealthMultiplier = Mathf.Max(1f, healthMultiplier);
+        eliteAttackDamageMultiplier = Mathf.Max(1f, attackDamageMultiplier);
+        eliteVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
+        eliteRuntimeApplied = true;
+
+        if (baseSpawnMaxHealth <= 0f)
+            baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
+        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier) * eliteHealthMultiplier;
+        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier) * eliteAttackDamageMultiplier;
+        maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
+        currentHealth = maxHealth * previousHealthRatio;
+        if (!isPossessed && enemyStats.HasConfiguredHealth)
+            collisionDamage = enemyStats.collisionDamage * eliteAttackDamageMultiplier;
+
+        ApplyVisualScale();
+        if (visualFx != null)
+        {
+            visualFx.ConfigureEliteStyle(sinType);
+            visualFx.SetEliteHighlight(true);
+        }
+        UpdateHealthUI();
+    }
+
+    /// <summary>Refreshes an active Elite when the run difficulty tier advances.</summary>
+    public void RefreshEliteWaveDifficulty(int tier)
+    {
+        if (!IsElite || isPossessed || isDowned || Body != BodyState.Active) return;
+        ApplySpawnDifficultySnapshot(spawnOrigin, tier);
+        UpdateHealthUI();
     }
 
     /// <summary>Called by the imprint manager after the possessed stat block is applied.</summary>
@@ -1479,20 +1581,88 @@ public class MonsterActor : Actor
     public void ApplyPossessionVisualScale(float multiplier)
     {
         PossessionCombatScaleMultiplier = Mathf.Max(1f, multiplier);
-        if (visualScaleRoot == null) return;
-        if (!authoredVisualScaleCaptured)
-        {
-            authoredVisualScale = visualScaleRoot.localScale;
-            authoredVisualScaleCaptured = true;
-        }
-        visualScaleRoot.localScale = authoredVisualScale * PossessionCombatScaleMultiplier;
+        ApplyVisualScale();
     }
 
     public void ResetPossessionVisualScale()
     {
         PossessionCombatScaleMultiplier = 1f;
-        if (visualScaleRoot != null && authoredVisualScaleCaptured)
-            visualScaleRoot.localScale = authoredVisualScale;
+        ApplyVisualScale();
+    }
+
+    private void ResetEliteRuntimeState()
+    {
+        eliteHealthMultiplier = 1f;
+        eliteAttackDamageMultiplier = 1f;
+        eliteVisualScaleMultiplier = 1f;
+        eliteRuntimeApplied = false;
+        if (visualFx != null) visualFx.SetEliteHighlight(false);
+        ApplyVisualScale();
+    }
+
+    private void ApplyVisualScale()
+    {
+        float multiplier = Mathf.Max(1f, PossessionCombatScaleMultiplier) * Mathf.Max(1f, eliteVisualScaleMultiplier);
+        if (visualScaleRoot != null)
+        {
+            if (!authoredVisualScaleCaptured)
+            {
+                authoredVisualScale = visualScaleRoot.localScale;
+                authoredVisualScaleCaptured = true;
+            }
+            visualScaleRoot.localScale = authoredVisualScale * multiplier;
+            return;
+        }
+
+        for (int i = 0; i < fallbackVisualScaleRoots.Count; i++)
+        {
+            Transform root = fallbackVisualScaleRoots[i];
+            if (root != null) root.localScale = fallbackAuthoredVisualScales[i] * multiplier;
+        }
+    }
+
+    private void CaptureFallbackVisualScaleRoots()
+    {
+        fallbackVisualScaleRoots.Clear();
+        fallbackAuthoredVisualScales.Clear();
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (!IsEliteVisualRenderer(renderer)) continue;
+
+            Transform root = renderer.transform;
+            while (root.parent != null && root.parent != transform)
+                root = root.parent;
+            if (root == transform || fallbackVisualScaleRoots.Contains(root)) continue;
+
+            fallbackVisualScaleRoots.Add(root);
+            fallbackAuthoredVisualScales.Add(root.localScale);
+        }
+    }
+
+    private bool IsEliteVisualRenderer(Renderer renderer)
+    {
+        if (renderer == null || renderer is ParticleSystemRenderer || renderer is TrailRenderer || renderer is LineRenderer)
+            return false;
+
+        Transform current = renderer.transform;
+        while (current != null)
+        {
+            if (current.GetComponent<SoulActor>() != null || current.GetComponent<EnemyAbility>() != null
+                || current.GetComponent<Canvas>() != null || current.GetComponent<Light>() != null)
+                return false;
+
+            string objectName = current.name;
+            if (objectName.IndexOf("VFX", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Trail", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Headfire", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Health", StringComparison.OrdinalIgnoreCase) >= 0)
+                return false;
+            if (current == transform) break;
+            current = current.parent;
+        }
+        return true;
     }
 
     /// <summary>
@@ -1520,13 +1690,22 @@ public class MonsterActor : Actor
 
     private void CancelAbilityRuntimeState(){
         foreach (EnemyAbility ability in GetComponentsInChildren<EnemyAbility>(true))
-            if (ability != null) ability.ResetForOwnerReuse();
+            if (ability != null && ShouldManageAbilityComponent(ability)) ability.ResetForOwnerReuse();
     }
 
     private void SetAbilityComponentsEnabled(bool enabled)
     {
         foreach (EnemyAbility ability in GetComponentsInChildren<EnemyAbility>(true))
-            if (ability != null) ability.enabled = enabled;
+            if (ability != null && ShouldManageAbilityComponent(ability)) ability.enabled = enabled;
+    }
+
+    /// <summary>
+    /// Allows composite actors to keep EnemyAbility components embedded in visual source
+    /// prefabs from being treated as live abilities of the host actor.
+    /// </summary>
+    protected virtual bool ShouldManageAbilityComponent(EnemyAbility ability)
+    {
+        return true;
     }
 
     public bool TryReserveForPossession(){
