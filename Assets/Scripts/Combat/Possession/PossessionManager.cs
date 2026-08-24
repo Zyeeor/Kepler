@@ -23,6 +23,8 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public SwitchState State { get; private set; }
     public MonsterActor CurrentBody { get; private set; }
     public float CooldownRemaining { get; private set; }
+    /// <summary>当前是否正在被动流逝附身 Body 的耐久（表现层读取，如血条燃烧特效）。</summary>
+    public bool IsBodyDecaying { get; private set; }
 
     public event System.Action<MonsterActor> OnPossessionStarted;
     /// <summary>Single post-commit event consumed by run-level systems. Transaction ids are idempotency keys.</summary>
@@ -115,11 +117,13 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         if (CooldownRemaining > 0f) CooldownRemaining -= Time.deltaTime;
 
+        IsBodyDecaying = false;
         if (State != SwitchState.Possessing || CurrentBody == null) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
         if (CurrentBody.IsBossBattleReserveBody) return;
 
         if (decayInterval <= 0f) return;
+        IsBodyDecaying = true;
         float decayAmount = CurrentBody.maxHealth * possessionDecayPercent / decayInterval * Time.deltaTime;
         if (PossessionImprintManager.Instance != null)
             decayAmount *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(CurrentBody);
