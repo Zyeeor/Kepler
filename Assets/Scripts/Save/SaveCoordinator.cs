@@ -17,8 +17,8 @@ using UnityEngine;
 /// </summary>
 public static class SaveCoordinator
 {
-    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v2：新增 runId。</summary>
-    public const int SchemaVersion = 3;
+    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v4：新增色欲浮点吸血进度。</summary>
+    public const int SchemaVersion = 4;
 
     static readonly string SavePath = Path.Combine(Application.persistentDataPath, "possess_run_save.json");
 
@@ -64,6 +64,7 @@ public static class SaveCoordinator
         float activeCombatSeconds = 0f,
         List<PossessionImprintState> possessionImprints = null,
         float greedBonusProgress = 0f,
+        float lustHealProgress = 0f,
         bool bossSpawned = false,
         bool bossDefeated = false)
     {
@@ -82,6 +83,7 @@ public static class SaveCoordinator
             globalMissStreak = globalMissStreak,
             activeCombatSeconds = activeCombatSeconds,
             greedBonusProgress = greedBonusProgress,
+            lustHealProgress = lustHealProgress,
             bossSpawned = bossSpawned,
             bossDefeated = bossDefeated,
         };

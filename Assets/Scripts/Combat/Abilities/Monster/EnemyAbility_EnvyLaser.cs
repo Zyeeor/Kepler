@@ -321,7 +321,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         float range = maxRange;
         if (IsUpgradeUnlocked("EN-TG01"))
             range += GetCardParameter("AttackRangeBonus", 4f);
-        return range;
+        return ScaleAbilityRadius(range);
     }
 
     private Vector3 GetBeamOrigin()

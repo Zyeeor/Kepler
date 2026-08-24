@@ -44,6 +44,14 @@ public class HookProjectile : MonoBehaviour
     private float traveled;
     private Vector3 lastHitCheckPosition;
     private bool finished;
+    private float authoredHitRadius;
+    private bool authoredHitRadiusCaptured;
+
+    void Awake()
+    {
+        authoredHitRadius = hitRadius;
+        authoredHitRadiusCaptured = true;
+    }
 
     void OnEnable()
     {
@@ -60,6 +68,16 @@ public class HookProjectile : MonoBehaviour
         lastHitCheckPosition = transform.position;
         onAnchorStop = null;
         // flightMode / masks / callbacks are reassigned by the firing ability after reset.
+    }
+
+    public void SetOwnerScaleMultiplier(float multiplier)
+    {
+        if (!authoredHitRadiusCaptured)
+        {
+            authoredHitRadius = hitRadius;
+            authoredHitRadiusCaptured = true;
+        }
+        hitRadius = authoredHitRadius * Mathf.Max(1f, multiplier);
     }
 
     void Update()

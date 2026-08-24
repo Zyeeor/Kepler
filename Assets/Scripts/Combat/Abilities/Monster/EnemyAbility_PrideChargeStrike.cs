@@ -186,7 +186,7 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
 
     private void CutIncomingProjectiles(Vector3 center, Vector3 forward, float radius)
     {
-        Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
+        Collider[] hits = Physics.OverlapSphere(center, ScaleAbilityRadius(radius), ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {
             Projectile projectile = hits[i].GetComponentInParent<Projectile>();

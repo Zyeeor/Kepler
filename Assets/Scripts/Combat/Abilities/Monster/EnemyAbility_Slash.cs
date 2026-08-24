@@ -54,15 +54,16 @@ public class EnemyAbility_Slash : EnemyAbility
 
         Vector3 forward = owner.transform.forward;
         Vector3 slashOrigin = owner.transform.position + forward * 0.5f;
-        CreateSlashArc(slashOrigin, forward, slashRange);
+        float effectiveSlashRange = ScaleAbilityRadius(slashRange);
+        CreateSlashArc(slashOrigin, forward, effectiveSlashRange);
 
         // Detect all valid targets in the arc
         int layerMask = owner.isPossessed ? ~0 : targetMask;
-        CombatHitboxDebug.DrawArc(drawHitboxes, slashOrigin, forward, slashRange, slashAngle, slashEffectDuration);
-        CombatHitboxDebug.DrawSphere(drawHitboxes, slashOrigin, slashRange, slashEffectDuration);
+        CombatHitboxDebug.DrawArc(drawHitboxes, slashOrigin, forward, effectiveSlashRange, slashAngle, slashEffectDuration);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, slashOrigin, effectiveSlashRange, slashEffectDuration);
 
         // Use OverlapSphere with no angle restriction for reliable detection
-        Collider[] hits = Physics.OverlapSphere(slashOrigin, slashRange, layerMask, QueryTriggerInteraction.Collide);
+        Collider[] hits = Physics.OverlapSphere(slashOrigin, effectiveSlashRange, layerMask, QueryTriggerInteraction.Collide);
         HashSet<Enemy> hitEnemies = new HashSet<Enemy>();
 
         foreach (var hit in hits)

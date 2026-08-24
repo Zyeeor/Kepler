@@ -1,6 +1,6 @@
 # Possession：七罪罪印、双源生怪与七相缝合 Boss
 
-> 状态：Detailed Contract（设计已决策；实现待工作树隔离）  
+> 状态：Detailed Contract（已整合 Owner 增补；代码已落地，待 PlayMode 验收）
 > 日期：2026-08-21  
 > 适用项目：Kepler / Possession  
 > GitHub Issue：https://github.com/Zyeeor/Kepler/issues/7  
@@ -82,6 +82,11 @@ Boss Gluttony Devour hit --> BossAffixAssimilator --> mirror player's E affixes
 | D-12 | 同化词条在本场 Boss 战中取并集、唯一化、持续到 Boss 死亡 | 让多次吞噬有成长反馈，避免重复叠同一单层 Card |
 | D-13 | Boss 世界观暂称“七相收束载体 / Sevenfold Convergence”，不声明它就是七罪本体、终极存在或正式终局 | `OD-CAN-005` 仍是 Open Decision |
 | D-14 | 怠惰罪印不再提供承伤减免；改为降低当前附身体的血条消耗，覆盖附身自然消耗与技能/移动技能 HP 消耗 | 与“血条作为附身与技能资源”的实际玩法一致 |
+| D-15 | 色欲罪印取消控制/Charm 效果，改为每层 `1%` 吸血；按实际造成伤害计算浮点治疗进度，进度每累计到整数才给当前附身体恢复对应整数 HP，治疗受当前最大生命限制 | Owner 增补需求；伤害不足 1 点时不丢失小数，且不把灵魂作为治疗目标 |
+| D-16 | Boss 出场额外生成七具固定罪种的 Boss 备用尸体；备用尸体永久保持可附身，不参与自然衰减/尸体倒计时/普通清场；玩家切换时旧身体回到备用尸体态并保留当前 HP，只有 Boss 造成的真实伤害可以扣除其 HP，HP 到 0 才离开备用名额 | Owner 增补需求；保证 Boss 战中七种身体可反复选择与切换 |
+| D-17 | Boss 战不设身体切换冷却；失败只由灵魂体死亡触发，成功只由七相 Boss 死亡触发；身体死亡后回到灵魂态，若灵魂体再被 Boss 命中则进入 Failed | Owner 增补需求；不把身体耗尽误判为胜负终态 |
+| D-18 | 七种罪印统一按最多 `100` 层结算，取消各效果自身的收益上限；暴食体型是唯一显式例外，最大为原始体型 `2.0×`，生命值不设效果上限；投掷物视觉尺寸与技能命中范围同步乘以当前体型倍率 | Owner 增补需求；层数上限仍是统一的 `MaxStacks=100`，不是各效果的额外封顶 |
+| D-19 | Boss 进入 Boss 战后不允许被普通尸体生命周期、波次回收或池化清理路径回收；只有 Boss 自身真正死亡时才能进入消散与回收流程 | Owner 增补需求；修复按 `8` 召唤后吞噬全场导致 Boss GameObject 失效 |
 
 ### 2.1 与 Canonical / Open Decision 的显式偏差
 
@@ -145,40 +150,39 @@ if greedProgress >= 1:
 
 - 贪婪取事务开始前的层数，避免夺舍贪婪时立即递归自增。
 - 单次事务最多奖励 1 个额外层；每次仍保证基础 `+1`。
-- 所有罪印层数统一受可配置的 `MaxStacks` 限制，首版为 `100` 层；达到上限后不再增加该罪印层数，收益仍按各自效果上限计算。
+- 所有罪印层数统一受可配置的 `MaxStacks` 限制，首版为 `100` 层；达到上限后不再增加该罪印层数。除暴食体型的 `2.0×` 视觉上限外，不再设置各罪印效果的额外收益上限。
 
 ### 3.3 数值公式（首版 TUNABLE）
 
 | 罪印 | 每层 / 公式 | 效果上限 | 作用域与实现钩子 |
 |---|---|---|---|
 | 傲慢 Pride | 实际冷却倍率 `1 / (1 + 0.05 × N)` | 层数上限 `100`；100 层约 83.3% CDR | 当前附身体全部 Attack/Special/Movement 的 `EnemyAbility.EffectiveCooldown`；不改动画速度 |
-| 愤怒 Wrath | 造成伤害 `+6% × N`，加法累计 | `+120%` | 当前附身体所有经 `ApplyOffensiveDamage` 的结算；DoT 按源快照，不重复乘 |
-| 暴食 Gluttony | 最大生命 `+5% × N`；视觉体型 `+2.5% × N` | HP `+100%`；体型 `+25%` | 只放大 `visualScaleRoot`，不缩放根 Collider/NavMeshAgent；新层按当前生命比例重算，不白送治疗 |
+| 愤怒 Wrath | 造成伤害 `+6% × N`，加法累计 | 无额外效果上限 | 当前附身体所有经 `ApplyOffensiveDamage` 的结算；DoT 按源快照，不重复乘 |
+| 暴食 Gluttony | 最大生命 `+5% × N`；视觉体型 `+2.5% × N` | HP 无上限；体型最大 `2.0×` | 只放大 `visualScaleRoot`，不缩放根 Collider/NavMeshAgent；投掷物与技能命中范围同步使用体型倍率；新层按当前生命比例重算，不白送治疗 |
 | 贪婪 Greed | 每次后续真实夺舍增加 `5% × N` 额外层进度 | 每次最多 `100%`，最多奖 1 层 | 见 3.2；HUD Tooltip 同时显示当前进度 |
-| 嫉妒 Envy | 子弹时间 `+0.15s × N` | `+3.0s` | 叠加在 `PossessionManager` 的基础持续时间上；手动与现有自动触发共用 |
-| 色欲 Lust | 有效攻击命中控制概率 `+2% × N` | `30%` | 每个目标、每次 ability activation 最多判定一次；DoT tick/弹射重复命中不重复抽取 |
-| 怠惰 Sloth | 血条消耗倍率 `1 - min(60%, 1 - 1 / (1 + 0.04 × N))` | `60%` 消耗减免 | 当前附身体的附身自然消耗、Attack/Skill/Movement 的 HP 消耗；不作用于承伤、真实处决或规则伤害 |
+| 嫉妒 Envy | 子弹时间 `+0.15s × N` | 无额外效果上限 | 叠加在 `PossessionManager` 的基础持续时间上；手动与现有自动触发共用 |
+| 色欲 Lust | 有效攻击造成伤害的 `1% × N` 转化为吸血 | 无额外效果上限 | 仅当前附身体生效；按最终实际伤害累加浮点治疗进度，达到整数时恢复当前附身体 HP；不治疗灵魂，不对 Boss 控制或 Charm |
+| 怠惰 Sloth | 血条消耗倍率 `1 / (1 + 0.04 × N)` | 无额外效果上限 | 当前附身体的附身自然消耗、Attack/Skill/Movement 的 HP 消耗；不作用于承伤、真实处决或规则伤害 |
 
 #### 怠惰血条消耗细则
 
 - 怠惰罪印只降低“玩家当前附身体主动承担的血条消耗”，不改变怪物受到的外部伤害，也不提供传统意义上的减伤。
 - 覆盖两类来源：`PossessionManager` 的附身自然衰减，以及 `MonsterActor` 对 Attack、Skill、Movement 和持续型 Ability 的 HP cost。
 - 每次消耗先计算 Ability 自身的基础倍率，再乘以 `PossessionImprintMath.SlothDrainMultiplier(N)`；非附身状态、灵魂态和 `suppressPossessionDrain` 路径不受影响。
-- 首版公式在 `N=100` 时封顶为 60% 消耗减免（实际消耗倍率 40%）；罪印层数上限仍由统一 `PossessionImprintMath.MaxStacks` 参数控制。
+- 罪印层数上限仍由统一 `PossessionImprintMath.MaxStacks` 参数控制；怠惰不再有独立的减免封顶。
 
 #### 暴食体型细则
 
 - 每个 Monster Prefab 增加可选 `visualScaleRoot`；没有时由配置明确指定视觉节点，禁止直接缩放 Actor 根节点。
 - 池化时恢复 Authored Scale；罪印应用使用 `authoredScale × sizeMultiplier`，绝不在上次 Scale 上继续乘。
-- 射线、近战距离、碰撞体、导航半径不跟随体型增长，避免攻击范围与卡位的隐式增强。
+- 根 Collider、导航半径和移动卡位不跟随体型增长；由能力统一入口控制的投掷物视觉尺寸、投掷物命中半径、射线/近战/范围技能命中范围随体型倍率增长，避免遗漏某类技能。
 
-#### 色欲控制细则
+#### 色欲吸血细则
 
-- 有效目标：活着、非玩家身体、非 Boss、非 Elite、非已被控制的普通怪物。
-- 触发后进入 `Charmed` 2.5 秒：临时敌对目标改为最近普通敌人，不能伤害玩家，也不算夺舍。
-- 结束后恢复原 AI；目标死亡、被夺舍、场景卸载时立即清理。
-- 一次多段攻击用 `AbilityActivationId + TargetInstanceId` 去重。
-- 不用每帧场景扫描；通过 `EnemyRegistry` 获取候选，并在 AI 决策间隔查询。
+- 不再执行 `CharmController`、敌对目标切换或控制概率判定；色欲罪印不改变目标阵营和 AI。
+- 只统计当前附身体通过统一 `ApplyOffensiveDamage` 路径造成的**实际扣血**；未命中、免疫、Guard 吸收与过量伤害不产生治疗。
+- 采用 `float lustHealProgress` 累加 `actualDamage × (0.01 × LustStacks)`；每次取出可恢复的整数部分并保留余数，逐次调用当前附身体 `Heal`。
+- 换身时保留本局吸血小数进度；灵魂态、Boss 本体和未附身普通怪不读取该进度。
 
 ### 3.4 首次提示
 
@@ -361,6 +365,17 @@ damageMultiplier = min(1 + 0.06 × tier, 2.20)
 6. 3.0s：在远离玩家的三个方位生成 3 个正常、可击倒、可夺舍小怪；Boss 战中若“活小怪 + 可夺舍尸体 < 3”，每 18 秒补至 3，最多同时 5。
 7. Boss 死亡：解除 Chunk Pin，清理临时词条、召唤物和 MPB 状态，进入 Run Result。
 
+- Boss 的 GameObject 在接管、吞噬和战斗期间必须保持 Active；普通 `BeginDisappearing`、尸体自然消散、波次回收和 `MonsterPool.Return` 均不得绕过 Boss 死亡入口。
+
+#### 5.3.1 Boss 战备用尸体与胜负
+
+- Boss 在 `8:00.000` 接管完成时，额外从七个 `*_new` 普通怪 Prefab 各生成 1 具备用尸体，固定顺序为傲慢、愤怒、暴食、贪婪、嫉妒、色欲、怠惰。
+- 七具尸体不计入普通活怪容量、不进入 Boss 吞噬快照、不触发 KillEcho，也不参与波次清场；它们只通过统一 Possession 输入提供附身目标。
+- 备用尸体使用永久 `Downed` 状态和无限附身窗口；未被附身时不走自然血条衰减。玩家离开身体时，该身体回到备用尸体态并保留其当前 HP/罪种。
+- 备用尸体只有在 Boss 的有效攻击对当前附身身体造成真实扣血时才减少 HP；HP 到 `0` 才触发该名额的消亡和身体死亡回魂流程。切换到其他仍存活的备用尸体不判失败。
+- Boss 战期间跳过普通附身冷却，允许在七具仍存活的备用尸体之间自由切换；备用名额耗尽后，玩家回到灵魂体，灵魂体被击杀即 `Failed`。
+- `BossSevenfoldActor.Die` 是唯一成功入口：Boss 被杀后进入 `Result`。普通波清场、身体死亡、备用尸体耗尽都不得直接进入 `Result`。
+
 ### 5.4 技能集合
 
 Boss 持有七怪的 Attack + Special 共 14 个能力，不挂七个 Movement 槽：
@@ -538,13 +553,15 @@ MonsterFatalEvent(actor, killer, cause, spawnOrigin, transactionId)
 ### 7.2 修改代码
 
 - `PossessionManager.cs`：带 reason/transactionId 的单次提交事件；罪印与 Bullet Time 接口。
-- `MonsterActor.cs`：SinType、可夺舍开关、视觉根、出生倍率、Fatal attribution、Boss consume 路径。
+- `MonsterActor.cs`：SinType、可夺舍开关、视觉根、出生倍率、Fatal attribution、Boss consume 路径、色欲浮点吸血与 Boss 备用尸体状态。
 - `EnemyAbility.cs`：外部冷却倍率、activationId、精确单能力触发入口。
 - `CombatAbilityComponent.cs` / 伤害路径：统一玩家出伤、敌人出生伤害、最终入伤修正。
 - `PlayerPassiveManager.cs` / `EnemyPassiveBuff.cs`：旧实验系统迁移或停用，防双重加成。
 - `MonsterSpawner.cs`：接收 SpawnRequest，返回成功/失败与合法位置。
 - `MonsterPool.cs`：严格恢复 Authored base 后应用 Spawn Snapshot。
 - `WaveManager.cs`：Periodic origin、Choice 前清理 Echo、最后波等待 8:00 Boss。
+- `RunSpawnDirector.cs`：Boss 接管时额外创建七罪备用尸体，并从普通生成容量/吞噬/清波统计中隔离。
+- `PossessionManager.cs`：Boss 战备用身体的无冷却切换、保留身体 HP、耗尽后回魂但不直接判负。
 - `EnemyAbility_GluttonyDevour.cs`：Boss 分支走词条同化，普通暴食维持现有复制 Skill 行为。
 - `EliteBuildCarrier.cs`：提供只读 active effectId 枚举接口。
 - `SaveData.cs`、`RunSession.cs`、`SaveCoordinator.cs`、`SaveMigrator.cs`：Schema v3 和新字段。
@@ -624,7 +641,7 @@ MonsterFatalEvent(actor, killer, cause, spawnOrigin, transactionId)
 
 ### 9.1 EditMode
 
-- 七种罪印公式在 0/1/10/20/100/101 层下正确，统一由 `MaxStacks=100` 截断且不越各自效果上限。
+- 七种罪印公式在 0/1/10/20/100/101 层下正确，统一由 `MaxStacks=100` 截断；除暴食体型最大 `2.0×` 外，不再越各自效果上限。
 - 怠惰在附身自然衰减、Attack/Skill/Movement 与持续型 Ability HP cost 上均使用同一消耗倍率；不改变外部承伤。
 - 每个 possession transaction 只结算一次；LoadRestore/Debug 不加层。
 - 贪婪进度使用旧层数、满 1 后只奖 1 层并正确保留余数。
@@ -640,11 +657,15 @@ MonsterFatalEvent(actor, killer, cause, spawnOrigin, transactionId)
 - 首次提示 Profile 仅一次；关提示仍涨层。
 - HUD 始终有 7 个非白块图标，0 层暗显，数字和 Tooltip 正确。
 - 暴食视觉放大不改变 Collider/NavMeshAgent，不在池化后累乘。
-- 色欲多段/DoT 一次 activation 对同目标只抽一次，Charm 可正常恢复。
+- 暴食体型倍率同时放大投掷物视觉尺寸、投掷物命中半径和技能命中范围；池化复用后不累乘。
+- 色欲攻击按实际扣血累加浮点吸血，低于 1 点的治疗进度可跨命中保留；不再触发 Charm/控制。
 - Periodic 能维持目标压力；Echo 远离死亡点和玩家；Choice 时无残留攻击者。
 - 新出生怪在每个 30 秒 Tier 取得正确 HP/伤害；旧怪不跳变。
 - Pause/CardChoice 不推进 8 分钟计时；Bullet Time 推进。
-- 8:00 只生成一个 Boss；全场怪物被吞噬，玩家身体不被吞，3 秒内补可夺舍小怪。
+- 8:00 只生成一个 Boss；全场普通怪物被吞噬，玩家当前身体不被吞，3 秒内补可夺舍普通小怪。
+- Boss 吞噬全场后仍保持 Active、继续执行接管协程和战斗 AI；非 Boss 死亡入口不得使 Boss GameObject 失效，只有 Boss 真正死亡后才允许回收。
+- 8:00 额外生成七具固定罪种的永久备用尸体；不自然消亡、不被普通清场/吞噬，切换离身后仍可再次附身。
+- 备用尸体只在 Boss 有效攻击造成真实扣血时减少 HP；HP 为 0 才消亡，普通换身保留 HP；身体死亡回魂不直接失败，灵魂体死亡才 Failed。
 - Boss 近/中/远距离分别使用能命中的技能，五次施法序列不单一；近战不空放远处玩家。
 - Boss 瞬移合法、不会进墙/玩家体内；材质 Out/In 和伤害窗口同步。
 - Boss Devour 命中后只给其已有同源 Special 添加玩家词条，不新增技能 Component；重复词条不叠。
@@ -679,12 +700,12 @@ MonsterFatalEvent(actor, killer, cause, spawnOrigin, transactionId)
 | Echo 与 Wave Clear/Choice 冲突 | 高 | Echo 独立 origin，不计目标；阶段切换统一消费/淡出 |
 | SaveData 字段漂移导致旧档异常 | 高 | Schema v3 + v2→v3 迁移；默认层数/时钟为 0 |
 | Boss 吞噬清空尸体使夺舍循环暂时中断 | 中 | 3 秒内补 3 小怪，之后至少维持 3 个身体供给 |
-| 色欲 Charm 触发敌我伤害边界错误 | 中 | 明确 faction override、伤害过滤、超时恢复和目标切换测试 |
+| 备用尸体被普通波次/环境/吞噬误清理 | 高 | 备用尸体单独标记并从普通容量、Fatal、清场与 Boss 吞噬过滤；只允许 Boss 伤害路径扣除 |
 | 体型增长影响物理与导航 | 中 | 仅缩放视觉根，不缩放 Actor 根 |
 | 时间倍率在 8 分钟过强 | 中 | HP/伤害分别封顶 3.0/2.2；视完整跑局调参 |
 | Boss 与七罪关系仍是 Open Decision | 中 | 只使用临时系统称谓，不更新 Canonical |
 
-人工必须审核：Boss 拼接审美、Telegraph 可读性、浮空/瞬移眩目程度、整体难度、8:00 节奏、色欲控制是否过强、词条同化的可理解反馈。
+人工必须审核：Boss 拼接审美、Telegraph 可读性、浮空/瞬移眩目程度、整体难度、8:00 节奏、色欲吸血与七具身体切换的资源压力、词条同化的可理解反馈。
 
 ---
 

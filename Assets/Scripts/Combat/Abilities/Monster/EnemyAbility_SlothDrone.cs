@@ -77,9 +77,12 @@ public class EnemyAbility_SlothDrone : EnemyAbility
             Vector3 start = owner.transform.position + Vector3.up * 1.2f;
             Vector3 apex = start + Vector3.up * tossHeight;
             GameObject go = Instantiate(dronePrefab, start, Quaternion.identity);
+            go.transform.localScale *= OwnerCombatScaleMultiplier;
             SummonActor summon = go.GetComponent<SummonActor>();
             if (summon == null) summon = go.AddComponent<SummonActor>();
-            summon.Bind(owner, droneLifetime, false, deathBlastDamage, deathBlastTriggerDistance, deathBlastRadius, deathBlastDiveSpeed, deathBlastVfx, deathBlastVfxDuration);
+            summon.Bind(owner, droneLifetime, false, deathBlastDamage,
+                ScaleAbilityRadius(deathBlastTriggerDistance), ScaleAbilityRadius(deathBlastRadius),
+                deathBlastDiveSpeed, deathBlastVfx, deathBlastVfxDuration);
             summon.ConfigurePursuit(
                 IsUpgradeUnlocked("SL-S03"),
                 IsUpgradeUnlocked("SL-S03")
@@ -120,4 +123,3 @@ public class EnemyAbility_SlothDrone : EnemyAbility
         upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
     }
 }
-

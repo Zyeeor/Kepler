@@ -64,12 +64,14 @@ public class EnemyAbility_LandMine : EnemyAbility
         else
             mineGo = new GameObject("Mine");
 
+        mineGo.transform.localScale *= OwnerCombatScaleMultiplier;
+
         var mine = mineGo.GetComponent<MineBehaviour>();
         if (mine == null) mine = mineGo.AddComponent<MineBehaviour>();
 
         mine.lifetime = mineDuration;
-        mine.triggerRadius = triggerRadius;
-        mine.blastRadius = blastRadius;
+        mine.triggerRadius = ScaleAbilityRadius(triggerRadius);
+        mine.blastRadius = ScaleAbilityRadius(blastRadius);
         mine.damage = damage * damageMultiplier;
         mine.placer = owner;
         mine.blastVfxPrefab = blastVfxPrefab;

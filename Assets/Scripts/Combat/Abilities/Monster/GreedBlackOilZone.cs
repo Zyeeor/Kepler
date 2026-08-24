@@ -26,6 +26,7 @@ public class GreedBlackOilZone : MonoBehaviour
     private float _expiresAt;
     private GameObject _vfxInstance;
     private BoxCollider _volume;
+    private float _ownerScaleMultiplier = 1f;
 
     public bool IsNormalOil => !isBurning;
     public bool IsOwnedBy(Enemy actor) => owner != null && actor != null && owner == actor;
@@ -41,6 +42,8 @@ public class GreedBlackOilZone : MonoBehaviour
         GameObject burningVfx)
     {
         owner = oilOwner;
+        MonsterActor ownerMonster = oilOwner as MonsterActor;
+        _ownerScaleMultiplier = ownerMonster != null ? ownerMonster.PossessionCombatScaleMultiplier : 1f;
         lifetime = Mathf.Max(0.1f, life);
         width = Mathf.Max(0.2f, oilWidth);
         allySpeedMultiplier = Mathf.Max(0.01f, allyMult);
@@ -89,7 +92,8 @@ public class GreedBlackOilZone : MonoBehaviour
         if (_volume == null) _volume = gameObject.AddComponent<BoxCollider>();
         _volume.isTrigger = true;
         _volume.center = new Vector3(0f, 0.5f, 0f);
-        _volume.size = new Vector3(width, 1.5f, width);
+        float effectiveWidth = width * Mathf.Max(1f, _ownerScaleMultiplier);
+        _volume.size = new Vector3(effectiveWidth, 1.5f * Mathf.Max(1f, _ownerScaleMultiplier), effectiveWidth);
 
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
@@ -113,7 +117,8 @@ public class GreedBlackOilZone : MonoBehaviour
 
     private void ScanOccupants()
     {
-        Vector3 half = new Vector3(width * 0.5f, 0.75f, width * 0.5f);
+        float scale = Mathf.Max(1f, _ownerScaleMultiplier);
+        Vector3 half = new Vector3(width * 0.5f * scale, 0.75f * scale, width * 0.5f * scale);
         Vector3 boxCenter = transform.position + Vector3.up * 0.5f;
         CombatHitboxDebug.DrawBox(true, boxCenter, half, Quaternion.identity, 0f);
         int count = Physics.OverlapBoxNonAlloc(

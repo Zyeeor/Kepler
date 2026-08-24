@@ -147,7 +147,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         Vector3 origin = owner.transform.position + forward * 1f + Vector3.up * 1f;
 
         var go = SpawnVfxTracked(projectilePrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
-        go.transform.localScale = Vector3.one * scale;
+        go.transform.localScale = Vector3.one * scale * OwnerCombatScaleMultiplier;
 
         StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, dmgMult));
 
@@ -160,14 +160,16 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         float traveled = 0f;
         int layerMask = owner.isPossessed ? ~0 : targetMask;
 
-        while (traveled < maxRange && projectileGo != null)
+        float effectiveMaxRange = ScaleAbilityRadius(maxRange);
+        while (traveled < effectiveMaxRange && projectileGo != null)
         {
             float step = projectileSpeed * AbilityDeltaTime;
             traveled += step;
-            Vector3 currentPos = origin + forward * Mathf.Min(traveled, maxRange);
+            Vector3 currentPos = origin + forward * Mathf.Min(traveled, effectiveMaxRange);
             projectileGo.transform.position = currentPos;
 
-            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale, projectileHeight * 0.5f * scale, step * 0.5f);
+            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale * OwnerCombatScaleMultiplier,
+                projectileHeight * 0.5f * scale * OwnerCombatScaleMultiplier, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
             CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
@@ -247,7 +249,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
                 randomDir.y = Mathf.Abs(randomDir.y);
                 randomDir.Normalize();
                 var bullet = SpawnVfxTracked(projectilePrefab, bulletSpawnPos, Quaternion.LookRotation(randomDir, Vector3.up));
-                bullet.transform.localScale = Vector3.one * sloth02BulletScale;
+                bullet.transform.localScale = Vector3.one * sloth02BulletScale * OwnerCombatScaleMultiplier;
                 StartCoroutine(ScatterBulletTravel(bullet, bulletSpawnPos, randomDir, sloth02BulletRange, sloth02BulletScale, dmgMult, hitEnemies));
             }
         }
@@ -257,11 +259,12 @@ public class EnemyAbility_ChargeShot : EnemyAbility
     {
         yield return AbilityWait(sloth01MineDelay);
         var mineGo = Instantiate(sloth01MinePrefab, pos, Quaternion.identity);
+        mineGo.transform.localScale *= OwnerCombatScaleMultiplier;
         var mine = mineGo.GetComponent<MineBehaviour>();
         if (mine == null) mine = mineGo.AddComponent<MineBehaviour>();
         mine.lifetime = sloth01MineLifetime;
-        mine.triggerRadius = 1.5f;
-        mine.blastRadius = 3f;
+        mine.triggerRadius = 1.5f * OwnerCombatScaleMultiplier;
+        mine.blastRadius = 3f * OwnerCombatScaleMultiplier;
         mine.damage = damage * sloth01MineDamageMult;
         mine.placer = owner;
         mine.blastVfxPrefab = blastVfxPrefab;
@@ -281,7 +284,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             bullet.transform.position = currentPos;
 
             CombatHitboxDebug.DrawSphere(drawHitboxes, currentPos, 0.5f * scale, 0f);
-            Collider[] hits = Physics.OverlapSphere(currentPos, 0.5f * scale, layerMask, QueryTriggerInteraction.Collide);
+            Collider[] hits = Physics.OverlapSphere(currentPos, 0.5f * scale * OwnerCombatScaleMultiplier, layerMask, QueryTriggerInteraction.Collide);
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponentInParent<Enemy>();

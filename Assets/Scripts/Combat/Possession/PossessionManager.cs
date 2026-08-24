@@ -55,6 +55,10 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     private bool nextPossessionIsDeathRelay;
     private PossessionGrantReason reservedGrantReason = PossessionGrantReason.PlayerPossession;
     private int lastPossessionInputFrame = -1;
+    private bool bossBattleSwitchMode;
+
+    /// <summary>Boss 战允许在附身尸体之间立即切换，不受常规冷却和最短附身时间限制。</summary>
+    public bool IsBossBattleSwitchMode => bossBattleSwitchMode;
 
     protected override void Awake()
     {
@@ -113,6 +117,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         if (State != SwitchState.Possessing || CurrentBody == null) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
+        if (CurrentBody.IsBossBattleReserveBody) return;
 
         if (decayInterval <= 0f) return;
         float decayAmount = CurrentBody.maxHealth * possessionDecayPercent / decayInterval * Time.deltaTime;
@@ -166,7 +171,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             return false;
         }
 
-        if (State == SwitchState.Idle && CooldownRemaining > 0f)
+        if (!bossBattleSwitchMode && State == SwitchState.Idle && CooldownRemaining > 0f)
         {
             reason = "possession cooldown remaining=" + CooldownRemaining.ToString("F2");
             return false;
@@ -245,13 +250,23 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void RequestRelease(bool force)
     {
         if (State != SwitchState.Possessing) return;
-        if (!force && Time.time - possessStartTime < minPossessTime)
+        if (!bossBattleSwitchMode && !force && Time.time - possessStartTime < minPossessTime)
         {
             Debug.Log("[Possession] Release rejected: min possession time remaining=" + (minPossessTime - (Time.time - possessStartTime)).ToString("F2"));
             return;
         }
 
         CommitRelease(recycleBody: true, startCooldown: true);
+    }
+
+    /// <summary>
+    /// Toggles the boss battle possession rules. The mode is owned by the boss encounter
+    /// so normal waves retain their cooldown and minimum-possession-time behavior.
+    /// </summary>
+    public void SetBossBattleSwitchMode(bool enabled)
+    {
+        bossBattleSwitchMode = enabled;
+        if (enabled) CooldownRemaining = 0f;
     }
 
     /// <summary>
@@ -427,7 +442,10 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             if (oldBody.Combat != null) oldBody.Combat.RemoveLooseTags(this);
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            oldBody.BeginDisappearing();
+            if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
+                oldBody.ReturnToBossBattleReserve();
+            else
+                oldBody.BeginDisappearing();
         }
 
         if (soul != null)
@@ -458,7 +476,13 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         {
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            if (recycleBody) oldBody.BeginDisappearing();
+            if (recycleBody)
+            {
+                if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
+                    oldBody.ReturnToBossBattleReserve();
+                else
+                    oldBody.BeginDisappearing();
+            }
         }
 
         if (soul != null)
@@ -548,6 +572,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void OnGameOver()
     {
         handlingGameOver = true;
+        bossBattleSwitchMode = false;
         if (flyRoutine != null)
         {
             StopCoroutine(flyRoutine);

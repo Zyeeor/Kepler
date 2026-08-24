@@ -195,9 +195,10 @@ public class EnemyAbility_GreedHands : EnemyAbility
     {
         if (owner == null) return null;
         Enemy best = null;
-        float bestSqr = detectRange * detectRange;
-        CombatHitboxDebug.DrawSphere(drawHitboxes, from, detectRange, 0f);
-        Collider[] hits = Physics.OverlapSphere(from, detectRange, ~0, QueryTriggerInteraction.Collide);
+        float effectiveDetectRange = ScaleAbilityRadius(detectRange);
+        float bestSqr = effectiveDetectRange * effectiveDetectRange;
+        CombatHitboxDebug.DrawSphere(drawHitboxes, from, effectiveDetectRange, 0f);
+        Collider[] hits = Physics.OverlapSphere(from, effectiveDetectRange, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {
             Enemy enemy = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
@@ -242,7 +243,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
             go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "GreedHandProjectile";
             go.transform.position = origin;
-            go.transform.localScale = Vector3.one * 0.35f;
+            go.transform.localScale = Vector3.one * 0.35f * OwnerCombatScaleMultiplier;
             Collider col = go.GetComponent<Collider>();
             if (col != null) col.isTrigger = true;
             Object.Destroy(go.GetComponent<Collider>());
@@ -258,6 +259,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
         GreedHandProjectile hand = go.GetComponent<GreedHandProjectile>();
         if (hand == null) hand = go.AddComponent<GreedHandProjectile>();
+        if (daggerPrefab != null)
+            go.transform.localScale *= OwnerCombatScaleMultiplier;
         hand.Launch(
             this,
             owner,
@@ -296,7 +299,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
             else
             {
                 vis = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                vis.transform.localScale = Vector3.one * 0.25f;
+                vis.transform.localScale = Vector3.one * 0.25f * OwnerCombatScaleMultiplier;
                 Object.Destroy(vis.GetComponent<Collider>());
             }
             // Orbit visuals must not fly as projectiles.

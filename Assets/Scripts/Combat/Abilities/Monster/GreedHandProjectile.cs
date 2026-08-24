@@ -137,10 +137,13 @@ public class GreedHandProjectile : MonoBehaviour
         if (look.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(look.normalized, Vector3.up);
 
+        float effectiveHitRadius = hitRadius;
+        if (sourceAbility != null && sourceAbility.OwnerMonster != null)
+            effectiveHitRadius *= sourceAbility.OwnerMonster.PossessionCombatScaleMultiplier;
         if (Time.time >= _canHitAt
-            && Vector3.Distance(transform.position, target.transform.position) <= hitRadius)
+            && Vector3.Distance(transform.position, target.transform.position) <= effectiveHitRadius)
         {
-            CombatHitboxDebug.DrawSphere(true, transform.position, hitRadius, 0f);
+            CombatHitboxDebug.DrawSphere(true, transform.position, effectiveHitRadius, 0f);
 
             SettleHit();
         }

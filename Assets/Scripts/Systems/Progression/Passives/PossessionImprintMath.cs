@@ -6,12 +6,7 @@ public static class PossessionImprintMath
     /// <summary>Single run-wide cap for every sin imprint stack.</summary>
     public static int MaxStacks = 100;
 
-    public const float MaxWrathDamageBonus = 1.20f;
-    public const float MaxGluttonyHealthBonus = 1.00f;
-    public const float MaxGluttonyScaleBonus = 0.25f;
-    public const float MaxEnvyBulletTimeBonus = 3.00f;
-    public const float MaxLustControlChance = 0.30f;
-    public const float MaxSlothDrainReduction = 0.60f;
+    public const float MaxGluttonyScaleMultiplier = 2.00f;
 
     static int ClampStacks(int stacks)
     {
@@ -25,17 +20,17 @@ public static class PossessionImprintMath
 
     public static float WrathDamageMultiplier(int stacks)
     {
-        return 1f + Mathf.Min(MaxWrathDamageBonus, ClampStacks(stacks) * 0.06f);
+        return 1f + ClampStacks(stacks) * 0.06f;
     }
 
     public static float GluttonyHealthMultiplier(int stacks)
     {
-        return 1f + Mathf.Min(MaxGluttonyHealthBonus, ClampStacks(stacks) * 0.05f);
+        return 1f + ClampStacks(stacks) * 0.05f;
     }
 
     public static float GluttonyScaleMultiplier(int stacks)
     {
-        return 1f + Mathf.Min(MaxGluttonyScaleBonus, ClampStacks(stacks) * 0.025f);
+        return Mathf.Min(MaxGluttonyScaleMultiplier, 1f + ClampStacks(stacks) * 0.025f);
     }
 
     public static float GreedProgressPerPossession(int oldStacks)
@@ -45,19 +40,18 @@ public static class PossessionImprintMath
 
     public static float EnvyBulletTimeBonus(int stacks)
     {
-        return Mathf.Min(MaxEnvyBulletTimeBonus, ClampStacks(stacks) * 0.15f);
+        return ClampStacks(stacks) * 0.15f;
     }
 
-    public static float LustControlChance(int stacks)
+    public static float LustLifestealMultiplier(int stacks)
     {
-        return Mathf.Min(MaxLustControlChance, ClampStacks(stacks) * 0.02f);
+        return ClampStacks(stacks) * 0.01f;
     }
 
     /// <summary>Multiplier applied to possessed-body HP drain, not incoming combat damage.</summary>
     public static float SlothDrainMultiplier(int stacks)
     {
-        float reduction = Mathf.Min(MaxSlothDrainReduction, 1f - 1f / (1f + ClampStacks(stacks) * 0.04f));
-        return 1f - reduction;
+        return 1f / (1f + ClampStacks(stacks) * 0.04f);
     }
 
     /// <summary>
