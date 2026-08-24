@@ -64,7 +64,13 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     public float scatterBulletRange = 6f;
     public float scatterBulletYOffset = 1f;
 
+    [Header("Canonical Sloth Cards")]
+    public int fanProjectileCount = 3;
+    public float fanSpreadAngle = 24f;
+    public float crushScaleThreshold = 2f;
+
     private bool isCharging;
+
     private float chargeTimer;
     private float lastChargeTime;
     private GameObject chargeVfxInstance;
@@ -80,6 +86,10 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Sloth.ChargeShot", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Sloth.ChargeShot");
+        EnsureUpgrade("SL-A03");
+        EnsureUpgrade("SL-A04");
+        EnsureUpgrade("SL-A05");
+
     }
 
     public override bool CanTrigger()
@@ -172,7 +182,26 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             ParticleSystem.MainModule main = particleSystem.main;
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
         }
-        StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, shotDamage));
+        if (IsUpgradeUnlocked("SL-A04"))
+        {
+            int count = Mathf.Max(1, Mathf.RoundToInt(GetCardParameter("FanProjectileCount", fanProjectileCount)));
+            float totalSpread = GetCardParameter("FanSpreadAngle", fanSpreadAngle);
+            float perProjectileDamage = Mathf.Max(3f, shotDamage / count);
+            ReleaseVfx(go);
+            for (int i = 0; i < count; i++)
+            {
+                float angle = count == 1 ? 0f : Mathf.Lerp(-totalSpread * 0.5f, totalSpread * 0.5f, i / (float)(count - 1));
+                Vector3 direction = Quaternion.Euler(0f, angle, 0f) * forward;
+                GameObject fanProjectile = SpawnVfxTracked(projectilePrefab, origin, Quaternion.LookRotation(direction, Vector3.up));
+                fanProjectile.transform.localScale *= scale * scatterBulletScale;
+                StartCoroutine(ProjectileTravel(fanProjectile, direction, origin, radius * scatterBulletScale, scale * scatterBulletScale, perProjectileDamage));
+            }
+        }
+        else
+        {
+            StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, shotDamage));
+        }
+
 
         if (owner.isPossessed && shootFeedback != null && shootFeedback.HasAnyEnabled)
             CombatEffectManager.PlayHitFeedback(shootFeedback, owner.transform);
@@ -237,8 +266,12 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
             CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
 
+            if (IsUpgradeUnlocked("SL-A05") && scale >= crushScaleThreshold)
+                TryCrushIncomingProjectile(checkCenter, forward, scale);
+
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
             bool hitSomething = false;
+
             Enemy primaryHit = null;
             Vector3 hitPos = currentPos;
 
@@ -297,10 +330,11 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         }
         TryDamagePlayerInRadius(pos, radius, shotDamage);
 
-        if (scatterIgnore == null || !IsUpgradeUnlocked("Sloth.Scatter") || projectilePrefab == null)
+        if (!IsUpgradeUnlocked("SL-A03") || projectilePrefab == null)
             return;
 
-        var exclude = new HashSet<Enemy> { scatterIgnore };
+        var exclude = scatterIgnore != null ? new HashSet<Enemy> { scatterIgnore } : null;
+
         int bulletCount = Mathf.CeilToInt(lastChargeTime * scatterBulletMult);
         Vector3 bulletSpawnPos = pos + Vector3.up * scatterBulletYOffset;
         for (int i = 0; i < bulletCount; i++)
@@ -351,7 +385,31 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         if (bullet != null) ReleaseVfx(bullet);
     }
 
+    private void TryCrushIncomingProjectile(Vector3 center, Vector3 forward, float ownScale)
+    {
+        Collider[] candidates = Physics.OverlapSphere(center, projectileWidth * ownScale * 0.5f, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            Projectile incoming = candidates[i].GetComponentInParent<Projectile>();
+            if (incoming == null || incoming.ownerEnemy == owner) continue;
+            Vector3 direction = incoming.transform.forward;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f && Vector3.Dot(direction.normalized, forward) >= 0f) continue;
+            if (incoming.transform.lossyScale.magnitude >= transform.lossyScale.magnitude * ownScale) continue;
+            VfxPool.ReleaseOrDestroy(incoming.gameObject);
+            return;
+        }
+    }
+
+    private void EnsureUpgrade(string effectId)
+    {
+        if (upgrades == null) upgrades = new List<UpgradeSlot>();
+        if (upgrades.Exists(slot => slot != null && string.Equals(slot.effectId, effectId, System.StringComparison.OrdinalIgnoreCase))) return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
+
     void StopCharging()
+
     {
         isCharging = false;
         EndActivationEffect();

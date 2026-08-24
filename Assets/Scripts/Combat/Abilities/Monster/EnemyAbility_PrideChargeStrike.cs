@@ -38,6 +38,17 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.ChargeStrike", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.ChargeStrike");
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride");
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.Cut", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride.Cut");
+        if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.ExecutionSpeed", System.StringComparison.OrdinalIgnoreCase)))
+            abilityTags.Add("Ability.Monster.Pride.ExecutionSpeed");
+        EnsureUpgrade("PR-M01");
+
+        EnsureUpgrade("PR-A03");
+        EnsureUpgrade("PR-TG01");
+
     }
 
     /// <summary>Possessed play is hold/release driven in Update; edge Trigger is for AI only.</summary>
@@ -117,19 +128,32 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         if (activeVfx != null)
             activeVfx.transform.SetParent(owner.transform, true);
 
-        float baseDistance = Mathf.Max(0.01f, GetCardParameter("ChargeDistance", chargeDistance));
+        float baseDistance = Mathf.Max(0.01f, chargeDistance);
         float chargeRatio = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, maxChargeTime)); // 0~100%
-        float distance = baseDistance * (1f + chargeRatio);
-        float strikeDamage = damage * damageMultiplier * (1f + chargeRatio);
+        float distanceMultiplier = IsUpgradeUnlocked("PR-M01")
+            ? GetCardParameter("ChargeDistanceMultiplier", 1.5f)
+            : 1f;
+        float damageMultiplierFromCard = IsUpgradeUnlocked("PR-M01")
+            ? GetCardParameter("ChargeDamageMultiplier", 1.5f)
+            : 1f;
+        float distance = baseDistance * distanceMultiplier * (1f + chargeRatio);
+        float strikeDamage = damage * damageMultiplier * damageMultiplierFromCard * (1f + chargeRatio);
+        float effectiveChargeSpeed = chargeSpeed * (IsUpgradeUnlocked("PR-TG01")
+            ? GetCardParameter("MovementSpeedMultiplier", 1.15f)
+            : 1f);
+
 
         float moved = 0f;
         owner.IsAbilityFacingLocked = true;
         owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
         while (owner != null && moved < distance)
         {
-            float step = Mathf.Min(chargeSpeed * AbilityDeltaTime, distance - moved);
+            float step = Mathf.Min(effectiveChargeSpeed * AbilityDeltaTime, distance - moved);
             Vector3 next = owner.transform.position + direction * step;
             DamageEnemiesAlongPath(owner.transform.position, next, hitRadius, strikeDamage);
+            if (IsUpgradeUnlocked("PR-A03"))
+                CutIncomingProjectiles(next, direction, hitRadius);
+
             owner.transform.position = next;
             moved += step;
             yield return null;
@@ -138,16 +162,51 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         if (owner != null)
         {
             DamageEnemiesInSphere(owner.transform.position, landingRadius, strikeDamage);
+            if (IsUpgradeUnlocked("PR-A03"))
+                StartCoroutine(CutZoneRoutine(owner.transform.position + direction * landingRadius, direction));
             owner.IsAbilityFacingLocked = false;
         }
 
         CleanupDashVfx();
+
         CleanupChargeHoldVfx();
         EndActivationEffect();
         isDashing = false;
     }
 
+    private IEnumerator CutZoneRoutine(Vector3 center, Vector3 forward)
+    {
+        float endsAt = AbilityTime + 1f;
+        while (AbilityTime < endsAt)
+        {
+            CutIncomingProjectiles(center, forward, landingRadius);
+            yield return null;
+        }
+    }
+
+    private void CutIncomingProjectiles(Vector3 center, Vector3 forward, float radius)
+    {
+        Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Projectile projectile = hits[i].GetComponentInParent<Projectile>();
+            if (projectile == null || projectile.ownerEnemy == owner) continue;
+            Vector3 incoming = projectile.transform.forward;
+            incoming.y = 0f;
+            if (incoming.sqrMagnitude > 0.0001f && Vector3.Dot(incoming.normalized, forward) >= 0f) continue;
+            VfxPool.ReleaseOrDestroy(projectile.gameObject);
+        }
+    }
+
+    private void EnsureUpgrade(string effectId)
+    {
+        if (upgrades == null) upgrades = new System.Collections.Generic.List<UpgradeSlot>();
+        if (upgrades.Exists(slot => slot != null && string.Equals(slot.effectId, effectId, System.StringComparison.OrdinalIgnoreCase))) return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
+
     private void SpawnChargeHoldVfx()
+
     {
         if (chargeVfxInstance != null || chargeVfxPrefab == null || owner == null) return;
 

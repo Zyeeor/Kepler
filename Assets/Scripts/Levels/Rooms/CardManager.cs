@@ -35,6 +35,11 @@ public class CardManager : SceneSingleton<CardManager>
     [Header("Current Picks (read-only)")]
     public CardData[] currentPicks = new CardData[3];
 
+    /// <summary>
+    /// 卡牌解锁广播（Run Analytics 采集用）：UnlockEffect 成功后触发（含选卡与调试解锁）。
+    /// </summary>
+    public static event System.Action<CardData> OnEffectUnlocked;
+
     // Track which effects have been permanently unlocked this run（已取得的卡；本局不再出现——最新需求：所有卡都只会出现一次）
     private HashSet<string> unlockedEffects = new HashSet<string>();
     // Known Type Set（§2）：本 Run 已合法遭遇的 Sin 类型（Pride 起始即进入，其余按波次解锁表推导）
@@ -468,6 +473,19 @@ public class CardManager : SceneSingleton<CardManager>
     }
 
     /// <summary>
+    /// Debug：把指定槽位候选替换为卡库中任意一张卡（卡面浏览器用，想看哪张卡直接看哪张）。
+    /// 同步会话排除与 ChoicePicks（读档补弹候选一致）；不触发解锁（选择仍走 SelectCard）。
+    /// </summary>
+    public void DebugReplacePick(int slotIndex, CardData card)
+    {
+        if (card == null || currentPicks == null || slotIndex < 0 || slotIndex >= currentPicks.Length) return;
+        currentPicks[slotIndex] = card;
+        if (!string.IsNullOrEmpty(card.effectId)) shownThisSession.Add(card.effectId);
+        SyncChoicePicksToSession();
+        Debug.Log($"[CardManager] Debug 替换候选槽位 {slotIndex} → {card.cardName} ({card.effectId})");
+    }
+
+    /// <summary>
     /// Permanently unlock an effect for this run (same path as selecting a card).
     /// 所有卡都只会出现一次：取得后从池中剔除（EnumeratePool 排除）。
     /// </summary>
@@ -495,6 +513,7 @@ public class CardManager : SceneSingleton<CardManager>
             count++;
         }
         Debug.Log($"[CardManager] Unlock '{effectId}': {count} existing instances");
+        OnEffectUnlocked?.Invoke(data);   // Run Analytics：解锁广播（采集器统计 Card 投资）
     }
 
     /// <summary>Investment 累计（§6）：取得该 Sin 的 Monster-Type / Type Growth 卡时 +1。</summary>
@@ -576,25 +595,14 @@ public class CardManager : SceneSingleton<CardManager>
         Debug.Log($"[CardManager] UnlockOnAbility: added new slot '{runtimeEffectId}' for card '{effectId}' on {a.name}, upgrades count={a.upgrades.Count}");
     }
 
-    // Canonical CardIds are the public pool/save identifiers. These Pride/Sloth
-    // abilities still expose their original prefab upgrade IDs, so resolve only
-    // at the ability slot boundary while keeping CardLibrary canonical.
+    // Ability slots are stored with Canonical Card IDs. Keeping the value unchanged
+    // ensures save data, CardLibrary, prefabs, normal monsters, and Elite snapshots
+    // all resolve the same upgrade identifier.
     static string ResolveLegacyUpgradeId(string effectId)
     {
-        switch (effectId)
-        {
-            case "PR-A01": return "Pride02";
-            case "PR-A02": return "Pride.Pierce";
-            case "PR-A04": return "Pride01";
-            case "PR-M01": return "Pride.ChargeEmpowered";
-            case "PR-S01": return "Pride.BlinkCountPlusTwo";
-            case "PR-X01": return "Pride.BlinkSwordQi";
-            case "SL-A03": return "Sloth.Scatter";
-            case "SL-M01": return "Sloth.LandingMine";
-            case "SL-M02": return "Sloth.LandingBlast";
-            default: return effectId;
-        }
+        return effectId;
     }
+
 
     /// <summary>Check if an effect has been unlocked.</summary>
     public bool IsEffectUnlocked(string effectId)

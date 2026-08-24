@@ -41,6 +41,12 @@ public class RunSession : MonoBehaviour
     /// <summary>是否有进行中的对局（BeginNewRun/LoadFromSave 后 true，EndRun 后 false）。</summary>
     public bool HasActiveRun { get; private set; }
 
+    /// <summary>
+    /// 本局是否由主菜单"新游戏"开始（仅 BeginNewRun 置 true）。
+    /// 新人引导唯一合法触发入口：读档/直接 Play/重开路径均为 false，防止"其他形式进入对局"误触发引导。
+    /// </summary>
+    public bool StartedFromMainMenu { get; private set; }
+
     /// <summary>当前 Run 级流程阶段（整局状态链，总控）。</summary>
     public RunPhase CurrentPhase { get; private set; }
 
@@ -172,6 +178,9 @@ public class RunSession : MonoBehaviour
         WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
                                                     : (uint)UnityEngine.Random.Range(1, int.MaxValue);
         if (string.IsNullOrEmpty(RunId)) RunId = NewRunId(); // 直接 Play 路径也保证有 runId
+        StartedFromMainMenu = false; // 直接 Play/重开路径：不触发新人引导
+        // Run Analytics：直接 Play 也启动采集（幂等；主菜单新局路径由 BeginNewRun 负责）
+        RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Opening;
         Debug.Log($"[RunSession] 直接 Play 种子初始化：worldSeed={WorldSeed}（useFixedSeed={gm != null && gm.useFixedSeed}）。");
     }
@@ -200,7 +209,10 @@ public class RunSession : MonoBehaviour
         BossDefeated = false;
         HasActiveRun = true;
         RunId = NewRunId();
+        StartedFromMainMenu = true; // 主菜单"新游戏"：新人引导唯一合法触发入口
         SaveCoordinator.DeleteSave();
+        // Run Analytics：新局启动采集器并重置统计（常驻单例自动创建）
+        RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Opening; // 新局从开场开始（Opening 占位直通，见 RunFlow）
         Debug.Log($"[RunSession] 新对局开始：worldSeed={WorldSeed}");
     }
@@ -240,6 +252,7 @@ public class RunSession : MonoBehaviour
         // 读档延续同一 runId（老档/缺失字段时补生成，保证精英快照 upsert 键可用）
         RunId = !string.IsNullOrEmpty(data.runId) ? data.runId : NewRunId();
         HasActiveRun = true;
+        StartedFromMainMenu = false; // 读档路径：不触发新人引导（阶段直接为 Waves/Choice）
         // 读档不经过开场/教学：回到波次或选卡补弹（pendingChoice=true → Choice）
         CurrentPhase = PendingChoice ? RunPhase.Choice : RunPhase.Waves;
         Debug.Log($"[RunSession] 读档恢复对局：已完成波 {CompletedWaveIndex + 1}，worldSeed={WorldSeed}，解锁卡 {UnlockedEffects.Count} 张（阶段={CurrentPhase}）。");
@@ -326,7 +339,11 @@ public class RunSession : MonoBehaviour
     /// </summary>
     public void EndRun()
     {
+        // Run Analytics：中途结束（返回主菜单/重开/直接 Play 退出）时兜底结算未终结的对局
+        if (RunStatsCollector.Instance != null)
+            RunStatsCollector.Instance.EndRunEarly();
         HasActiveRun = false;
+        StartedFromMainMenu = false;
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
         CompletedWaveIndex = -1;
         UnlockedEffects.Clear();

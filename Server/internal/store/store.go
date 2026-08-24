@@ -143,6 +143,9 @@ func (s *SQLiteStore) migrate() error {
 	// 精英怪 BD 快照表（他人 BD 怪物投放候选库，见 elite.go）
 	stmts = append(stmts, snapshotMigrateStmts...)
 
+	// 精英怪战果回传聚合表（策划案 §6.5，见 elite.go）
+	stmts = append(stmts, eliteStatsMigrateStmts...)
+
 	for _, stmt := range stmts {
 		if _, err := s.db.Exec(stmt); err != nil {
 			return fmt.Errorf("migrate: %w", err)

@@ -26,6 +26,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("固定种子值（仅 useFixedSeed=true 时生效）。")]
     public uint fixedSeed = 12345;
 
+    [Header("Tutorial（新人引导）")]
+    [Tooltip("强制开启新人引导：开启后无论进入对局路径（直接 Play/读档/重开）与教学总开关如何，本局都触发新人引导（调试用）。")]
+    public bool forceTutorial = false;
+
     [Header("Flow（流程）")]
     [Tooltip("正式流程开关：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；同时屏蔽调试显示（F2 面板/作弊提示/刷怪面板）。关闭则直接进入当前场景（调试模式）。")]
     public bool useFormalFlow = false;
@@ -44,6 +48,9 @@ public class GameManager : MonoBehaviour
     
     /// <summary>正式流程（屏蔽调试显示/先进主菜单）。供调试组件查询：调试组件在 Update/OnGUI 开头检查并跳过。</summary>
     public static bool IsFormalFlow => Instance != null && Instance.useFormalFlow;
+
+    /// <summary>强制开启新人引导（GameManager 调试开关，供 TutorialController 准入判定查询）。</summary>
+    public static bool ForceTutorial => Instance != null && Instance.forceTutorial;
 
     /// <summary>
     /// 游戏状态变更事件（Kimi 评审断环：GameManager 不再直接调用各系统，改为广播；

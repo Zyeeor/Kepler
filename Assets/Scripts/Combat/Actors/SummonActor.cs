@@ -22,8 +22,11 @@ public class SummonActor : Enemy
     public GameObject deathExplosionVfx;
     public float deathExplosionVfxDuration = 1f;
     public float autoAttackInterval = 0.5f;
+    public bool pursueNearestEnemy;
+    public float pursuitAttackIntervalMultiplier = 1f;
 
     private float spawnedAt;
+
     private float nextAttackAt;
     private bool consumed;
     private bool diving;
@@ -75,7 +78,14 @@ public class SummonActor : Enemy
         SyncFaction();
     }
 
+    public void ConfigurePursuit(bool enabled, float attackIntervalMultiplier)
+    {
+        pursueNearestEnemy = enabled;
+        pursuitAttackIntervalMultiplier = Mathf.Max(0.05f, attackIntervalMultiplier);
+    }
+
     protected override void Update()
+
     {
         if (consumed) return;
         if (diving)
@@ -107,7 +117,20 @@ public class SummonActor : Enemy
         Transform follow = GetFollowTarget();
         if (follow == null) return;
 
+        Enemy pursued = pursueNearestEnemy ? FindNearestLegalEnemy() : null;
+        if (pursued != null)
+        {
+            Vector3 targetPos = pursued.transform.position + Vector3.up * followHeight;
+            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-followLerp * Time.deltaTime));
+            Vector3 toTarget = pursued.transform.position - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(toTarget.normalized, Vector3.up), Time.deltaTime * 10f);
+            return;
+        }
+
         Vector3 back = follow.forward;
+
         back.y = 0f;
         if (back.sqrMagnitude < 0.0001f) back = Vector3.back;
         back.Normalize();
@@ -169,10 +192,27 @@ public class SummonActor : Enemy
             entry.ability.Trigger();
             fired = true;
         }
-        if (fired) nextAttackAt = Time.time + Mathf.Max(0.05f, autoAttackInterval);
+        if (fired)
+            nextAttackAt = Time.time + Mathf.Max(0.05f, autoAttackInterval * pursuitAttackIntervalMultiplier);
+    }
+
+    private Enemy FindNearestLegalEnemy()
+    {
+        Enemy nearest = null;
+        float bestSqr = float.MaxValue;
+        foreach (Enemy candidate in EnemyRegistry.All)
+        {
+            if (candidate == null || !CanDamage(candidate)) continue;
+            float distanceSqr = (candidate.transform.position - transform.position).sqrMagnitude;
+            if (distanceSqr >= bestSqr) continue;
+            bestSqr = distanceSqr;
+            nearest = candidate;
+        }
+        return nearest;
     }
 
     private void SyncFaction()
+
     {
         MonsterActor monster = summoner as MonsterActor;
         isPossessed = monster != null && monster.isPossessed;

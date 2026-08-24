@@ -24,10 +24,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 21300000, guid: 0b70c6a9168b5b44ab3e56b7affbe8b1, type: 3}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 82f493acd6f38564bacb4b3cfdff59d4, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 13383d2e4d7249d4d92ffec83436ec9a,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u738B\u51A0\u52BF"
     effectId: PR-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -39,10 +40,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 7c672fc7b70c6d848b410ad0887e2819, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 1269b2f14d175164691069b8e47b6967,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u738B\u547D\u8FDC\u5F81"
     effectId: PR-A04
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -54,10 +56,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: cc6af5e051fafb844abe5137848d6081, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 30c5c5209a9cb1e418c88867208c98ab,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u738B\u5EA7\u4E4B\u6B65"
     effectId: PR-M01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -71,10 +74,11 @@ MonoBehaviour:
       value: 10
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 49b05e8719097b34e97620b467ab526b, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 6ff122357d32b7a4c94b5d6c0849fc61,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u5F81\u670D\u8005\u4E4B\u5F84"
     effectId: PR-X01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -86,10 +90,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: c57286152e23d054e8ec9086b7c06f8b, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: cdb65174015ff1d47af6d7442898dbe3,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u738B\u6743\u5DE1\u730E"
     effectId: PR-S01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -103,10 +108,11 @@ MonoBehaviour:
       value: 6
     category: 2
     monsterType: 1
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 6ff122357d32b7a4c94b5d6c0849fc61, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 1269b2f14d175164691069b8e47b6967,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u8FDF\u6765\u7684\u5730\u9E23"
     effectId: SL-M02
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
@@ -158,11 +164,11 @@ MonoBehaviour:
     description: "\u6362\u4F4D\u6210\u529F\u540E\uFF0C\u65E7 Anchor \u4F4D\u7F6E\u5EF6\u8FDF\u7206\u70B8\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
-    - Ability.Monster.Pride.SwordQi
+    - Ability.Monster.Lust.Anchor
     grantedEffectTags: []
     abilityParameters: []
     category: 2
-    monsterType: 1
+    monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: 0ca0ed9878d3e7b469916bf8d9c86453, type: 3}
     middlegroundSprite: {fileID: 21300000, guid: a035db9559bd5f2468b86775c96b32e0,
       type: 3}
@@ -274,7 +280,7 @@ MonoBehaviour:
   - cardName: "\u6B32\u6F6E\u4E0D\u606F"
     effectId: LU-TG01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: "\u79FB\u901F +15%\uFF1B\u4E09\u69FD CD \u00D70.70\u3002"
+    description: "\u79FB\u901F +15%\uFF1B\u4E09\u69FD CD \xD70.70\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Lust
@@ -525,10 +531,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: d50cd9f09c0cef449aa38fd7409bc95c, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: f23ee3c858549f94cb752489abc9fe2e,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u672B\u65E5\u9501\u94FE"
     effectId: WR-M02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -542,14 +549,16 @@ MonoBehaviour:
       value: 1.5
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: a09ec944f327d484b85cf4619c1c2e76, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u6B89\u8EAB\u52A0\u5195"
     effectId: WR-B01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
-    description: "\u7F3A\u5931\u8010\u4E45\u63D0\u9AD8\u4F24\u5BB3/\u8303\u56F4\u5E76\u7F29\u77EDAttack CD"
+    description: "\u7F3A\u5931\u8010\u4E45\u63D0\u9AD8\u4F24\u5BB3/\u8303\u56F4\u5E76\u7F29\u77EDAttack
+      CD"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Wrath.Slam
@@ -557,10 +566,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 179a994600bb6234096e3fdcbc0ca446, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: c90bcfa810b20584badd16aa659a5c0d,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: 5529e3a532452644a9c3f54557361376, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u4EE5\u8EAB\u4E3A\u85AA"
     effectId: WR-B02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -572,10 +582,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 66244c6db3772e34b87543d516da8f0a, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: d5ac8f6cc06e6a44ab4513f47e882df0,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: faa0e763fa483994bb96ea44cc5cdf54, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u98CE\u66B4\u9501\u94FE"
     effectId: WR-S01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -587,10 +598,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 782ea6a9b4d89b64ea2cc3ddc0dcd502, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u7EC8\u672B\u98D3\u98CE"
     effectId: WR-S03
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
@@ -602,10 +614,11 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 0}
-    middlegroundSprite: {fileID: 0}
-    backgroundSprite: {fileID: 0}
-    borderSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: bf6bd93e7fbe87241aaae07a1cd9bef3, type: 3}
+    middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
+      type: 3}
+    backgroundSprite: {fileID: 21300000, guid: db60b6b182cc27f4db2d25301e9e4e79, type: 3}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
   - cardName: "\u7FA4\u53E3\u5723\u5BB4"
     effectId: GL-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
@@ -715,6 +728,108 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 3
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u5F02\u7AEF\u5664\u58F0"
+    effectId: PR-A03
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u5251\u6C14\u4E0E\u7A81\u8FDB\u524D\u7AEF\u53EF\u5207\u65AD\u8FCE\u9762\u98DE\u884C\u653B\u51FB\uFF1B\u7A81\u8FDB\u7ED3\u675F\u540E\u524D\u65B9\u5207\u65AD\u533A\u4FDD\u75591\u79D2\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.Cut
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u738B\u6743\u75BE\u4EE4"
+    effectId: PR-TG01
+    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    description: "\u63D0\u9AD8\u50B2\u6162\u4F4D\u79FB\u63A8\u8FDB\u901F\u5EA6\u4E0E\u5251\u6C14\u5C55\u5F00\u3001\u5EF6\u4F38\u901F\u5EA6\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Pride.ExecutionSpeed
+    grantedEffectTags: []
+    abilityParameters:
+    - key: MovementSpeedMultiplier
+      value: 1.15
+    - key: AttackExpandSpeedMultiplier
+      value: 1.15
+    category: 3
+    monsterType: 1
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4F17\u4EC6\u9F50\u9E23"
+    effectId: SL-A04
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: "\u91CD\u70AE\u66FF\u6362\u4E3A\u56FA\u5B9A\u6247\u5F62\u591A\u53D1\uFF1B\u4F24\u5BB3\u5E73\u644A\u4E14\u6BCF\u679A\u6700\u4F4E3\u70B9\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.ChargeShot
+    grantedEffectTags: []
+    abilityParameters:
+    - key: FanProjectileCount
+      value: 3
+    - key: FanSpreadAngle
+      value: 24
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u5DE8\u50CF\u8DF5\u8E0F"
+    effectId: SL-A05
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: "\u8FBE\u5230\u6307\u5B9A\u70AE\u4F53\u6863\u4F4D\u540E\uFF0C\u6BCF\u53D1\u91CD\u70AE\u53EF\u538B\u788E\u4E00\u679A\u8F83\u5C0F\u7684\u8FCE\u9762\u98DE\u884C\u653B\u51FB\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.ChargeShot
+    grantedEffectTags: []
+    abilityParameters: []
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u6C89\u7720\u4F8D\u4ECE"
+    effectId: SL-S01
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: "\u7279\u6B8A\u6280\u80FD\u989D\u5916\u751F\u6210\u4E24\u53F0\u6728\u7075\uFF1B\u8D85\u8FC7\u540C\u6E90\u4E0A\u9650\u66FF\u6362\u6700\u65E7\u6728\u7075\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Drone
+    grantedEffectTags: []
+    abilityParameters:
+    - key: BonusDroneCount
+      value: 2
+    category: 2
+    monsterType: 2
+    foregroundSprite: {fileID: 0}
+    middlegroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 0}
+    borderSprite: {fileID: 0}
+  - cardName: "\u4F8D\u4ECE\u5723\u6B66"
+    effectId: SL-S03
+    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    description: "\u6728\u7075\u653B\u51FB\u66F4\u5FEB\uFF0C\u5E76\u6301\u7EED\u8FFD\u51FB\u6700\u8FD1\u7684\u5408\u6CD5\u654C\u4EBA\u3002"
+    abilityPrefab: {fileID: 0}
+    targetAbilityTags:
+    - Ability.Monster.Sloth.Drone
+    grantedEffectTags: []
+    abilityParameters:
+    - key: PursuitAttackIntervalMultiplier
+      value: 0.6
+    category: 2
+    monsterType: 2
     foregroundSprite: {fileID: 0}
     middlegroundSprite: {fileID: 0}
     backgroundSprite: {fileID: 0}

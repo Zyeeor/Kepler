@@ -676,7 +676,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 0
-  upgrades: []
+  upgrades:
+  - effectId: LU-S05
+    unlocked: 0
+  - effectId: LU-S06
+    unlocked: 0
+  - effectId: LU-TG01
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -688,7 +694,9 @@ MonoBehaviour:
   drawHitboxes: 0
   cooldown: 6
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Lust
+  - Ability.Monster.Lust.SoulPull
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -848,7 +856,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 0
-  upgrades: []
+  upgrades:
+  - effectId: LU-M05
+    unlocked: 0
+  - effectId: LU-A03
+    unlocked: 0
+  - effectId: LU-A04
+    unlocked: 0
+  - effectId: LU-TG01
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -860,7 +876,9 @@ MonoBehaviour:
   drawHitboxes: 0
   cooldown: 2
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Lust
+  - Ability.Monster.Lust.RoundTrip
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -986,7 +1004,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Ability
   type: 0
-  upgrades: []
+  upgrades:
+  - effectId: LU-M03
+    unlocked: 0
+  - effectId: LU-TG01
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -998,7 +1020,9 @@ MonoBehaviour:
   drawHitboxes: 0
   cooldown: 1
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Lust
+  - Ability.Monster.Lust.Anchor
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}

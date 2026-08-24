@@ -22,7 +22,16 @@ public class EnemyAbility_SlothDrone : EnemyAbility
     [Tooltip("Death explosion VFX lifetime before it is destroyed.")]
     public float deathBlastVfxDuration = 1f;
 
+    [Header("Canonical Sloth Cards")]
+    public int baseDroneCount = 1;
+    public int bonusDroneCount = 2;
+    public int maxActiveDrones = 3;
+    public float pursuitAttackIntervalMultiplier = 0.6f;
+
+    private readonly System.Collections.Generic.List<SummonActor> activeDrones = new System.Collections.Generic.List<SummonActor>();
+
     private void OnEnable()
+
     {
         type = AbilityType.Skill;
         abilityName = "木灵";
@@ -30,12 +39,16 @@ public class EnemyAbility_SlothDrone : EnemyAbility
         if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Sloth.Drone", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Sloth.Drone");
+        EnsureUpgrade("SL-S01");
+        EnsureUpgrade("SL-S03");
+
     }
 
     public override float GetHpCostMultiplier()
     {
-        return IsUpgradeUnlocked("Sloth.DroneEconomy") ? 0.5f : 1f;
+        return 1f;
     }
+
 
     protected override void OnTrigger()
     {
@@ -50,36 +63,61 @@ public class EnemyAbility_SlothDrone : EnemyAbility
             yield break;
         }
 
-        Vector3 start = owner.transform.position + Vector3.up * 1.2f;
-        Vector3 apex = start + Vector3.up * tossHeight;
-        GameObject go = Instantiate(dronePrefab, start, Quaternion.identity);
-        SummonActor summon = go.GetComponent<SummonActor>();
-        if (summon == null) summon = go.AddComponent<SummonActor>();
-
-        float life = droneLifetime;
-        if (IsUpgradeUnlocked("Sloth.DroneEconomy"))
-            life *= 1.1f;
-
-        summon.Bind(
-            owner,
-            life,
-            IsUpgradeUnlocked("Sloth.DroneDeathBlast"),
-            deathBlastDamage,
-            deathBlastTriggerDistance,
-            deathBlastRadius,
-            deathBlastDiveSpeed,
-            deathBlastVfx,
-            deathBlastVfxDuration);
-
-        float elapsed = 0f;
-        while (go != null && elapsed < tossDuration)
+        int spawnCount = baseDroneCount + (IsUpgradeUnlocked("SL-S01") ? bonusDroneCount : 0);
+        for (int i = 0; i < spawnCount; i++)
         {
-            elapsed += AbilityDeltaTime;
-            float t = Mathf.Clamp01(elapsed / tossDuration);
-            go.transform.position = Vector3.Lerp(start, apex, t);
-            yield return null;
+            PruneDrones();
+            while (activeDrones.Count >= Mathf.Max(1, maxActiveDrones))
+            {
+                SummonActor oldest = activeDrones[0];
+                activeDrones.RemoveAt(0);
+                if (oldest != null) Destroy(oldest.gameObject);
+            }
+
+            Vector3 start = owner.transform.position + Vector3.up * 1.2f;
+            Vector3 apex = start + Vector3.up * tossHeight;
+            GameObject go = Instantiate(dronePrefab, start, Quaternion.identity);
+            SummonActor summon = go.GetComponent<SummonActor>();
+            if (summon == null) summon = go.AddComponent<SummonActor>();
+            summon.Bind(owner, droneLifetime, false, deathBlastDamage, deathBlastTriggerDistance, deathBlastRadius, deathBlastDiveSpeed, deathBlastVfx, deathBlastVfxDuration);
+            summon.ConfigurePursuit(
+                IsUpgradeUnlocked("SL-S03"),
+                IsUpgradeUnlocked("SL-S03")
+                    ? GetCardParameter("PursuitAttackIntervalMultiplier", pursuitAttackIntervalMultiplier)
+                    : 1f);
+
+            activeDrones.Add(summon);
+            StartCoroutine(TossDrone(go, start, apex));
         }
+
+        yield return null;
+
 
         EndActivationEffect();
     }
+
+    private IEnumerator TossDrone(GameObject drone, Vector3 start, Vector3 apex)
+    {
+        float elapsed = 0f;
+        while (drone != null && elapsed < tossDuration)
+        {
+            elapsed += AbilityDeltaTime;
+            drone.transform.position = Vector3.Lerp(start, apex, Mathf.Clamp01(elapsed / tossDuration));
+            yield return null;
+        }
+    }
+
+    private void PruneDrones()
+    {
+        for (int i = activeDrones.Count - 1; i >= 0; i--)
+            if (activeDrones[i] == null) activeDrones.RemoveAt(i);
+    }
+
+    private void EnsureUpgrade(string effectId)
+    {
+        if (upgrades == null) upgrades = new System.Collections.Generic.List<UpgradeSlot>();
+        if (upgrades.Exists(slot => slot != null && string.Equals(slot.effectId, effectId, System.StringComparison.OrdinalIgnoreCase))) return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
 }
+

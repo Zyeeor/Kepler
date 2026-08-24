@@ -27,9 +27,10 @@ Material:
     m_Floats:
     - _Dark_intensity: 0.554
     - _Darksoft: 0.426
-    - _Highlight_range: -0.838
-    - _OutlineWidth: 0
+    - _Highlight_range: -0.858
+    - _Highlight_soft: 0.64
+    - _OutlineWidth: 0.01
     m_Colors:
     - _MainColor: {r: 1.4980394, g: 0.87306076, b: 0.7678628, a: 1}
-    - _Outline_color: {r: 1, g: 0.95283014, b: 0.95283014, a: 1}
+    - _Outline_color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 1}
   m_BuildTextureStacks: []

@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<!--
+  Possession — Monster BD Builder（怪物构筑器 / BD 快照本地生成）
+
+  ── 设计真源（Design Authority，唯一）──
+  卡牌：.vibe/doc/Canonical/Content/Card_System_Current_Truth_v1.1.md §7（65 张，逐卡 12 字段原文）
+  牌池：同上 §1（基础通用 9 / 全局槽位质变 7 / 傲慢 8 / 怠惰 7 / 暴食 7 / 嫉妒 6 / 愤怒 6 / 贪婪 8 / 色欲 7）
+  作用域：同上 §2.5；选卡时点：§2.6；类型成长：§3；全局槽位：§4
+  怪物：.vibe/doc/Canonical/02_CONTENT_CANONICAL.md §2 Roster / §3 21 个基础技能
+
+  ── 输出格式（Wire Contract）──
+  Server/docs/api-guide.md §4.1 POST /api/bd-snapshots 的请求体结构
+  Assets/Scripts/Systems/Elite/EliteNetClient.cs：UploadSnapshotsReq / SnapshotEntry / BdCardEntry
+  Assets/Scripts/Systems/Elite/EliteBuildDirector.cs BuildSnapshots()：
+      bdData 只含 MonsterType / TypeGrowth 卡；stack 恒 1；bdCount = bdData.length
+  sin 编码：EliteMonsterCatalog.WireName(SinType) —— 小写枚举名
+  monsterType：EliteMonsterCatalog.Entry.displayName —— 透传字段
+  上传：POST {serverUrl}/api/user-bd（server.go handleUserBDUpload）——
+  严格校验（elite.go validateUserBD）通过后存文件到 userBD/{playerId}/bd-{runId}.json
+  并实时进入投放候选池；内容重复不入库（返回 duplicates 计数）；数据有误返回 400；
+  服务器不可达提示离线。服务器重启时 ImportUserBD 遍历顶层与 {playerId} 子目录，
+  按内容指纹（sin + 排序 cardId 集合）去重加载。
+
+  本工具只在本地生成文件，不发起任何网络请求。
+  Repository 实现事实（如 Assets/Configs/CardLibrary.asset 的 effectId 现状）按 Canonical Authority Order
+  排在设计真源之后，故不参与本工具的卡牌内容与 ID 判定。
+
+  单文件无依赖，直接用浏览器打开。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Possession · 怪物构筑</title>
+<style>
+  :root{
+    --bg:#08090d; --bg2:#0e1015;
+    --panel:#14161d; --panel2:#1a1d26; --panel3:#20242f;
+    --line:#262a35; --line2:#333947;
+    --txt:#eceef3; --txt2:#a2abbb; --txt3:#6e7686;
+    --gold:#d0a850; --gold2:#f0d18a;
+    --ok:#5cb37e; --bad:#d05e5a;
+    --sin:#d0a850;            /* 当前罪孽主色，由 JS 注入 */
+    --sinSoft:rgba(208,168,80,.14);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 520px at 12% -8%, rgba(255,255,255,.05), transparent 70%),
+      radial-gradient(760px 460px at 92% 0%, var(--sinSoft), transparent 72%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--txt);
+    font:15px/1.6 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    transition:background .5s;
+  }
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+  input,textarea{font:inherit;color:inherit}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:.9em}
+  .grow{flex:1}
+
+  /* ══ 顶栏 ══ */
+  header{
+    position:sticky;top:0;z-index:60;
+    padding:0 24px;height:60px;display:flex;align-items:center;gap:20px;
+    background:rgba(10,11,15,.82);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .logo{font-size:16px;font-weight:700;letter-spacing:.16em}
+  .logo b{color:var(--gold)}
+  .steps{display:flex;align-items:center;gap:4px}
+  .step{
+    display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:22px;
+    color:var(--txt3);font-size:13.5px;transition:.2s;
+  }
+  .step:hover{color:var(--txt2)}
+  .step.on{background:var(--panel3);color:var(--txt)}
+  .step i{
+    width:21px;height:21px;border-radius:50%;display:grid;place-items:center;
+    font-size:11.5px;font-weight:700;font-style:normal;
+    background:var(--line2);color:var(--txt2);
+  }
+  .step.on i{background:var(--sin);color:#0a0b0f}
+  .step.done i{background:var(--ok);color:#0a0b0f}
+  .sep{width:14px;height:1px;background:var(--line2)}
+  .icon{
+    width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+    color:var(--txt2);font-size:14px;transition:.15s;
+  }
+  .icon:hover{background:var(--panel3);color:var(--txt)}
+  .icon.on{background:var(--sin);color:#0a0b0f}
+
+  .wrap{max-width:1340px;margin:0 auto;padding:26px 24px 90px}
+  .stage{display:none}
+  .stage.on{display:block;animation:in .32s ease}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .lead{margin:0 0 22px}
+  .lead h2{margin:0 0 5px;font-size:25px;font-weight:650;letter-spacing:.01em}
+  .lead p{margin:0;color:var(--txt3);font-size:13.5px}
+
+  /* ══ Step1：罪孽选择 ══ */
+  .sins{display:grid;grid-template-columns:repeat(auto-fill,minmax(216px,1fr));gap:14px}
+  .sinCard{
+    position:relative;text-align:left;padding:20px 18px 17px;border-radius:15px;
+    background:linear-gradient(165deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);overflow:hidden;transition:.2s;
+  }
+  .sinCard::before{
+    content:"";position:absolute;inset:0;opacity:.1;transition:.25s;
+    background:radial-gradient(340px 190px at 84% -12%,var(--c),transparent 70%);
+  }
+  .sinCard:hover{transform:translateY(-4px);border-color:var(--c);box-shadow:0 14px 34px -14px rgba(0,0,0,.8)}
+  .sinCard:hover::before{opacity:.3}
+  .sinCard.on{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 16px 40px -16px var(--c)}
+  .sinCard.on::before{opacity:.36}
+  .sinCard .gly{
+    width:50px;height:50px;border-radius:13px;display:grid;place-items:center;
+    font-size:24px;font-weight:700;color:#0a0b0f;background:var(--c);
+    box-shadow:0 6px 20px -7px var(--c);position:relative;
+  }
+  .sinCard h3{margin:14px 0 3px;font-size:17.5px;font-weight:650;position:relative}
+  .sinCard .rl{color:var(--txt3);font-size:12.5px;position:relative}
+  .sinCard .gm{
+    display:inline-block;margin-top:12px;padding:2px 10px;border-radius:12px;
+    font-size:11.5px;background:rgba(255,255,255,.06);color:var(--txt2);position:relative;
+  }
+  .sinCard .pill{
+    position:absolute;top:16px;right:16px;min-width:26px;height:26px;padding:0 8px;
+    border-radius:13px;display:grid;place-items:center;font-size:12.5px;font-weight:700;
+    background:var(--c);color:#0a0b0f;
+  }
+
+  /* ══ Step2：三槽 + 卡池 ══ */
+  .hero{
+    display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:16px 20px;
+    border-radius:14px;background:linear-gradient(100deg,var(--sinSoft),transparent 60%);
+    border:1px solid var(--line);
+  }
+  .hero .gly{
+    width:46px;height:46px;flex:none;border-radius:12px;display:grid;place-items:center;
+    font-size:22px;font-weight:700;color:#0a0b0f;background:var(--sin);
+  }
+  .hero h3{margin:0;font-size:19px;font-weight:650}
+  .hero p{margin:2px 0 0;color:var(--txt3);font-size:12.5px}
+  .hero .cta{
+    padding:9px 18px;border-radius:10px;background:var(--panel3);
+    border:1px solid var(--line2);font-size:13.5px;font-weight:600;
+  }
+  .hero .cta:hover{border-color:var(--sin);color:var(--gold2)}
+
+  .lanes{display:grid;gap:16px}
+  .lane{border:1px solid var(--line);border-radius:15px;background:var(--panel);overflow:hidden}
+  .laneHd{display:flex;align-items:center;gap:13px;padding:15px 18px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .laneHd .sg{
+    width:32px;height:32px;flex:none;border-radius:9px;display:grid;place-items:center;
+    font-size:15px;font-weight:700;color:#0a0b0f;
+  }
+  .laneHd .t{flex:1;min-width:0}
+  .laneHd .t b{display:block;font-size:15.5px;font-weight:650}
+  .laneHd .t span{display:block;color:var(--txt3);font-size:12px;margin-top:1px}
+  .laneHd .n{
+    flex:none;font-size:12.5px;color:var(--txt3);padding:3px 11px;
+    border-radius:12px;background:var(--panel3);
+  }
+  .laneHd .n.hot{background:var(--sin);color:#0a0b0f;font-weight:700}
+  .base{
+    padding:12px 18px;font-size:12.5px;color:var(--txt2);
+    background:rgba(255,255,255,.017);border-bottom:1px solid var(--line);
+  }
+  .base b{color:var(--gold2);font-weight:600}
+
+  /* ══ 卡面 ══ */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(214px,1fr));gap:13px;padding:16px 18px}
+  .cd{
+    position:relative;text-align:left;border-radius:13px;overflow:hidden;
+    background:linear-gradient(178deg,var(--panel2) 0%,var(--panel) 100%);
+    border:1px solid var(--line2);
+    transition:transform .17s cubic-bezier(.2,.7,.3,1),box-shadow .17s,border-color .17s;
+    display:flex;flex-direction:column;min-height:212px;
+  }
+  .cd::before{
+    content:"";position:absolute;inset:0;opacity:0;transition:opacity .2s;pointer-events:none;
+    background:radial-gradient(280px 150px at 50% -20%,var(--c),transparent 70%);
+  }
+  .cd:hover{transform:translateY(-5px);border-color:var(--c);box-shadow:0 16px 32px -16px rgba(0,0,0,.85)}
+  .cd:hover::before{opacity:.2}
+  .cd.on{
+    border-color:var(--c);
+    box-shadow:0 0 0 2px var(--c),0 16px 36px -18px var(--c);
+    background:linear-gradient(178deg,var(--panel3) 0%,var(--panel2) 100%);
+  }
+  .cd.on::before{opacity:.26}
+  .cdTop{display:flex;align-items:center;gap:8px;padding:11px 12px 0;position:relative}
+  .cdTop .sg{
+    width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;
+    font-size:12px;font-weight:700;color:#0a0b0f;background:var(--c);
+  }
+  .cdTop .cid{
+    font:600 10.5px/1 ui-monospace,Consolas,monospace;color:var(--txt3);letter-spacing:.05em;
+  }
+  .cdTop .tick{
+    margin-left:auto;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+    font-size:12px;font-weight:700;border:1.5px solid var(--line2);color:transparent;transition:.18s;
+  }
+  .cd.on .cdTop .tick{background:var(--c);border-color:var(--c);color:#0a0b0f}
+  .cd h4{margin:9px 12px 0;font-size:15.5px;font-weight:650;line-height:1.35;position:relative}
+  .cd .eff{margin:6px 12px 0;font-size:12.5px;color:var(--txt2);line-height:1.55;position:relative;flex:1}
+  .cd .eff code{color:var(--gold2);background:rgba(255,255,255,.05);padding:0 4px;border-radius:3px}
+  .cd .foot{
+    margin-top:10px;padding:8px 12px;border-top:1px solid var(--line);
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:relative;
+    background:rgba(0,0,0,.18);
+  }
+  .cd .foot .mk{font-size:11px;color:var(--txt3)}
+  .badge{
+    font-size:10px;padding:2px 7px;border-radius:11px;font-weight:600;letter-spacing:.02em;
+    background:rgba(255,255,255,.07);color:var(--txt2);
+  }
+  .badge.tg{background:rgba(208,168,80,.2);color:var(--gold2)}
+  .more{
+    margin:0 12px 10px;font-size:11.5px;color:var(--txt3);line-height:1.5;position:relative;
+    border-top:1px dashed var(--line2);padding-top:7px;
+  }
+  .more div{margin-top:3px}
+  .more i{color:var(--txt3);font-style:normal;opacity:.7}
+
+  /* ══ Step3 ══ */
+  .sum{display:grid;grid-template-columns:minmax(0,1fr) 344px;gap:18px;align-items:start}
+  @media (max-width:1000px){ .sum{grid-template-columns:1fr} }
+  .box{border:1px solid var(--line);border-radius:15px;background:var(--panel);overflow:hidden}
+  .box > h3{
+    margin:0;padding:14px 18px;font-size:14px;font-weight:650;
+    background:var(--panel2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;
+  }
+  .box .in{padding:16px 18px}
+  .sumSin{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .sumSin:last-child{border-bottom:0}
+  .sumSin .h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .sumSin .h .sg{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center;font-size:14px;font-weight:700;color:#0a0b0f}
+  .sumSin .h b{font-size:15px;font-weight:650}
+  .sumSin .h span{color:var(--txt3);font-size:12px}
+  .chipRow{display:flex;flex-wrap:wrap;gap:7px}
+  .cchip{
+    display:inline-flex;align-items:center;gap:7px;padding:5px 8px 5px 11px;border-radius:19px;
+    background:var(--panel3);border:1px solid var(--line2);font-size:12.5px;
+  }
+  .cchip em{font-style:normal;color:var(--txt3);font-size:10.5px;font-family:ui-monospace,Consolas,monospace}
+  .cchip button{width:17px;height:17px;border-radius:50%;color:var(--txt3);font-size:13px;line-height:1;display:grid;place-items:center}
+  .cchip button:hover{background:var(--bad);color:#fff}
+
+  .big{
+    width:100%;padding:13px;border-radius:11px;font-size:14.5px;font-weight:700;
+    background:linear-gradient(180deg,var(--gold2),var(--gold));color:#15110a;
+    box-shadow:0 8px 22px -10px var(--gold);
+  }
+  .big:hover{filter:brightness(1.07)}
+  .ghost{
+    width:100%;padding:11px;border-radius:11px;font-size:13.5px;
+    background:var(--panel3);border:1px solid var(--line2);color:var(--txt2);
+  }
+  .ghost:hover{border-color:var(--sin);color:var(--txt)}
+  .kv{display:grid;grid-template-columns:88px 1fr;gap:9px;align-items:center;font-size:13px}
+  .kv label{color:var(--txt3)}
+  .kv input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:7px 10px}
+  .kv input:focus{outline:none;border-color:var(--sin)}
+  textarea{
+    width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;
+    padding:11px;font:11.5px/1.55 ui-monospace,Consolas,monospace;resize:vertical;
+  }
+  textarea:focus{outline:none;border-color:var(--sin)}
+  details summary{cursor:pointer;color:var(--txt3);font-size:12.5px;padding:4px 0}
+  details summary:hover{color:var(--txt2)}
+  .hint{font-size:11.5px;color:var(--txt3);line-height:1.65;margin:10px 0 0}
+  .empty{padding:34px 18px;text-align:center;color:var(--txt3);font-size:13.5px}
+  .empty .em{display:block;font-size:30px;margin-bottom:9px;opacity:.4}
+
+  /* ══ 底栏 ══ */
+  .bottom{
+    position:fixed;left:0;right:0;bottom:0;z-index:70;height:62px;
+    background:rgba(10,11,15,.9);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    display:flex;align-items:center;gap:16px;padding:0 24px;
+  }
+  .bottom .quota{display:flex;align-items:center;gap:11px}
+  .dots{display:flex;gap:5px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line2);transition:.2s}
+  .dot.f{background:var(--sin);box-shadow:0 0 8px -1px var(--sin)}
+  .dot.o{background:var(--bad)}
+  .qt{font-size:12.5px;color:var(--txt3)}
+  .qt b{color:var(--txt);font-weight:650}
+  .qt.over b{color:var(--bad)}
+  .nav{display:flex;gap:9px;margin-left:auto}
+  .nav button{padding:9px 20px;border-radius:10px;font-size:13.5px;font-weight:600}
+  .nav .b1{background:var(--panel3);border:1px solid var(--line2);color:var(--txt2)}
+  .nav .b1:hover{border-color:var(--sin);color:var(--txt)}
+  .nav .b2{background:var(--sin);color:#0a0b0f}
+  .nav .b2:hover{filter:brightness(1.1)}
+  .nav button:disabled{opacity:.35;cursor:not-allowed}
+  .nav button:disabled:hover{filter:none;border-color:var(--line2);color:var(--txt2)}
+
+  /* ══ Toast ══ */
+  #msg{
+    position:fixed;left:50%;bottom:80px;transform:translate(-50%,16px);z-index:90;
+    max-width:640px;padding:12px 20px;border-radius:11px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:.25s;box-shadow:0 12px 34px -12px rgba(0,0,0,.9);
+  }
+  #msg.on{opacity:1;transform:translate(-50%,0)}
+  #msg.ok{background:#1a3527;color:#a8e5c1;border:1px solid #2d5b3f}
+  #msg.err{background:#37191a;color:#f0b5b3;border:1px solid #5e2a2c}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">POSSESSION<b>·</b>构筑</div>
+  <nav class="steps" id="steps">
+    <button class="step on" data-go="1"><i>1</i>选择躯体</button>
+    <span class="sep"></span>
+    <button class="step" data-go="2"><i>2</i>装配卡牌</button>
+    <span class="sep"></span>
+    <button class="step" data-go="3"><i>3</i>保存构筑</button>
+  </nav>
+  <span class="grow"></span>
+  <button class="icon" id="lineToggle" title="切换卡面文案：明线（神话）/ 暗线（系统）">◐</button>
+  <button class="icon" id="fieldToggle" title="显示卡牌完整设定（机制细则、暗线文案、来源）">☰</button>
+  <button class="icon" id="resetAll" title="清空全部已选卡牌">⟲</button>
+</header>
+
+<div class="wrap">
+
+  <!-- ══════ Step 1 ══════ -->
+  <section class="stage on" id="s1">
+    <div class="lead">
+      <h2>你想构筑哪一具躯体？</h2>
+      <p>七宗罪各有独立的三槽技能与专属卡池。可以逐个构筑，最终一并保存。</p>
+    </div>
+    <div class="sins" id="sins"></div>
+  </section>
+
+  <!-- ══════ Step 2 ══════ -->
+  <section class="stage" id="s2">
+    <div class="hero" id="hero"></div>
+    <div class="lanes" id="lanes"></div>
+  </section>
+
+  <!-- ══════ Step 3 ══════ -->
+  <section class="stage" id="s3">
+    <div class="lead">
+      <h2>构筑总览</h2>
+      <p>确认无误后保存到本地。文件可直接用于游戏内的精英怪投放数据。</p>
+    </div>
+    <div class="sum">
+      <div>
+        <div class="box" style="margin-bottom:16px">
+          <h3>躯体构筑<span class="grow"></span><span style="color:var(--txt3);font-weight:400;font-size:12.5px" id="sumMeta"></span></h3>
+          <div id="sumList"></div>
+        </div>
+        <div class="box">
+          <h3>全局卡牌<span class="grow"></span><span style="color:var(--txt3);font-weight:400;font-size:12.5px">作用于本局全部躯体</span></h3>
+          <div id="sumRun"></div>
+        </div>
+      </div>
+      <div>
+        <div class="box" style="margin-bottom:16px">
+          <h3>保存</h3>
+          <div class="in">
+            <div style="margin-bottom:9px">
+              <span style="font-size:12px;color:#9a8f7d">服务器地址</span><br>
+              <input id="serverUrl" spellcheck="false" style="width:100%;max-width:260px;box-sizing:border-box;margin-top:4px;padding:7px 10px;border-radius:8px;border:1px solid #4a4235;background:#231f18;color:#e8dcc4;font-size:13px" placeholder="http://127.0.0.1:8080">
+            </div>
+            <button class="big" id="btnUpload" style="margin-bottom:9px">上传构筑到服务器</button>
+            <button class="ghost" id="btnMd" style="margin-bottom:9px">导出可读清单（.md）</button>
+            <button class="ghost" id="btnCopy">复制到剪贴板</button>
+            <p class="hint">上传前请先启动服务器（默认 <code>http://127.0.0.1:8080</code>）。上传的构筑经服务器校验后保存到 <code>Server/data/userBD/{playerId}/</code> 并<b>实时进入精英怪候选池</b>；内容重复的构筑不会重复入库；数据有误会提示重新构筑；服务器未启动会提示不可达。</p>
+          </div>
+        </div>
+        <div class="box">
+          <h3>标识信息</h3>
+          <div class="in">
+            <div class="kv">
+              <label for="playerId">玩家 ID</label><input type="text" id="playerId">
+              <label for="runId">本局 ID</label><input type="text" id="runId">
+              <label for="sourceWave">波次</label><input type="number" id="sourceWave" value="8" min="1">
+              <label for="gameTime">用时(秒)</label><input type="number" id="gameTime" value="420" min="0">
+            </div>
+            <p class="hint">已自动生成，通常无需修改。</p>
+            <details style="margin-top:12px">
+              <summary>查看 / 编辑原始数据</summary>
+              <textarea id="out" rows="13" spellcheck="false" style="margin-top:10px"></textarea>
+              <button class="ghost" id="btnImport" style="margin-top:9px">从上方数据还原构筑</button>
+              <p class="hint">
+                字段对应 <code>POST /api/bd-snapshots</code>：<code>bdData</code> 只含各罪的专属卡与类型成长卡，
+                全局卡不入快照；<code>stack</code> 恒为 1。
+              </p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="bottom">
+  <div class="quota">
+    <div class="dots" id="dots"></div>
+    <span class="qt" id="qt"></span>
+  </div>
+  <div class="nav">
+    <button class="b1" id="btnPrev">上一步</button>
+    <button class="b2" id="btnNext">下一步</button>
+  </div>
+</div>
+
+<div id="msg"></div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════
+   MONSTERS — 02_CONTENT_CANONICAL.md §2 Roster + §3 21 个基础技能
+   sinEnum 对齐 CardData.cs 的 SinType；wire 对齐 EliteMonsterCatalog.WireName；
+   display 对齐 EliteMonsterCatalog.Entry.displayName（快照 monsterType 透传字段）。
+   ═══════════════════════════════════════════════════════════ */
+const MONSTERS = [
+  { key:"Pride", sinEnum:1, wire:"pride", display:"傲慢-终刃绝影", sig:"傲", color:"#c8a04a",
+    grammar:"宣称 / 压制", role:"高机动刺客",
+    slots:[
+      ["Movement — 一刀斩突进","高速向输入方向突进，并以刀锋前端斩击；基础不清弹，Enemy 必须有方向前兆。Playable Baseline：Reload 2–5 / hp cost 5–25 / damage 20。"],
+      ["Attack — 剑气","短程实体飞行斩击，玩家自由瞄准，Enemy 有挥刀前摇；基础不与飞行攻击对冲，可被 Greed Guard 吸收。Playable Baseline：Reload 1 / hp cost 5 / damage 20。"],
+      ["Special — 穿梭斩","一次合法施放进行 4 段高速穿梭，每段 0.25 秒；无合法目标不启动，目标少时可重复命中，穿梭瞬间可不可选中，结束后有恢复窗口。Playable Baseline：Reload 1.5 / hp cost 20 / damage 10 per blink。"]
+    ]},
+  { key:"Sloth", sinEnum:2, wire:"sloth", display:"怠惰-机械之灵", sig:"怠", color:"#7f8fa6",
+    grammar:"委托 / 延迟", role:"重炮 / 短寿命召唤",
+    slots:[
+      ["Movement — 弹射起跳","朝地面开炮后弹射起跳，有明显起跳前摇；腾空主要是表现，不获得地面攻击免疫。Playable Baseline：Reload 1 / hp cost 20 / damage 0。"],
+      ["Attack — 蓄力爆炸炮","按住蓄力，蓄力提高威胁、范围与伤害档；释放有明显后坐动画 / 反馈但不产生 Gameplay 位移；“重型”本身不自动压弹。Playable Baseline：Reload 0 / hp cost 5 / damage 2–100。"],
+      ["Special — 木灵","向天空投出短寿命自动攻击木灵；木灵跟随玩家、持续追击并攻击最近 Enemy 直到死亡；可被击毁、不可 Possess、不产 Corpse，换身后按自身寿命继续，达上限后新木灵替换最旧同源木灵。Playable Baseline：lifetime 4s / Reload 1 / hp cost 50 / damage 5 per attack / attack range 30。"]
+    ]},
+  { key:"Gluttony", sinEnum:3, wire:"gluttony", display:"暴食-魔猫", sig:"暴", color:"#b4653f",
+    grammar:"吞并 / 消耗", role:"捕食 / 短周期爆发",
+    slots:[
+      ["Movement — 小猫化","变为约 50% 体型的小猫，持续 3 秒；移动速度提高 100%、重量变轻，不改变受击层；再次使用 Movement 切换回魔猫形态，使用 Special 也会恢复魔猫形态；普通 Attack 默认解除小猫化，取得 GL-M01 后不解除。Playable Baseline：Reload 0 / hp cost 100 / damage 0。"],
+      ["Attack — 深渊巨口","基础在施放者脚下生成深渊巨口；施放时快照，0.5 秒后生成，不持续追踪；GL-A03 使施放者将诱饵抛向远处并在远端位置生成巨口。Enemy 与玩家版本均必须显示清晰地面危险区。Playable Baseline：Reload 2 / hp cost 10 / damage 20。"],
+      ["Special — 吞噬 / 复制 Skill Ability","魔猫形态下向前方约 1 米半径扇形作出巨大咬合，只命中最近的合法 Enemy；命中后获得 Overfed，下一次基础吞噬变为二次咬合并消费；复制该最近 Enemy 的 E / Skill Ability 临时替换暴食 E 槽，成功使用一次后失效并恢复吞噬；换身清除 Overfed 与未使用的复制 Skill Ability；基础不吞飞行攻击，GL-S03 为例外。Playable Baseline：Reload 1 / hp cost 50 / damage 40。"]
+    ]},
+  { key:"Envy", sinEnum:4, wire:"envy", display:"嫉妒-激光异形", sig:"嫉", color:"#4f9e8f",
+    grammar:"映照 / 夺取差异", role:"持续猎杀 / 延迟兑现",
+    slots:[
+      ["Movement — 飞行加速","飞起并获得 +200% 移动速度，持续 1 秒；可在维持激光时调角度 / 距离；不建立真实空中层，不基础无敌 / 清弹。Playable Baseline：Reload 0 / hp cost 20 / damage 0。"],
+      ["Attack — 激光 + Mark","玩家可直接鼠标瞄准，Enemy 锁当前玩家而非“最高 HP 目标”；激光命中目标时向该目标写入 Mark，每个 Mark 储存目标受到伤害的 20%；激光可被 Greed Guard 截断，被截断伤害不写入 Mark。Playable Baseline：Reload 0 / hp cost 10 per second / damage 2 per second。"],
+      ["Special — 雷暴兑现","将锁链雷电传导至所有带 Mark 的合法 Enemy；每个目标结算基础雷暴 + 自身 Mark 储存伤害并消费自身 Mark；没有合法带 Mark 目标时不启动、不收费、不进 Reload；Enemy 使用前必须预警。Playable Baseline：Reload 1 / hp cost 50 / damage 10 + stored Mark damage per target。"]
+    ]},
+  { key:"Wrath", sinEnum:5, wire:"wrath", display:"愤怒-链狱冥兽", sig:"怒", color:"#b8483f",
+    grammar:"冲突 / 反击", role:"低耐久狂战 / 聚怪",
+    slots:[
+      ["Movement — 钩索位移","将自己钩向前方合法地面 / 位移点；无合法点不启动；钩头不是 Attack Projectile；基础只负责位移，WR-M01 赋予路径伤害，WR-M02 提高合法抓取距离并使抵达落点后冲击周围地面。"],
+      ["Attack — 双拳砸地 + Burning","双拳砸地，对范围内敌人造成基础范围伤害；命中区域生成燃烧，燃烧每秒造成 5 点伤害、持续 3 秒；若砸地区域存在 Greed 普通黑油则点燃该黑油。满耐久时本身就必须好用。"],
+      ["Special — 暴怒锁链 / 龙卷风","用触角将范围内敌人吸入中心，形成持续 2 秒的龙卷风式牵引，每 0.5 秒结算一次伤害；轻 / 中 / 重产生不同牵引位移；不 Stun；被 Enemy Pull 的玩家仍保留移动与 Space 输入；WR-S01 使龙卷风期间获得 +300% 移动速度，WR-S03 使时长延长 2 秒。"]
+    ]},
+  { key:"Greed", sinEnum:6, wire:"greed", display:"贪婪-万手藏主", sig:"贪", color:"#9c8f3e",
+    grammar:"占有 / 累积", role:"囤积 / 防守反击",
+    slots:[
+      ["Movement — 铺黑油","向前方释放短寿命黑油；站在自身普通黑油上的玩家 / Possessed Greed 获得加速；明确火源可点燃黑油；GR-M01 扩大黑油路径长度与覆盖范围并使 Enemy 踏入时减速。Playable Baseline：Reload 0 / hp cost 10 / damage 0。"],
+      ["Attack — 念力魔手","每秒生成 1 只魔手，魔手环绕本体，基础库存上限 6；LMB 以 0.2 秒间隔依次释放所有库存魔手，一次释放总计消耗 20HP；无合法目标的魔手消失；魔手追踪最近的怪物并造成伤害，只有在与自己一定距离内的敌人才算合法目标；Possession 初始化获得少量魔手，0 库存时 Attack 不启动、不收费；已发射魔手跨 Body 继续。"],
+      ["Special — 大手 Guard / 吸收转化","大手保护身体，吸收所有伤害；基础持续 1 秒，期间不能移动也不能倾泻魔手；每 100 点实际吸收伤害转化 1 只魔手；空开也视为正常释放并收费 / 进入 Reload；GR-S01 改为每 60 点转化 1 只，GR-S04 使 Guard 持续 3 秒并可再次使用 Special 提前结束后立即进入 Reload。"]
+    ]},
+  { key:"Lust", sinEnum:7, wire:"lust", display:"色欲-灵念师", sig:"色", color:"#9a6bb5",
+    grammar:"牵引 / 绑定", role:"Anchor / Link 位置控制",
+    slots:[
+      ["Movement — 魅影换位 / Anchor","位移；起点留 Anchor；再次使用可换位；基础只维护一个主 Anchor，新 Anchor 替换旧 Anchor；Anchor 不可攻击 / 不被 Pull；有寿命；换身清除。"],
+      ["Attack — 迷情往返","雾状攻击去程 / 回程，两段可分别命中；命中施加 Link；Link 不无限叠层；基础不对冲普通飞行攻击。"],
+      ["Special — 诱引 / 牵魂","前置：有有效 Anchor 且至少一个合法 Linked 目标；前置失败则不启动、不收费、不进 Reload。成功时将 Linked 目标拉向 Anchor 并造成伤害，重量影响位移，不 Stun，消费 Anchor 和相关 Link。"]
+    ]},
+];
+
+/* ═══════════════════════════════════════════════════════════
+   CARDS — Card_System_Current_Truth_v1.1.md §7 全量 65 张，逐卡 12 字段原文
+     id   Card ID              n   明线名称           d   明线玩家可见描述
+     m    简短机制描述          cc  分类（Canonical）   cls 机制类别
+     dn   暗线名称             dd  暗线玩家可见描述     src 来源骨架
+   Stack Max 全池恒 1；明线 / 暗线叠层后文本恒为“—”（§25 叠层废除，字段保留供追溯）。
+     cat  → 导出用 CardCategory（CardData.cs）：BasicUniversal / GlobalSlot / MonsterType / TypeGrowth
+     slot → UI 归类，取自该卡「机制类别」：M / A / S / B / R(Mark) / TG / GX(全局质变)
+   Canonical 内的书写顺序即此处顺序。
+   ═══════════════════════════════════════════════════════════ */
+const CARDS = [
+  /* ── §7.1 基础通用｜9 张 ── */
+  {id:"UB-A01",n:"远击神谕",cat:"BasicUniversal",sin:null,slot:"A",cc:"基础通用",
+   d:"所有攻击都能触及更远的位置。",
+   m:"飞行攻击 / 激光 / 地面目标 / 近战分别映射。",
+   cls:"Attack合法作用距离",
+   dn:"攻击作用距离扩展",
+   dd:"按攻击原有形态提高合法作用距离。",
+   src:"Attack合法作用距离"},
+  {id:"UB-A02",n:"扩张圣域",cat:"BasicUniversal",sin:null,slot:"A",cc:"基础通用",
+   d:"所有攻击的覆盖范围扩大；原有形态不变。",
+   m:"不增加数量，不自动获得对消 / 切断。",
+   cls:"Attack外显覆盖尺寸",
+   dn:"攻击覆盖域扩容",
+   dd:"按攻击原有形态扩大斩面、飞行体、激光宽度或作用区域，不增加数量。",
+   src:"Attack外显覆盖尺寸"},
+  {id:"UB-A03",n:"先制祝祷",cat:"BasicUniversal",sin:null,slot:"A",cc:"基础通用",
+   d:"所有攻击的展开与延伸更快。",
+   m:"不改冷却、蓄力上限或最低前兆。",
+   cls:"Attack Active / 延伸速度",
+   dn:"攻击执行速率修正",
+   dd:"提高攻击生效阶段或延伸过程的执行速率，不改变冷却、蓄力上限或最低前兆。",
+   src:"Attack Active / 延伸速度"},
+  {id:"UB-B01",n:"朝圣者之步",cat:"BasicUniversal",sin:null,slot:"B",cc:"基础通用",
+   d:"所有普通躯体的基础移动速度提高。",
+   m:"所有普通躯体基础移动速度提高；不改技能前摇。",
+   cls:"Body基础移速",
+   dn:"载体基础移动参数增益",
+   dd:"所有合法载体的基础移动速度参数上调。",
+   src:"Body基础移速"},
+  {id:"UB-M01",n:"远征恩典",cat:"BasicUniversal",sin:null,slot:"M",cc:"基础通用",
+   d:"所有移动技能都能抵达更远的位置；原有形态不变。",
+   m:"按七只怪物各自的合法技能规格映射，不改变物理形态。",
+   cls:"Movement位移 / 作用距离",
+   dn:"移动作用距离扩展",
+   dd:"按各移动技能的合法规格扩展位移或作用距离，不改变原始形态。",
+   src:"Movement位移 / 作用距离"},
+  {id:"UB-M02",n:"疾行福音",cat:"BasicUniversal",sin:null,slot:"M",cc:"基础通用",
+   d:"所有移动技能的推进更迅捷；总距离不变。",
+   m:"不改总距离和敌人最低前兆。",
+   cls:"Movement Active推进速度",
+   dn:"移动执行速率修正",
+   dd:"提高移动技能生效阶段的推进速率，不增加总位移距离。",
+   src:"Movement Active推进速度"},
+  {id:"UB-S01",n:"远域祷文",cat:"BasicUniversal",sin:null,slot:"S",cc:"基础通用",
+   d:"所有特殊技能都能作用到更远的位置；原有前置仍然有效。",
+   m:"不绕过目标 / 锚点 / 资源前置。",
+   cls:"Special合法作用距离",
+   dn:"特殊技能作用距离扩展",
+   dd:"提高特殊技能的合法作用距离，不绕过目标、锚点或资源前置。",
+   src:"Special合法作用距离"},
+  {id:"UB-S02",n:"宏仪圣印",cat:"BasicUniversal",sin:null,slot:"S",cc:"基础通用",
+   d:"所有特殊技能的作用规模扩大；原有形态不变。",
+   m:"不凭空改变技能类型；防御仍不覆盖侧后方。",
+   cls:"Special外显效果规模",
+   dn:"特殊技能作用规模扩容",
+   dd:"扩大特殊技能的合法外显规模，不改变技能原有类型或防御方向。",
+   src:"Special外显效果规模"},
+  {id:"UB-S03",n:"不息祷文",cat:"BasicUniversal",sin:null,slot:"S",cc:"基础通用",
+   d:"拥有持续阶段的特殊技能维持更久；换身时仍按原规则结束。",
+   m:"仅作用有持续规格的特殊技能；依附躯体的状态换身仍结束。",
+   cls:"Special合法持续参数",
+   dn:"特殊技能持续参数延长",
+   dd:"仅延长具有持续阶段的特殊技能；依附躯体的状态仍在换身时结束。",
+   src:"Special合法持续参数"},
+
+  /* ── §7.2 全局槽位质变｜7 张 ── */
+  {id:"GX-MA01",n:"征途裁决",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"使用位移后，下一次普通攻击的作用范围显著扩大。",
+   m:"完成一次正常位移后，为下一次正常普通攻击提供一次外显覆盖尺寸增幅；重复位移只刷新待触发状态，不叠加。",
+   cls:"位移→普攻联动；Stack 1",
+   dn:"位移后攻击尺度增幅",
+   dd:"位移完成后，下一次正常普通攻击获得一次外显覆盖尺寸增幅；再次位移只刷新待触发状态。",
+   src:"Global Redesign｜Movement→Attack：下一次普攻范围扩大"},
+  {id:"GX-AS01",n:"血证大仪",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"使用普通攻击后，下一次特殊技能的作用范围显著扩大。",
+   m:"完成一次正常普通攻击后，为下一次正常特殊技能提供一次外显效果规模增幅；重复普通攻击只刷新待触发状态，不叠加。",
+   cls:"普攻→特殊联动；Stack 1",
+   dn:"攻击后特殊尺度增幅",
+   dd:"正常普通攻击完成后，下一次特殊技能获得一次外显效果规模增幅；再次普通攻击只刷新待触发状态。",
+   src:"Global Redesign｜Attack→Special：下一次Special范围扩大"},
+  {id:"GX-A01N",n:"双重宣判",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"普通攻击会紧接着额外释放一次。",
+   m:"每次正常普通攻击后，自动追加一次同源普通攻击执行；追加执行不视为新的普通攻击槽位使用，不再次触发其他槽位联动。",
+   cls:"普攻复执行质变；Stack 1",
+   dn:"攻击重复执行",
+   dd:"每次正常普通攻击后自动追加一次同源攻击执行；追加执行不生成新的普通攻击槽位触发事件。",
+   src:"Global Redesign｜Attack：额外释放一次"},
+  {id:"GX-MA02N",n:"无隙追猎",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"位移的主要效果完成后，可以立刻接普通攻击，取消位移后摇。",
+   m:"位移的主要有效阶段完成后，允许普通攻击取消剩余后摇并立即开始；不能提前取消核心位移过程。",
+   cls:"位移→普攻动作衔接；Stack 1",
+   dn:"位移→攻击恢复段取消",
+   dd:"位移的主要有效阶段结束后，普通攻击可以取消剩余后摇并立即开始；核心位移过程不可被提前跳过。",
+   src:"Global Redesign｜Movement→Attack：后摇取消"},
+  {id:"GX-AS02N",n:"裁决续礼",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"普通攻击的主要效果完成后，可以立刻接特殊技能，取消普攻后摇。",
+   m:"普通攻击的主要有效阶段完成后，允许特殊技能取消剩余后摇并立即开始；不能提前取消核心攻击过程。",
+   cls:"普攻→特殊动作衔接；Stack 1",
+   dn:"攻击→特殊恢复段取消",
+   dd:"普通攻击的主要有效阶段结束后，特殊技能可以取消剩余后摇并立即开始；核心攻击过程不可被提前跳过。",
+   src:"Global Redesign｜Attack→Special：后摇取消"},
+  {id:"GX-MR01",n:"命运折返",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"位移过程中，接触到的飞行攻击会被弹回。",
+   m:"位移有效阶段加入飞行攻击反射交互；接触到的飞行攻击被弹回。当前不设置单次数量上限，具体可反射对象范围后续测试。",
+   cls:"位移弹反质变；Stack 1",
+   dn:"位移反射交互",
+   dd:"位移有效阶段增加飞行攻击反射交互；当前不限制单次反射数量，具体可反射对象资格留待体验验证。",
+   src:"Global Redesign｜Movement：飞行攻击弹反"},
+  {id:"GX-AR01",n:"审判回返",cat:"GlobalSlot",sin:null,slot:"GX",cc:"全局槽位质变",
+   d:"普通攻击的有效攻击过程，会把接触到的飞行攻击弹回。",
+   m:"在普通攻击原有有效作用区域加入飞行攻击反射交互；不改变原攻击物理形态。当前不设置单次数量上限，具体可反射对象范围后续测试。",
+   cls:"普攻弹反质变；Stack 1",
+   dn:"攻击反射交互",
+   dd:"在普通攻击原有有效作用区域增加飞行攻击反射交互；不改变攻击物理形态，当前不限制单次反射数量。",
+   src:"Global Redesign｜Attack：飞行攻击弹反"},
+
+  /* ── §7.3 傲慢｜8 张 ── */
+  {id:"PR-A01",n:"王冠军势",cat:"MonsterType",sin:"Pride",slot:"A",cc:"傲慢",
+   d:"一次攻击会射出三道散开的剑气。",
+   m:"将单道剑气替换为三道扇形散射剑气；三道共享本次施放的实例预算与命中规则。",
+   cls:"Attack三道散射；Stack 1",
+   dn:"三实例扇形飞行斩击模板",
+   dd:"将一次Attack改写为三道固定扇形剑气；不增加单道伤害、不额外生成后续施放事件。",
+   src:"Owner Delta 2026-08-18｜三道剑气散射"},
+  {id:"PR-A02",n:"十字圣裁",cat:"MonsterType",sin:"Pride",slot:"A",cc:"傲慢",
+   d:"飞行斩击化为十字剑气。",
+   m:"将原剑气替换为十字斩面；共享一次命中与消费标识，按本次Attack的正常伤害结算。",
+   cls:"Attack十字剑气；Stack 1",
+   dn:"攻击十字斩面模板替换",
+   dd:"将原剑气替换为十字斩面；使用一次命中事件结算，不额外追加双重伤害或重复命中类效果。",
+   src:"Owner Delta 2026-08-18｜十字剑气"},
+  {id:"PR-A03",n:"异端噤声",cat:"MonsterType",sin:"Pride",slot:"A",cc:"傲慢",
+   d:"飞行斩击与突进前端的斩击，可以斩碎与其接触的迎面飞行攻击；突进结束后，前方切断区短暂保留1秒。",
+   m:"剑气与移动前端原生斩击可切断与其接触的合法迎面飞行攻击；突进结束后的前方切断区短暂保留1秒。不反射，不处理激光 / 地面范围攻击。",
+   cls:"Attack高阶Interaction；Stack 1",
+   dn:"小型迎面输出切断协议",
+   dd:"为剑气与突进前端斩击加入迎面飞行攻击切断交互；突进结束后前方切断区短暂保留1秒。激光与地面范围攻击不参与。",
+   src:"P-IN-01 切弹；Standalone"},
+  {id:"PR-A04",n:"王命远征",cat:"MonsterType",sin:"Pride",slot:"A",cc:"傲慢",
+   d:"剑气能够斩向更远处的敌人。",
+   m:"提高傲慢普通Attack剑气的合法作用距离；不增加数量、不改为穿透、不改变命中结算。",
+   cls:"Attack基础强化；Stack 1",
+   dn:"飞行斩击合法作用距离扩展",
+   dd:"提高`Sword Qi`最大合法攻击距离；不提高伤害、飞行数量、命中体积或切断资格。",
+   src:"Owner Delta 2026-08-18｜气刃变远程"},
+  {id:"PR-M01",n:"王座之步",cat:"MonsterType",sin:"Pride",slot:"M",cc:"傲慢",
+   d:"傲慢的突进更远，斩击也更强。",
+   m:"一刀斩突进距离提高50%，前端斩击伤害提高50%；不改变起手、受击层或技能形态。",
+   cls:"Movement距离 + 伤害强化；Stack 1",
+   dn:"高机动载体位移距离与前端伤害增益",
+   dd:"提高一刀斩合法突进距离与前端斩击伤害各50%；不额外改变取消、无敌或清弹资格。",
+   src:"Owner Delta 2026-08-18｜突进距离与伤害各+50%"},
+  {id:"PR-S01",n:"王权巡猎",cat:"MonsterType",sin:"Pride",slot:"S",cc:"傲慢",
+   d:"穿梭斩可以额外穿梭2次。",
+   m:"一次性增加2次合法穿梭；总演出时长仍受上限约束。",
+   cls:"Special数量质变；Stack 1",
+   dn:"多段穿梭次数扩展",
+   dd:"一次性提高2次合法穿梭次数；总演出时长仍受上限限制。",
+   src:"P-SP-01 穿梭次数；Standalone"},
+  {id:"PR-X01",n:"征服者之径",cat:"MonsterType",sin:"Pride",slot:"S",cc:"傲慢",
+   d:"穿梭时会沿着经过的方向附加气刃。",
+   m:"每段合法穿梭按穿梭方向追加一次路径气刃；不作用于Movement突进，且每段与每次施放均受实例上限约束。",
+   cls:"Special路径剑气；Stack 1",
+   dn:"穿梭方向路径攻击生成协议",
+   dd:"每段合法Special穿梭按实际移动方向生成一次线性气刃；不改写Movement，不生成新的槽位事件。",
+   src:"Owner Delta 2026-08-18｜穿梭方向附加气刃"},
+  {id:"PR-TG01",n:"王权疾令",cat:"TypeGrowth",sin:"Pride",slot:"TG",cc:"傲慢",
+   d:"傲慢的位移更迅捷，普通攻击的展开与延伸也更快。",
+   m:"同步提高傲慢位移技能的有效推进速度与普通攻击的展开 / 延伸速度；两个单轴的增幅均低于对应基础通用卡。",
+   cls:"类型成长；Stack 1",
+   dn:"傲慢执行速率统调",
+   dd:"同步提高傲慢位移技能推进速度与普通攻击展开 / 延伸速度；单轴强度低于对应基础通用卡。",
+   src:"Type Growth v1｜傲慢：位移执行速度 + 攻击执行速度"},
+
+  /* ── §7.4 怠惰｜7 张 ── */
+  {id:"SL-A03",n:"圣骸分裂",cat:"MonsterType",sin:"Sloth",slot:"A",cc:"怠惰",
+   d:"重炮爆炸会散出小炮弹；蓄力越久，散射越多。",
+   m:"重炮爆炸后生成扇形散射子弹；散射数量随本次蓄力时长增加，子弹不可再次分裂。",
+   cls:"Attack蓄力散射质变；Stack 1",
+   dn:"蓄力爆炸散射数量扩展协议",
+   dd:"按本次重炮蓄力时长决定爆炸后散射子弹数量；不生成递归分裂，不改变主炮的蓄力伤害档。",
+   src:"Owner Delta 2026-08-18｜蓄力越久散射越多"},
+  {id:"SL-A04",n:"众仆齐鸣",cat:"MonsterType",sin:"Sloth",slot:"A",cc:"怠惰",
+   d:"重炮改为一次向扇形方向发射多枚小炮弹。",
+   m:"起手将单发替换为同次施放的固定扇形多发；每枚小炮伤害为本次重炮伤害除以小炮数量，最低伤害为3；与`SL-A03`共享总实例上限。",
+   cls:"Attack扇形多发质变；Stack 1",
+   dn:"重炮扇形多发伤害分摊模板",
+   dd:"将单发重炮替换为固定扇形小炮；单枚伤害=本次重炮伤害÷小炮数量，最低为3，不生成额外施放事件。",
+   src:"Owner Delta 2026-08-18｜扇形小炮与最低伤害3"},
+  {id:"SL-A05",n:"巨像践踏",cat:"MonsterType",sin:"Sloth",slot:"A",cc:"怠惰",
+   d:"达到足够大的炮体后，重炮可以压碎一枚较小的迎面攻击并继续前进。",
+   m:"达指定外显炮体档位后，每发可压碎一枚更小飞行攻击并继续；不处理激光 / 范围攻击。",
+   cls:"Attack高阶Interaction；Stack 1",
+   dn:"大型飞行输出压制协议",
+   dd:"达到指定炮体档位后，每发重炮可消除一枚更小的迎面飞行攻击且自身继续存在；不处理激光或范围攻击。",
+   src:"S-IN-01 Heavy压制较小攻击；Standalone"},
+  {id:"SL-M01",n:"遗下的守望者",cat:"MonsterType",sin:"Sloth",slot:"M",cc:"怠惰",
+   d:"起跳前会在原地留下一个地雷。",
+   m:"合法起跳前在起点部署短寿命地雷；地雷的具体触发时机与伤害为Playable参数。",
+   cls:"Movement地雷部署；Stack 1",
+   dn:"起跳前地面爆炸装置部署",
+   dd:"Movement启动前在起点生成一次性地雷实例；不产生额外位移或施放事件。",
+   src:"Owner Delta 2026-08-18｜起飞前放置地雷"},
+  {id:"SL-M02",n:"迟来的地鸣",cat:"MonsterType",sin:"Sloth",slot:"M",cc:"怠惰",
+   d:"落地时会立刻炸裂周围地面。",
+   m:"合法落地后立即造成一次周围地面爆炸；未抵达合法落点不生成爆炸。",
+   cls:"Movement落地爆炸；Stack 1",
+   dn:"移动终点即时地面爆炸协议",
+   dd:"Movement成功抵达合法落点时立刻结算一次地面AoE；不部署延迟装置，不生成持续脉冲。",
+   src:"Owner Delta 2026-08-18｜落地直接爆炸"},
+  {id:"SL-S01",n:"沉眠侍从",cat:"MonsterType",sin:"Sloth",slot:"S",cc:"怠惰",
+   d:"特殊技能会额外召来两台木灵。",
+   m:"额外生成两台木灵；超全局上限替换最旧同源木灵。具体数量 `TUNABLE / PLAYABLE`。",
+   cls:"Special数量强化；Stack 1",
+   dn:"无人执行单元数量扩展",
+   dd:"额外生成两台木灵；超过全局上限时替换最旧的同源木灵。",
+   src:"S-SP-01 多Drone；Standalone"},
+  {id:"SL-S03",n:"侍从圣武",cat:"MonsterType",sin:"Sloth",slot:"S",cc:"怠惰",
+   d:"木灵攻击更快，并会持续追击最近的敌人。",
+   m:"提高木灵攻击节奏；木灵持续追击并攻击最近合法Enemy，直到自身死亡。",
+   cls:"Special追击与攻击节奏强化；Stack 1",
+   dn:"无人执行单元持续最近目标追击协议",
+   dd:"提高木灵攻击节奏，并将其目标行为锁定为持续追击最近合法Enemy至自身终止；不增加木灵数量。",
+   src:"Owner Delta 2026-08-18｜持续追最近Enemy直到死亡"},
+
+  /* ── §7.5 暴食｜7 张 ── */
+  {id:"GL-M01",n:"饥神猎步",cat:"MonsterType",sin:"Gluttony",slot:"M",cc:"暴食",
+   d:"小猫形态移动得更快、转向也更灵活；普通攻击不再使其恢复魔猫形态。",
+   m:"提高小猫化移动速度与转向响应；持有时，施放深渊巨口不解除小猫化。小猫化仍会在持续结束、再次使用Movement切换或使用Special时结束。",
+   cls:"Movement基础强化 + Attack形态例外；Stack 1",
+   dn:"轻型形态移动与攻击状态保持协议",
+   dd:"提高小猫形态的移动速度与转向响应；普通攻击不再触发轻型形态退出，其他既定退出条件保持不变。",
+   src:"Owner Decision 2026-08-17｜小猫速度、转向与Attack不退形态"},
+  {id:"GL-A01",n:"群口圣宴",cat:"MonsterType",sin:"Gluttony",slot:"A",cc:"暴食",
+   d:"获得过饱后，下一次深渊巨口会成对降下；第二个巨口稍后出现。",
+   m:"消耗`Overfed`时，下一次深渊巨口生成一对编队：主巨口按基础时序生成，第二个巨口额外延迟0.5秒；只消费一次`Overfed`，受本次施放实例上限约束。",
+   cls:"Overfed→Attack成对巨口；Stack 1",
+   dn:"过饱状态双实例地面攻击协议",
+   dd:"`Overfed`消费时将下一次巨口替换为二实例编队；第二实例额外延迟0.5秒，单次状态只生成一对，不追加第三或第四实例。",
+   src:"Owner Decision 2026-08-17｜GL-X01职责并入"},
+  {id:"GL-A02",n:"猎步圣餐",cat:"MonsterType",sin:"Gluttony",slot:"A",cc:"暴食",
+   d:"小猫化位移后，下一次深渊巨口的范围扩大100%。",
+   m:"完成一次合法暴食Movement后，为下一次深渊巨口写入范围+100%强化；巨口生成后消费该强化。与`GL-A01`同时生效时，成对巨口的两次攻击均获得范围加成。",
+   cls:"Movement→Attack范围强化；Stack 1",
+   dn:"位移后地面攻击覆盖范围翻倍协议",
+   dd:"合法Movement完成后，将下一次Abyss Maw的覆盖范围提高100%；若本次为`GL-A01`双实例，两个实例均继承该范围参数。",
+   src:"Owner Delta 2026-08-18｜Movement后巨口范围+100%"},
+  {id:"GL-A03",n:"远方圣餐",cat:"MonsterType",sin:"Gluttony",slot:"A",cc:"暴食",
+   d:"将诱饵抛向远处，深渊巨口会在那里出现。",
+   m:"解锁远程诱饵投放：施放者向远处抛出诱饵，巨口在诱饵落点生成；落点施放时快照，不追踪，0.5秒预警不变。",
+   cls:"Attack远程目标方式解锁；Stack 1",
+   dn:"远程诱饵地面攻击落点协议",
+   dd:"将基础脚下巨口改写为远程诱饵落点巨口；诱饵落点在施放时锁定，巨口仍延迟生成且不追踪。",
+   src:"Owner Delta 2026-08-18｜远处诱饵生成巨口"},
+  {id:"GL-S01",n:"鲜血圣餐",cat:"MonsterType",sin:"Gluttony",slot:"S",cc:"暴食",
+   d:"每具躯体第一次成功吞噬敌人时，恢复50点耐久。",
+   m:"每个Body生命周期内，首次成功吞噬合法Enemy时回复50点耐久；吞噬飞行攻击、未命中和后续吞噬均不触发。",
+   cls:"Special首次吞噬耐久回复；Stack 1",
+   dn:"首次吞噬固定耐久回补协议",
+   dd:"当前Body的首次合法Enemy吞噬事件回复50点耐久；飞行攻击吞噬与重复事件不进入回补资格。",
+   src:"Owner Decision 2026-08-17｜每Body首次吞噬回复50"},
+  {id:"GL-S02",n:"最后一餐",cat:"MonsterType",sin:"Gluttony",slot:"S",cc:"暴食",
+   d:"吞噬命中耐久低于20%的敌人时，会直接将其处决。",
+   m:"吞噬命中当前耐久低于20%的合法Enemy时执行处决；致命仍产生合法Corpse，复制资格与正常吞噬命中一致。",
+   cls:"Special条件处决；Stack 1",
+   dn:"低耐久目标终止协议",
+   dd:"当前耐久低于20%的合法Enemy被吞噬命中时直接执行致命结果；尸体与E槽复制规则保持不变。",
+   src:"Owner Decision 2026-08-17｜低于20%处决"},
+  {id:"GL-S03",n:"万物皆食",cat:"MonsterType",sin:"Gluttony",slot:"S",cc:"暴食",
+   d:"吞噬会吃掉前方扇形内所有合法飞行攻击，并获得过饱。",
+   m:"咬击消费前方扇形内全部合法飞行攻击并获得`Overfed`；不吞激光、重型攻击或范围攻击；飞行攻击不提供E槽复制。",
+   cls:"Special高阶Interaction；Stack 1",
+   dn:"前方扇形全量飞行输出吞噬与过饱写入协议",
+   dd:"吞噬可消费前方扇形内全部符合资格的飞行攻击并写入`Overfed`；激光、重型攻击、范围攻击与E槽复制不参与。",
+   src:"Owner Delta 2026-08-18｜扇形内全部合法飞行攻击吞噬"},
+
+  /* ── §7.6 嫉妒｜6 张 ── */
+  {id:"EN-A01",n:"万眼同视",cat:"MonsterType",sin:"Envy",slot:"A",cc:"嫉妒",
+   d:"每隔3秒，激光会短暂同时照向四个目标。",
+   m:"每3秒触发一次短暂多目标激光阶段，攻击四个总目标且包含主目标；各目标可正常写入自身Mark。",
+   cls:"Attack周期四目标；Stack 1",
+   dn:"周期性四目标激光分配协议",
+   dd:"每隔3秒将一次激光阶段分配至四个合法目标，主目标计入四个名额；不生成额外槽位事件。",
+   src:"Owner Delta 2026-08-18｜每3秒攻击四目标"},
+  {id:"EN-A03",n:"穿镜圣光",cat:"MonsterType",sin:"Envy",slot:"A",cc:"嫉妒",
+   d:"激光会在短暂阶段获得穿透能力，可以继续命中后方目标。",
+   m:"激光进入短暂穿透阶段，可穿过首个合法目标并继续影响后方目标；当前不额外增加伤害、宽度或Mark写入效率。",
+   cls:"Attack高阶形态质变；Stack 1",
+   dn:"激光穿透协议",
+   dd:"短暂阶段为激光启用目标穿透；不额外修改伤害、宽度或Mark写入效率。",
+   src:"Owner Edit｜Laser短暂强化 + 穿透"},
+  {id:"EN-R01",n:"无底之镜",cat:"MonsterType",sin:"Envy",slot:"R",cc:"嫉妒",
+   d:"目标身上的印记能储存更多伤害，激光造成的伤害也会更快填入印记。",
+   m:"提高 Mark 的储存伤害量50%，并提高有效激光伤害写入目标 Mark 的比例；不改变目标数量、激光基础伤害或雷暴基础伤害。具体写入效率为 TUNABLE / PLAYABLE。",
+   cls:"Mark储存与写入效率强化；Stack 1",
+   dn:"目标Mark储存与写入效率增益协议",
+   dd:"目标 Mark 储存量提高50%，有效激光伤害写入 Mark 的效率提升；不增加 Mark 数量，也不改变激光或雷暴基础伤害。",
+   src:"Owner Decision 2026-08-20｜EN-R02并入EN-R01"},
+  {id:"EN-S01",n:"雷霆作证",cat:"MonsterType",sin:"Envy",slot:"S",cc:"嫉妒",
+   d:"雷暴命中后，会在该位置1秒后继续降下雷霆，随后再降下第三次。",
+   m:"雷暴命中后，1秒后在原命中位置再次落雷，再1秒后在同一位置落下第三次雷霆（共3次落雷）。每次追加雷霆均独立预警，不继续递归。具体间隔与伤害 `TUNABLE / PLAYABLE`。",
+   cls:"Special派生质变；Stack 1",
+   dn:"雷暴同点延迟复现",
+   dd:"雷暴命中后在原位置延迟1秒复现一次，再延迟1秒复现第三次；每次均使用同一原始位置并独立预警。",
+   src:"Owner Edit｜雷暴同点延迟复现（原 Stack 2 合并为单层）"},
+  {id:"EN-M01",n:"镜痕巡猎",cat:"MonsterType",sin:"Envy",slot:"M",cc:"嫉妒",
+   d:"飞行经过的敌人会留下印记。",
+   m:"嫉妒完成一次合法飞行Movement时，路径经过的每个合法Enemy获得1层Mark；同一Enemy在同一次Movement中最多获得1层。",
+   cls:"Movement路径印记；Stack 1",
+   dn:"飞行路径目标Mark写入协议",
+   dd:"Movement有效路径与合法Enemy相交时写入1层Mark；每个目标每次Movement最多登记一次，不产生伤害或递归事件。",
+   src:"Owner Delta 2026-08-18｜飞行路径上Enemy也上印记"},
+  {id:"EN-A05",n:"妒焰渐炽",cat:"MonsterType",sin:"Envy",slot:"A",cc:"嫉妒",
+   d:"激光维持越久，伤害越高，最高达到每秒50点。",
+   m:"同一次连续合法激光连接中，激光伤害随维持时间逐步提高，最高为每秒50点伤害；连接中断后，本次增长归零。",
+   cls:"Attack持续伤害成长；Stack 1",
+   dn:"连续激光时间轴伤害爬升协议",
+   dd:"单次连续激光连接按持续时间提高每秒伤害，至50点/秒封顶；断连、目标失效或攻击停止时重置本次爬升，不修改Mark储存比例或雷暴结算倍率。",
+   src:"Owner Delta 2026-08-18｜激光持续越久伤害越高，最高50/秒"},
+
+  /* ── §7.7 愤怒｜6 张 ── */
+  {id:"WR-M01",n:"焚途誓约",cat:"MonsterType",sin:"Wrath",slot:"M",cc:"愤怒",
+   d:"钩索经过的路径会伤害敌人。",
+   m:"钩索实际行进路径产生一次路径伤害；不额外留下火迹。",
+   cls:"Movement路径伤害；Stack 1",
+   dn:"钩索路径伤害派生协议",
+   dd:"钩索实际行进路径产生一次路径伤害；不生成额外持续火迹。",
+   src:"W-MV-02 路径Damage；Standalone"},
+  {id:"WR-M02",n:"末日锁链",cat:"MonsterType",sin:"Wrath",slot:"M",cc:"愤怒",
+   d:"钩索能够抓住更远的合法落点；抵达后会冲击周围地面。",
+   m:"提高合法钩点搜索与自我位移距离；抵达合法落点后生成一次周围地面冲击。无合法点不启动 / 不收费，未抵达合法落点不生成冲击。",
+   cls:"Movement距离 + 落点冲击；Stack 1",
+   dn:"钩索合法位移距离与终点冲击协议",
+   dd:"扩展钩索合法抓取与自我位移距离；合法落点抵达后生成一次带短预警的地面冲击。",
+   src:"W-MV-01 钩索距离 + W-MV-04 落点冲击；Merged Into WR-M02"},
+  {id:"WR-B01",n:"殉身加冕",cat:"MonsterType",sin:"Wrath",slot:"B",cc:"愤怒",
+   d:"躯体耐久越低，伤害、攻击范围与攻击冷却缩减越强；每项最高提升50%。",
+   m:"按当前Body缺失耐久比例同步提高伤害与攻击外显范围，并缩短Attack CD；三项增益各自上限均为50%。不提高动作播放速度，不缩短敌人最低前兆。",
+   cls:"低耐久伤害 / 范围 / Attack CD缩短；Stack 1",
+   dn:"低耐久冲突响应增益协议",
+   dd:"按当前Body缺失耐久比例上调伤害与攻击作用范围，并下调Attack CD；每项最大修正为50%，不改变动作执行速率或最低Telegraph。",
+   src:"Owner Decision 2026-08-18｜低血量伤害、范围、Attack CD"},
+  {id:"WR-B02",n:"以身为薪",cat:"MonsterType",sin:"Wrath",slot:"B",cc:"愤怒",
+   d:"点燃自己；敌人靠近就会被点燃。",
+   m:"当前愤怒Body持续具有贴身燃烧光环；进入光环的合法Enemy被点燃。光环随换身或Body致命结束，不依赖低耐久前置。",
+   cls:"Body Trait燃烧光环；Stack 1",
+   dn:"常驻贴身燃烧协议",
+   dd:"当前Body维持近身燃烧区域；合法Enemy进入后取得燃烧状态，换身或致命时终止。",
+   src:"Owner Decision 2026-08-18｜点燃自身、近敌燃烧"},
+  {id:"WR-S01",n:"风暴锁链",cat:"MonsterType",sin:"Wrath",slot:"S",cc:"愤怒",
+   d:"龙卷风暴过程中获得+300%移动速度。",
+   m:"暴怒锁链龙卷风的持续阶段内，愤怒Body获得+300%移动速度；不延长龙卷风时长，不提高Pull强度，不造成眩晕。",
+   cls:"Special龙卷风移速强化；Stack 1",
+   dn:"特殊持续阶段载体移动参数增益",
+   dd:"Special龙卷风持续期间将Body移动速度提高300%；不修改Special持续、牵引位移或控制规则。",
+   src:"Owner Decision 2026-08-18｜龙卷风期间+300%移速"},
+  {id:"WR-S03",n:"终末飓风",cat:"MonsterType",sin:"Wrath",slot:"S",cc:"愤怒",
+   d:"龙卷风时长变长2秒。",
+   m:"暴怒锁链的龙卷风持续时长增加2秒；既有每0.5秒结算、牵引规则与不Stun边界保持不变。",
+   cls:"Special龙卷风时长强化；Stack 1",
+   dn:"特殊持续窗口延长协议",
+   dd:"将Special龙卷风持续窗口延长2秒；不新增终段冲击、不改变每次结算间隔或牵引规则。",
+   src:"Owner Decision 2026-08-18｜龙卷风时长+2秒"},
+
+  /* ── §7.8 贪婪｜8 张 ── */
+  {id:"GR-A01",n:"万手圣库",cat:"MonsterType",sin:"Greed",slot:"A",cc:"贪婪",
+   d:"可以储存并一次释放更多魔手；附身时的初始库存不会因此等量增加。",
+   m:"提高库存 / 单次释放上限（取原 Stack 2 档，具体上限 `TUNABLE / PLAYABLE`）；附身初始库存不随上限等量填满。",
+   cls:"Attack Resource上限强化；Stack 1",
+   dn:"魔手库存与释放上限扩展",
+   dd:"提高魔手库存上限与单次释放上限；附身初始化库存不随上限等量填满。",
+   src:"GR-AT-02 魔手上限；Standalone"},
+  {id:"GR-A02",n:"未收之贡",cat:"MonsterType",sin:"Greed",slot:"A",cc:"贪婪",
+   d:"魔手杀死敌人后，会再寻找最近的敌人。",
+   m:"一只魔手造成致命后，若存在合法最近Enemy则重新索敌并继续；无目标时消失。每只魔手仅可通过本卡再索敌一次。",
+   cls:"Attack击杀后再索敌；Stack 1",
+   dn:"魔手致命后最近目标再获取协议",
+   dd:"魔手造成致命后仅允许一次最近合法目标再获取；无目标时终止，完整生命周期不刷新。",
+   src:"Owner Decision 2026-08-18｜击杀后再找最近敌人"},
+  {id:"GR-A03",n:"亡者遗产",cat:"MonsterType",sin:"Greed",slot:"A",cc:"贪婪",
+   d:"魔手杀死敌人后，会自动出现1–2只新的魔手。",
+   m:"魔手造成致命后生成1–2只新魔手并索敌；具体数量和总实例预算可调。新魔手不能递归触发本卡。",
+   cls:"Attack击杀后新增魔手；Stack 1",
+   dn:"魔手致命后受限实例增殖协议",
+   dd:"魔手致命后生成1–2个新魔手实例并索敌；生成数量受单次施放与全局实例预算限制，派生不可递归。",
+   src:"Owner Decision 2026-08-18｜击杀后新增1–2只魔手"},
+  {id:"GR-A07",n:"迂回纳贡",cat:"MonsterType",sin:"Greed",slot:"A",cc:"贪婪",
+   d:"释放的魔手会绕开正面，从侧翼扑向目标。",
+   m:"每只已释放魔手先沿固定左/右侧翼弧线离开正前方，再收束追向合法目标；无合法目标时消失。",
+   cls:"Attack路径形态质变；Stack 1",
+   dn:"魔手侧翼弧线路径重写协议",
+   dd:"已释放魔手先按固定侧翼弧线离开正面、后收束至合法目标；只改变移动路径，不改变伤害、数量、寿命或派生次数。",
+   src:"Owner Delta 2026-08-18｜魔手固定侧翼绕行"},
+  {id:"GR-M01",n:"黑油圣路",cat:"MonsterType",sin:"Greed",slot:"M",cc:"贪婪",
+   d:"黑油带更长、更宽；踏入其中的敌人会减速。",
+   m:"扩大黑油路径长度与覆盖范围，并使踏入黑油的合法Enemy减速；基础黑油本身只提供玩家 / Possessed Greed加速。燃烧黑油不继承Enemy减速，多片黑油只取最高减速。",
+   cls:"Movement黑油范围 / 长度 + Enemy减速；Stack 1",
+   dn:"黑油路径覆盖与敌方移动参数抑制协议",
+   dd:"提高黑油路径长度与覆盖范围，并对进入区域的合法Enemy施加减速；燃烧状态不继承该减速，多片区域只取最高值。",
+   src:"Owner Delta 2026-08-18｜基础黑油加速，GR-M01提供Enemy减速"},
+  {id:"GR-M02",n:"圣路恩赐",cat:"MonsterType",sin:"Greed",slot:"M",cc:"贪婪",
+   d:"站在自己留下的黑油上时，不会受到地形伤害。",
+   m:"贪婪Body位于自身普通黑油区域内时，免疫地形来源伤害；离开区域立即失去保护，不免疫直接攻击或接触伤害。",
+   cls:"Movement区域地形伤害防护；Stack 1",
+   dn:"自有黑油区域地形伤害隔离协议",
+   dd:"当前贪婪Body站在自身普通黑油上时忽略地形来源伤害；不影响飞行攻击、近战攻击或离开黑油后的受伤规则。",
+   src:"Owner Delta 2026-08-18｜圣路上不受地形伤害"},
+  {id:"GR-S01",n:"圣库纳贡",cat:"MonsterType",sin:"Greed",slot:"S",cc:"贪婪",
+   d:"大手防御吸收伤害时，会转化出更多魔手。",
+   m:"Guard期间每60点实际吸收伤害转化1只魔手；持续激光按实际累计吸收伤害计算。",
+   cls:"Special受击资源转化；Stack 1",
+   dn:"全伤害防御资源转化增益协议",
+   dd:"将Guard资源换算改写为每60点实际吸收伤害写入1只魔手；不改变Guard的结束条件。",
+   src:"Owner Delta 2026-08-18｜每60吸收伤害转1手"},
+  {id:"GR-S04",n:"贪神庇护",cat:"MonsterType",sin:"Greed",slot:"S",cc:"贪婪",
+   d:"大手防御能够维持3秒；再次使用可提前结束。",
+   m:"Guard持续时间改为3秒；持续期间不可移动、不可攻击；再次使用Special可提前结束，并立即开始Reload。",
+   cls:"Special基础强化；Stack 1",
+   dn:"全伤害防御窗口延长与主动终止协议",
+   dd:"将Guard窗口扩展至3秒，并允许第二次Special主动终止；终止后立即进入Reload，不改变吸收与转化资格。",
+   src:"Owner Delta 2026-08-18｜Guard 3秒、二次输入提前关闭"},
+
+  /* ── §7.9 色欲｜7 张（精确数值为首轮 TUNABLE / PLAYABLE Baseline）── */
+  {id:"LU-M03",n:"背离之罚",cat:"MonsterType",sin:"Lust",slot:"M",cc:"色欲",
+   d:"与残影互换位置后，引爆被互换的残影，对周围敌人造成30点伤害。",
+   m:"第二次Movement成功与Anchor换位后，在原Anchor位置延迟0.15秒生成一次30伤害、2.5米半径爆炸；首次位移只留Anchor，不触发爆炸；每次换位最多一次，不施加Link、不递归。",
+   cls:"Movement换位爆炸；Stack 1",
+   dn:"锚点互换后终止爆破协议",
+   dd:"Anchor Swap成功后，在被交换Anchor位置延迟0.15秒执行一次30伤害、2.5米半径爆破；单次换位最多一次，不写入Link，不生成递归事件。",
+   src:"2026-08-17 Owner Lust Final｜换位引爆"},
+  {id:"LU-M05",n:"同欲之影",cat:"MonsterType",sin:"Lust",slot:"M",cc:"色欲",
+   d:"你发动普通攻击时，当前残影会在短暂延迟后模仿同一攻击。",
+   m:"每次本体Attack使当前Anchor延迟0.10秒模仿一次当前普通攻击形态，方向与本体一致，伤害为本体50%；可施加Link但同一目标不叠层；不额外耗血、不再触发模仿。若已获得`LU-A04`，Anchor改为在自身位置生成50%伤害的环形迷气。",
+   cls:"Movement→Attack模仿联动；Stack 1",
+   dn:"锚点攻击镜像执行协议",
+   dd:"本体Attack事件使当前Anchor延迟0.10秒执行一次50%伤害的同形攻击；不额外收费，不生成新的模仿触发事件，Link不重复叠层。",
+   src:"2026-08-17 Owner Lust Final｜Anchor模仿普通攻击"},
+  {id:"LU-S05",n:"同欲相噬",cat:"MonsterType",sin:"Lust",slot:"S",cc:"色欲",
+   d:"被特殊技能牵引的敌人相互碰撞时，会在碰撞位置产生爆炸。",
+   m:"仅检测同一次色欲Special中正在被牵引的目标；两个牵引目标互撞时，在碰撞点造成25伤害、2米半径爆炸。每个目标每次Special最多参与一次，因此4个目标最多形成2次碰撞爆炸；墙壁、Anchor、玩家或未被牵引目标不触发。爆炸不施加Link、不递归，但击杀其他Linked目标可正常触发`LU-A03`。",
+   cls:"Special牵引碰撞爆炸；Stack 1",
+   dn:"牵引目标碰撞爆破协议",
+   dd:"同批Pull中的两个目标发生有效互撞时，在接触点执行25伤害、2米半径爆破；每个目标单次Pull最多登记一次碰撞事件，不响应环境与非牵引单位碰撞。",
+   src:"2026-08-17 Owner Lust Final｜牵引目标相撞爆炸"},
+  {id:"LU-A03",n:"欲痕殉爆",cat:"MonsterType",sin:"Lust",slot:"A",cc:"色欲",
+   d:"带有Link标记的敌人死亡时，消耗其标记并在死亡位置产生爆炸。",
+   m:"Linked目标死亡后0.10秒在死亡位置造成30伤害、2.5米半径爆炸并消费死者Link；每个死亡目标最多一次，爆炸不施加Link。爆炸击杀其他Linked目标时，其他目标可各自正常触发一次，形成有限连锁。",
+   cls:"Attack+Link死亡爆炸；Stack 1",
+   dn:"Link终止时死亡爆破协议",
+   dd:"Linked目标死亡后消费其Link，并延迟0.10秒执行一次30伤害、2.5米半径爆破；单个死亡实例最多登记一次，不重新写入Link。",
+   src:"2026-08-17 Owner Lust Final｜Link死亡消耗爆炸"},
+  {id:"LU-S06",n:"无害之拥",cat:"MonsterType",sin:"Lust",slot:"S",cc:"色欲",
+   d:"被特殊技能牵引的敌人在牵引期间无法伤害你当前附身的怪物。",
+   m:"色欲Special牵引期间，被牵引目标对玩家当前Possessed Body造成的直接、接触和牵引期间新发射Projectile伤害降低100%，牵引结束后保留0.15秒宽限；牵引前已存在的持续伤害与地面效果不清除。",
+   cls:"Special牵引期间伤害屏蔽；Stack 1",
+   dn:"牵引来源伤害隔离协议",
+   dd:"Pull有效期及结束后0.15秒内，隔离被牵引来源对当前Possessed Body的新直接、接触与Projectile伤害；不回滚既有持续伤害实例。",
+   src:"2026-08-17 Owner Lust Final｜牵引期间伤害屏蔽"},
+  {id:"LU-A04",n:"色欲潮汐",cat:"MonsterType",sin:"Lust",slot:"A",cc:"色欲",
+   d:"普通攻击不再往返飞行，而是以你为中心形成不断向周围扩散的环形迷气。",
+   m:"Attack替换为以施放者为圆心的环形迷气：初始半径0.5米、最大半径4米、0.8秒扩散、环宽0.8米、单目标20伤害；每次施放每目标最多命中一次并施加1个Link，原Attack冷却与耗血不变，不再具有去程/回程双段命中。",
+   cls:"Attack环形扩散质变；Stack 1",
+   dn:"径向迷气扩散协议",
+   dd:"将往返Attack替换为0.5至4米的径向环带扩散，历时0.8秒、环宽0.8米；单目标20伤害且单次只登记一次命中与一次Link写入，原冷却与费用不变。",
+   src:"2026-08-17 Owner Lust Final｜环形扩散迷气"},
+  {id:"LU-TG01",n:"欲潮不息",cat:"TypeGrowth",sin:"Lust",slot:"TG",cc:"色欲",
+   d:"色欲移动得更快，位移、普通攻击与特殊技能的冷却时间均减少30%。",
+   m:"提高色欲Body的基础移动速度；Movement / Attack / Special三槽冷却时间统一乘以0.70。基础移速增幅为首轮`TUNABLE / PLAYABLE`参数；不缩短技能前摇、后摇或敌人最低预警时间。",
+   cls:"Type Growth：Body移速 + 三槽冷却；Stack 1",
+   dn:"载体机动与技能循环加速协议",
+   dd:"提高色欲Body基础移动速度，并将Movement / Attack / Special的Cooldown统一乘以0.70；不修改Startup、Recovery或最低Telegraph。",
+   src:"2026-08-17 Owner Lust Type Growth Revision｜Body移速 + 三槽Cooldown"},
+];
+
+/* Canonical §1 声明的牌池规模，用于启动自检（数据与真源不符时立即在页面上报） */
+const EXPECTED = { total:65, BasicUniversal:9, GlobalSlot:7, Pride:8, Sloth:7, Gluttony:7, Envy:6, Wrath:6, Greed:8, Lust:7 };
+const RUN_PICK_LIMIT = 9; // Canonical §2.6：W1–7 后各 1 次 + W8 后连续 2 次
+
+/* 槽位呈现表（UI 层，不属设计数据）：字形 / 中文名 / 玩家向说明。
+   槽位归属取自各卡「机制类别」，见 CARDS 的 slot 字段。 */
+const SLOT_UI = {
+  M : { g:"移", name:"位移",     desc:"改变移动技能的形态、距离或附带效果" },
+  A : { g:"攻", name:"普通攻击", desc:"改变普通攻击的形态、范围或交互" },
+  S : { g:"特", name:"特殊技能", desc:"改变特殊技能的规模、派生或前置" },
+  B : { g:"体", name:"躯体特性", desc:"作用于躯体本身，常驻生效" },
+  R : { g:"印", name:"印记",     desc:"改变印记的储存与写入规则" },
+  TG: { g:"成", name:"类型成长", desc:"该罪整体形态成长，同时计入该罪投资" },
+  GX: { g:"律", name:"法则改写", desc:"改变本局的槽位联动法则" },
+};
+/* 全局卡两类的玩家向表述（分类名本身取自 Canonical 的「分类」字段） */
+const RUN_GROUP = [
+  { cat:"BasicUniversal", g:"通", name:"基础通用", desc:"所有躯体共同的基础强化" },
+  { cat:"GlobalSlot",     g:"律", name:"全局槽位质变", desc:"改变本局槽位联动法则" },
+];
+
+/* ═══════════════ 状态 ═══════════════ */
+const CARD_BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const MON_BY_KEY = Object.fromEntries(MONSTERS.map(m => [m.key, m]));
+
+const state = {
+  step: 1,             // 1 选躯体 / 2 装配 / 3 保存
+  sin: null,           // 当前正在装配的罪
+  picked: {},          // { sinKey: Set<cardId> } —— 写入 bdData
+  run: new Set(),      // 基础通用 + 全局槽位（不写入 bdData）
+  line: "bright",      // bright 明线 / dark 暗线
+  allFields: false,
+};
+MONSTERS.forEach(m => state.picked[m.key] = new Set());
+
+const $ = s => document.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+/* Canonical 原文中的 `标识符` 原样保存在数据里；仅在渲染时转为 <code>，不改动字面内容。 */
+const rt = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+const plain = s => String(s).replace(/`/g, "");
+const monsterPicked = () => MONSTERS.reduce((n, m) => n + state.picked[m.key].size, 0);
+const totalPicked = () => monsterPicked() + state.run.size;
+const rid = () => { const d = new Date(), p = n => String(n).padStart(2,"0");
+  return `run-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; };
+
+/* ═══════════════ 渲染 ═══════════════ */
+
+/* 取怪物短名："傲慢-终刃绝影" → 罪名 / 本名。display 原文用于导出，不改写。 */
+const sinName  = m => m.display.split("-")[0];
+const bodyName = m => m.display.split("-")[1] || m.display;
+
+/* ── Step 1：罪孽选择 ── */
+function renderSins(){
+  const box = $("#sins"); box.innerHTML = "";
+  MONSTERS.forEach(m => {
+    const n = state.picked[m.key].size;
+    const b = el("button", "sinCard" + (m.key === state.sin ? " on" : ""));
+    b.style.setProperty("--c", m.color);
+    b.innerHTML =
+      `<div class="gly">${esc(m.sig)}</div>` +
+      `<h3>${esc(sinName(m))} · ${esc(bodyName(m))}</h3>` +
+      `<div class="rl">${esc(m.role)}</div>` +
+      `<div class="gm">${esc(m.grammar)}</div>` +
+      (n ? `<div class="pill">${n}</div>` : "");
+    b.onclick = () => { state.sin = m.key; go(2); };
+    box.appendChild(b);
+  });
+}
+
+/* ── 卡面 ── */
+function cardNode(c, picked, onToggle, color){
+  const b = el("button", "cd" + (picked ? " on" : ""));
+  b.style.setProperty("--c", color);
+  const bright = state.line === "bright";
+  const s = SLOT_UI[c.slot] || { g:"?", name:c.slot };
+
+  let html =
+    `<div class="cdTop">` +
+      `<span class="sg">${esc(s.g)}</span>` +
+      `<span class="cid">${esc(c.id)}</span>` +
+      `<span class="tick">✓</span>` +
+    `</div>` +
+    `<h4>${esc(bright ? c.n : c.dn)}</h4>` +
+    `<div class="eff">${rt(bright ? c.d : c.dd)}</div>`;
+
+  if (state.allFields){
+    html += `<div class="more">` +
+      `<div><i>机制：</i>${rt(c.m)}</div>` +
+      `<div><i>${bright ? "暗线" : "明线"}：</i>${esc(bright ? c.dn : c.n)}｜${rt(bright ? c.dd : c.d)}</div>` +
+      `<div><i>机制类别：</i>${rt(c.cls)}</div>` +
+      `<div><i>来源：</i>${rt(c.src)}</div>` +
+      `</div>`;
+  }
+
+  html += `<div class="foot">` +
+    `<span class="badge">${esc(s.name)}</span>` +
+    (c.cat === "TypeGrowth" ? `<span class="badge tg">类型成长</span>` : "") +
+    `<span class="mk grow"></span>` +
+    `<span class="mk">唯一</span>` +
+    `</div>`;
+
+  b.innerHTML = html;
+  b.title = plain(c.m);
+  b.onclick = onToggle;
+  return b;
+}
+
+/* ── Step 2：三槽泳道 + 卡池 ── */
+function renderHero(){
+  const m = MON_BY_KEY[state.sin], n = state.picked[m.key].size;
+  const all = CARDS.filter(c => c.sin === m.key).length;
+  $("#hero").innerHTML =
+    `<div class="gly">${esc(m.sig)}</div>` +
+    `<div class="grow">` +
+      `<h3>${esc(sinName(m))} · ${esc(bodyName(m))}</h3>` +
+      `<p>${esc(m.role)}　·　已装配 <b style="color:var(--sin)">${n}</b> / ${all} 张专属卡</p>` +
+    `</div>` +
+    `<button class="cta" id="switchSin">换一具躯体</button>`;
+  $("#switchSin").onclick = () => go(1);
+}
+
+/* 按 Canonical 顺序把某罪的卡分入槽位组；组的先后 = 该槽首张卡在 Canonical 中的次序 */
+function slotGroups(sinKey){
+  const groups = [];
+  CARDS.filter(c => c.sin === sinKey).forEach(c => {
+    let g = groups.find(x => x.slot === c.slot);
+    if (!g) groups.push(g = { slot:c.slot, cards:[] });
+    g.cards.push(c);
+  });
+  return groups;
+}
+
+function renderLanes(){
+  const m = MON_BY_KEY[state.sin], set = state.picked[m.key];
+  const box = $("#lanes"); box.innerHTML = "";
+
+  // 三槽基础技能：MONSTERS[].slots 为 Canonical §3 原文（Movement / Attack / Special 顺序）
+  const baseOf = { M:m.slots[0], A:m.slots[1], S:m.slots[2] };
+
+  slotGroups(m.key).forEach(g => {
+    const ui = SLOT_UI[g.slot] || { g:"?", name:g.slot, desc:"" };
+    const lane = el("div", "lane");
+    lane.dataset.slot = g.slot;
+
+    lane.appendChild(el("div", "laneHd",
+      `<span class="sg" style="background:${m.color}">${esc(ui.g)}</span>` +
+      `<span class="t"><b>${esc(ui.name)}</b><span>${esc(ui.desc)}</span></span>` +
+      `<span class="n">0 / ${g.cards.length}</span>`));
+
+    // 基础技能行：去掉 "Movement — " 一类前缀，只留技能名与 Canonical 原文说明
+    const base = baseOf[g.slot];
+    if (base) lane.appendChild(el("div", "base",
+      `<b>基础技能 ─ ${esc(base[0].replace(/^[^—]*—\s*/, ""))}</b>　${esc(base[1])}`));
+
+    const grid = el("div", "cards");
+    g.cards.forEach(c => grid.appendChild(cardNode(c, set.has(c.id), ev => {
+      set.has(c.id) ? set.delete(c.id) : set.add(c.id);
+      ev.currentTarget.classList.toggle("on", set.has(c.id));
+      refresh();
+    }, m.color)));
+    lane.appendChild(grid);
+    box.appendChild(lane);
+  });
+
+  // 全局卡：不隶属任一罪，不进 bdData（Canonical §2.5）
+  RUN_GROUP.forEach(rg => {
+    const cards = CARDS.filter(c => c.cat === rg.cat);
+    const lane = el("div", "lane");
+    lane.dataset.run = rg.cat;
+    lane.appendChild(el("div", "laneHd",
+      `<span class="sg" style="background:var(--txt3)">${esc(rg.g)}</span>` +
+      `<span class="t"><b>${esc(rg.name)}</b><span>${esc(rg.desc)}　·　作用于本局全部躯体，不计入单具躯体的构筑</span></span>` +
+      `<span class="n">0 / ${cards.length}</span>`));
+    const grid = el("div", "cards");
+    cards.forEach(c => grid.appendChild(cardNode(c, state.run.has(c.id), ev => {
+      state.run.has(c.id) ? state.run.delete(c.id) : state.run.add(c.id);
+      ev.currentTarget.classList.toggle("on", state.run.has(c.id));
+      refresh();
+    }, "#8b93a4")));
+    lane.appendChild(grid);
+    box.appendChild(lane);
+  });
+  syncLaneCounts();
+}
+
+/* 只更新泳道计数徽标，不重建卡片 DOM（保住 hover 与滚动位置） */
+function syncLaneCounts(){
+  if (!state.sin) return;
+  const set = state.picked[state.sin];
+  document.querySelectorAll("#lanes .lane").forEach(lane => {
+    const badge = lane.querySelector(".laneHd .n");
+    if (!badge) return;
+    let n = 0, total = 0;
+    if (lane.dataset.slot){
+      const g = slotGroups(state.sin).find(x => x.slot === lane.dataset.slot);
+      if (!g) return;
+      total = g.cards.length; n = g.cards.filter(c => set.has(c.id)).length;
+    } else {
+      const cards = CARDS.filter(c => c.cat === lane.dataset.run);
+      total = cards.length; n = cards.filter(c => state.run.has(c.id)).length;
+    }
+    badge.textContent = `${n} / ${total}`;
+    badge.classList.toggle("hot", n > 0);
+  });
+}
+
+/* ── Step 3：总览 ── */
+function renderSummary(){
+  const box = $("#sumList"); box.innerHTML = "";
+  const active = MONSTERS.filter(m => state.picked[m.key].size > 0);
+  $("#sumMeta").textContent = active.length ? `${active.length} 具躯体` : "";
+
+  if (!active.length){
+    box.appendChild(el("div","empty",`<span class="em">◇</span>还没有装配任何躯体卡牌。<br>回到第一步选择躯体后开始装配。`));
+  } else active.forEach(m => {
+    const ids = CARDS.filter(c => state.picked[m.key].has(c.id)).map(c => c.id); // 保持 Canonical 顺序
+    const w = el("div","sumSin");
+    w.appendChild(el("div","h",
+      `<span class="sg" style="background:${m.color}">${esc(m.sig)}</span>` +
+      `<b>${esc(sinName(m))} · ${esc(bodyName(m))}</b>` +
+      `<span>${ids.length} 张</span>`));
+    const row = el("div","chipRow");
+    ids.forEach(id => {
+      const c = CARD_BY_ID[id];
+      const chip = el("span","cchip",
+        `<em>${esc(id)}</em>${esc(state.line === "bright" ? c.n : c.dn)}`);
+      const x = el("button", null, "×"); x.title = "移除";
+      x.onclick = () => unpick(id, m.key);
+      chip.appendChild(x); row.appendChild(chip);
+    });
+    w.appendChild(row); box.appendChild(w);
+  });
+
+  const rbox = $("#sumRun"); rbox.innerHTML = "";
+  if (!state.run.size){
+    rbox.appendChild(el("div","empty",`<span class="em">◇</span>未选择全局卡牌。`));
+  } else {
+    const w = el("div","sumSin");
+    const row = el("div","chipRow");
+    CARDS.filter(c => state.run.has(c.id)).forEach(c => {
+      const chip = el("span","cchip", `<em>${esc(c.id)}</em>${esc(state.line === "bright" ? c.n : c.dn)}`);
+      const x = el("button", null, "×"); x.title = "移除";
+      x.onclick = () => unpick(c.id, null);
+      chip.appendChild(x); row.appendChild(chip);
+    });
+    w.appendChild(row); rbox.appendChild(w);
+  }
+}
+
+/* ── 底栏额度 ── */
+function renderQuota(){
+  const n = totalPicked(), over = n > RUN_PICK_LIMIT;
+  const dots = $("#dots"); dots.innerHTML = "";
+  for (let i = 0; i < RUN_PICK_LIMIT; i++)
+    dots.appendChild(el("span", "dot" + (i < n ? (over ? " o" : " f") : "")));
+  const qt = $("#qt");
+  qt.className = "qt" + (over ? " over" : "");
+  qt.innerHTML = over
+    ? `已选 <b>${n}</b> 张，超出单局 ${RUN_PICK_LIMIT} 次选卡额度`
+    : `本局选卡 <b>${n}</b> / ${RUN_PICK_LIMIT}`;
+  qt.title = "单局共 9 次三选一：第 1–7 波后各 1 次，第 8 波后连续 2 次（Canonical §2.6）。";
+}
+
+function buildPayload(){
+  const sourceWave = Number($("#sourceWave").value) || 1;
+  const gameTime = Number($("#gameTime").value) || 0;
+  const snapshots = MONSTERS
+    .filter(m => state.picked[m.key].size > 0)
+    .map(m => {
+      const bdData = CARDS.filter(c => state.picked[m.key].has(c.id))
+                          .map(c => ({ cardId: c.id, stack: 1 })); // §25 叠层废除，stack 恒 1
+      return { sin:m.wire, monsterType:m.display, bdCount:bdData.length, bdData, sourceWave, gameTime };
+    });
+  return { playerId: $("#playerId").value.trim(), runId: $("#runId").value.trim(), snapshots };
+}
+
+function renderOut(){ $("#out").value = JSON.stringify(buildPayload(), null, 2); }
+
+/* ── 步骤切换 ── */
+function go(step){
+  if (step === 2 && !state.sin) step = 1;
+  state.step = step;
+  document.querySelectorAll(".stage").forEach(s => s.classList.remove("on"));
+  $("#s" + step).classList.add("on");
+  document.querySelectorAll("#steps .step").forEach(b => {
+    const i = Number(b.dataset.go);
+    b.classList.toggle("on", i === step);
+    b.classList.toggle("done", i < step);
+  });
+  $("#btnPrev").disabled = step === 1;
+  const next = $("#btnNext");
+  next.textContent = step === 3 ? "保存构筑" : "下一步";
+  next.disabled = step === 2 && !state.sin;
+  window.scrollTo({ top:0, behavior:"smooth" });
+  renderAll();
+}
+
+/* 全量重建：切步骤 / 切躯体 / 切文案 / 导入 时使用 */
+function renderAll(){
+  const m = state.sin ? MON_BY_KEY[state.sin] : null;
+  // 当前罪孽主色注入 CSS 变量，全站配色随躯体变化
+  document.documentElement.style.setProperty("--sin", m ? m.color : "#d0a850");
+  document.documentElement.style.setProperty("--sinSoft",
+    m ? hexA(m.color, .14) : "rgba(208,168,80,.14)");
+
+  renderSins();
+  if (state.sin){ renderHero(); renderLanes(); }
+  renderSummary(); renderQuota(); renderOut();
+}
+
+/* 轻量刷新：勾选 / 取消卡牌时使用，不重建卡池 DOM */
+function refresh(){
+  syncLaneCounts();
+  renderSins();            // Step 1 的已选数量徽标（该页此刻不可见，重建无视觉代价）
+  if (state.sin) renderHero();
+  renderSummary(); renderQuota(); renderOut();
+}
+
+/* 从总览移除一张卡：同步取消卡池中对应卡面的选中态，无需重建 */
+function unpick(id, sinKey){
+  if (sinKey) state.picked[sinKey].delete(id); else state.run.delete(id);
+  document.querySelectorAll("#lanes .cd").forEach(cd => {
+    const cid = cd.querySelector(".cid");
+    if (cid && cid.textContent === id) cd.classList.remove("on");
+  });
+  refresh();
+}
+
+/* #rrggbb → rgba()，用于主色柔光背景 */
+function hexA(hex, a){
+  const h = hex.replace("#","");
+  const v = h.length === 3 ? h.split("").map(x => x + x).join("") : h;
+  const n = parseInt(v, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/* ═══════════════ 本地生成 ═══════════════ */
+function flash(text, ok){
+  const m = $("#msg");
+  m.innerHTML = text;
+  m.className = "on " + (ok ? "ok" : "err");
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => m.className = "", ok ? 4500 : 9000);
+}
+function save(name, text, mime){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+  flash("已保存到下载目录：<b>" + name + "</b>", true);
+}
+function buildMarkdown(){
+  const p = buildPayload();
+  const bright = state.line === "bright";
+  const L = [
+    "# Possession 怪物构筑清单",
+    "",
+    `- 玩家 ID：\`${p.playerId}\`｜本局 ID：\`${p.runId}\``,
+    `- 波次：${$("#sourceWave").value}｜用时：${$("#gameTime").value} 秒`,
+    `- 本局选卡：${totalPicked()} / ${RUN_PICK_LIMIT}`,
+    "- 设计真源：`.vibe/doc/Canonical/Content/Card_System_Current_Truth_v1.1.md` §7；三槽：`02_CONTENT_CANONICAL.md` §3",
+    "",
+    "## 躯体构筑（进入 bdData）",
+    "",
+  ];
+  if (!p.snapshots.length) L.push("_（无：尚未装配任何躯体卡牌）_", "");
+  p.snapshots.forEach(s => {
+    const m = MONSTERS.find(x => x.wire === s.sin);
+    L.push(`### ${m.display}（sin=\`${s.sin}\`，bdCount=${s.bdCount}）`, "");
+    L.push("| Card ID | 名称 | 槽位 | 机制类别 | 效果 |", "|---|---|---|---|---|");
+    s.bdData.forEach(e => {
+      const c = CARD_BY_ID[e.cardId];
+      const su = SLOT_UI[c.slot] || { name:c.slot };
+      L.push(`| \`${c.id}\` | ${bright ? c.n : c.dn} | ${su.name} | ${c.cls} | ${bright ? c.d : c.dd} |`);
+    });
+    L.push("");
+  });
+  L.push("## 全局卡牌（作用于本局全部躯体，不进 bdData）", "");
+  if (!state.run.size) L.push("_（无）_", "");
+  else {
+    L.push("| Card ID | 名称 | 分类 | 效果 |", "|---|---|---|---|");
+    CARDS.filter(c => state.run.has(c.id)).forEach(c =>
+      L.push(`| \`${c.id}\` | ${bright ? c.n : c.dn} | ${c.cc} | ${bright ? c.d : c.dd} |`));
+    L.push("");
+  }
+  return L.join("\n");
+}
+
+/* ── 上传构筑到服务器（POST /api/user-bd）──
+   服务器严格校验：通过 → 存文件到 userBD/{playerId}/ 并实时进入投放候选池；
+   数据有误 → 400（提示重新构筑）；服务器未启动/不可达 → 提示离线。 */
+function serverUrl(){
+  const v = ($("#serverUrl").value || "").trim() || "http://127.0.0.1:8080";
+  localStorage.setItem("mbe_serverUrl", v);
+  return v.replace(/\/+$/, ""); // 去尾部斜杠
+}
+
+async function doUpload(){
+  const p = buildPayload();
+  if (!p.snapshots.length) return flash("还没有装配任何躯体卡牌，无法上传。", false);
+  renderOut();
+  flash("正在上传……", true);
+  try {
+    const resp = await fetch(serverUrl() + "/api/user-bd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(p),
+    });
+    const j = await resp.json().catch(() => null);
+    if (resp.ok && j && j.ok) {
+      const parts = [`新怪 ${j.stored} 只已入池`];
+      if (j.duplicates > 0) parts.push(`${j.duplicates} 只内容重复（已在池中）`);
+      flash(`上传成功：${parts.join("，")}。`, true);
+    } else {
+      flash(`数据有误，请重新构筑（${j && j.msg ? j.msg : "服务器校验失败"}）`, false);
+    }
+  } catch (_) {
+    flash("当前服务器不可达，请确认服务器已启动（地址：<b>" + serverUrl() + "</b>）", false);
+  }
+}
+$("#btnUpload").onclick = doUpload;
+
+/* 服务器地址初始化与记忆（localStorage） */
+(function initServerUrl(){
+  const saved = localStorage.getItem("mbe_serverUrl");
+  if (saved) $("#serverUrl").value = saved;
+})();
+$("#btnCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("#out").value); flash("构筑数据已复制到剪贴板。", true); }
+  catch { flash("剪贴板不可用，请展开「查看 / 编辑原始数据」手动复制。", false); }
+};
+$("#btnMd").onclick = () => save(`build-${$("#runId").value || "run"}.md`, buildMarkdown(), "text/markdown");
+$("#btnImport").onclick = () => {
+  let p;
+  try { p = JSON.parse($("#out").value); }
+  catch (e) { return flash("数据格式有误，无法解析：" + e.message, false); }
+  // 兼容种子文件格式 {"seeds":[{playerId,runId,snapshots}]}：取第一条种子记录还原
+  if (p && Array.isArray(p.seeds) && p.seeds.length && !p.snapshots) p = p.seeds[0];
+  if (!p || !Array.isArray(p.snapshots)) return flash("数据缺少 snapshots 列表，无法还原。", false);
+
+  MONSTERS.forEach(m => state.picked[m.key].clear());
+  const skipped = [];
+  p.snapshots.forEach(s => {
+    const m = MONSTERS.find(x => x.wire === String(s.sin || "").toLowerCase());
+    if (!m) return void skipped.push(`sin=${s.sin}`);
+    (s.bdData || []).forEach(e => {
+      const c = CARD_BY_ID[e && e.cardId];
+      if (!c || c.sin !== m.key) return void skipped.push(String(e && e.cardId));
+      state.picked[m.key].add(c.id);
+    });
+  });
+  if (p.playerId) $("#playerId").value = p.playerId;
+  if (p.runId) $("#runId").value = p.runId;
+  const w = p.snapshots.find(s => s.sourceWave != null);
+  if (w){ $("#sourceWave").value = w.sourceWave; if (w.gameTime != null) $("#gameTime").value = w.gameTime; }
+  renderAll();
+  flash(skipped.length
+    ? `已还原，跳过 ${skipped.length} 项当前卡池中不存在的卡：${skipped.join("、")}`
+    : "构筑已还原。", !skipped.length);
+};
+
+/* ═══════════════ 交互 ═══════════════ */
+document.querySelectorAll("#steps .step").forEach(b => b.onclick = () => go(Number(b.dataset.go)));
+$("#btnPrev").onclick = () => go(Math.max(1, state.step - 1));
+$("#btnNext").onclick = () => state.step === 3 ? doSave() : go(state.step + 1);
+
+$("#lineToggle").onclick = e => {
+  state.line = state.line === "bright" ? "dark" : "bright";
+  const dark = state.line === "dark";
+  e.currentTarget.classList.toggle("on", dark);
+  e.currentTarget.textContent = dark ? "◑" : "◐";
+  e.currentTarget.title = dark ? "当前：暗线（系统）文案 — 点击切回明线" : "当前：明线（神话）文案 — 点击切到暗线";
+  flash(dark ? "已切换为<b>暗线</b>文案：同一效果的系统视角表述。" : "已切换为<b>明线</b>文案。", true);
+  renderAll();
+};
+$("#fieldToggle").onclick = e => {
+  state.allFields = !state.allFields;
+  e.currentTarget.classList.toggle("on", state.allFields);
+  e.currentTarget.title = state.allFields ? "隐藏卡牌完整设定" : "显示卡牌完整设定";
+  renderAll();
+};
+$("#resetAll").onclick = () => {
+  if (!totalPicked()) return flash("当前没有已选卡牌。", false);
+  MONSTERS.forEach(m => state.picked[m.key].clear());
+  state.run.clear(); renderAll();
+  flash("已清空全部已选卡牌。", true);
+};
+["playerId","runId","sourceWave","gameTime"].forEach(id => $("#" + id).oninput = renderOut);
+addEventListener("keydown", e => {
+  if (e.target.matches("input,textarea")) return;
+  if (e.key === "ArrowRight" && state.step < 3) go(state.step + 1);
+  if (e.key === "ArrowLeft"  && state.step > 1) go(state.step - 1);
+});
+
+/* ═══════════════ 启动自检：内嵌数据 vs Canonical §1 声明规模 ═══════════════ */
+(function selfCheck(){
+  const errs = [];
+  const seen = new Set();
+  CARDS.forEach(c => { if (seen.has(c.id)) errs.push(`重复 Card ID：${c.id}`); seen.add(c.id); });
+  if (CARDS.length !== EXPECTED.total) errs.push(`牌池总数 ${CARDS.length} ≠ Canonical 声明的 ${EXPECTED.total}`);
+  const cnt = k => CARDS.filter(c => c.cat === k).length;
+  if (cnt("BasicUniversal") !== EXPECTED.BasicUniversal) errs.push(`基础通用 ${cnt("BasicUniversal")} ≠ ${EXPECTED.BasicUniversal}`);
+  if (cnt("GlobalSlot") !== EXPECTED.GlobalSlot) errs.push(`全局槽位质变 ${cnt("GlobalSlot")} ≠ ${EXPECTED.GlobalSlot}`);
+  MONSTERS.forEach(m => {
+    const n = CARDS.filter(c => c.sin === m.key).length;
+    if (n !== EXPECTED[m.key]) errs.push(`${m.display} ${n} 张 ≠ Canonical 声明的 ${EXPECTED[m.key]} 张`);
+  });
+  // §3：当前类型成长共 2 张（PR-TG01 / LU-TG01）；Gluttony / Wrath / Greed / Sloth / Envy 为无 Type Growth 例外
+  const tg = CARDS.filter(c => c.cat === "TypeGrowth").map(c => c.id).sort().join(",");
+  if (tg !== "LU-TG01,PR-TG01") errs.push(`类型成长卡应为 PR-TG01 / LU-TG01，当前为 ${tg || "（无）"}`);
+  // 每张卡的 slot 必须有对应呈现定义，否则卡面会显示为 "?"
+  CARDS.forEach(c => { if (!SLOT_UI[c.slot]) errs.push(`${c.id} 的槽位 '${c.slot}' 缺少呈现定义`); });
+  if (errs.length) flash("数据自检未通过（与 Canonical 不一致）：" + errs.join("；"), false);
+})();
+
+$("#playerId").value = "device-" + Math.random().toString(16).slice(2, 10);
+$("#runId").value = rid();
+go(1);
+</script>
+</body>
+</html>

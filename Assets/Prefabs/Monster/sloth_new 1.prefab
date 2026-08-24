@@ -132,6 +132,12 @@ MonoBehaviour:
   upgrades:
   - effectId: Sloth.Scatter
     unlocked: 0
+  - effectId: SL-A03
+    unlocked: 0
+  - effectId: SL-A04
+    unlocked: 0
+  - effectId: SL-A05
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -203,7 +209,7 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
-  recoilTarget: {fileID: 2975423352239436615}
+  recoilTarget: {fileID: 824517378410054671}
   maxRecoilOffset: {x: 0, y: 0, z: -0.4}
   recoilKickDuration: 0.05
   recoilReturnDuration: 0.15
@@ -267,6 +273,7 @@ Transform:
   - {fileID: 7761242723630428616}
   - {fileID: 3162426705399175952}
   - {fileID: 4738218620331132360}
+  - {fileID: 3226789034630848535}
   - {fileID: 7056750021311227428}
   - {fileID: 853822848936796973}
   m_Father: {fileID: 0}
@@ -667,6 +674,89 @@ Transform:
   - {fileID: 7132946111069763414}
   m_Father: {fileID: 1338306576578461038}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3106395331532931344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 824517378410054671}
+  - component: {fileID: 2414623869716187644}
+  - component: {fileID: 5034372914346340150}
+  m_Layer: 0
+  m_Name: Daiduo_01 (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &824517378410054671
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3106395331532931344}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00000013101304, y: -0.17877857, z: -0.000000023805825, w: 0.9838894}
+  m_LocalPosition: {x: 0.03610456, y: 0, z: -0.086098194}
+  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3226789034630848535}
+  m_LocalEulerAnglesHint: {x: 0, y: -20.597, z: 0}
+--- !u!33 &2414623869716187644
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3106395331532931344}
+  m_Mesh: {fileID: 8195081056750656242, guid: 2432de6f6f19ca748b46795456b8104b, type: 3}
+--- !u!23 &5034372914346340150
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3106395331532931344}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2198037863452027752, guid: 2432de6f6f19ca748b46795456b8104b, type: 3}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &4769193223067061717
 GameObject:
   m_ObjectHideFlags: 0
@@ -748,6 +838,10 @@ MonoBehaviour:
   - effectId: Sloth.DroneEconomy
     unlocked: 0
   - effectId: Sloth.DroneDeathBlast
+    unlocked: 0
+  - effectId: SL-S01
+    unlocked: 0
+  - effectId: SL-S03
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
@@ -1114,6 +1208,10 @@ MonoBehaviour:
     unlocked: 0
   - effectId: Sloth.LandingMine
     unlocked: 0
+  - effectId: SL-M01
+    unlocked: 0
+  - effectId: SL-M02
+    unlocked: 0
   vfxPrefab: {fileID: 7274247396609794175, guid: 0513ef01dbf0c8c4aa7467ffab2fc104,
     type: 3}
   vfxSpawnPoint: {fileID: 7761242723630428616}
@@ -1174,6 +1272,145 @@ MonoBehaviour:
     type: 3}
   mineBlastVfxDuration: 1
   mineDamage: 20
+--- !u!1001 &3120258945419134972
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1338306576578461038}
+    m_Modifications:
+    - target: {fileID: -9099325942293374878, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_Name
+      value: "\u6020\u60F0-Die"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7445966929880765224, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_RootBone
+      value: 
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 824517378410054671}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4251872004976594469}
+  m_SourcePrefab: {fileID: 100100000, guid: 5e96704d06f50ea469b133fa12abd573, type: 3}
+--- !u!1 &2849664944687577773 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5e96704d06f50ea469b133fa12abd573,
+    type: 3}
+  m_PrefabInstance: {fileID: 3120258945419134972}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &4251872004976594469
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2849664944687577773}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: a8cfdf254caa0a840bc37657c6fb780c, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &3226789034630848535 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5e96704d06f50ea469b133fa12abd573,
+    type: 3}
+  m_PrefabInstance: {fileID: 3120258945419134972}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7378063582921032143
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1262,6 +1499,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Daiduo 1
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2432de6f6f19ca748b46795456b8104b,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5705768785275990664, guid: 2432de6f6f19ca748b46795456b8104b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1314,12 +1556,6 @@ PrefabInstance:
       addedObject: {fileID: 1035814552403279005}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2432de6f6f19ca748b46795456b8104b, type: 3}
---- !u!4 &2975423352239436615 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5705768785275990664, guid: 2432de6f6f19ca748b46795456b8104b,
-    type: 3}
-  m_PrefabInstance: {fileID: 7378063582921032143}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7056750021311227428 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2432de6f6f19ca748b46795456b8104b,

@@ -1748,7 +1748,7 @@ Transform:
   m_GameObject: {fileID: 3555381734484890308}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.17, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -1948,7 +1948,7 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2, g: 1.75, b: 0.75, a: 1}
+  dissolveEdgeColor: {r: 1.6703318, g: 3.5088181, b: 3.5648696, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!1 &3644302243139924383
@@ -3906,6 +3906,16 @@ MonoBehaviour:
     unlocked: 0
   - effectId: Pride01
     unlocked: 0
+  - effectId: PR-A01
+    unlocked: 1
+  - effectId: PR-A02
+    unlocked: 1
+  - effectId: PR-A03
+    unlocked: 1
+  - effectId: PR-A04
+    unlocked: 1
+  - effectId: PR-TG01
+    unlocked: 1
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -3920,6 +3930,9 @@ MonoBehaviour:
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.SwordQi
+  - Ability.Monster.Pride
+  - Ability.Monster.Pride.Cut
+  - Ability.Monster.Pride.ExecutionSpeed
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -3962,8 +3975,8 @@ MonoBehaviour:
   projectileVfxPrefab: {fileID: 821419318031468683, guid: 8cb5727277cbb5945905182571d0a5de,
     type: 3}
   projectileVfxScale: 1
-  projectileVfxPositionOffset: {x: 0, y: 1, z: 1}
-  projectileVfxRotationOffset: {x: 0, y: 0, z: 45}
+  projectileVfxPositionOffset: {x: 0, y: 2, z: 1}
+  projectileVfxRotationOffset: {x: 0, y: 0, z: 0}
   explosionVfxPrefab: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19,
     type: 3}
   explosionVfxDuration: 0.5
@@ -3973,8 +3986,8 @@ MonoBehaviour:
   pride02SpreadAngle: 20
   pierceVfxPrefab: {fileID: 7478006030143991211, guid: 2088839dd24009a4db10df10661ad160,
     type: 3}
-  pierceVfxPositionOffset: {x: 0, y: 0, z: 0}
-  pierceVfxRotationOffset: {x: 0, y: 0, z: 45}
+  pierceVfxPositionOffset: {x: 0, y: 2, z: 0}
+  pierceVfxRotationOffset: {x: 0, y: 0, z: 0}
   pierceDamageMultiplier: 2
 --- !u!1 &8305497005758189896
 GameObject:
@@ -4134,6 +4147,12 @@ MonoBehaviour:
   upgrades:
   - effectId: Pride.ChargeEmpowered
     unlocked: 0
+  - effectId: PR-M01
+    unlocked: 0
+  - effectId: PR-A03
+    unlocked: 0
+  - effectId: PR-TG01
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -4147,6 +4166,9 @@ MonoBehaviour:
   debugLogCooldown: 0
   abilityTags:
   - Ability.Monster.Pride.ChargeStrike
+  - Ability.Monster.Pride
+  - Ability.Monster.Pride.Cut
+  - Ability.Monster.Pride.ExecutionSpeed
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -4388,6 +4410,10 @@ MonoBehaviour:
     unlocked: 0
   - effectId: Pride.BlinkCountPlusTwo
     unlocked: 0
+  - effectId: PR-S01
+    unlocked: 1
+  - effectId: PR-X01
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

@@ -1,8 +1,9 @@
 # 编译产物
 /server
 
-# 运行时数据
-/data/
+# 运行时数据（种子快照配置除外：策划可编辑，随仓库分发）
+/data/*
+!data/seed_snapshots.json
 *.db
 
 # 系统文件

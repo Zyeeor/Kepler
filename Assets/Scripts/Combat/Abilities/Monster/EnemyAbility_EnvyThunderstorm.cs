@@ -53,8 +53,9 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
             return;
         }
 
-        Animator anim = owner.GetActiveAnimator();
-        if (anim != null) anim.SetTrigger("Skill");
+        Animator[] animators = owner.GetComponentsInChildren<Animator>(false);
+        for (int i = 0; i < animators.Length; i++)
+            animators[i].SetTrigger("Skill");
         StartCoroutine(ThunderstormRoutine());
     }
 

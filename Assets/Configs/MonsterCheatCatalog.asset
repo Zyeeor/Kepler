@@ -26,7 +26,7 @@ MonoBehaviour:
     prefab: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7,
       type: 3}
   - displayName: "\u5AC9\u5992"
-    prefab: {fileID: 1418491709266848708, guid: b072b1eddfbc44cdb2a2cd5f2dcc91a8,
+    prefab: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342,
       type: 3}
   - displayName: "\u8272\u6B32"
     prefab: {fileID: 2259565064542781952, guid: adf557850b8644449a273ddc69a83bd5,

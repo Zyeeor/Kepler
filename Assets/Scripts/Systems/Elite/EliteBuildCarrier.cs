@@ -23,6 +23,8 @@ public class EliteBuildCarrier : MonoBehaviour
     public long SnapshotId { get; private set; }
     /// <summary>来源玩家设备特征码（观测 / 调试）。</summary>
     public string SourcePlayerId { get; private set; }
+    /// <summary>来源玩家的 Run ID（战果回传聚合键组成，Meta §6.5）。</summary>
+    public string RunId { get; private set; }
     /// <summary>快照 Sin 的 wire 名（观测 / 调试）。</summary>
     public string Sin { get; private set; }
     /// <summary>快照来源波次（观测 / 调试）。</summary>
@@ -57,6 +59,7 @@ public class EliteBuildCarrier : MonoBehaviour
 
         SnapshotId = snapshot.snapshotId;
         SourcePlayerId = snapshot.sourcePlayerId;
+        RunId = snapshot.runId;
         Sin = snapshot.sin;
         SourceWave = snapshot.sourceWave;
 

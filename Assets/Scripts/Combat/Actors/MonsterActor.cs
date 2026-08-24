@@ -1111,6 +1111,9 @@ public class MonsterActor : Actor
         isPossessed = true;
         isDowned = false;
         isWeakened = false;
+        // 恢复能力组件：SpawnAsPermanentCorpse（开场载体/刷尸体）与 BeginDisappearing 会禁用 EnemyAbility 组件，
+        // 若附身时不恢复，EnemyAbility.Update 不执行 → currentCooldown 不递减 → 攻击一次后永久卡 CD 无法再攻击。
+        SetAbilityComponentsEnabled(true);
         Body = BodyState.Active;
         gameObject.tag = "Player";
         if (bodyAnimator != null) bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
@@ -1193,6 +1196,17 @@ public class MonsterActor : Actor
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
         Debug.Log($"[MonsterState] '{displayName}' downed. Possess window={corpsePossessionWindow:F1}s.");
+    }
+
+    /// <summary>
+    /// 教学保护：延长尸体附身窗口（教学 TUT-04 用——玩家读提示/走位时不因 5s 窗口消散）。
+    /// 仅 Downed 态生效；永久尸体（窗口无限）无需延长；不影响后续生命周期。
+    /// </summary>
+    public void ExtendPossessionWindow(float extraSeconds)
+    {
+        if (Body != BodyState.Downed || extraSeconds <= 0f) return;
+        if (float.IsPositiveInfinity(possessionWindowEndsAt)) return;
+        possessionWindowEndsAt = Mathf.Max(possessionWindowEndsAt, Time.time + extraSeconds);
     }
 
     /// <summary>

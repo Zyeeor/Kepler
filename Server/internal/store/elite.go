@@ -44,6 +44,142 @@ type EliteStore interface {
 	// TopWaveCandidates 兜底候选（§5）：全库（排除请求者、bdCount >= minBD）中
 	// sourceWave 等于全库最高值的条目，按 bdCount 降序。
 	TopWaveCandidates(minBD int, excludePlayerID string) ([]*BuildSnapshot, error)
+	// ListAllSnapshots 全库快照（按 id 升序；userBD 目录导入的内容指纹去重用，
+	// 受全局容量上限约束，规模可控）。
+	ListAllSnapshots() ([]*BuildSnapshot, error)
+
+	// RecordEliteEvents 战果回传（策划案 §6.5）：精英在他人游戏中的战果事件，
+	// 按构筑主人 (owner_player_id, owner_run_id, sin) 聚合计数。返回聚合写入条数。
+	RecordEliteEvents(events []*EliteEvent) (int, error)
+	// GetEliteBuildStats 查询构筑主人的异步战绩聚合（荣誉殿堂 §5.4 字段的数据源）。
+	GetEliteBuildStats(ownerPlayerID string) ([]*EliteBuildStats, error)
+}
+
+// ============================================================================
+// 战果回传（策划案 §6.5）：精英在他人游戏中的战果事件 → 按构筑主人聚合
+// ============================================================================
+
+// EliteEvent 单条战果事件（客户端埋点上报）。
+type EliteEvent struct {
+	OwnerPlayerID string // 构筑主人（快照来源玩家，聚合键）
+	OwnerRunID    string // 构筑主人的 Run ID（聚合键）
+	Sin           string // 七宗罪 wire 名（聚合键）
+	Type          string // spawned / fatal / possessed / bodyFatal / runFail
+	SnapshotID    int64  // 投放命中的快照 ID（观测用，不参与聚合键）
+	ReporterID    string // 回报玩家（观测用，不参与聚合键）
+	Wave          int    // 事件发生波次（观测用，透传）
+	GameTime      int64  // 事件发生游戏时间（观测用，透传）
+}
+
+// EliteBuildStats 构筑主人的异步战绩聚合（荣誉殿堂「异步战绩」字段的数据源，§5.4/§5.8）。
+type EliteBuildStats struct {
+	OwnerPlayerID string
+	OwnerRunID    string
+	Sin           string
+	Deployed      int   // 被投放次数（spawned）
+	Fatal         int   // 被其他玩家击杀次数（fatal）
+	Possessed     int   // 被其他玩家 Possess 次数（possessed）
+	BodyFatal     int   // 造成 Body Fatal 次数（bodyFatal）
+	RunFail       int   // 直接导致 Run Fail 次数（runFail）
+	UpdatedAt     int64
+}
+
+// eliteStatsMigrateStmts 战绩聚合表建表语句（由 store.go 的 migrate 统一执行）。
+var eliteStatsMigrateStmts = []string{
+	`CREATE TABLE IF NOT EXISTS elite_build_stats (
+		owner_player_id TEXT NOT NULL,
+		owner_run_id    TEXT NOT NULL,
+		sin             TEXT NOT NULL,
+		deployed        INTEGER NOT NULL DEFAULT 0,
+		fatal           INTEGER NOT NULL DEFAULT 0,
+		possessed       INTEGER NOT NULL DEFAULT 0,
+		body_fatal      INTEGER NOT NULL DEFAULT 0,
+		run_fail        INTEGER NOT NULL DEFAULT 0,
+		updated_at      INTEGER NOT NULL,
+		UNIQUE(owner_player_id, owner_run_id, sin)
+	)`,
+	`CREATE INDEX IF NOT EXISTS idx_elite_stats_owner ON elite_build_stats(owner_player_id)`,
+}
+
+// RecordEliteEvents 批量聚合战果事件（事务）：每条事件按类型对对应计数器 +1，
+// 不存在则插入（初值 1）。返回聚合写入条数。
+func (s *SQLiteStore) RecordEliteEvents(events []*EliteEvent) (int, error) {
+	if len(events) == 0 {
+		return 0, nil
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	const upsert = `
+		INSERT INTO elite_build_stats (owner_player_id, owner_run_id, sin, deployed, fatal, possessed, body_fatal, run_fail, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(owner_player_id, owner_run_id, sin) DO UPDATE SET
+			deployed   = deployed + excluded.deployed,
+			fatal      = fatal + excluded.fatal,
+			possessed  = possessed + excluded.possessed,
+			body_fatal = body_fatal + excluded.body_fatal,
+			run_fail   = run_fail + excluded.run_fail,
+			updated_at = excluded.updated_at`
+	stmt, err := tx.Prepare(upsert)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	now := time.Now().Unix()
+	for _, e := range events {
+		var deployed, fatal, possessed, bodyFatal, runFail int
+		switch e.Type {
+		case "spawned":
+			deployed = 1
+		case "fatal":
+			fatal = 1
+		case "possessed":
+			possessed = 1
+		case "bodyFatal":
+			bodyFatal = 1
+		case "runFail":
+			runFail = 1
+		default:
+			continue // 未知类型逐条跳过（服务层已校验，存储层防御）
+		}
+		if _, err := stmt.Exec(
+			e.OwnerPlayerID, e.OwnerRunID, e.Sin,
+			deployed, fatal, possessed, bodyFatal, runFail, now,
+		); err != nil {
+			return 0, err
+		}
+	}
+	return len(events), tx.Commit()
+}
+
+// GetEliteBuildStats 查询构筑主人的战绩聚合（按更新时间降序）。
+func (s *SQLiteStore) GetEliteBuildStats(ownerPlayerID string) ([]*EliteBuildStats, error) {
+	rows, err := s.db.Query(`
+		SELECT owner_player_id, owner_run_id, sin, deployed, fatal, possessed, body_fatal, run_fail, updated_at
+		FROM elite_build_stats
+		WHERE owner_player_id = ?
+		ORDER BY updated_at DESC`, ownerPlayerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []*EliteBuildStats
+	for rows.Next() {
+		var st EliteBuildStats
+		if err := rows.Scan(
+			&st.OwnerPlayerID, &st.OwnerRunID, &st.Sin,
+			&st.Deployed, &st.Fatal, &st.Possessed, &st.BodyFatal, &st.RunFail, &st.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, &st)
+	}
+	return out, rows.Err()
 }
 
 // snapshotColumns 快照查询列。
@@ -173,6 +309,16 @@ func (s *SQLiteStore) TopWaveCandidates(minBD int, excludePlayerID string) ([]*B
 		  AND source_wave = (SELECT MAX(source_wave) FROM monster_build_snapshots WHERE player_id != ?)
 		ORDER BY bd_count DESC, id ASC
 		LIMIT 1000`, minBD, excludePlayerID, excludePlayerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanSnapshots(rows)
+}
+
+// ListAllSnapshots 全库快照（按 id 升序）。
+func (s *SQLiteStore) ListAllSnapshots() ([]*BuildSnapshot, error) {
+	rows, err := s.db.Query(`SELECT ` + snapshotColumns + ` FROM monster_build_snapshots ORDER BY id ASC`)
 	if err != nil {
 		return nil, err
 	}

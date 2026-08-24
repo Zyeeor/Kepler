@@ -52,6 +52,15 @@ public class EliteNetworkStatusUI : MonoBehaviour
         label.alignment = TextAlignmentOptions.TopLeft;
         label.color = textColor;
         label.raycastTarget = false;
+        // 中文提示需中文字形：TMP 默认字体缺 CJK 会显示方框；set_font 加保护防字体资产异常中断调用方
+        try
+        {
+            label.font = UiFontAssets.ChineseOrDefault;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[EliteNetworkStatusUI] 字体设置失败：{e.Message}");
+        }
         label.text = offlineText;
     }
 

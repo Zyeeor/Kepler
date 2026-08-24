@@ -142,8 +142,8 @@ public class CoreChoiceUI : MonoBehaviour
         PlayerController.SetGameplayInputBlocked(true, "CoreChoiceUI");
     }
 
-    /// <summary>根据 CardManager.currentPicks 重建卡片 UI。</summary>
-    private void RefreshCards()
+    /// <summary>根据 CardManager.currentPicks 重建卡片 UI。public：Debug 卡面浏览器替换候选后调用。</summary>
+    public void RefreshCards()
     {
         if (cardParent != null)
         {

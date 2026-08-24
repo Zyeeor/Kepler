@@ -47,7 +47,10 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Sloth.Launch", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Sloth.Launch");
+        EnsureUpgrade("SL-M01");
+        EnsureUpgrade("SL-M02");
         if (appliedEffectTags != null)
+
             appliedEffectTags.Clear();
     }
 
@@ -78,7 +81,8 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
         }
 
         owner.IsAbilityFacingLocked = true;
-        if (IsUpgradeUnlocked("Sloth.LandingMine"))
+        if (IsUpgradeUnlocked("SL-M01"))
+
             PlaceMine(owner.transform.position);
 
         yield return AbilityWait(windupDuration);
@@ -115,7 +119,8 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
             land.y = start.y;
             owner.transform.position = land;
             owner.IsAbilityFacingLocked = false;
-            if (IsUpgradeUnlocked("Sloth.LandingBlast"))
+            if (IsUpgradeUnlocked("SL-M02"))
+
             {
                 PlayLandingVfxOnSelf();
                 DamageEnemiesInSphere(land, landingRadius, landingDamage, null, landingVfxDuration);
@@ -168,7 +173,15 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
         activeMines.Add(mine);
     }
 
+    private void EnsureUpgrade(string effectId)
+    {
+        if (upgrades == null) upgrades = new List<UpgradeSlot>();
+        if (upgrades.Exists(slot => slot != null && string.Equals(slot.effectId, effectId, System.StringComparison.OrdinalIgnoreCase))) return;
+        upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
+    }
+
     private static float GetWorldRadiusXZ(GameObject go)
+
     {
         Renderer[] renderers = go.GetComponentsInChildren<Renderer>(true);
         if (renderers == null || renderers.Length == 0) return 1f;

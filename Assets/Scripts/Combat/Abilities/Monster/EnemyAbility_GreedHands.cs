@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
+
 
 /// <summary>
 /// Greed Attack: orbiting hand inventory. Regen 1/sec, dump all on LMB (0.2s spacing, 20 HP once).
@@ -8,24 +10,56 @@ using UnityEngine;
 /// </summary>
 public class EnemyAbility_GreedHands : EnemyAbility
 {
-    public int baseInventoryMax = 6;
+    [Header("Hand Inventory")]
+    [FormerlySerializedAs("baseInventoryMax")]
+    public int maxDaggers = 6;
+
     public int cardInventoryMax = 10;
     public int initialPossessedHands = 2;
     public float regenInterval = 1f;
-    public float releaseInterval = 0.2f;
-    public float detectRange = 10f;
-    public float handDamage = 15f;
-    public GameObject handProjectilePrefab;
+
+    [Header("Dagger")]
+    [FormerlySerializedAs("handProjectilePrefab")]
+    public GameObject daggerPrefab;
+    public Transform orbitCircleCenterOffset;
+
     public GameObject handSpawnVfxPrefab;
-    public GameObject handHitVfxPrefab;
-    public float orbitRadius = 1.4f;
-    public float orbitHeight = 1.1f;
+
+    public float orbitRadius = 1.5f;
+    public float orbitSpeed = 200f;
+    [FormerlySerializedAs("orbitHeight")]
+    public float heightOffset;
+
+    [Header("Homing")]
+    public float detectRange = 8f;
+    [FormerlySerializedAs("releaseInterval")]
+    public float launchInterval = 0.3f;
+    public float aimTurnSpeed = 720f;
+    public float homingSpeed = 20f;
+    public float homingTurnRate = 720f;
+    [Range(0f, 1f)] public float homingCurveStrength = 0.757f;
+
+    [Header("Damage")]
+    [HideInInspector] public float handDamage = 15f;
+
+    public float damageMultiplier = 1f;
+
+    [Header("Impact VFX")]
+    [FormerlySerializedAs("handHitVfxPrefab")]
+    public GameObject impactVfxPrefab;
+    public float impactVfxDuration = 1f;
+
+    [Header("Animation")]
+    public string animTrigger = "Basic";
+
     [Header("Debug")]
+
     [Tooltip("Log inventory / orbit visual lifecycle for troubleshooting.")]
     public bool debugLog = true;
 
     public int CurrentHands { get; private set; }
-    public int InventoryMax => IsUpgradeUnlocked("GR-A01") ? Mathf.Max(baseInventoryMax, cardInventoryMax) : baseInventoryMax;
+    public int InventoryMax => IsUpgradeUnlocked("GR-A01") ? Mathf.Max(maxDaggers, cardInventoryMax) : maxDaggers;
+
 
     private float _regenTimer;
     private bool _wasPossessed;
@@ -52,7 +86,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
             CurrentHands = Mathf.Clamp(initialPossessedHands, 0, InventoryMax);
         RefreshOrbitVisuals();
         if (debugLog)
-            Debug.Log($"[GreedHands] Start on '{(owner != null ? owner.name : "<no owner>")}' (root '{transform.root.name}'): possessed={_wasPossessed}, hands={CurrentHands}/{InventoryMax}, handProjectilePrefab={(handProjectilePrefab != null ? handProjectilePrefab.name : "NULL -> sphere fallback")}", this);
+            Debug.Log($"[GreedHands] Start on '{(owner != null ? owner.name : "<no owner>")}' (root '{transform.root.name}'): possessed={_wasPossessed}, hands={CurrentHands}/{InventoryMax}, daggerPrefab={(daggerPrefab != null ? daggerPrefab.name : "NULL -> sphere fallback")}", this);
+
     }
 
     public override bool CanTrigger()
@@ -103,7 +138,10 @@ public class EnemyAbility_GreedHands : EnemyAbility
             return;
         }
 
+        foreach (Animator animator in owner.GetComponentsInChildren<Animator>(false))
+            animator.SetTrigger(animTrigger);
         StartCoroutine(DumpRoutine());
+
     }
 
     private IEnumerator DumpRoutine()
@@ -133,11 +171,13 @@ public class EnemyAbility_GreedHands : EnemyAbility
             else
             {
                 bool left = (i % 2) == 0;
-                FireHand(owner.transform.position + Vector3.up * orbitHeight, target, retarget, spawnOnKill, flank, left, derived: false);
+                FireHand(GetOrbitCenterPosition(), target, retarget, spawnOnKill, flank, left, derived: false);
+
             }
 
             if (i < toRelease - 1)
-                yield return AbilityWait(releaseInterval);
+                yield return AbilityWait(launchInterval);
+
         }
 
         _dumping = false;
@@ -194,8 +234,9 @@ public class EnemyAbility_GreedHands : EnemyAbility
     private void FireHand(Vector3 origin, Enemy target, bool retarget, bool spawnOnKill, bool flank, bool left, bool derived)
     {
         GameObject go;
-        if (handProjectilePrefab != null)
-            go = VfxPool.Instance.Spawn(handProjectilePrefab, origin, Quaternion.identity);
+        if (daggerPrefab != null)
+            go = VfxPool.Instance.Spawn(daggerPrefab, origin, Quaternion.identity);
+
         else
         {
             go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -217,7 +258,22 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
         GreedHandProjectile hand = go.GetComponent<GreedHandProjectile>();
         if (hand == null) hand = go.AddComponent<GreedHandProjectile>();
-        hand.Launch(this, owner, target, damage > 0f ? damage : handDamage, retarget, spawnOnKill, flank, left, derived, handHitVfxPrefab);
+        hand.Launch(
+            this,
+            owner,
+            target,
+            (damage > 0f ? damage : handDamage) * damageMultiplier,
+            retarget,
+            spawnOnKill,
+            flank,
+            left,
+            derived,
+            impactVfxPrefab,
+            impactVfxDuration,
+            homingSpeed,
+            homingTurnRate,
+            homingCurveStrength);
+
         if (debugLog)
             Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' fired hand -> '{(target != null ? target.name : "<none>")}' (flank={flank}, left={left}, derived={derived})", go);
     }
@@ -234,8 +290,9 @@ public class EnemyAbility_GreedHands : EnemyAbility
         while (_orbitVisuals.Count < CurrentHands)
         {
             GameObject vis;
-            if (handProjectilePrefab != null)
-                vis = Instantiate(handProjectilePrefab);
+            if (daggerPrefab != null)
+                vis = Instantiate(daggerPrefab);
+
             else
             {
                 vis = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -248,7 +305,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
             vis.name = "GreedHandOrbit";
             _orbitVisuals.Add(vis);
             if (debugLog)
-                Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' orbit visual created ({_orbitVisuals.Count}/{CurrentHands}) from '{(handProjectilePrefab != null ? handProjectilePrefab.name : "sphere fallback")}'", vis);
+                Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' orbit visual created ({_orbitVisuals.Count}/{CurrentHands}) from '{(daggerPrefab != null ? daggerPrefab.name : "sphere fallback")}'", vis);
+
         }
     }
 
@@ -259,13 +317,20 @@ public class EnemyAbility_GreedHands : EnemyAbility
         {
             GameObject vis = _orbitVisuals[i];
             if (vis == null) continue;
-            float angle = AbilityTime * 90f + i * (360f / Mathf.Max(1, _orbitVisuals.Count));
+            float angle = AbilityTime * orbitSpeed + i * (360f / Mathf.Max(1, _orbitVisuals.Count));
             Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * orbitRadius;
-            vis.transform.position = owner.transform.position + Vector3.up * orbitHeight + offset;
+            vis.transform.position = GetOrbitCenterPosition() + offset;
         }
     }
 
+    private Vector3 GetOrbitCenterPosition()
+    {
+        if (orbitCircleCenterOffset != null) return orbitCircleCenterOffset.position;
+        return owner != null ? owner.transform.position + Vector3.up * heightOffset : transform.position;
+    }
+
     protected override void OnDisable()
+
     {
         for (int i = 0; i < _orbitVisuals.Count; i++)
             if (_orbitVisuals[i] != null) Destroy(_orbitVisuals[i]);

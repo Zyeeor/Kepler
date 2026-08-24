@@ -1,0 +1,128 @@
+{
+  "seeds": [
+    {
+      "playerId": "device-seed-default-a",
+      "runId": "run-seed-001",
+      "snapshots": [
+        {
+          "sin": "pride",
+          "monsterType": "傲慢-终刃绝影",
+          "bdCount": 3,
+          "sourceWave": 7,
+          "gameTime": 280,
+          "bdData": [{"cardId": "PR-A01", "stack": 1}, {"cardId": "PR-A02", "stack": 1}, {"cardId": "PR-M01", "stack": 1}]
+        },
+        {
+          "sin": "sloth",
+          "monsterType": "怠惰-机械之灵",
+          "bdCount": 3,
+          "sourceWave": 7,
+          "gameTime": 280,
+          "bdData": [{"cardId": "SL-A03", "stack": 1}, {"cardId": "SL-M01", "stack": 1}, {"cardId": "SL-S01", "stack": 1}]
+        },
+        {
+          "sin": "gluttony",
+          "monsterType": "暴食-魔猫",
+          "bdCount": 3,
+          "sourceWave": 7,
+          "gameTime": 280,
+          "bdData": [{"cardId": "GL-A01", "stack": 1}, {"cardId": "GL-A02", "stack": 1}, {"cardId": "GL-M01", "stack": 1}]
+        },
+        {
+          "sin": "envy",
+          "monsterType": "嫉妒",
+          "bdCount": 4,
+          "sourceWave": 8,
+          "gameTime": 350,
+          "bdData": [{"cardId": "EN-A01", "stack": 1}, {"cardId": "EN-A03", "stack": 1}, {"cardId": "EN-M01", "stack": 1}, {"cardId": "EN-A05", "stack": 1}]
+        },
+        {
+          "sin": "wrath",
+          "monsterType": "愤怒",
+          "bdCount": 3,
+          "sourceWave": 7,
+          "gameTime": 280,
+          "bdData": [{"cardId": "WR-M01", "stack": 1}, {"cardId": "WR-B01", "stack": 1}, {"cardId": "WR-S01", "stack": 1}]
+        },
+        {
+          "sin": "greed",
+          "monsterType": "贪婪-万手藏主",
+          "bdCount": 3,
+          "sourceWave": 7,
+          "gameTime": 280,
+          "bdData": [{"cardId": "GR-M01", "stack": 1}, {"cardId": "GR-A01", "stack": 1}, {"cardId": "GR-S01", "stack": 1}]
+        },
+        {
+          "sin": "lust",
+          "monsterType": "色欲-灵念师",
+          "bdCount": 3,
+          "sourceWave": 7,
+          "gameTime": 280,
+          "bdData": [{"cardId": "LU-M05", "stack": 1}, {"cardId": "LU-A03", "stack": 1}, {"cardId": "LU-TG01", "stack": 1}]
+        }
+      ]
+    },
+    {
+      "playerId": "device-seed-default-b",
+      "runId": "run-seed-002",
+      "snapshots": [
+        {
+          "sin": "pride",
+          "monsterType": "傲慢-终刃绝影",
+          "bdCount": 2,
+          "sourceWave": 5,
+          "gameTime": 180,
+          "bdData": [{"cardId": "PR-M01", "stack": 1}, {"cardId": "PR-S01", "stack": 1}]
+        },
+        {
+          "sin": "sloth",
+          "monsterType": "怠惰-机械之灵",
+          "bdCount": 2,
+          "sourceWave": 5,
+          "gameTime": 180,
+          "bdData": [{"cardId": "SL-M01", "stack": 1}, {"cardId": "SL-S01", "stack": 1}]
+        },
+        {
+          "sin": "gluttony",
+          "monsterType": "暴食-魔猫",
+          "bdCount": 2,
+          "sourceWave": 5,
+          "gameTime": 180,
+          "bdData": [{"cardId": "GL-S01", "stack": 1}, {"cardId": "GL-S02", "stack": 1}]
+        },
+        {
+          "sin": "envy",
+          "monsterType": "嫉妒",
+          "bdCount": 2,
+          "sourceWave": 6,
+          "gameTime": 220,
+          "bdData": [{"cardId": "EN-R01", "stack": 1}, {"cardId": "EN-S01", "stack": 1}]
+        },
+        {
+          "sin": "wrath",
+          "monsterType": "愤怒",
+          "bdCount": 2,
+          "sourceWave": 6,
+          "gameTime": 220,
+          "bdData": [{"cardId": "WR-M02", "stack": 1}, {"cardId": "WR-B02", "stack": 1}]
+        },
+        {
+          "sin": "greed",
+          "monsterType": "贪婪-万手藏主",
+          "bdCount": 2,
+          "sourceWave": 6,
+          "gameTime": 220,
+          "bdData": [{"cardId": "GR-M02", "stack": 1}, {"cardId": "GR-A02", "stack": 1}]
+        },
+        {
+          "sin": "lust",
+          "monsterType": "色欲-灵念师",
+          "bdCount": 2,
+          "sourceWave": 5,
+          "gameTime": 180,
+          "bdData": [{"cardId": "LU-S05", "stack": 1}, {"cardId": "LU-S06", "stack": 1}]
+        }
+      ]
+    }
+  ]
+}
