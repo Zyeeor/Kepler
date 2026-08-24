@@ -19,11 +19,14 @@ public class WrathBurnField : MonoBehaviour
     private float _expiresAt;
     private float _nextTickAt;
     private GameObject _vfx;
+    private float _ownerScaleMultiplier = 1f;
 
     public void Configure(Enemy fieldOwner, EnemyAbility ability, float fieldRadius, float fieldDps, float fieldDuration, GameObject vfxPrefab, GameplayEffectDefinition effect)
     {
         owner = fieldOwner;
         sourceAbility = ability;
+        MonsterActor ownerMonster = fieldOwner as MonsterActor;
+        _ownerScaleMultiplier = ownerMonster != null ? ownerMonster.PossessionCombatScaleMultiplier : 1f;
         radius = Mathf.Max(0.1f, fieldRadius);
         dps = Mathf.Max(0f, fieldDps);
         duration = Mathf.Max(0.1f, fieldDuration);
@@ -65,8 +68,9 @@ public class WrathBurnField : MonoBehaviour
 
     private void ApplyTick(float tickDamage)
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Collide);
-        CombatHitboxDebug.DrawSphere(true, transform.position, radius, Mathf.Max(0.08f, tickInterval));
+        float effectiveRadius = radius * Mathf.Max(1f, _ownerScaleMultiplier);
+        Collider[] hits = Physics.OverlapSphere(transform.position, effectiveRadius, ~0, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawSphere(true, transform.position, effectiveRadius, Mathf.Max(0.08f, tickInterval));
         HashSet<int> seen = new HashSet<int>();
         foreach (Collider hit in hits)
         {
@@ -103,7 +107,8 @@ public class WrathBurnField : MonoBehaviour
 
     private void TryIgniteOilsInRadius()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Collide);
+        float effectiveRadius = radius * Mathf.Max(1f, _ownerScaleMultiplier);
+        Collider[] hits = Physics.OverlapSphere(transform.position, effectiveRadius, ~0, QueryTriggerInteraction.Collide);
         foreach (Collider hit in hits)
         {
             if (hit == null) continue;

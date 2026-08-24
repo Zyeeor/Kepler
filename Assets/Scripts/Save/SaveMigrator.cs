@@ -29,6 +29,7 @@ public static class SaveMigrator
         // 读档恢复时 RunSession.ResumeFromSave 对缺失 runId 自动补生成。
         migrations[1] = MigrateV1ToV2;
         migrations[2] = MigrateV2ToV3;
+        migrations[3] = MigrateV3ToV4;
     }
 
     static SaveData MigrateV1ToV2(SaveData d)
@@ -39,6 +40,12 @@ public static class SaveMigrator
     static SaveData MigrateV2ToV3(SaveData d)
     {
         if (d.possessionImprints == null) d.possessionImprints = new List<PossessionImprintState>();
+        return d;
+    }
+
+    static SaveData MigrateV3ToV4(SaveData d)
+    {
+        // New LustHealProgress is a run-local fractional remainder; old saves start at zero.
         return d;
     }
 

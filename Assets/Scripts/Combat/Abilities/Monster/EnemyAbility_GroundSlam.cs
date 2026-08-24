@@ -54,9 +54,10 @@ public class EnemyAbility_GroundSlam : EnemyAbility
     void DoRadiusHit(float baseDmg, float multiplier)
     {
         Vector3 center = owner != null ? owner.transform.position : transform.position;
+        float hitRadius = ScaleAbilityRadius(radius);
         int layerMask = owner.isPossessed ? ~0 : targetMask;
-        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, Mathf.Max(secondHitDelay, 0.4f));
-        Collider[] hits = Physics.OverlapSphere(center, radius, layerMask, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, hitRadius, Mathf.Max(secondHitDelay, 0.4f));
+        Collider[] hits = Physics.OverlapSphere(center, hitRadius, layerMask, QueryTriggerInteraction.Collide);
         foreach (var h in hits)
         {
             var ph = h.GetComponentInParent<PlayerHealth>();

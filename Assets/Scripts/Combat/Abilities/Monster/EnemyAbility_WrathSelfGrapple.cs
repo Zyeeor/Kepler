@@ -196,6 +196,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         hookProj.ownerTransform = owner != null ? owner.transform : null;
         hookProj.hitMask = ~0;
         hookProj.obstacleMask = obstacleMask.value == 0 ? (LayerMask)~0 : obstacleMask;
+        hookProj.SetOwnerScaleMultiplier(OwnerCombatScaleMultiplier);
         hookProj.useUnscaledTime = IsOwnedByPlayer;
         hookProj.debugLogging = false;
         hookProj.ResetForPoolSpawn();
@@ -249,7 +250,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         float distance = Mathf.Max(0.5f, GetCardParameter("GrappleDistance", grappleDistance));
         if (IsUpgradeUnlocked(CardRangeImpact))
             distance *= Mathf.Max(1f, GetCardParameter("GrappleRangeMult", rangeMultiplierWithM02));
-        return distance;
+        return ScaleAbilityRadius(distance);
     }
 
     private void DealPathDamageSegment(Vector3 from, Vector3 to)
@@ -263,8 +264,9 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         }
 
         Vector3 dir = delta / dist;
-        CombatHitboxDebug.DrawCapsule(drawHitboxes, from, to, pathRadius, 0f);
-        RaycastHit[] hits = Physics.SphereCastAll(from, pathRadius, dir, dist, ~0, QueryTriggerInteraction.Collide);
+        float effectivePathRadius = ScaleAbilityRadius(pathRadius);
+        CombatHitboxDebug.DrawCapsule(drawHitboxes, from, to, effectivePathRadius, 0f);
+        RaycastHit[] hits = Physics.SphereCastAll(from, effectivePathRadius, dir, dist, ~0, QueryTriggerInteraction.Collide);
         foreach (RaycastHit hit in hits)
             TryDamageColliderOnce(hit.collider);
 
@@ -273,8 +275,9 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
 
     private void CollectAndDamageSphere(Vector3 center, float radius)
     {
-        CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, 0f);
-        Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
+        float effectiveRadius = ScaleAbilityRadius(radius);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, effectiveRadius, 0f);
+        Collider[] hits = Physics.OverlapSphere(center, effectiveRadius, ~0, QueryTriggerInteraction.Collide);
         foreach (Collider hit in hits)
             TryDamageColliderOnce(hit);
     }

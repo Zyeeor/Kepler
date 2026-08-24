@@ -244,7 +244,7 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     private Enemy FindNearestTarget(Vector3 origin, Enemy exclude)
     {
         Enemy result = null;
-        float bestDistance = searchRange;
+        float bestDistance = ScaleAbilityRadius(searchRange);
         foreach (var candidate in EnemyRegistry.All)
         {
             if (candidate == null || candidate == exclude || owner == null || !owner.CanDamage(candidate)) continue;

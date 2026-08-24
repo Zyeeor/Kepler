@@ -141,7 +141,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             if (chargeVfxInstance != null)
             {
                 float ct = Mathf.Clamp01(chargeTimer / Mathf.Max(0.01f, maxChargeTime));
-                chargeVfxInstance.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 2f, ct);
+                        chargeVfxInstance.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 2f, ct) * OwnerCombatScaleMultiplier;
             }
         }
         else if (isCharging)
@@ -254,14 +254,16 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         float traveled = 0f;
         int layerMask = owner.isPossessed ? ~0 : targetMask;
 
-        while (traveled < maxRange && projectileGo != null)
+        float effectiveMaxRange = ScaleAbilityRadius(maxRange);
+        while (traveled < effectiveMaxRange && projectileGo != null)
         {
             float step = projectileSpeed * AbilityDeltaTime;
             traveled += step;
-            Vector3 currentPos = origin + forward * Mathf.Min(traveled, maxRange);
+            Vector3 currentPos = origin + forward * Mathf.Min(traveled, effectiveMaxRange);
             projectileGo.transform.position = currentPos;
 
-            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale, projectileHeight * 0.5f * scale, step * 0.5f);
+            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale * OwnerCombatScaleMultiplier,
+                projectileHeight * 0.5f * scale * OwnerCombatScaleMultiplier, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
             CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
@@ -362,7 +364,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             bullet.transform.position = currentPos;
 
             CombatHitboxDebug.DrawSphere(drawHitboxes, currentPos, 0.5f * scale, 0f);
-            Collider[] hits = Physics.OverlapSphere(currentPos, 0.5f * scale, layerMask, QueryTriggerInteraction.Collide);
+            Collider[] hits = Physics.OverlapSphere(currentPos, 0.5f * scale * OwnerCombatScaleMultiplier, layerMask, QueryTriggerInteraction.Collide);
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponentInParent<Enemy>();
@@ -387,7 +389,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
     private void TryCrushIncomingProjectile(Vector3 center, Vector3 forward, float ownScale)
     {
-        Collider[] candidates = Physics.OverlapSphere(center, projectileWidth * ownScale * 0.5f, ~0, QueryTriggerInteraction.Collide);
+        Collider[] candidates = Physics.OverlapSphere(center, projectileWidth * ownScale * 0.5f * OwnerCombatScaleMultiplier, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < candidates.Length; i++)
         {
             Projectile incoming = candidates[i].GetComponentInParent<Projectile>();

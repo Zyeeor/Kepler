@@ -81,7 +81,7 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         Vector3 secondPoint = center;
         if (pairedMaws)
         {
-            float offset = pairedOffset * Mathf.Max(1f, radius / Mathf.Max(0.01f, blastRadius));
+            float offset = ScaleAbilityRadius(pairedOffset) * Mathf.Max(1f, radius / Mathf.Max(0.01f, blastRadius));
             firstPoint = center - right * (offset * 0.5f);
             secondPoint = center + right * (offset * 0.5f);
         }
@@ -94,13 +94,14 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
 
     private IEnumerator SpawnSingleMawRoutine(Vector3 point, float radius, float dmg)
     {
-        GameObject telegraph = SpawnTelegraph(point, radius);
+        float scaledRadius = ScaleAbilityRadius(radius);
+        GameObject telegraph = SpawnTelegraph(point, scaledRadius);
         yield return AbilityWait(warnDelay);
 
         if (telegraph != null) Destroy(telegraph);
 
         // Blast VFX is the maw resolve cue at the snapshotted ground point (not per-hit).
-        PlayBlastVfx(point, radius);
+        PlayBlastVfx(point, scaledRadius);
         DamageEnemiesInSphere(point, radius, dmg, null, blastVfxDuration);
         TryDamagePlayerInRadius(point, radius, dmg, blastVfxDuration);
     }
@@ -111,7 +112,7 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         if (!IsUpgradeUnlocked("GL-A03"))
             return ProjectToGround(ref aimPoint);
 
-        float maxDistance = GetCardParameter("MawAimDistance", glA03AimDistance);
+        float maxDistance = ScaleAbilityRadius(GetCardParameter("MawAimDistance", glA03AimDistance));
         if (owner.isPossessed && PlayerController.Instance != null &&
             PlayerController.Instance.TryGetAimPoint(out Vector3 mouseAim))
         {

@@ -134,7 +134,7 @@ public class EnemyAbility_SweepPull : EnemyAbility
         if (hookPrefab != null)
         {
             hookObj = SpawnVfxTracked(hookPrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
-            if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
+            if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale * OwnerCombatScaleMultiplier;
             hookProj = hookObj.GetComponent<HookProjectile>();
             if (hookProj != null)
                 ConfigurePullHook(hookProj);
@@ -146,13 +146,13 @@ public class EnemyAbility_SweepPull : EnemyAbility
             hookObj = new GameObject("HookProj");
             hookObj.transform.position = origin;
             hookObj.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
-            if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale;
+            if (wrath02) hookObj.transform.localScale = Vector3.one * wrath02HookScale * OwnerCombatScaleMultiplier;
             hookProj = hookObj.AddComponent<HookProjectile>();
             ConfigurePullHook(hookProj);
         }
 
         // Wait for hook to hit or miss
-        float timeout = hookMaxRange / hookSpeed + 0.5f;
+        float timeout = ScaleAbilityRadius(hookMaxRange) / hookSpeed + 0.5f;
         float elapsed = 0f;
         while (!hookHit && elapsed < timeout)
         {
@@ -239,12 +239,14 @@ public class EnemyAbility_SweepPull : EnemyAbility
         if (hookProj == null) return;
         hookProj.flightMode = HookProjectile.FlightMode.PullTargets;
         hookProj.speed = hookSpeed;
-        hookProj.maxTravelDistance = hookMaxRange;
-        hookProj.maxLifetime = hookMaxRange / Mathf.Max(0.01f, hookSpeed) + 0.25f;
+        float effectiveHookRange = ScaleAbilityRadius(hookMaxRange);
+        hookProj.maxTravelDistance = effectiveHookRange;
+        hookProj.maxLifetime = effectiveHookRange / Mathf.Max(0.01f, hookSpeed) + 0.25f;
         hookProj.hitVfxPrefab = hitVfxPrefab;
         hookProj.hitVfxDuration = hitVfxDuration;
         hookProj.ownerAbility = this;
         hookProj.ownerTransform = owner != null ? owner.transform : null;
+        hookProj.SetOwnerScaleMultiplier(OwnerCombatScaleMultiplier);
         hookProj.hitMask = owner != null && owner.isPossessed ? ~0 : targetMask;
         hookProj.useUnscaledTime = IsOwnedByPlayer;
         hookProj.onAnchorStop = null;

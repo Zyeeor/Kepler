@@ -153,8 +153,9 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
         else
         {
             // Follow-up may land after target died; still show VFX at snapshot position.
-            CombatHitboxDebug.DrawSphere(drawHitboxes, strike.position, 0.75f, hitEffectDuration);
-            Collider[] cols = Physics.OverlapSphere(strike.position, 0.75f);
+            float hitRadius = ScaleAbilityRadius(0.75f);
+            CombatHitboxDebug.DrawSphere(drawHitboxes, strike.position, hitRadius, hitEffectDuration);
+            Collider[] cols = Physics.OverlapSphere(strike.position, hitRadius);
             for (int i = 0; i < cols.Length; i++)
             {
                 Enemy enemy = cols[i].GetComponentInParent<Enemy>();
@@ -191,7 +192,7 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
         float range = searchRadius;
         if (IsUpgradeUnlocked("EN-TG01"))
             range += GetCardParameter("SpecialRangeBonus", 4f);
-        return range;
+        return ScaleAbilityRadius(range);
     }
 
     private void SpawnTelegraph(Vector3 pos)

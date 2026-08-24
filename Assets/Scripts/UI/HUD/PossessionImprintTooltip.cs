@@ -42,14 +42,15 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
                 return "攻击伤害提升 " + ((PossessionImprintMath.WrathDamageMultiplier(stacks) - 1f) * 100f).ToString("0") + "%";
             case SinType.Gluttony:
                 return "附身体生命提升 " + ((PossessionImprintMath.GluttonyHealthMultiplier(stacks) - 1f) * 100f).ToString("0")
-                    + "%\n视觉体型提升 " + ((PossessionImprintMath.GluttonyScaleMultiplier(stacks) - 1f) * 100f).ToString("0") + "%";
+                    + "%\n视觉体型提升 " + ((PossessionImprintMath.GluttonyScaleMultiplier(stacks) - 1f) * 100f).ToString("0")
+                    + "%\n投掷物与技能命中范围同步放大";
             case SinType.Greed:
                 float progress = PossessionImprintManager.Instance != null ? PossessionImprintManager.Instance.GreedBonusProgress : 0f;
                 return "每次夺舍额外叠层进度 " + Mathf.Min(stacks * 5, 100) + "%\n当前进度 " + (progress * 100f).ToString("0") + "%";
             case SinType.Envy:
                 return "子弹时间延长 " + PossessionImprintMath.EnvyBulletTimeBonus(stacks).ToString("0.00") + "秒";
             case SinType.Lust:
-                return "有效攻击命中控制概率 " + (PossessionImprintMath.LustControlChance(stacks) * 100f).ToString("0") + "%";
+                return "攻击伤害转化吸血 " + (PossessionImprintMath.LustLifestealMultiplier(stacks) * 100f).ToString("0") + "%";
             case SinType.Sloth:
                 return "附身与技能生命消耗降低 " + ((1f - PossessionImprintMath.SlothDrainMultiplier(stacks)) * 100f).ToString("0.0") + "%";
             default:

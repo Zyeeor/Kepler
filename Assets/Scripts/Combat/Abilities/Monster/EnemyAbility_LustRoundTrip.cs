@@ -126,7 +126,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
 
     private IEnumerator RoundTripRoutine(Vector3 origin, Vector3 direction, float dmg)
     {
-        Vector3 end = origin + direction * mistRange;
+        Vector3 end = origin + direction * ScaleAbilityRadius(mistRange);
         HashSet<int> outboundHits = new HashSet<int>();
         yield return TravelSegment(origin, end, dmg, outboundHits);
         HashSet<int> returnHits = new HashSet<int>();
@@ -175,7 +175,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
             float u = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, expand));
             float radius = Mathf.Lerp(r0, r1, u);
             if (ring != null)
-                ring.transform.localScale = Vector3.one * Mathf.Max(0.1f, radius * 2f);
+                ring.transform.localScale = Vector3.one * Mathf.Max(0.1f, radius * 2f * OwnerCombatScaleMultiplier);
             RegisterRingHits(origin, radius, width, dmg, hitIds);
             yield return null;
         }
@@ -198,6 +198,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
 
     private void RegisterHitsAlong(Vector3 from, Vector3 to, float radius, float dmg, HashSet<int> hitIds)
     {
+        radius = ScaleAbilityRadius(radius);
         Vector3 delta = to - from;
         float dist = delta.magnitude;
         if (dist < 0.0001f)
@@ -217,7 +218,8 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
 
     private void RegisterRingHits(Vector3 origin, float radius, float width, float dmg, HashSet<int> hitIds)
     {
-        float half = Mathf.Max(0.05f, width * 0.5f);
+        radius = ScaleAbilityRadius(radius);
+        float half = Mathf.Max(0.05f, ScaleAbilityRadius(width * 0.5f));
         CombatHitboxDebug.DrawSphere(drawHitboxes, origin, radius + half, 0f);
         Collider[] hits = Physics.OverlapSphere(origin, radius + half, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
@@ -243,6 +245,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
 
     private void RegisterSphereHits(Vector3 center, float radius, float dmg, HashSet<int> hitIds)
     {
+        radius = ScaleAbilityRadius(radius);
         CombatHitboxDebug.DrawSphere(drawHitboxes, center, radius, 0f);
         Collider[] hits = Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
@@ -310,7 +313,10 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         float dmg = GetCardParameter("Dmg", a03Damage);
         float radius = GetCardParameter("R", a03Radius);
         if (a03BlastVfx != null)
-            Object.Instantiate(a03BlastVfx, pos, Quaternion.identity);
+        {
+            GameObject blast = Object.Instantiate(a03BlastVfx, pos, Quaternion.identity);
+            blast.transform.localScale *= OwnerCombatScaleMultiplier;
+        }
         DamageEnemiesInSphere(pos, radius, dmg);
         if (!owner.isPossessed)
             TryDamagePlayerInRadius(pos, radius, dmg);
@@ -319,12 +325,16 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
     private GameObject SpawnMistVisual(Vector3 pos, Quaternion rot)
     {
         if (mistVfxPrefab != null)
-            return Object.Instantiate(mistVfxPrefab, pos, rot);
+        {
+            GameObject mist = Object.Instantiate(mistVfxPrefab, pos, rot);
+            mist.transform.localScale *= OwnerCombatScaleMultiplier;
+            return mist;
+        }
         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         go.name = "PF_MON_LUST_ROUNDTRIP_MIST";
         go.transform.position = pos;
         go.transform.rotation = rot;
-        go.transform.localScale = Vector3.one * Mathf.Max(0.3f, mistWidth);
+        go.transform.localScale = Vector3.one * Mathf.Max(0.3f, mistWidth) * OwnerCombatScaleMultiplier;
         Collider col = go.GetComponent<Collider>();
         if (col != null) Object.Destroy(col);
         return go;
