@@ -165,3 +165,6 @@ InitTestScene*.unity*
 .codebuddy/**/cache/
 .codebuddy/**/*.local.*
 
+
+# 精英怪前台实现文档（本地工作文档，不入库）
+精英怪筛选-他人BD怪物投放-策划案.md
