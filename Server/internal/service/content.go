@@ -5,11 +5,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"demo/server/internal/logx"
 	"demo/server/internal/store"
 )
 
@@ -60,7 +60,7 @@ func (s *ContentService) Upload(req *UploadRequest) (*store.Creation, error) {
 	if len(req.Thumbnail) > 0 {
 		thumbnailURL, err = s.saveFile(creationID, "thumbnail.png", req.Thumbnail)
 		if err != nil {
-			log.Printf("save thumbnail failed: %v", err)
+			logx.Event("save thumbnail failed: %v", err)
 		}
 	}
 
