@@ -82,9 +82,9 @@ public class AbilityCooldownUI : MonoBehaviour
 
     void SetupIcons()
     {
-        if (basicKeyHint != null) basicKeyHint.text = "左键";
-        if (skillKeyHint != null) skillKeyHint.text = "Q";
-        if (possessKeyHint != null) possessKeyHint.text = "右键";
+        if (basicKeyHint != null) basicKeyHint.text = TextCatalog.Get("ui.hud.key_left");
+        if (skillKeyHint != null) skillKeyHint.text = TextCatalog.Get("ui.hud.key_q");
+        if (possessKeyHint != null) possessKeyHint.text = TextCatalog.Get("ui.hud.key_right");
 
         // Set overlay colors
         SetupOverlay(basicCooldownOverlay);

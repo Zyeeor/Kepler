@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa6d9d8365d6034ba5a234fdfe9cd6b, type: 3}
+  m_Name: TextCatalog
+  m_EditorClassIdentifier: 
+  entries:
+  - key: ui.settings.sfx
+    text: 'SFX/UI: {0}%'
+    mythicText: 
+    systemText: 
+  - key: ui.settings.music
+    text: 'Music: {0}%'
+    mythicText: 
+    systemText: 
+  - key: ui.dialog.title
+    text: "\u786E\u8BA4"
+    mythicText: 
+    systemText: 
+  - key: ui.dialog.message
+    text: "\u786E\u5B9A\u8981\u6267\u884C\u6B64\u64CD\u4F5C\u5417\uFF1F"
+    mythicText: 
+    systemText: 
+  - key: ui.dialog.confirm
+    text: "\u786E\u8BA4"
+    mythicText: 
+    systemText: 
+  - key: ui.dialog.cancel
+    text: "\u53D6\u6D88"
+    mythicText: 
+    systemText: 
+  - key: ui.hud.attack
+    text: "\u5DE6\u952E - {0}"
+    mythicText: 
+    systemText: 
+  - key: ui.hud.skill
+    text: Q - {0}
+    mythicText: 
+    systemText: 
+  - key: ui.hud.possess
+    text: "E - \u5B50\u5F39\u65F6\u95F4 / F - \u8131\u79BB"
+    mythicText: 
+    systemText: 
+  - key: ui.hud.basic_default
+    text: "\u666E\u653B"
+    mythicText: 
+    systemText: 
+  - key: ui.hud.skill_default
+    text: "\u6280\u80FD"
+    mythicText: 
+    systemText: 
+  - key: ui.hud.key_left
+    text: "\u5DE6\u952E"
+    mythicText: 
+    systemText: 
+  - key: ui.hud.key_q
+    text: Q
+    mythicText: 
+    systemText: 
+  - key: ui.hud.key_right
+    text: "\u53F3\u952E"
+    mythicText: 
+    systemText: 
+  - key: ui.result.victory
+    text: VICTORY
+    mythicText: 
+    systemText: 
+  - key: ui.result.gameover
+    text: GAME OVER
+    mythicText: 
+    systemText: 
+  - key: ui.toggle.hp_on
+    text: 'HP: ON'
+    mythicText: 
+    systemText: 
+  - key: ui.toggle.hp_off
+    text: 'HP: OFF'
+    mythicText: 
+    systemText: 
+  - key: ui.elite.offline
+    text: "\u7CBE\u82F1\u670D\u52A1\u5668\u79BB\u7EBF"
+    mythicText: 
+    systemText: 

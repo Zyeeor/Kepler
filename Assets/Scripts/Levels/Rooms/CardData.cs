@@ -42,6 +42,8 @@ public class CardData
 {
     [Tooltip("Display name shown on the card.")]
     public string cardName;
+    [Tooltip("文本目录 Key（TextCatalog；已配置时优先于 cardName/description，实现文案统一管理）。格式：card.<effectId>，目录内对应 .name / .desc 后缀。")]
+    public string textKey;
     [Tooltip("Unique effect ID. Matches an AbilityUpgrade on an EnemyAbility prefab.")]
     public string effectId;
     [Tooltip("Card image / icon sprite (shown in CoreChoiceUI).")]
@@ -73,6 +75,22 @@ public class CardData
     public Sprite backgroundSprite;
     [Tooltip("边框层（broader）素材；null = 使用卡 prefab 默认素材。")]
     public Sprite borderSprite;
+
+    /// <summary>生效卡名：textKey 命中目录时取目录值，否则内联 cardName。</summary>
+    public string ResolveCardName()
+    {
+        if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
+            return TextCatalog.Instance.Get(textKey + ".name");
+        return cardName;
+    }
+
+    /// <summary>生效卡描述：textKey 命中目录时取目录值，否则内联 description。</summary>
+    public string ResolveDescription()
+    {
+        if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
+            return TextCatalog.Instance.Get(textKey + ".desc");
+        return description;
+    }
 }
 
 [Serializable]

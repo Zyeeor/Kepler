@@ -126,7 +126,7 @@ public class CoreChoiceUI : MonoBehaviour
         Debug.Log($"[CoreChoiceUI] Show called: doublePick={doublePick}, panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
         if (panelRoot != null) panelRoot.SetActive(true);
         else Debug.LogError("[CoreChoiceUI] panelRoot is NULL — drag the UI Panel into this field!");
-        AudioManager.Instance?.PlayUiSfx(cardOpenSfx);
+        AudioManager.Instance?.PlayWithOverride(cardOpenSfx, SfxId.CardOpen); // 字段非空优先，空走 SfxBank 条目
 
         // continue 按钮在 panelRoot 外，始终显示（供 toggle 显隐选卡界面）
         if (confirmAllButton != null)
@@ -160,13 +160,16 @@ public class CoreChoiceUI : MonoBehaviour
             Sprite sprite = null;
             if (picks != null && i < picks.Length && picks[i] != null)
             {
-                name = picks[i].cardName;
-                desc = picks[i].description ?? "";
+                name = picks[i].ResolveCardName();
+                desc = picks[i].ResolveDescription() ?? "";
                 sprite = picks[i].image;
             }
 
             var go = cardPrefab != null ? Instantiate(cardPrefab, cardParent) : null;
             if (go == null) continue;
+            // 卡片字体统一配置：实例化后强制套用 FontRegistry 的 card 槽字体（改资产一处，全部卡片生效）
+            if (FontRegistry.Instance != null)
+                FontRegistry.Instance.ApplyFontToTree(go.transform, FontSlots.Card);
             var card = go.GetComponent<CoreChoiceCard>();
             if (card == null) card = go.AddComponent<CoreChoiceCard>();
             CardData cardData = picks != null && i < picks.Length ? picks[i] : null;
@@ -191,7 +194,7 @@ public class CoreChoiceUI : MonoBehaviour
         // 点卡即选即生效（双选中更符合直觉）；解锁该卡
         if (CardManager.Instance != null)
             CardManager.Instance.SelectCard(index);
-        AudioManager.Instance?.PlayUiSfx(cardSelectSfx);
+        AudioManager.Instance?.PlayWithOverride(cardSelectSfx, SfxId.CardSelect);
 
         picksRemaining--;
         if (picksRemaining > 0 && doublePick)
@@ -231,13 +234,13 @@ public class CoreChoiceUI : MonoBehaviour
         {
             Sprite sprite = null;
             if (newCard.image != null) sprite = newCard.image;
-            cards[index].Replace(newCard.cardName, sprite, newCard.description ?? "", newCard);
+            cards[index].Replace(newCard.ResolveCardName(), sprite, newCard.ResolveDescription() ?? "", newCard);
             // currentPicks[index] 已由 DrawOneReroll 内部更新，UI 不再直写
             // 刷新次数判定：已刷满 maxRerollsPerCard 次则锁卡（每卡可刷新次数可配）
             bool locked = CardManager.Instance != null && !CardManager.Instance.HasRerollCandidates(index);
             cards[index].ApplyRerollLock(locked);
             if (selectedIndex == index) selectedIndex = -1;
-            AudioManager.Instance?.PlayUiSfx(cardRerollSfx);
+            AudioManager.Instance?.PlayWithOverride(cardRerollSfx, SfxId.CardReroll);
             Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}, locked={locked}");
         }
         else

@@ -190,7 +190,7 @@ public class UIManager : SceneSingleton<UIManager>
         }
 
         if (gameOverText != null)
-            gameOverText.text = won ? "VICTORY" : "GAME OVER";
+            gameOverText.text = won ? TextCatalog.Get("ui.result.victory") : TextCatalog.Get("ui.result.gameover");
 
         // Show and unlock cursor so the player can click UI buttons
         Cursor.visible = true;
@@ -265,7 +265,7 @@ public class UIManager : SceneSingleton<UIManager>
     void UpdateHealthBarToggleText()
     {
         if (healthBarToggleText != null)
-            healthBarToggleText.text = Enemy.ShowHealthBars ? "HP: ON" : "HP: OFF";
+            healthBarToggleText.text = Enemy.ShowHealthBars ? TextCatalog.Get("ui.toggle.hp_on") : TextCatalog.Get("ui.toggle.hp_off");
     }
 
     void TogglePause()

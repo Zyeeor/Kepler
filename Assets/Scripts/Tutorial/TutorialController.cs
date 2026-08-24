@@ -400,7 +400,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         }
 
         if (ui != null)
-            ui.ShowBanner(step.title, ResolveText(step.text));
+            ui.ShowBanner(step.ResolveTitle(), ResolveText(step.ResolveBody()));
 
         Debug.Log($"[TutorialController] Step 激活：{step.id}（{step.title}），阻断={step.blocking}，超时={step.timeoutSeconds}s，提醒={step.remindInterval}s");
         TutorialTelemetry.StepActivated(step.id, step.blocking);
@@ -436,7 +436,7 @@ public class TutorialController : SceneSingleton<TutorialController>
             {
                 TutorialStepConfig next = null;
                 foreach (var kv in activeSteps) { next = kv.Value; break; }
-                ui.ShowBanner(next.title, ResolveText(next.text));
+                ui.ShowBanner(next.ResolveTitle(), ResolveText(next.ResolveBody()));
             }
             else
             {
@@ -520,7 +520,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         yield return new WaitForSeconds(interval);
         while (activeSteps.TryGetValue(stepId, out var step))
         {
-            if (ui != null) ui.ShowBanner(step.title, ResolveText(step.text));
+            if (ui != null) ui.ShowBanner(step.ResolveTitle(), ResolveText(step.ResolveBody()));
             yield return new WaitForSeconds(interval);
         }
     }

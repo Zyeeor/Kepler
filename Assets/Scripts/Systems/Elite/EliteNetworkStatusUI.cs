@@ -61,7 +61,7 @@ public class EliteNetworkStatusUI : MonoBehaviour
         {
             Debug.LogWarning($"[EliteNetworkStatusUI] 字体设置失败：{e.Message}");
         }
-        label.text = offlineText;
+        label.text = TextCatalog.Get("ui.elite.offline");
     }
 
     public void Show()

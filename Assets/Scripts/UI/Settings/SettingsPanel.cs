@@ -118,12 +118,12 @@ public class SettingsPanel : MonoBehaviour
     private void UpdateSFXLabel(float value)
     {
         if (sfxLabel != null)
-            sfxLabel.text = "SFX/UI: " + Mathf.RoundToInt(value * 100) + "%";
+            sfxLabel.text = string.Format(TextCatalog.Get("ui.settings.sfx"), Mathf.RoundToInt(value * 100));
     }
 
     private void UpdateMusicLabel(float value)
     {
         if (musicLabel != null)
-            musicLabel.text = "Music: " + Mathf.RoundToInt(value * 100) + "%";
+            musicLabel.text = string.Format(TextCatalog.Get("ui.settings.music"), Mathf.RoundToInt(value * 100));
     }
 }
