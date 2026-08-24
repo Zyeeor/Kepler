@@ -4,7 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Play-mode cheat panel for monster skill / build testing.
-/// - Number key alone (1-9): spawn catalog monster and instantly possess it.
+/// - Number key alone (1-7): spawn catalog monster and instantly possess it.
+/// - Number key 9: spawn a random Elite enemy from the EliteMonsterCatalog.
 /// - Number key 0: spawn a random catalog monster as a normal enemy (no possess).
 /// - While possessed, hold a skill key + number: unlock the Nth CardLibrary build entry
 ///   that targets that skill's abilities (1-based index in filtered CardLibrary order).
@@ -62,6 +63,18 @@ public class MonsterPossessionCheat : MonoBehaviour
             return;
         }
 
+        if (number == 9)
+        {
+            if (bossSummonOnly) return;
+            if (TryGetHeldSkillType(out EnemyAbility.AbilityType skillTypeForNine))
+            {
+                TryUnlockBuildEntry(skillTypeForNine, number);
+                return;
+            }
+            TrySpawnRandomElite();
+            return;
+        }
+
         if (bossSummonOnly) return;
 
         if (TryGetHeldSkillType(out EnemyAbility.AbilityType skillType))
@@ -81,7 +94,7 @@ public class MonsterPossessionCheat : MonoBehaviour
         List<string> buildLines = BuildHintLines(out string skillLabel);
         float height = 70f + (catalog != null && catalog.monsters != null ? Mathf.Min(catalog.monsters.Count, 9) * 16f : 0f) + buildLines.Count * 16f + 28f;
         GUI.Box(new Rect(10f, 10f, width, height), "Monster Possession Cheat");
-        GUI.Label(new Rect(18f, 32f, width - 24f, 20f), "0 random enemy | 1-7 spawn+possess | 8 summon Boss | hold LMB/Q/Space + 1-9 unlock");
+        GUI.Label(new Rect(18f, 32f, width - 24f, 20f), "0 random enemy | 1-7 spawn+possess | 8 summon Boss | 9 random Elite | hold LMB/Q/Space + 1-9 unlock");
         float y = 52f;
         if (catalog != null && catalog.monsters != null)
         {
@@ -230,13 +243,52 @@ public class MonsterPossessionCheat : MonoBehaviour
         {
             ClearDamageImmune(previousCheatBody);
             previousCheatBody.suppressPossessionDrain = false;
-            if (despawnPreviousCheatBody && previousCheatBody.gameObject.activeInHierarchy)
+            if (despawnPreviousCheatBody && !previousCheatBody.IsElite && previousCheatBody.gameObject.activeInHierarchy)
                 previousCheatBody.BeginDisappearing();
         }
 
         lastCheatBody = monster;
         string label = !string.IsNullOrEmpty(entry.displayName) ? entry.displayName : monster.displayName;
         SetStatus($"Possessed [{number}] {label}{(immortalCheatBodies ? " (damage immune)" : "")}");
+    }
+
+    private void TrySpawnRandomElite()
+    {
+        EliteBuildDirector director = EliteBuildDirector.EnsureInstance();
+        EliteMonsterCatalog eliteCatalog = director.catalog;
+        if (eliteCatalog == null)
+        {
+            SetStatus("EliteMonsterCatalog missing.");
+            return;
+        }
+
+        EliteSnapshotItem snapshot = eliteCatalog.PickPresetSnapshot();
+        if (snapshot == null)
+        {
+            SetStatus("Elite catalog has no valid preset snapshot.");
+            return;
+        }
+
+        EliteMonsterCatalog.Entry entry = eliteCatalog.FindByWireName(snapshot.sin);
+        if (entry == null || entry.prefab == null)
+        {
+            SetStatus($"Elite preset '{snapshot.sin}' has no prefab entry.");
+            return;
+        }
+
+        MonsterSpawner spawner = MonsterSpawner.EnsureInstance();
+        MonsterActor monster = spawner.SpawnWaveMonster(entry.prefab, ResolveSpawnPosition());
+        if (monster == null)
+        {
+            SetStatus($"Elite spawn failed for '{entry.prefab.name}'.");
+            return;
+        }
+
+        EliteBuildCarrier carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
+        carrier.Init(snapshot, entry.displayName);
+        director.ApplyEliteRuntimeSettings(monster);
+        string label = !string.IsNullOrEmpty(entry.displayName) ? entry.displayName : monster.displayName;
+        SetStatus($"Spawned random Elite '{label}' (HP x{director.eliteHealthMultiplier:0.##}, ATK x{director.eliteAttackDamageMultiplier:0.##}, Scale x{director.eliteVisualScaleMultiplier:0.##})");
     }
 
     private void TrySummonBoss()

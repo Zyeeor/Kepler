@@ -16,6 +16,10 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     public float projectileHeight = 2f;
     public float projectileSpeed = 30f;
     public float maxRange = 15f;
+    [Tooltip("Boss projectile dimensions and blast radius use this multiplier instead of the generic combat scale.")]
+    public float bossProjectileScaleMultiplier = 1.5f;
+    [Tooltip("Boss-only cadence for the short-shot then cannon sequence.")]
+    public float bossPatternCooldown = 6f;
 
     [Header("Impact VFX")]
     [Tooltip("Optional VFX spawned on every Enemy damaged by the charged-shot blast.")]
@@ -75,6 +79,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     private float lastChargeTime;
     private GameObject chargeVfxInstance;
     private Coroutine recoilRoutine;
+    private Coroutine bossPatternRoutine;
     private Vector3 recoilBasePosition;
     private bool hasRecoilBasePosition;
 
@@ -82,7 +87,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     {
         type = AbilityType.BasicAttack;
         abilityName = "地爆天星";
-        cooldown = 0f;
+        cooldown = owner is BossSevenfoldActor ? bossPatternCooldown : 0f;
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Sloth.ChargeShot", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Sloth.ChargeShot");
@@ -95,6 +100,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
+        if (owner is BossSevenfoldActor)
+            return bossPatternRoutine == null;
         if (owner != null && owner.isPossessed) return false;
         return owner != null && owner.targetPlayer != null;
     }
@@ -103,6 +110,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     {
         base.Update();
         if (owner == null) return;
+        if (owner is BossSevenfoldActor) return;
 
         bool wantFire = false;
         if (owner.isPossessed)
@@ -169,6 +177,9 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         float radius = Mathf.Lerp(minBlastRadius, maxBlastRadius, t);
         float shotDamage = Mathf.Lerp(minDamage, maxDamage, t);
         if (damage > 0f) shotDamage = Mathf.Max(shotDamage, damage * Mathf.Lerp(1f, maxDamage / Mathf.Max(1f, minDamage), t));
+        float projectileScaleMultiplier = owner is BossSevenfoldActor
+            ? bossProjectileScaleMultiplier
+            : OwnerCombatScaleMultiplier;
 
         Vector3 forward = owner.transform.forward;
         Vector3 origin = projectileSpawnPoint != null
@@ -176,7 +187,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             : owner.transform.position + forward * 1f + Vector3.up * 1f;
 
         var go = SpawnVfxTracked(projectilePrefab, origin, Quaternion.LookRotation(forward, Vector3.up));
-        go.transform.localScale *= scale;
+        go.transform.localScale *= scale * projectileScaleMultiplier;
         foreach (ParticleSystem particleSystem in go.GetComponentsInChildren<ParticleSystem>(true))
         {
             ParticleSystem.MainModule main = particleSystem.main;
@@ -193,13 +204,13 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
                 float angle = count == 1 ? 0f : Mathf.Lerp(-totalSpread * 0.5f, totalSpread * 0.5f, i / (float)(count - 1));
                 Vector3 direction = Quaternion.Euler(0f, angle, 0f) * forward;
                 GameObject fanProjectile = SpawnVfxTracked(projectilePrefab, origin, Quaternion.LookRotation(direction, Vector3.up));
-                fanProjectile.transform.localScale *= scale * scatterBulletScale;
-                StartCoroutine(ProjectileTravel(fanProjectile, direction, origin, radius * scatterBulletScale, scale * scatterBulletScale, perProjectileDamage));
+                fanProjectile.transform.localScale *= scale * scatterBulletScale * projectileScaleMultiplier;
+                StartCoroutine(ProjectileTravel(fanProjectile, direction, origin, radius * scatterBulletScale, scale * scatterBulletScale, perProjectileDamage, projectileScaleMultiplier));
             }
         }
         else
         {
-            StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, shotDamage));
+            StartCoroutine(ProjectileTravel(go, forward, origin, radius, scale, shotDamage, projectileScaleMultiplier));
         }
 
 
@@ -249,7 +260,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         recoilRoutine = null;
     }
 
-    IEnumerator ProjectileTravel(GameObject projectileGo, Vector3 forward, Vector3 origin, float radius, float scale, float shotDamage)
+    IEnumerator ProjectileTravel(GameObject projectileGo, Vector3 forward, Vector3 origin, float radius, float scale, float shotDamage, float projectileScaleMultiplier)
     {
         float traveled = 0f;
         int layerMask = owner.isPossessed ? ~0 : targetMask;
@@ -262,8 +273,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             Vector3 currentPos = origin + forward * Mathf.Min(traveled, effectiveMaxRange);
             projectileGo.transform.position = currentPos;
 
-            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale * OwnerCombatScaleMultiplier,
-                projectileHeight * 0.5f * scale * OwnerCombatScaleMultiplier, step * 0.5f);
+            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * scale * projectileScaleMultiplier,
+                projectileHeight * 0.5f * scale * projectileScaleMultiplier, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
             CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
@@ -298,7 +309,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
             if (hitSomething)
             {
-                DoBlast(hitPos, radius, scale, shotDamage, primaryHit);
+                DoBlast(hitPos, radius, scale, shotDamage, primaryHit, projectileScaleMultiplier);
                 ReleaseVfx(projectileGo);
                 yield break;
             }
@@ -308,14 +319,15 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
         if (projectileGo != null)
         {
-            DoBlast(projectileGo.transform.position, radius, scale, shotDamage, null);
+            DoBlast(projectileGo.transform.position, radius, scale, shotDamage, null, projectileScaleMultiplier);
             ReleaseVfx(projectileGo);
         }
     }
 
-    void DoBlast(Vector3 pos, float radius, float scale, float shotDamage, Enemy scatterIgnore)
+    void DoBlast(Vector3 pos, float radius, float scale, float shotDamage, Enemy scatterIgnore, float projectileScaleMultiplier)
     {
-        HashSet<Enemy> hitEnemies = DamageEnemiesInSphere(pos, radius, shotDamage, null);
+        float blastRadius = radius * projectileScaleMultiplier / Mathf.Max(0.01f, OwnerCombatScaleMultiplier);
+        HashSet<Enemy> hitEnemies = DamageEnemiesInSphere(pos, blastRadius, shotDamage, null);
         foreach (Enemy hitEnemy in hitEnemies)
         {
             if (impactVfxPrefab == null) continue;
@@ -323,14 +335,14 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             GameObject impact = SpawnVfxTracked(impactVfxPrefab, hitEnemy.transform.position, Quaternion.identity, impactVfxDuration);
             if (impact == null) continue;
 
-            impact.transform.localScale *= scale;
+            impact.transform.localScale *= scale * projectileScaleMultiplier;
             foreach (ParticleSystem particleSystem in impact.GetComponentsInChildren<ParticleSystem>(true))
             {
                 ParticleSystem.MainModule main = particleSystem.main;
                 main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             }
         }
-        TryDamagePlayerInRadius(pos, radius, shotDamage);
+        TryDamagePlayerInRadius(pos, blastRadius, shotDamage);
 
         if (!IsUpgradeUnlocked("SL-A03") || projectilePrefab == null)
             return;
@@ -345,7 +357,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             randomDir.y = Mathf.Abs(randomDir.y);
             randomDir.Normalize();
             var bullet = SpawnVfxTracked(projectilePrefab, bulletSpawnPos, Quaternion.LookRotation(randomDir, Vector3.up));
-            bullet.transform.localScale = Vector3.one * scatterBulletScale;
+            bullet.transform.localScale = Vector3.one * scatterBulletScale * OwnerCombatScaleMultiplier;
             StartCoroutine(ScatterBulletTravel(bullet, bulletSpawnPos, randomDir, scatterBulletRange, scatterBulletScale, shotDamage, exclude));
         }
     }
@@ -425,11 +437,90 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         }
     }
 
-    protected override void OnTrigger() { }
+    protected override void OnTrigger()
+    {
+        BossSevenfoldActor boss = owner as BossSevenfoldActor;
+        if (boss == null || bossPatternRoutine != null) return;
+        bossPatternRoutine = StartCoroutine(BossPatternRoutine(boss));
+    }
+
+    private IEnumerator BossPatternRoutine(BossSevenfoldActor boss)
+    {
+        boss.SetAbilitySequenceLocked(true);
+        const float shortFireDuration = 1.5f;
+        const float shortFireInterval = 0.3f;
+        float elapsed = 0f;
+        while (owner != null && elapsed < shortFireDuration)
+        {
+            boss.FaceBossTarget(boss.GetBossTargetPosition());
+            FireShot(0f);
+
+            float intervalElapsed = 0f;
+            while (owner != null && intervalElapsed < shortFireInterval)
+            {
+                boss.FaceBossTarget(boss.GetBossTargetPosition());
+                intervalElapsed += AbilityDeltaTime;
+                yield return null;
+            }
+            elapsed += shortFireInterval;
+        }
+
+        if (owner != null && chargeVfxPrefab != null)
+        {
+            Transform anchor = chargeVfxSpawnPoint != null ? chargeVfxSpawnPoint : owner.transform;
+            chargeVfxInstance = Instantiate(chargeVfxPrefab, anchor);
+            if (chargeVfxInstance != null)
+            {
+                chargeVfxInstance.transform.localPosition = chargeVfxPositionOffset;
+                PlayVfx(chargeVfxInstance);
+            }
+        }
+
+        elapsed = 0f;
+        const float cannonChargeDuration = 1.5f;
+        while (owner != null && elapsed < cannonChargeDuration)
+        {
+            elapsed += AbilityDeltaTime;
+            if (chargeVfxInstance != null)
+            {
+                float charge = Mathf.Clamp01(elapsed / cannonChargeDuration);
+                chargeVfxInstance.transform.localScale = Vector3.one
+                    * Mathf.Lerp(0.5f, 2f, charge) * OwnerCombatScaleMultiplier;
+            }
+            yield return null;
+        }
+
+        if (owner != null)
+        {
+            FireShot(maxChargeTime);
+        }
+        FinishBossPattern(boss);
+    }
+
+    private void FinishBossPattern(BossSevenfoldActor boss)
+    {
+        if (chargeVfxInstance != null)
+        {
+            ReleaseVfx(chargeVfxInstance);
+            chargeVfxInstance = null;
+        }
+        if (boss != null) boss.SetAbilitySequenceLocked(false);
+        bossPatternRoutine = null;
+        EndActivationEffect();
+    }
 
     protected override void OnDisable()
     {
+        if (bossPatternRoutine != null) StopCoroutine(bossPatternRoutine);
+        BossSevenfoldActor boss = owner as BossSevenfoldActor;
+        if (boss != null) boss.SetAbilitySequenceLocked(false);
+        bossPatternRoutine = null;
         if (isCharging) StopCharging();
+        else if (chargeVfxInstance != null)
+        {
+            ReleaseVfx(chargeVfxInstance);
+            chargeVfxInstance = null;
+        }
         if (recoilRoutine != null) StopCoroutine(recoilRoutine);
         if (recoilTarget != null && hasRecoilBasePosition) recoilTarget.transform.localPosition = recoilBasePosition;
         recoilRoutine = null;

@@ -235,6 +235,9 @@ public class CardFaceBrowser : MonoBehaviour
 
             var go = Instantiate(ui.cardPrefab, previewRect);
             go.name = "CardFaceBrowserPreview";
+            // 与正式选卡一致：套用 FontRegistry card 槽统一字体（预览所见即所得）
+            if (FontRegistry.Instance != null)
+                FontRegistry.Instance.ApplyFontToTree(go.transform, FontSlots.Card);
             previewCC = go.GetComponent<CoreChoiceCard>();
             if (previewCC != null)
             {

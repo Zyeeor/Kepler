@@ -101,6 +101,9 @@ public class GameManager : MonoBehaviour
         // 音频管理器丢失自愈（幂等）：常驻实例正常时无操作；若因极端时序被销毁，
         // 在场景加载完成后重建（此时 Start 的 DontDestroyOnLoad 可靠）。
         AudioManager.EnsureInstance();
+        AudioEventBinder.EnsureInstance(); // 音频事件订阅器自愈（同 AudioManager 生命周期）
+        NarrativeScheduler.EnsureInstance();
+        NarrativeEventBus.EnsureInstance();
         // 每次场景加载收敛 AudioListener（新场景相机可能带启用的监听器，且不止一个时需收敛）
         EnsureSingleAudioListener();
         // DDOL 玩家对象兜底清理（主界面幽灵 bug 防御面）：
@@ -143,9 +146,14 @@ public class GameManager : MonoBehaviour
     
     void Start()
     {
+        // 全局字体统一应用：FontApplier 常驻并订阅场景加载，每场景加载后自动套用 FontRegistry 字体
+        FontApplier.EnsureInstance();
         AudioManager.EnsureInstance();
+        AudioEventBinder.EnsureInstance();
         AudioSettingsManager.EnsureInstance();
         CombatHitboxDebugSettings.EnsureOnGameManager();
+        AudioDebugPanel.EnsureOnGameManager();
+        NarrativeDebugPanel.EnsureOnGameManager();
         soulTime = 15f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;

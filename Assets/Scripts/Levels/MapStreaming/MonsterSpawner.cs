@@ -30,6 +30,10 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("刷怪统一高度（世界 y）：所有怪物生成在这个高度，按地面实际高度手动调整即可。")]
     public float spawnHeightY = 0f;
 
+    [Header("击杀回声取点")]
+    [Tooltip("击杀回声怪物越过屏幕边界后的额外距离（米）。越小越贴近屏幕边缘。")]
+    [Min(0f)] public float killEchoScreenPadding = 0.75f;
+
     [Header("节奏")]
     [Tooltip("低频维护间隔（秒）：追踪列表修剪（尸体 fade 自行回池的怪摘除）。")]
     [Min(0.05f)] public float upkeepInterval = 0.25f;
@@ -134,9 +138,10 @@ public class MonsterSpawner : MonoBehaviour
     /// AI 直接激活索敌；不随 Chunk 休眠/回收/写快照，退场由波次系统裁决。
     /// </summary>
     /// <param name="prefab">怪物 prefab（须挂 MonsterActor）。</param>
-    /// <param name="pos">刷怪世界坐标（由 TryGetWaveSpawnPosition 提供，或调用方自行保证合法）。</param>
+    /// <param name="pos">刷怪世界坐标（由取点方法提供，或调用方自行保证合法）。</param>
+    /// <param name="immediateChase">是否在生成后立即向玩家移动（用于击杀回声怪物）。</param>
     /// <returns>刷出的 MonsterActor；配额满 / prefab 无效 / 无 Actor 时返回 null。</returns>
-    public MonsterActor SpawnWaveMonster(GameObject prefab, Vector3 pos)
+    public MonsterActor SpawnWaveMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
     {
         if (prefab == null || TrackedMonsterCount >= maxCombatMonsters) return null;
         var system = MapStreamingSystem.Instance;
@@ -158,9 +163,95 @@ public class MonsterSpawner : MonoBehaviour
         RunSpawnDirector director = RunSpawnDirector.Instance;
         monster.ApplySpawnDifficultySnapshot(SpawnOrigin.PeriodicPressure, director != null ? director.CurrentTier : 0);
         Track(home, monster, prefab, isWaveMonster: true); // 不随 Chunk 回收/写快照，退场由波次系统裁决
+        if (immediateChase)
+            monster.BeginImmediateChase();
         if (logSpawns)
             Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}）。");
         return monster;
+    }
+
+    /// <summary>
+    /// 击杀回声刷怪点：从上一只被击杀怪物经过玩家延长射线，取屏幕边界外最近的可走 Tile。
+    /// 这样新怪与上一只死去的怪、玩家三点共线，并从玩家视野外直接朝玩家追击。
+    /// </summary>
+    public bool TryGetKillEchoSpawnPosition(Vector3 lastDeathPosition, out Vector3 pos)
+    {
+        pos = default;
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return false;
+
+        Vector3 player = GetPlayerPosition();
+        player.y = spawnHeightY;
+        Vector3 awayFromDeath = player - lastDeathPosition;
+        awayFromDeath.y = 0f;
+        if (awayFromDeath.sqrMagnitude < 0.0001f)
+        {
+            Camera cam = GetMainCamera();
+            awayFromDeath = cam != null ? cam.transform.forward : Vector3.forward;
+            awayFromDeath.y = 0f;
+        }
+        if (awayFromDeath.sqrMagnitude < 0.0001f) awayFromDeath = Vector3.forward;
+        awayFromDeath.Normalize();
+
+        Camera camera = GetMainCamera();
+        float boundaryDistance;
+        if (camera != null && TryGetScreenExitDistance(camera, player, awayFromDeath, out boundaryDistance))
+            boundaryDistance += Mathf.Max(0f, killEchoScreenPadding);
+        else
+            boundaryDistance = Mathf.Max(minSpawnDistanceToPlayer, killEchoScreenPadding);
+
+        // The first valid point wins: it keeps the monster as close as possible while
+        // allowing the exact screen-edge tile to be blocked or outside the loaded map.
+        float searchStep = Mathf.Max(0.5f, killEchoScreenPadding);
+        float maxSearchDistance = Mathf.Max(maxSpawnDistanceToPlayer, minSpawnDistanceToPlayer) * 2f;
+        maxSearchDistance = Mathf.Max(maxSearchDistance, boundaryDistance + 12f);
+        for (float distance = boundaryDistance; distance <= maxSearchDistance; distance += searchStep)
+        {
+            Vector3 candidate = player + awayFromDeath * distance;
+            if (camera != null && IsOnScreen(camera, candidate)) continue;
+            if (!system.Registry.TryGetValue(system.WorldToChunk(candidate), out var chunk) || chunk == null || chunk.Tiles == null)
+                continue;
+            if (!IsWalkable(chunk, candidate)) continue;
+            candidate.y = spawnHeightY;
+            pos = candidate;
+            return true;
+        }
+        return false;
+    }
+
+    bool TryGetScreenExitDistance(Camera camera, Vector3 origin, Vector3 direction, out float distance)
+    {
+        distance = 0f;
+        if (!IsOnScreen(camera, origin)) return true;
+
+        const float sampleStep = 1f;
+        float previous = 0f;
+        float maxDistance = Mathf.Max(maxSpawnDistanceToPlayer * 2f, 100f);
+        for (float current = sampleStep; current <= maxDistance; current += sampleStep)
+        {
+            if (!IsOnScreen(camera, origin + direction * current))
+            {
+                float low = previous;
+                float high = current;
+                for (int i = 0; i < 12; i++)
+                {
+                    float middle = (low + high) * 0.5f;
+                    if (IsOnScreen(camera, origin + direction * middle)) low = middle;
+                    else high = middle;
+                }
+                distance = high;
+                return true;
+            }
+            previous = current;
+        }
+        return false;
+    }
+
+    bool IsOnScreen(Camera camera, Vector3 worldPosition)
+    {
+        Vector3 viewport = camera.WorldToViewportPoint(worldPosition);
+        return viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f
+            && viewport.y >= 0f && viewport.y <= 1f;
     }
 
     /// <summary>
@@ -211,6 +302,13 @@ public class MonsterSpawner : MonoBehaviour
     public void RecycleWaveMonster(MonsterActor monster)
     {
         if (monster == null) return;
+        if (monster.IsElite && monster.isDowned)
+        {
+            // Elite bodies are permanent scene corpses. Release the combat quota, but never
+            // return the instance to the pool while its EliteBuildCarrier is still alive.
+            ReleaseTracking(monster);
+            return;
+        }
         if (monster is BossSevenfoldActor)
         {
             // Boss owns its own death/fade/pool lifecycle. Wave cleanup must never
@@ -228,6 +326,15 @@ public class MonsterSpawner : MonoBehaviour
             Untrack(monster);
         }
         MonsterPool.Instance.Return(monster);
+    }
+
+    /// <summary>Releases a permanent corpse from the active combat quota without deactivating it.</summary>
+    public void ReleaseTracking(MonsterActor monster)
+    {
+        if (monster == null || !trackInfoByMonster.TryGetValue(monster, out var info)) return;
+        if (trackedByChunk.TryGetValue(info.homeChunk, out var list))
+            list.Remove(monster);
+        Untrack(monster);
     }
 
     /// <summary>世界坐标是否落在该 Chunk 的可走 Tile 上（经系统坐标换算，支持地图旋转）。</summary>

@@ -233,6 +233,9 @@ MonoBehaviour:
   scatterBulletSpeed: 15
   scatterBulletRange: 6
   scatterBulletYOffset: 1
+  fanProjectileCount: 3
+  fanSpreadAngle: 24
+  crushScaleThreshold: 2
 --- !u!1 &1827098444623938932
 GameObject:
   m_ObjectHideFlags: 0
@@ -416,6 +419,8 @@ MonoBehaviour:
   maxHealth: 140
   currentHealth: 140
   displayName: "\u6020\u60F0-\u673A\u68B0\u4E4B\u7075"
+  sinType: 2
+  isPossessable: 1
   enemyStats:
     maxHealth: 140
     moveSpeed: 4
@@ -442,6 +447,7 @@ MonoBehaviour:
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
   rangeCircleSegments: 64
+  visualScaleRoot: {fileID: 0}
   bodyColor: {r: 0.43081754, g: 1, b: 0.49079517, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.0034412616, g: 0.36477977, b: 0.10066073, a: 1}
@@ -478,6 +484,11 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  spawnOrigin: 0
+  spawnDifficultyTier: 0
+  baseSpawnMaxHealth: 0
+  spawnHealthMultiplier: 1
+  spawnDamageMultiplier: 1
   soulAnchorPoint: {fileID: 3162426705399175952}
 --- !u!136 &5986682704312686819
 CapsuleCollider:
@@ -550,9 +561,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.58414173, g: 1, b: 0.19999999, a: 1}
-  possessionRimIntensity: 3.39
-  hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
-  hitFlashDuration: 0.12
+  possessionRimIntensity: 0.8
+  eliteRimColor: {r: 0.06, g: 0.35, b: 0.8, a: 1}
+  eliteRimIntensity: 0.55
+  elitePulseSpeed: 0.7
+  elitePulseAmount: 0.13
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 4.2
+  eliteMetallic: 0.3
+  hitFlashColor: {r: 0, g: 0.0867854, b: 0.9339623, a: 1}
+  hitFlashDuration: 0.25
   hitFlashPeak: 0.85
   dissolveEdgeColor: {r: 0.17982431, g: 0.8287561, b: 0.25189692, a: 1}
   dissolveEdgeIntensity: 4.72
@@ -894,6 +912,10 @@ MonoBehaviour:
   deathBlastVfx: {fileID: 8026296608122095936, guid: 7add8d30c3249bf45a56ee5a5a60bf23,
     type: 3}
   deathBlastVfxDuration: 1
+  baseDroneCount: 1
+  bonusDroneCount: 2
+  maxActiveDrones: 3
+  pursuitAttackIntervalMultiplier: 0.6
 --- !u!1 &6565463922317408885
 GameObject:
   m_ObjectHideFlags: 0

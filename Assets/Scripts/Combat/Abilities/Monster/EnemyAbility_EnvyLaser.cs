@@ -74,6 +74,13 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     {
         base.Update();
         if (owner == null) return;
+        BossSevenfoldActor boss = owner as BossSevenfoldActor;
+        if (boss != null && boss.IsAbilitySequenceLocked)
+        {
+            if (_isFiring) StopLaser();
+            SetAnimBoolCached(owner.GetActiveAnimator(), "IsFiring", false);
+            return;
+        }
 
         bool wantFire;
         if (owner.isPossessed)
@@ -321,7 +328,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         float range = maxRange;
         if (IsUpgradeUnlocked("EN-TG01"))
             range += GetCardParameter("AttackRangeBonus", 4f);
-        return ScaleAbilityRadius(range);
+        // Boss visual scale must not turn Envy's beam into a longer threat.
+        return owner is BossSevenfoldActor ? range : ScaleAbilityRadius(range);
     }
 
     private Vector3 GetBeamOrigin()

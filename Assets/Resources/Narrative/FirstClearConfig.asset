@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ddacc36f67c03f439418341dd0b8bc4, type: 3}
+  m_Name: FirstClearConfig
+  m_EditorClassIdentifier: 
+  step1MythicClosureKey: nar.firstclear.s1.throne
+  step2WhoAmIKey: nar.firstclear.s2.whoami
+  declarationKeys:
+  - nar.firstclear.decl.1
+  - nar.firstclear.decl.2
+  - nar.firstclear.decl.3
+  declarationIds:
+  - decl_throne
+  - decl_carrier
+  - decl_witness
+  summaryTemplateKey: nar.firstclear.s4.summary
+  summarySinTextKeyPrefix: nar.sin.name.
+  step6ConfirmationKey: nar.firstclear.s6.confirm
+  step8DistillationKey: nar.firstclear.s8.distilled
+  step5ModelTitleKey: nar.firstclear.s5.model
+  stepMinReadSeconds: 2
+  blackHoldSeconds: 1.2
+  finalHoldSeconds: 2.5

@@ -1640,7 +1640,7 @@ MonoBehaviour:
   maxHealth: 150
   currentHealth: 150
   displayName: "\u6124\u6012"
-  sinType: 0
+  sinType: 5
   isPossessable: 1
   enemyStats:
     maxHealth: 150
@@ -1773,8 +1773,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 4.05
+  eliteRimColor: {r: 1, g: 0.04, b: 0.01, a: 1}
+  eliteRimIntensity: 1
+  elitePulseSpeed: 3.2
+  elitePulseAmount: 0.32
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 2.7
+  eliteMetallic: 0.25
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
-  hitFlashDuration: 0.12
+  hitFlashDuration: 0.25
   hitFlashPeak: 0.85
   dissolveEdgeColor: {r: 2.2402449, g: 0.4525355, b: 0.36359987, a: 1}
   dissolveEdgeIntensity: 4.5

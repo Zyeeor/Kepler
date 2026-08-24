@@ -1671,6 +1671,8 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   displayName: "\u5AC9\u5992"
+  sinType: 4
+  isPossessable: 1
   enemyStats:
     maxHealth: 100
     moveSpeed: 4
@@ -1697,6 +1699,7 @@ MonoBehaviour:
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
   rangeCircleSegments: 64
+  visualScaleRoot: {fileID: 0}
   bodyColor: {r: 1, g: 0, b: 0, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -1732,6 +1735,11 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  spawnOrigin: 0
+  spawnDifficultyTier: 0
+  baseSpawnMaxHealth: 0
+  spawnHealthMultiplier: 1
+  spawnDamageMultiplier: 1
   soulAnchorPoint: {fileID: 7294985651498570169}
 --- !u!114 &3078269145440667395
 MonoBehaviour:
@@ -1805,8 +1813,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 4.05
+  eliteRimColor: {r: 0.05, g: 0.75, b: 1, a: 1}
+  eliteRimIntensity: 0.9
+  elitePulseSpeed: 2.8
+  elitePulseAmount: 0.3
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 3.4
+  eliteMetallic: 0.35
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
-  hitFlashDuration: 0.12
+  hitFlashDuration: 0.25
   hitFlashPeak: 0.85
   dissolveEdgeColor: {r: 0.8333246, g: 0.3592842, b: 2.2402449, a: 1}
   dissolveEdgeIntensity: 4.5

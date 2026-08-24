@@ -12,6 +12,7 @@ Shader "Possession/BossSevenfoldDistortion"
         _ChromaticSplit ("Chromatic Split", Range(0,0.08)) = 0.01
         _DissolveAmount ("Dissolve", Range(0,1)) = 0
         _SinChannel ("Sin Channel", Range(0,6)) = 0
+        _PortalPulse ("Portal Pulse", Range(0,1)) = 0
     }
 
     SubShader
@@ -44,6 +45,7 @@ Shader "Possession/BossSevenfoldDistortion"
                 half _ChromaticSplit;
                 half _DissolveAmount;
                 half _SinChannel;
+                half _PortalPulse;
             CBUFFER_END
 
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv:TEXCOORD0; };
@@ -74,6 +76,20 @@ Shader "Possession/BossSevenfoldDistortion"
 
             half4 frag(Varyings input):SV_Target
             {
+                if (_PortalPulse > 0.001h)
+                {
+                    float2 portalUv = input.uv - 0.5;
+                    float radius = length(portalUv) * 2.0;
+                    clip(1.0 - radius);
+                    float angle = atan2(portalUv.y, portalUv.x);
+                    float spiral = 0.5 + 0.5 * sin(angle * 11.0 - radius * 34.0 - _Time.y * 12.0);
+                    float rim = smoothstep(0.54, 1.0, radius);
+                    float accretion = smoothstep(0.18, 0.92, spiral) * (1.0 - smoothstep(0.72, 1.0, radius));
+                    half3 voidCore = _BaseColor.rgb;
+                    half3 voidRim = _RimColor.rgb * (rim + accretion * 0.8);
+                    half3 portalColor = voidCore + voidRim * _PortalPulse;
+                    return half4(MixFog(portalColor, input.fog), 1);
+                }
                 float noise = Hash21(floor(input.positionWS.xz * 7.0 + _Time.y * 2.0));
                 clip(noise - _DissolveAmount);
                 half3 normalWS = normalize(input.normalWS);

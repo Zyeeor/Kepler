@@ -33,8 +33,24 @@ public class TutorialStepConfig
     [Tooltip("Step 正文（v1 内联中文；可含 {KEY} 占位符，运行时替换为动态键位）")]
     public string text = "";
 
-    [Tooltip("本地化 Key（v1 不使用，预留）")]
+    [Tooltip("文本目录 Key（TextCatalog；已配置时优先于 title/text 内联文本）")]
     public string textKey = "";
+
+    /// <summary>生效标题：textKey 命中目录时取目录值，否则内联 title。</summary>
+    public string ResolveTitle()
+    {
+        if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
+            return TextCatalog.Instance.Get(textKey + ".title");
+        return title;
+    }
+
+    /// <summary>生效正文：textKey 命中目录时取目录值，否则内联 text。</summary>
+    public string ResolveBody()
+    {
+        if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
+            return TextCatalog.Instance.Get(textKey + ".body");
+        return text;
+    }
 
     [Tooltip("开始条件事实：为空 = 阶段进入即激活；非空 = 需先报告这些事实（追溯判定用）")]
     public List<TutorialFact> startFacts = new List<TutorialFact>();

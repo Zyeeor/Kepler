@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"sort"
 	"strings"
 
+	"demo/server/internal/logx"
 	"demo/server/internal/store"
 )
 
@@ -91,14 +91,14 @@ func (s *EliteService) SeedIfEmpty(seedFile string) error {
 		return fmt.Errorf("seed check count: %w", err)
 	}
 	if count > 0 {
-		log.Printf("[elite] seed skipped: pool already has %d snapshots", count)
+		logx.Event("seed skipped · pool already has %d snapshots", count)
 		return nil
 	}
 
 	data, err := os.ReadFile(seedFile)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("[elite] seed skipped: file not found (%s)", seedFile)
+			logx.Event("seed skipped · file not found (%s)", seedFile)
 			return nil
 		}
 		return fmt.Errorf("seed read file: %w", err)
@@ -137,7 +137,7 @@ func (s *EliteService) SeedIfEmpty(seedFile string) error {
 		total += len(snaps)
 	}
 
-	log.Printf("[elite] seeded %d snapshots from %s (pool was empty)", total, seedFile)
+	logx.Event("seeded %d snapshots from %s (pool was empty)", total, seedFile)
 	return nil
 }
 
@@ -203,9 +203,9 @@ func validateUserBD(req *UploadSnapshotsRequest) error {
 // 并按内容指纹去重入库（实时进入投放候选池）；返回入库/去重条数。
 // 数据问题返回 *ValidationError（前台提示重新构筑）；重复内容不算错误（已在池中）。
 func (s *EliteService) UploadUserBD(dir string, req *UploadSnapshotsRequest) (stored, dups int, err error) {
-	log.Printf("[elite] userBD upload received: player=%s run=%s snapshots=%d", req.PlayerID, req.RunID, len(req.Snapshots))
+	logx.Event("userBD upload · player=%s run=%s · %d snapshots", req.PlayerID, req.RunID, len(req.Snapshots))
 	if err := validateUserBD(req); err != nil {
-		log.Printf("[elite] userBD upload REJECTED: player=%s run=%s -> %v", req.PlayerID, req.RunID, err)
+		logx.Event("userBD upload rejected · player=%s run=%s → %v", req.PlayerID, req.RunID, err)
 		return 0, 0, err
 	}
 
@@ -223,7 +223,7 @@ func (s *EliteService) UploadUserBD(dir string, req *UploadSnapshotsRequest) (st
 		if err := os.WriteFile(fileName, data, 0o644); err != nil {
 			return 0, 0, fmt.Errorf("write file: %w", err)
 		}
-		log.Printf("[elite] userBD upload: saved file %s", fileName)
+		logx.Detail("saved %s", fileName)
 	}
 
 	// 内容指纹去重入库（实时生效：入库即可被 pick 命中）
@@ -235,7 +235,7 @@ func (s *EliteService) UploadUserBD(dir string, req *UploadSnapshotsRequest) (st
 	for _, in := range req.Snapshots {
 		fp := contentFingerprint(in.Sin, in.BDData)
 		if _, ok := seen[fp]; ok {
-			log.Printf("  [dup] upload sin=%s monsterType=%s bdCount=%d cards=[%s] -> same content already in pool, skipped",
+			logx.Detail("dup upload · sin=%s monsterType=%s bdCount=%d cards=[%s] → already in pool, skipped",
 				in.Sin, in.MonsterType, in.BDCount, cardIDList(in.BDData))
 			dups++
 			continue
@@ -260,11 +260,11 @@ func (s *EliteService) UploadUserBD(dir string, req *UploadSnapshotsRequest) (st
 		stored = len(snaps)
 		s.enforceCapacity(req.PlayerID)
 		for _, snap := range snaps {
-			log.Printf("  [stored] upload sin=%s monsterType=%s bdCount=%d sourceWave=%d cards=[%s] (player=%s run=%s)",
+			logx.Detail("stored upload · sin=%s monsterType=%s bdCount=%d sourceWave=%d cards=[%s] (player=%s run=%s)",
 				snap.Sin, snap.MonsterType, snap.BDCount, snap.SourceWave, cardIDList(json.RawMessage(snap.BDData)), snap.PlayerID, snap.RunID)
 		}
 	}
-	log.Printf("[elite] userBD upload done: player=%s run=%s stored=%d duplicates=%d", req.PlayerID, req.RunID, stored, dups)
+	logx.Event("userBD upload done · player=%s run=%s → stored=%d duplicates=%d", req.PlayerID, req.RunID, stored, dups)
 	return stored, dups, nil
 }
 
@@ -300,7 +300,7 @@ func (s *EliteService) ImportUserBD(dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		// 目录不存在时自动创建，给出明确的文件投放路径；失败则静默跳过
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			log.Printf("[elite] userBD import skipped: cannot create dir %s: %v", dir, err)
+			logx.Event("userBD import skipped · cannot create dir %s: %v", dir, err)
 			return nil
 		}
 	}
@@ -319,7 +319,7 @@ func (s *EliteService) ImportUserBD(dir string) error {
 	importFile := func(path string) {
 		n, d, inv, err := s.importUserBDFile(path, seen)
 		if err != nil {
-			log.Printf("[elite] userBD import file %s failed (non-fatal): %v", filepath.Base(path), err)
+			logx.Event("userBD import failed · file %s: %v (non-fatal)", filepath.Base(path), err)
 			return
 		}
 		stored += n
@@ -332,7 +332,7 @@ func (s *EliteService) ImportUserBD(dir string) error {
 			// 一级子目录（在线上传按玩家分目录）：扫描其中 *.json，文件内 playerId/runId 为准
 			sub, err := os.ReadDir(filepath.Join(dir, e.Name()))
 			if err != nil {
-				log.Printf("[elite] userBD import subdir %s read failed (non-fatal): %v", e.Name(), err)
+				logx.Event("userBD import failed · subdir %s read: %v (non-fatal)", e.Name(), err)
 				continue
 			}
 			for _, se := range sub {
@@ -350,13 +350,13 @@ func (s *EliteService) ImportUserBD(dir string) error {
 		files++
 		importFile(filepath.Join(dir, e.Name()))
 	}
-	log.Printf("[elite] userBD import done: %d stored, %d duplicate skipped, %d invalid, %d json file(s) in %s",
+	logx.Event("userBD import done · stored=%d duplicates=%d invalid=%d · %d json file(s) in %s",
 		stored, dups, invalid, files, dir)
 	return nil
 }
 
 // importUserBDFile 解析单个工具导出文件，内容指纹去重后入库；返回入库/去重/非法条数。
-// 每条快照均输出明细日志：[stored] 入库 / [dup] 内容重复跳过 / [skip] 字段非法跳过。
+// 每条快照均输出明细日志：stored 入库 / dup 内容重复跳过 / skip 字段非法跳过。
 func (s *EliteService) importUserBDFile(path string, seen map[string]struct{}) (stored, dups, invalid int, err error) {
 	fileName := filepath.Base(path)
 	data, err := os.ReadFile(path)
@@ -389,7 +389,7 @@ func (s *EliteService) importUserBDFile(path string, seen map[string]struct{}) (
 
 	for _, en := range list {
 		if en.playerID == "" || en.runID == "" {
-			log.Printf("  [skip] file=%s playerId/runId missing (playerId=%q runId=%q) -> entry dropped", fileName, en.playerID, en.runID)
+			logx.Detail("skip %s · playerId/runId missing (playerId=%q runId=%q) → entry dropped", fileName, en.playerID, en.runID)
 			invalid += len(en.snaps)
 			continue
 		}
@@ -397,14 +397,14 @@ func (s *EliteService) importUserBDFile(path string, seen map[string]struct{}) (
 		for i, in := range en.snaps {
 			// 字段校验（与 Upload 同规则：sin/monsterType 非空、bdCount>=1、bdData 非 null）
 			if in.Sin == "" || in.MonsterType == "" || in.BDCount < 1 || len(in.BDData) == 0 || string(in.BDData) == "null" {
-				log.Printf("  [skip] file=%s entry[%d] invalid fields: sin=%q monsterType=%q bdCount=%d bdData=%s -> dropped",
+				logx.Detail("skip %s entry[%d] · invalid fields: sin=%q monsterType=%q bdCount=%d bdData=%s → dropped",
 					fileName, i, in.Sin, in.MonsterType, in.BDCount, bdDataSummary(in.BDData))
 				invalid++
 				continue
 			}
 			fp := contentFingerprint(in.Sin, in.BDData)
 			if _, ok := seen[fp]; ok {
-				log.Printf("  [dup] file=%s sin=%s monsterType=%s bdCount=%d cards=[%s] -> same content already in pool, skipped",
+				logx.Detail("dup %s · sin=%s monsterType=%s bdCount=%d cards=[%s] → already in pool, skipped",
 					fileName, in.Sin, in.MonsterType, in.BDCount, cardIDList(in.BDData))
 				dups++
 				continue
@@ -431,7 +431,7 @@ func (s *EliteService) importUserBDFile(path string, seen map[string]struct{}) (
 		stored += len(snaps)
 		s.enforceCapacity(en.playerID)
 		for _, snap := range snaps {
-			log.Printf("  [stored] file=%s sin=%s monsterType=%s bdCount=%d sourceWave=%d cards=[%s] (player=%s run=%s)",
+			logx.Detail("stored %s · sin=%s monsterType=%s bdCount=%d sourceWave=%d cards=[%s] (player=%s run=%s)",
 				fileName, snap.Sin, snap.MonsterType, snap.BDCount, snap.SourceWave, cardIDList(json.RawMessage(snap.BDData)), snap.PlayerID, snap.RunID)
 		}
 	}
@@ -478,7 +478,7 @@ func cardIDList(bdData json.RawMessage) string {
 	return strings.Join(ids, ",")
 }
 
-// bdDataSummary bdData 概要（非法条目的 [skip] 日志用，截断防刷屏）。
+// bdDataSummary bdData 概要（非法条目的 skip 明细日志用，截断防刷屏）。
 func bdDataSummary(bdData json.RawMessage) string {
 	s := string(bdData)
 	if len(s) > 60 {
@@ -557,11 +557,11 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 	skippedReasons := []string{}
 	for i, in := range req.Snapshots {
 		if in.Sin == "" || in.MonsterType == "" || in.BDCount < 1 {
-			skippedReasons = append(skippedReasons, fmt.Sprintf("  [skip] entry[%d] sin=%q monsterType=%q bdCount=%d (invalid fields)", i, in.Sin, in.MonsterType, in.BDCount))
+			skippedReasons = append(skippedReasons, fmt.Sprintf("skip entry[%d] · sin=%q monsterType=%q bdCount=%d (invalid fields)", i, in.Sin, in.MonsterType, in.BDCount))
 			continue
 		}
 		if len(in.BDData) == 0 || string(in.BDData) == "null" {
-			skippedReasons = append(skippedReasons, fmt.Sprintf("  [skip] entry[%d] sin=%s bdData is empty/null", i, in.Sin))
+			skippedReasons = append(skippedReasons, fmt.Sprintf("skip entry[%d] · sin=%s bdData is empty/null", i, in.Sin))
 			continue
 		}
 		snaps = append(snaps, &store.BuildSnapshot{
@@ -578,8 +578,11 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 	}
 	if len(snaps) == 0 {
 		if len(skippedReasons) > 0 {
-			log.Printf("[elite] upload player=%s run=%s -> all %d entries skipped:\n%s",
-				req.PlayerID, req.RunID, len(req.Snapshots), joinLines(skippedReasons))
+			logx.Event("upload player=%s run=%s → all %d entries skipped",
+				req.PlayerID, req.RunID, len(req.Snapshots))
+			for _, reason := range skippedReasons {
+				logx.Detail("%s", reason)
+			}
 		}
 		return 0, nil
 	}
@@ -589,15 +592,15 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 	}
 
 	// 详细记录每条入库快照
-	log.Printf("[elite] upload player=%s run=%s entries=%d stored=%d skipped=%d",
+	logx.Event("upload player=%s run=%s · entries=%d stored=%d skipped=%d",
 		req.PlayerID, req.RunID, len(req.Snapshots), len(snaps), len(req.Snapshots)-len(snaps))
 	for _, snap := range snaps {
-		log.Printf("  [stored] sin=%s monsterType=%s bdCount=%d sourceWave=%d gameTime=%d (upsert key=(%s,%s,%s))",
+		logx.Detail("stored · sin=%s monsterType=%s bdCount=%d sourceWave=%d gameTime=%d (upsert %s/%s/%s)",
 			snap.Sin, snap.MonsterType, snap.BDCount, snap.SourceWave, snap.GameTime,
 			snap.PlayerID, snap.RunID, snap.Sin)
 	}
 	for _, reason := range skippedReasons {
-		log.Println(reason)
+		logx.Detail("%s", reason)
 	}
 
 	// 容量治理：每玩家上限 → 全局 FIFO（覆盖更新不占新额度）。
@@ -610,17 +613,17 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 func (s *EliteService) enforceCapacity(playerID string) {
 	if count, err := s.store.CountSnapshotsByPlayer(playerID); err == nil && count > s.cfg.MaxSnapshotsPerPlayer {
 		if removed, err := s.store.TrimOldestSnapshotsByPlayer(playerID, s.cfg.MaxSnapshotsPerPlayer); err == nil && removed > 0 {
-			log.Printf("[elite] trim player=%s removed=%d (kept=%d, per-player cap=%d)", playerID, removed, s.cfg.MaxSnapshotsPerPlayer, s.cfg.MaxSnapshotsPerPlayer)
+			logx.Event("trim player=%s · removed=%d (per-player cap=%d)", playerID, removed, s.cfg.MaxSnapshotsPerPlayer)
 		}
 	} else if err == nil {
-		log.Printf("  [capacity] player=%s snapshots=%d/%d (within limit)", playerID, count, s.cfg.MaxSnapshotsPerPlayer)
+		logx.Detail("capacity · player=%s %d/%d (within limit)", playerID, count, s.cfg.MaxSnapshotsPerPlayer)
 	}
 	if count, err := s.store.CountSnapshots(); err == nil && count > s.cfg.MaxSnapshots {
 		if removed, err := s.store.TrimOldestSnapshots(s.cfg.MaxSnapshots); err == nil && removed > 0 {
-			log.Printf("[elite] trim global removed=%d (kept=%d, cap=%d)", removed, s.cfg.MaxSnapshots, s.cfg.MaxSnapshots)
+			logx.Event("trim global · removed=%d (cap=%d)", removed, s.cfg.MaxSnapshots)
 		}
 	} else if err == nil {
-		log.Printf("  [capacity] global snapshots=%d/%d (within limit)", count, s.cfg.MaxSnapshots)
+		logx.Detail("capacity · global %d/%d (within limit)", count, s.cfg.MaxSnapshots)
 	}
 }
 
@@ -637,7 +640,7 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *store
 	if waveGap < 0 {
 		waveGap = s.cfg.WaveGap
 	}
-	log.Printf("[elite] pick START wave=%d player=%s waveGap=%d config={minBD=%d, topBandMode=%s, topBandPercent=%.2f, topBandTopK=%d}",
+	logx.Event("pick wave=%d player=%s gap=%d · minBD=%d band=%s/%.2f topK=%d",
 		wave, playerID, waveGap, s.cfg.MinBD, s.cfg.TopBandMode, s.cfg.TopBandPercent, s.cfg.TopBandTopK)
 
 	// 主路径（Step 1–4）：bdCount >= MIN_BD 且 sourceWave >= N + waveGap 且他人。
@@ -646,8 +649,8 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *store
 	if err != nil {
 		return nil, false, err
 	}
-	log.Printf("  [step1-3] query: bdCount>=%d AND sourceWave>=%d AND player!=%s -> candidates=%d",
-		s.cfg.MinBD, minWave, playerID, len(cands))
+	logx.Detail("query · bdCount>=%d AND sourceWave>=%d AND player!=self → candidates=%d",
+		s.cfg.MinBD, minWave, len(cands))
 	if len(cands) > 0 {
 		s.logCandidates(cands)
 		snap := s.pickInBand(cands)
@@ -656,13 +659,13 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *store
 	}
 
 	// 兜底 1：放宽 WAVE_GAP 到 0（允许同波次的 BD 怪）。Step 1/Step 3 保持。
-	log.Printf("  [fallback1] main path empty, relaxing waveGap: sourceWave>=%d (was >=%d)", wave, minWave)
+	logx.Detail("fallback1 · main path empty, relax waveGap → sourceWave>=%d (was >=%d)", wave, minWave)
 	cands, err = s.store.PickCandidates(s.cfg.MinBD, wave, playerID)
 	if err != nil {
 		return nil, false, err
 	}
-	log.Printf("  [fallback1] query: bdCount>=%d AND sourceWave>=%d AND player!=%s -> candidates=%d",
-		s.cfg.MinBD, wave, playerID, len(cands))
+	logx.Detail("fallback1 query · bdCount>=%d AND sourceWave>=%d AND player!=self → candidates=%d",
+		s.cfg.MinBD, wave, len(cands))
 	if len(cands) > 0 {
 		s.logCandidates(cands)
 		snap := s.pickInBand(cands)
@@ -671,12 +674,12 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *store
 	}
 
 	// 兜底 2：全库 sourceWave 最高档中 bdCount 最大的一条。Step 1/Step 3 保持。
-	log.Printf("  [fallback2] fallback1 empty, trying top-wave tier (global max sourceWave, bdCount>=%d, player!=%s)", s.cfg.MinBD, playerID)
+	logx.Detail("fallback2 · fallback1 empty, trying top-wave tier (global max sourceWave, bdCount>=%d, player!=self)", s.cfg.MinBD)
 	cands, err = s.store.TopWaveCandidates(s.cfg.MinBD, playerID)
 	if err != nil {
 		return nil, false, err
 	}
-	log.Printf("  [fallback2] top-wave candidates=%d", len(cands))
+	logx.Detail("fallback2 query → top-wave candidates=%d", len(cands))
 	if len(cands) > 0 {
 		s.logCandidates(cands)
 		snap := cands[0]
@@ -685,13 +688,13 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *store
 	}
 
 	// 兜底 3：本波不投放精英怪。
-	log.Printf("[elite] pick RESULT wave=%d player=%s -> none (all paths exhausted, pool empty)", wave, playerID)
+	logx.Event("pick result wave=%d player=%s → none (all paths exhausted, pool empty)", wave, playerID)
 	return nil, false, nil
 }
 
 // logPickResult 记录筛选最终结果。
 func (s *EliteService) logPickResult(path string, wave int, playerID string, snap *store.BuildSnapshot, candidates int) {
-	log.Printf("[elite] pick RESULT wave=%d player=%s -> sin=%s bdCount=%d sourceWave=%d by=%s (path=%s, candidates=%d)",
+	logx.Event("pick result wave=%d player=%s → sin=%s bdCount=%d sourceWave=%d by=%s (path=%s, %d candidates)",
 		wave, playerID, snap.Sin, snap.BDCount, snap.SourceWave, snap.PlayerID, path, candidates)
 }
 
@@ -703,12 +706,12 @@ func (s *EliteService) logCandidates(cands []*store.BuildSnapshot) {
 	}
 	for i := 0; i < show; i++ {
 		c := cands[i]
-		log.Printf("  [candidate#%d] id=%d sin=%s bdCount=%d sourceWave=%d player=%s run=%s",
+		logx.Detail("cand #%-2d · id=%-4d sin=%-8s bd=%-2d wave=%-3d by=%s run=%s",
 			i+1, c.ID, c.Sin, c.BDCount, c.SourceWave, c.PlayerID, c.RunID)
 	}
 	if len(cands) > 5 {
 		c := cands[len(cands)-1]
-		log.Printf("  [candidate#%d] id=%d sin=%s bdCount=%d sourceWave=%d player=%s run=%s (... %d more omitted)",
+		logx.Detail("cand #%-2d · id=%-4d sin=%-8s bd=%-2d wave=%-3d by=%s run=%s (+%d more)",
 			len(cands), c.ID, c.Sin, c.BDCount, c.SourceWave, c.PlayerID, c.RunID, len(cands)-show-1)
 	}
 }
@@ -719,10 +722,10 @@ func (s *EliteService) logCandidates(cands []*store.BuildSnapshot) {
 // 避免每局精英怪永远是同一只 BD 最满的怪；候选很少（band <= 1）时直接取最高。
 func (s *EliteService) pickInBand(cands []*store.BuildSnapshot) *store.BuildSnapshot {
 	n := s.topBandSize(len(cands))
-	log.Printf("  [step4-topband] mode=%s bandSize=%d (from %d candidates, percent=%.2f, topK=%d)",
+	logx.Detail("band · mode=%s size=%d/%d (percent=%.2f, topK=%d)",
 		s.cfg.TopBandMode, n, len(cands), s.cfg.TopBandPercent, s.cfg.TopBandTopK)
 	if n <= 1 {
-		log.Printf("  [step4-topband] band<=1, pick top: id=%d sin=%s bdCount=%d", cands[0].ID, cands[0].Sin, cands[0].BDCount)
+		logx.Detail("band · size<=1 → pick top id=%d sin=%s bdCount=%d", cands[0].ID, cands[0].Sin, cands[0].BDCount)
 		return cands[0]
 	}
 	total := 0
@@ -733,13 +736,13 @@ func (s *EliteService) pickInBand(cands []*store.BuildSnapshot) *store.BuildSnap
 		return cands[0]
 	}
 	r := rand.Intn(total)
-	log.Printf("  [step4-topband] weighted random: totalWeight=%d, roll=%d", total, r)
+	logx.Detail("band · weighted random total=%d roll=%d", total, r)
 	for i := 0; i < n; i++ {
-		log.Printf("    band[%d] id=%d sin=%s bdCount=%d (weight=%d, remaining=%d)",
+		logx.Detail("band[%d] · id=%d sin=%s bdCount=%d (weight=%d, remaining=%d)",
 			i, cands[i].ID, cands[i].Sin, cands[i].BDCount, cands[i].BDCount, r)
 		r -= cands[i].BDCount
 		if r < 0 {
-			log.Printf("  [step4-topband] -> selected band[%d] id=%d sin=%s bdCount=%d", i, cands[i].ID, cands[i].Sin, cands[i].BDCount)
+			logx.Detail("band · selected band[%d] → id=%d sin=%s bdCount=%d", i, cands[i].ID, cands[i].Sin, cands[i].BDCount)
 			return cands[i]
 		}
 	}
@@ -765,10 +768,6 @@ func (s *EliteService) topBandSize(n int) int {
 		size = n
 	}
 	return size
-}
-
-func joinLines(lines []string) string {
-	return strings.Join(lines, "\n")
 }
 
 // ============================================================================
@@ -820,11 +819,11 @@ func (s *EliteService) RecordEvents(req *RecordEventsRequest) (int, error) {
 	events := make([]*store.EliteEvent, 0, len(req.Events))
 	for i, in := range req.Events {
 		if in.OwnerPlayerID == "" || in.OwnerPlayerID == localPresetOwner {
-			log.Printf("  [skip] event[%d] type=%s owner=%q (no real owner)", i, in.Type, in.OwnerPlayerID)
+			logx.Detail("skip event[%d] · type=%s owner=%q (no real owner)", i, in.Type, in.OwnerPlayerID)
 			continue
 		}
 		if !validSins[in.Sin] || !eliteEventTypes[in.Type] {
-			log.Printf("  [skip] event[%d] sin=%q type=%q (invalid)", i, in.Sin, in.Type)
+			logx.Detail("skip event[%d] · sin=%q type=%q (invalid)", i, in.Sin, in.Type)
 			continue
 		}
 		events = append(events, &store.EliteEvent{
@@ -839,7 +838,7 @@ func (s *EliteService) RecordEvents(req *RecordEventsRequest) (int, error) {
 		})
 	}
 	if len(events) == 0 {
-		log.Printf("[elite] events reporter=%s -> all %d entries skipped", req.PlayerID, len(req.Events))
+		logx.Event("events · reporter=%s → all %d entries skipped", req.PlayerID, len(req.Events))
 		return 0, nil
 	}
 
@@ -847,7 +846,7 @@ func (s *EliteService) RecordEvents(req *RecordEventsRequest) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("record elite events: %w", err)
 	}
-	log.Printf("[elite] events reporter=%s accepted=%d/%d", req.PlayerID, n, len(req.Events))
+	logx.Event("events · reporter=%s accepted=%d/%d", req.PlayerID, n, len(req.Events))
 	return n, nil
 }
 

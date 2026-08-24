@@ -33,6 +33,9 @@ public class PlayerAbility_Slash : PlayerAbility
         Vector3 slashOrigin = owner.transform.position + forward * 0.5f;
         CreateSlashArc(slashOrigin, forward, slashRange);
 
+        // Snapshot valid targets first: dealing damage may down/despawn enemies and
+        // unregister them from EnemyRegistry mid-enumeration (registry read-only rule).
+        var targets = new List<Enemy>();
         foreach (var enemy in EnemyRegistry.All)
         {
             if (enemy == null || enemy.isDowned || enemy.isPossessed) continue;
@@ -40,8 +43,10 @@ public class PlayerAbility_Slash : PlayerAbility
             if (dist > slashRange) continue;
             Vector3 toEnemy = (enemy.transform.position - owner.transform.position).normalized;
             if (Vector3.Dot(forward, toEnemy) < 0f) continue;
-            DealDamageToEnemy(enemy, damage);
+            targets.Add(enemy);
         }
+        for (int i = 0; i < targets.Count; i++)
+            DealDamageToEnemy(targets[i], damage);
     }
 
     void CreateSlashArc(Vector3 position, Vector3 direction, float radius)

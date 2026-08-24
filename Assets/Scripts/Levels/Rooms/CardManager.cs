@@ -35,6 +35,9 @@ public class CardManager : SceneSingleton<CardManager>
     [Header("Current Picks (read-only)")]
     public CardData[] currentPicks = new CardData[3];
 
+    /// <summary>抽卡候选落定广播（叙事事件总线订阅：Offer=候选生成，含重抽外的每次呈现）。</summary>
+    public static event System.Action OnCardOffered;
+
     /// <summary>
     /// 卡牌解锁广播（Run Analytics 采集用）：UnlockEffect 成功后触发（含选卡与调试解锁）。
     /// </summary>
@@ -295,6 +298,7 @@ public class CardManager : SceneSingleton<CardManager>
             RunSession.Instance.GlobalMissStreak = globalMissStreak;   // 同步会话（存档点落盘）
 
         SyncChoicePicksToSession(); // 候选变化即同步会话（选卡界面任意时刻退出，补弹候选都一致）
+        OnCardOffered?.Invoke();    // 叙事事件：候选落定广播（§3.2 CardOffered）
     }
 
     /// <summary>Global 软保底权重（§11）：连续 kGlobalPityStart 次 Miss 后，每次 +kGlobalPityStep。</summary>

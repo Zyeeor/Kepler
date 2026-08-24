@@ -103,7 +103,7 @@ public class CameraDirector : MonoBehaviour
         Instance = this;
         EnsureRig();
         EnsureCombatEffectManager();
-        EnsureCombatAudioManager();
+        // 战斗音频（CombatAudioManager）已收敛为纯静态门面，无需实例化（走 AudioManager 常驻单例统一通道）
         // 调试飞行相机（开发工具，F4 切换；与 CombatEffectManager 同款自举模式）
         DebugCameraController.EnsureOn(GetComponent<Camera>());
     }
@@ -119,18 +119,6 @@ public class CameraDirector : MonoBehaviour
         CameraDirector director = Instance;
         if (director != null)
             director.gameObject.AddComponent<CombatEffectManager>();
-    }
-
-    private static void EnsureCombatAudioManager()
-    {
-        if (CombatAudioManager.Instance != null)
-            return;
-        if (FindFirstObjectByType<CombatAudioManager>() != null)
-            return;
-
-        CameraDirector director = Instance;
-        if (director != null)
-            director.gameObject.AddComponent<CombatAudioManager>();
     }
 
     void Start()

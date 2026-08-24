@@ -29,13 +29,27 @@ public class EnemyAbility_SlothDrone : EnemyAbility
     public float pursuitAttackIntervalMultiplier = 0.6f;
 
     private readonly System.Collections.Generic.List<SummonActor> activeDrones = new System.Collections.Generic.List<SummonActor>();
+    public bool HasActiveDrone
+    {
+        get
+        {
+            PruneDrones();
+            return activeDrones.Count > 0;
+        }
+    }
+
+    int GetBossDroneLimit()
+    {
+        BossSevenfoldActor boss = owner as BossSevenfoldActor;
+        return boss != null ? boss.CombatPhase : Mathf.Max(1, maxActiveDrones);
+    }
 
     private void OnEnable()
 
     {
         type = AbilityType.Skill;
         abilityName = "木灵";
-        cooldown = cooldown <= 0f ? 5f : cooldown;
+        cooldown = owner is BossSevenfoldActor ? 15f : (cooldown <= 0f ? 5f : cooldown);
         if (abilityTags == null) abilityTags = new System.Collections.Generic.List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Sloth.Drone", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Sloth.Drone");
@@ -47,6 +61,13 @@ public class EnemyAbility_SlothDrone : EnemyAbility
     public override float GetHpCostMultiplier()
     {
         return 1f;
+    }
+
+    public override bool CanTrigger()
+    {
+        if (!base.CanTrigger()) return false;
+        PruneDrones();
+        return !(owner is BossSevenfoldActor) || activeDrones.Count < GetBossDroneLimit();
     }
 
 
@@ -63,11 +84,14 @@ public class EnemyAbility_SlothDrone : EnemyAbility
             yield break;
         }
 
-        int spawnCount = baseDroneCount + (IsUpgradeUnlocked("SL-S01") ? bonusDroneCount : 0);
+        bool isBossDrone = owner is BossSevenfoldActor;
+        int spawnCount = isBossDrone
+            ? Mathf.Max(0, GetBossDroneLimit() - activeDrones.Count)
+            : baseDroneCount + (IsUpgradeUnlocked("SL-S01") ? bonusDroneCount : 0);
         for (int i = 0; i < spawnCount; i++)
         {
             PruneDrones();
-            while (activeDrones.Count >= Mathf.Max(1, maxActiveDrones))
+            while (activeDrones.Count >= (isBossDrone ? GetBossDroneLimit() : Mathf.Max(1, maxActiveDrones)))
             {
                 SummonActor oldest = activeDrones[0];
                 activeDrones.RemoveAt(0);

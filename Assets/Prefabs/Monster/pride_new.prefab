@@ -1814,7 +1814,7 @@ MonoBehaviour:
   maxHealth: 80
   currentHealth: 20
   displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
-  sinType: 0
+  sinType: 1
   isPossessable: 1
   enemyStats:
     maxHealth: 80
@@ -1945,8 +1945,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 0
+  eliteRimColor: {r: 1, g: 0.45, b: 0.06, a: 1}
+  eliteRimIntensity: 0.8
+  elitePulseSpeed: 1.7
+  elitePulseAmount: 0.25
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 3.2
+  eliteMetallic: 0.55
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
-  hitFlashDuration: 0.12
+  hitFlashDuration: 0.25
   hitFlashPeak: 0.85
   dissolveEdgeColor: {r: 1.6703318, g: 3.5088181, b: 3.5648696, a: 1}
   dissolveEdgeIntensity: 4.5
@@ -3549,7 +3556,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7180877996318577951
 Transform:
   m_ObjectHideFlags: 0

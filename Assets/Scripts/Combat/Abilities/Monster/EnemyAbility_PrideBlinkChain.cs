@@ -31,6 +31,12 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     [Tooltip("Hide mesh/skinned renderers while blinking so only Effect afterimage VFX remains.")]
     public bool hideOwnerMeshes = true;
 
+    [Header("Boss Dodge Window")]
+    [Tooltip("Boss-only strike radius at the end of a committed dash. Moving out of this circle evades the hit.")]
+    public float bossStrikeRadius = 1.25f;
+    [Tooltip("Boss-only minimum travel time per slash; this is the readable window for a player dodge.")]
+    public float bossBlinkInterval = 0.55f;
+
     [Header("Activation Display")]
     [Tooltip("First display object on the enemy body. It is shown while this ability is active.")]
     public GameObject activationDisplayA;
@@ -38,12 +44,13 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     public GameObject activationDisplayB;
 
     private readonly List<Renderer> _hiddenRenderers = new List<Renderer>();
+    private Coroutine blinkRoutine;
 
     private void OnEnable()
     {
         type = AbilityType.Skill;
         abilityName = "穿梭斩";
-        cooldown = cooldown <= 0f ? 1.5f : cooldown;
+        cooldown = owner is BossSevenfoldActor ? 15f : (cooldown <= 0f ? 1.5f : cooldown);
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, "Ability.Monster.Pride.BlinkChain", System.StringComparison.OrdinalIgnoreCase)))
             abilityTags.Add("Ability.Monster.Pride.BlinkChain");
@@ -54,14 +61,28 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
     {
         if (!base.CanTrigger()) return false;
         // 附身态：穿梭斩打最近的敌对怪；AI 态：对灵魂玩家穿梭打击。
-        return owner.isPossessed
-            ? FindNearestTarget(owner.transform.position, null) != null
-            : owner.targetPlayer != null;
+        if (owner.isPossessed)
+            return FindNearestTarget(owner.transform.position, null) != null;
+
+        Transform target = GetAiTarget();
+        if (target == null) return false;
+        Vector3 delta = target.position - owner.transform.position;
+        delta.y = 0f;
+        return delta.sqrMagnitude <= ScaleAbilityRadius(searchRange) * ScaleAbilityRadius(searchRange);
     }
 
     protected override void OnTrigger()
     {
-        StartCoroutine(BlinkRoutine());
+        blinkRoutine = StartCoroutine(BlinkRoutine());
+    }
+
+    /// <summary>Boss-only escape hatch: a player Mobility activation breaks the remaining chain.</summary>
+    public void InterruptBossBlink()
+    {
+        if (!(owner is BossSevenfoldActor) || blinkRoutine == null) return;
+        StopCoroutine(blinkRoutine);
+        blinkRoutine = null;
+        CleanupBlinkState();
     }
 
     private IEnumerator BlinkRoutine()
@@ -74,8 +95,67 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
 
         if (owner.isPossessed)
             yield return BlinkRoutineVsEnemies();
+        else if (owner is BossSevenfoldActor)
+            yield return BlinkRoutineVsBossTarget();
         else
             yield return BlinkRoutineVsPlayer();
+        blinkRoutine = null;
+    }
+
+    /// <summary>
+    /// Boss chain commits to the target's current position, then dashes there visibly.
+    /// It only deals damage if the player remains in the strike circle, so a Mobility
+    /// ability (or ordinary movement) can evade it instead of being auto-hit.
+    /// </summary>
+    private IEnumerator BlinkRoutineVsBossTarget()
+    {
+        Transform target = GetAiTarget();
+        if (target == null)
+        {
+            EndActivationEffect();
+            yield break;
+        }
+
+        if (untargetableEffect != null)
+            owner.Combat.ApplyEffect(untargetableEffect, owner.Combat, abilityTags, out _);
+
+        SetActivationDisplays(true);
+        if (hideOwnerMeshes) HideOwnerMeshes();
+        owner.IsAbilityFacingLocked = true;
+
+        float segmentDuration = Mathf.Max(bossBlinkInterval, blinkInterval);
+        float passDuration = Mathf.Clamp(passThroughDuration, 0f, Mathf.Max(0f, segmentDuration - 0.08f));
+        float approachDuration = Mathf.Max(0.08f, segmentDuration - passDuration);
+        int strikes = Mathf.Max(1, Mathf.RoundToInt(GetCardParameter("BlinkCount", blinkCount)));
+
+        for (int i = 0; i < strikes && owner != null; i++)
+        {
+            target = GetAiTarget();
+            if (target == null) break;
+
+            Vector3 from = owner.transform.position;
+            Vector3 lockedTargetPosition = target.position;
+            Vector3 direction = lockedTargetPosition - from;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) direction = owner.transform.forward;
+            direction.Normalize();
+
+            Vector3 strikePosition = lockedTargetPosition - direction * arrivalOffset;
+            strikePosition.y = from.y;
+            Vector3 passEnd = strikePosition + direction * Mathf.Max(0f, passThroughDistance);
+            passEnd.y = from.y;
+            owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+
+            yield return MoveOwnerOverTime(from, strikePosition, approachDuration);
+            if (owner == null) break;
+
+            if (IsWithinBossStrike(target, strikePosition))
+                DealBossTargetDamage(target, damage * damageMultiplier);
+
+            yield return MoveOwnerOverTime(strikePosition, passEnd, passDuration);
+        }
+
+        CleanupBlinkState();
     }
 
     /// <summary>附身态：穿梭斩依次打击最近的敌对怪（原逻辑）。</summary>
@@ -206,6 +286,36 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
         EndActivationEffect();
     }
 
+    private Transform GetAiTarget()
+    {
+        if (owner is BossSevenfoldActor && PossessionManager.Instance != null
+            && PossessionManager.Instance.CurrentBody != null)
+            return PossessionManager.Instance.CurrentBody.transform;
+        return owner != null ? owner.targetPlayer : null;
+    }
+
+    private bool IsWithinBossStrike(Transform target, Vector3 strikePosition)
+    {
+        if (target == null) return false;
+        Vector3 delta = target.position - strikePosition;
+        delta.y = 0f;
+        float radius = ScaleAbilityRadius(bossStrikeRadius);
+        return delta.sqrMagnitude <= radius * radius;
+    }
+
+    private void DealBossTargetDamage(Transform target, float amount)
+    {
+        MonsterActor body = PossessionManager.Instance != null ? PossessionManager.Instance.CurrentBody : null;
+        if (body != null && body.transform == target)
+        {
+            owner.ApplyOffensiveDamage(body, amount);
+            return;
+        }
+
+        PlayerHealth player = target != null ? target.GetComponent<PlayerHealth>() : null;
+        if (player != null) DealDamageToPlayer(player, amount);
+    }
+
     private void EnsureUpgrade(string effectId)
     {
         if (upgrades == null) upgrades = new List<UpgradeSlot>();
@@ -312,21 +422,25 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
 
     protected override void OnDisable()
     {
-        if (owner != null) owner.IsAbilityFacingLocked = false;
-        if (owner != null && owner.Combat != null && untargetableEffect != null)
-            owner.Combat.RemoveEffect(untargetableEffect);
-        RestoreOwnerMeshes();
-        SetActivationDisplays(false);
+        blinkRoutine = null;
+        CleanupBlinkState();
         base.OnDisable();
     }
 
     public override void ResetForOwnerReuse()
+    {
+        blinkRoutine = null;
+        CleanupBlinkState();
+        base.ResetForOwnerReuse();
+    }
+
+    private void CleanupBlinkState()
     {
         if (owner != null) owner.IsAbilityFacingLocked = false;
         if (owner != null && owner.Combat != null && untargetableEffect != null)
             owner.Combat.RemoveEffect(untargetableEffect);
         RestoreOwnerMeshes();
         SetActivationDisplays(false);
-        base.ResetForOwnerReuse();
+        EndActivationEffect();
     }
 }
