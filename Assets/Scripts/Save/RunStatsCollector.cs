@@ -207,6 +207,7 @@ public class RunStatsCollector : MonoBehaviour
 
         Current.RefreshDistinctSinsUsed();
         RunStatsStore.SaveRunStats(Current);
+        HallOfFameStore.FinalizeRun(Current);   // 荣誉殿堂 §5.2/§5.7：Run 结束立即冻结荣誉记录（失败局同样保留 §5.10）
         RunStatsStore.UploadRunData(Current);   // 预留出口（当前空实现）
         Debug.Log($"[RunStats] 本局采集完成：runId={Current.runId}, 时长={Current.runDurationSeconds:F1}s, 附身={Current.totalPossessions}, 到达波={Current.reachedWaveIndex}, 胜利={won}");
         Current = null;

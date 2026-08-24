@@ -388,6 +388,9 @@ public class EliteBuildDirector : MonoBehaviour
         var run = RunSession.Instance;
         if (run == null) return;
 
+        // 荣誉殿堂 §5.2：对局内持续更新构筑快照——与上传同源双写，本地无条件落盘（离线/上传失败不影响冻结源）
+        HallOfFameStore.UpsertFromSnapshots(run.RunId, sourceWave, stage, snapshots);
+
         try
         {
             var resp = await Client().UploadSnapshots(new UploadSnapshotsReq

@@ -50,6 +50,10 @@ public class EliteNetClient
     public Task<ReportEventsResp> ReportEvents(ReportEventsReq body)
         => PostJson<ReportEventsResp>("/api/elite/events", body);
 
+    /// <summary>查询异步战绩聚合（荣誉殿堂 §5.7 联网刷新；playerId = 本机玩家 = 构筑主人）。</summary>
+    public Task<EliteStatsResp> FetchStats(string playerId)
+        => GetJson<EliteStatsResp>("/api/elite/stats?playerId=" + Uri.EscapeDataString(playerId));
+
     // ── HTTP 基础设施（同 ServerApiCheat 模式）──
 
     static Task SendAsync(UnityWebRequest req)
@@ -69,6 +73,23 @@ public class EliteNetClient
             req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
             req.downloadHandler = new DownloadHandlerBuffer();
             req.SetRequestHeader("Content-Type", "application/json");
+            req.timeout = timeoutSeconds;
+            await SendAsync(req);
+
+            string text = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            if (req.result != UnityWebRequest.Result.Success)
+                throw new Exception($"{label} failed: {req.error} (HTTP {req.responseCode}) body: {text}");
+            if (logRawResponses)
+                Debug.Log($"[EliteNetClient] <- {label}: {text}");
+            return JsonUtility.FromJson<T>(text);
+        }
+    }
+
+    async Task<T> GetJson<T>(string path)
+    {
+        string label = "GET " + path;
+        using (var req = UnityWebRequest.Get(serverUrl + path))
+        {
             req.timeout = timeoutSeconds;
             await SendAsync(req);
 
@@ -187,4 +208,26 @@ public class ReportEventsResp
 {
     public bool ok;
     public int accepted;
+}
+
+/// <summary>异步战绩聚合条目（GET /api/elite/stats 返回项；荣誉殿堂 §5.4 异步字段，字段名与原始表现分开）。</summary>
+[Serializable]
+public class EliteStatsItem
+{
+    public string ownerPlayerId;
+    public string ownerRunId;
+    public string sin;
+    public int deployed;    // 被投放次数
+    public int fatal;       // 被其他玩家击杀次数
+    public int possessed;   // 被其他玩家 Possess 次数
+    public int bodyFatal;   // 造成 Body Fatal 次数
+    public int runFail;     // 直接导致 Run Fail 次数
+    public long updatedAt;
+}
+
+[Serializable]
+public class EliteStatsResp
+{
+    public string playerId;
+    public List<EliteStatsItem> stats;
 }
