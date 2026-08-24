@@ -1805,16 +1805,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
-  acceleration: 100
-  deceleration: 120
+  moveSpeed: 15
+  acceleration: 200
+  deceleration: 200
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
   maxHealth: 80
   currentHealth: 20
   displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
-  sinType: 0
+  sinType: 1
   isPossessable: 1
   enemyStats:
     maxHealth: 80
@@ -3914,15 +3914,15 @@ MonoBehaviour:
   - effectId: Pride01
     unlocked: 0
   - effectId: PR-A01
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A02
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A03
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A04
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -4418,9 +4418,9 @@ MonoBehaviour:
   - effectId: Pride.BlinkCountPlusTwo
     unlocked: 0
   - effectId: PR-S01
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-X01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

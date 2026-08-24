@@ -107,10 +107,23 @@ public class VfxPool : MonoBehaviour
         if (!instance.activeSelf && IsInAvailableQueue(prefab, instance))
             return;
 
-        BumpReleaseEpoch(instance);
+        int epoch = BumpReleaseEpoch(instance);
         PrepareForRelease(instance);
         instance.SetActive(false);
-        instance.transform.SetParent(transform, false);
+        Transform currentParent = instance.transform.parent;
+        if (currentParent == null)
+        {
+            // Root-level instances have no parent that could be mid activate/deactivate.
+            instance.transform.SetParent(transform, false);
+        }
+        else if (currentParent != transform)
+        {
+            // Parented instances (e.g. VFX attached to a monster) must not be reparented while
+            // the parent is mid activate/deactivate dispatch — Release can run inside the owner's
+            // OnDisable (MonsterPool.Return → SetActive(false)). Defer one frame; the epoch guard
+            // cancels if the instance is re-rented meanwhile.
+            StartCoroutine(ReparentAfterRelease(instance, epoch));
+        }
 
         if (!availableByPrefab.TryGetValue(prefab, out Queue<GameObject> available))
         {
@@ -183,6 +196,19 @@ public class VfxPool : MonoBehaviour
         if (instance == null) yield break;
         if (!IsCurrentEpoch(instance, epoch)) yield break;
         Release(instance);
+    }
+
+    /// <summary>
+    /// Deferred reparent for instances released while their parent was mid activate/deactivate
+    /// dispatch. One frame is enough: the dispatch completes within the same call stack.
+    /// </summary>
+    private IEnumerator ReparentAfterRelease(GameObject instance, int epoch)
+    {
+        yield return null;
+        if (instance == null) yield break;
+        if (!IsCurrentEpoch(instance, epoch)) yield break;
+        if (instance.transform.parent != transform)
+            instance.transform.SetParent(transform, false);
     }
 
     private int BumpReleaseEpoch(GameObject instance)

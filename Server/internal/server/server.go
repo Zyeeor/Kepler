@@ -7,11 +7,11 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"demo/server/internal/logx"
 	"demo/server/internal/service"
 	"demo/server/internal/store"
 )
@@ -51,7 +51,7 @@ func New(cfg Config) (*Server, error) {
 	// 种子数据注入：候选库为空时加载预设快照（首位玩家体验保障）
 	if cfg.SeedFile != "" {
 		if err := eliteSvc.SeedIfEmpty(cfg.SeedFile); err != nil {
-			log.Printf("[elite] seed error (non-fatal): %v", err)
+			logx.Event("seed error (non-fatal): %v", err)
 		}
 	}
 
@@ -59,7 +59,7 @@ func New(cfg Config) (*Server, error) {
 	// upsert 入库——重复导入由唯一键 (playerId, runId, sin) 幂等去重，不产生重复行
 	if cfg.UserBDDir != "" {
 		if err := eliteSvc.ImportUserBD(cfg.UserBDDir); err != nil {
-			log.Printf("[elite] userBD import error (non-fatal): %v", err)
+			logx.Event("userBD import error (non-fatal): %v", err)
 		}
 	}
 
@@ -127,7 +127,7 @@ func logRequests(next http.Handler) http.Handler {
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w}
 		next.ServeHTTP(sw, r)
-		log.Printf("[http] %s %s -> %d %s %s",
+		logx.Event("%s %s → %d · %s · %s",
 			r.Method, r.URL.Path, sw.status,
 			time.Since(start).Round(time.Millisecond), r.RemoteAddr)
 	})
@@ -135,7 +135,7 @@ func logRequests(next http.Handler) http.Handler {
 
 // Run 启动服务。
 func (s *Server) Run() error {
-	log.Printf("ugc server listening on %s (upload dir=%s)", s.cfg.HTTPAddr, s.cfg.UploadDir)
+	logx.Event("listening on %s · upload dir=%s", s.cfg.HTTPAddr, s.cfg.UploadDir)
 	return http.ListenAndServe(s.cfg.HTTPAddr, s.Handler())
 }
 
@@ -151,7 +151,7 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 
 func writeErr(w http.ResponseWriter, code int, msg string) {
 	if code >= 500 {
-		log.Printf("[error] http %d: %s", code, msg) // 5xx 落服务端日志；4xx 属正常业务分支，访问日志已覆盖
+		logx.Event("error %d · %s", code, msg) // 5xx 落服务端日志；4xx 属正常业务分支，访问日志已覆盖
 	}
 	writeJSON(w, code, map[string]any{"code": code, "msg": msg})
 }
@@ -404,7 +404,7 @@ func (s *Server) handleSnapshotUpload(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleUserBDUpload(w http.ResponseWriter, r *http.Request) {
 	var req service.UploadSnapshotsRequest
 	if err := decodeJSON(r, &req); err != nil {
-		log.Printf("[elite] userBD upload REJECTED: bad JSON body from %s: %v", r.RemoteAddr, err)
+		logx.Event("userBD upload rejected · bad JSON body from %s: %v", r.RemoteAddr, err)
 		writeErr(w, http.StatusBadRequest, "数据有误，请求体不是合法 JSON")
 		return
 	}

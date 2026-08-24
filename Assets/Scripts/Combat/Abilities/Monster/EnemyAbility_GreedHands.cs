@@ -149,8 +149,10 @@ public class EnemyAbility_GreedHands : EnemyAbility
         _dumping = true;
         int toRelease = CurrentHands;
         CurrentHands = 0;
-        RefreshOrbitVisuals();
         _regenTimer = 0f;
+
+
+
         if (debugLog)
             Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' dump {toRelease} hand(s)", this);
 
@@ -163,7 +165,14 @@ public class EnemyAbility_GreedHands : EnemyAbility
             if (owner == null) break;
             if (_guard != null && _guard.IsGuarding) break;
 
-            Enemy target = FindNearestLegalTarget(owner.transform.position, null);
+            GameObject orbitHand = _orbitVisuals.Count > 0 ? _orbitVisuals[0] : null;
+            if (_orbitVisuals.Count > 0) _orbitVisuals.RemoveAt(0);
+            Vector3 launchOrigin = orbitHand != null
+                ? orbitHand.transform.position
+                : GetOrbitPosition(0, Mathf.Max(1, toRelease - i));
+            if (orbitHand != null) Destroy(orbitHand);
+
+            Transform target = FindAttackTarget(owner.transform.position);
             if (target == null)
             {
                 // No legal target: this hand disappears (consumed from inventory already).
@@ -171,20 +180,25 @@ public class EnemyAbility_GreedHands : EnemyAbility
             else
             {
                 bool left = (i % 2) == 0;
-                FireHand(GetOrbitCenterPosition(), target, retarget, spawnOnKill, flank, left, derived: false);
-
+                FireHand(launchOrigin, target, retarget, spawnOnKill, flank, left, derived: false);
             }
+
+
+
+
 
             if (i < toRelease - 1)
                 yield return AbilityWait(launchInterval);
 
         }
 
+        RefreshOrbitVisuals();
         _dumping = false;
         EndActivationEffect();
     }
 
     public void AddHands(int count)
+
     {
         if (count <= 0) return;
         CurrentHands = Mathf.Min(InventoryMax, CurrentHands + count);
@@ -211,7 +225,26 @@ public class EnemyAbility_GreedHands : EnemyAbility
         return best;
     }
 
+    private Transform FindAttackTarget(Vector3 from)
+    {
+        Enemy enemyTarget = FindNearestLegalTarget(from, null);
+        if (enemyTarget != null) return enemyTarget.transform;
+        if (owner == null || owner.isPossessed || owner.targetPlayer == null) return null;
+
+        Transform playerTarget = owner.targetPlayer;
+        float effectiveDetectRange = ScaleAbilityRadius(detectRange);
+        if ((playerTarget.position - from).sqrMagnitude > effectiveDetectRange * effectiveDetectRange) return null;
+
+        Enemy playerBody = playerTarget.GetComponentInParent<Enemy>();
+        if (playerBody != null)
+            return owner.CanDamage(playerBody) ? playerBody.transform : null;
+
+        PlayerHealth playerSoul = playerTarget.GetComponentInParent<PlayerHealth>();
+        return playerSoul != null && owner.CanDamageSoul() ? playerSoul.transform : null;
+    }
+
     public void SettleHandHit(Enemy target, float amount)
+
     {
         if (target == null) return;
         SettleHit(target, amount > 0f ? amount : damage);
@@ -228,11 +261,15 @@ public class EnemyAbility_GreedHands : EnemyAbility
         {
             Enemy target = FindNearestLegalTarget(origin, null);
             if (target == null) continue;
-            FireHand(origin + Vector3.up * 0.4f, target, retarget: false, spawnOnKill: false, flank, left: (i % 2) == 0, derived: true);
+            FireHand(origin + Vector3.up * 0.4f, target.transform, retarget: false, spawnOnKill: false, flank, left: (i % 2) == 0, derived: true);
+
+
+
         }
     }
 
-    private void FireHand(Vector3 origin, Enemy target, bool retarget, bool spawnOnKill, bool flank, bool left, bool derived)
+    private void FireHand(Vector3 origin, Transform target, bool retarget, bool spawnOnKill, bool flank, bool left, bool derived)
+
     {
         GameObject go;
         if (daggerPrefab != null)
@@ -240,6 +277,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
         else
         {
+
             go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "GreedHandProjectile";
             go.transform.position = origin;
@@ -251,15 +289,19 @@ public class EnemyAbility_GreedHands : EnemyAbility
         }
 
         if (handSpawnVfxPrefab != null)
+
         {
             GameObject spawnVfx = VfxPool.Instance.Spawn(handSpawnVfxPrefab, origin, Quaternion.identity);
+
             PlayVfx(spawnVfx);
             ReleaseVfx(spawnVfx, 1f);
         }
 
         GreedHandProjectile hand = go.GetComponent<GreedHandProjectile>();
         if (hand == null) hand = go.AddComponent<GreedHandProjectile>();
+
         if (daggerPrefab != null)
+
             go.transform.localScale *= OwnerCombatScaleMultiplier;
         hand.Launch(
             this,
@@ -305,7 +347,9 @@ public class EnemyAbility_GreedHands : EnemyAbility
             // Orbit visuals must not fly as projectiles.
             GreedHandProjectile projectile = vis.GetComponent<GreedHandProjectile>();
             if (projectile != null) Destroy(projectile);
+
             vis.name = "GreedHandOrbit";
+
             _orbitVisuals.Add(vis);
             if (debugLog)
                 Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' orbit visual created ({_orbitVisuals.Count}/{CurrentHands}) from '{(daggerPrefab != null ? daggerPrefab.name : "sphere fallback")}'", vis);
@@ -313,17 +357,26 @@ public class EnemyAbility_GreedHands : EnemyAbility
         }
     }
 
+
+
     private void UpdateOrbitPositions()
+
     {
         if (owner == null) return;
         for (int i = 0; i < _orbitVisuals.Count; i++)
         {
             GameObject vis = _orbitVisuals[i];
             if (vis == null) continue;
-            float angle = AbilityTime * orbitSpeed + i * (360f / Mathf.Max(1, _orbitVisuals.Count));
-            Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * orbitRadius;
-            vis.transform.position = GetOrbitCenterPosition() + offset;
+            vis.transform.position = GetOrbitPosition(i, _orbitVisuals.Count);
+
         }
+    }
+
+    private Vector3 GetOrbitPosition(int index, int count)
+    {
+        float angle = AbilityTime * orbitSpeed + index * (360f / Mathf.Max(1, count));
+        Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * orbitRadius;
+        return GetOrbitCenterPosition() + offset;
     }
 
     private Vector3 GetOrbitCenterPosition()
@@ -331,6 +384,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
         if (orbitCircleCenterOffset != null) return orbitCircleCenterOffset.position;
         return owner != null ? owner.transform.position + Vector3.up * heightOffset : transform.position;
     }
+
 
     protected override void OnDisable()
 

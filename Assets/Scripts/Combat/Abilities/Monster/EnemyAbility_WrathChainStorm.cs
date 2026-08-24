@@ -90,8 +90,9 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
             yield break;
         }
 
-        Animator anim = owner.GetActiveAnimator();
-        if (anim != null) anim.SetTrigger("Skill");
+        foreach (Animator animator in owner.GetComponentsInChildren<Animator>(false))
+            animator.SetTrigger("Skill");
+
 
         float duration = baseDuration;
         if (IsUpgradeUnlocked(CardStormDuration))

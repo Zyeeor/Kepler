@@ -45,9 +45,17 @@ public class PossessionBodyProvider : MonoBehaviour
     [Tooltip("刷出后立即自动附身（跳过飞行/倒地窗口直接接管）。关闭则刷出的怪由 AI 控制（会攻击玩家）。")]
     public bool autoPossess = true;
 
+    [Header("音频")]
+    [Tooltip("是否启用神龛接近/提供音效（close 首次进入触发圈、provide 提供躯体时）。")]
+    public bool audioEnabled = true;
+    [Tooltip("接近提示触发圈的半径（≤0 = 与 triggerRadius 相同）。")]
+    public float audioProximityRadius = 3f;
+
     [Header("状态（调试可重置）")]
     [Tooltip("已提供过（只一次）。调试时可手动取消勾选重置。")]
     public bool used;
+    /// <summary>接近提示音是否已播（每次进入触发圈只播一次，离开后重置）。</summary>
+    bool proximitySfxPlayed;
 
     /// <summary>提示日志限频（配置缺失时）。</summary>
     float lastWarnTime = -999f;
@@ -73,6 +81,25 @@ public class PossessionBodyProvider : MonoBehaviour
         if (pm != null && pm.CurrentBody != null) return;
 
         float dist = Vector3.Distance(player.transform.position, transform.position);
+
+        // 神龛接近提示音：首次进入音频提示圈（默认 3m）时播一次；离开后重置可再次触发。
+        if (audioEnabled && pm != null && pm.CurrentBody == null)
+        {
+            float proximityRadius = audioProximityRadius > 0f ? audioProximityRadius : triggerRadius;
+            if (dist <= proximityRadius)
+            {
+                if (!proximitySfxPlayed)
+                {
+                    proximitySfxPlayed = true;
+                    AudioManager.Instance?.Play(SfxId.ShrineProximity, transform.position);
+                }
+            }
+            else
+            {
+                proximitySfxPlayed = false;
+            }
+        }
+
         if (dist <= triggerRadius)
             ProvideBody();
     }
@@ -139,6 +166,9 @@ public class PossessionBodyProvider : MonoBehaviour
         monster.SpawnAsPermanentCorpse();
 
         used = true;
+        // 提供躯体音（默认 3D 定位在神龛位置；未配置 clip 静默）
+        if (audioEnabled)
+            AudioManager.Instance?.Play(SfxId.ShrineProvide, transform.position);
         Debug.Log($"[PossessionBodyProvider] {name} 提供躯体（尸体）{monster.name}（{mode}）@{pos.ToString("F1")}", this);
 
         if (autoPossess && PossessionManager.Instance != null)

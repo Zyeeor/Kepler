@@ -1,0 +1,211 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfc4f3e6d04e98a43b3e4d79394eaf25, type: 3}
+  m_Name: SfxBank
+  m_EditorClassIdentifier: 
+  entries:
+  - id: 1
+    clip: {fileID: 8300000, guid: 4f2503b9bbe56c8459da5dbd3cce75c6, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 2
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 3
+    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 4
+    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 5
+    clip: {fileID: 8300000, guid: bcf49cd290fd15443be82478919f7c69, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 1
+    prefer3D: 1
+  - id: 6
+    clip: {fileID: 8300000, guid: 89479c37eebdc9d4ba131348aa184b84, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 1
+    prefer3D: 1
+  - id: 7
+    clip: {fileID: 8300000, guid: f1afbe252b4aa3142902a2cbe6abf1cb, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 1
+    prefer3D: 1
+  - id: 8
+    clip: {fileID: 8300000, guid: 1dca4c19cd179a84da480a49e9b2504f, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 1
+    prefer3D: 1
+  - id: 9
+    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 10
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 11
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 12
+    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 13
+    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 14
+    clip: {fileID: 8300000, guid: 4f2503b9bbe56c8459da5dbd3cce75c6, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 15
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 16
+    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 17
+    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 18
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 24
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 0.8
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 27
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 28
+    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 19
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 20
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 21
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 22
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 23
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 25
+    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 26
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1

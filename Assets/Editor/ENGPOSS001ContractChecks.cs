@@ -43,7 +43,7 @@ public static class ENGPOSS001ContractChecks
         Require(PossessionImprintMath.MaxStacks == 100, "Seven-sin stack cap must default to 100.");
         Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(100), 0.4f), "Sloth drain cap is wrong.");
         Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(1000), 0.4f), "Sloth stack cap is not enforced.");
-        Require(Approximately(PossessionImprintMath.LustControlChance(100), 0.3f), "Lust cap is wrong.");
+        Require(Approximately(PossessionImprintMath.LustLifestealMultiplier(100), 1f), "Lust lifesteal formula is wrong.");
     }
 
     static void DifficultyTierBoundariesAreStable()

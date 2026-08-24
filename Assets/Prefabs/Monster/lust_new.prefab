@@ -123,7 +123,7 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   displayName: "\u8272\u6B32-\u7075\u5FF5\u5E08"
-  sinType: 0
+  sinType: 7
   isPossessable: 1
   enemyStats:
     maxHealth: 100
@@ -354,7 +354,7 @@ Transform:
   m_GameObject: {fileID: 2663089432379167242}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.769, z: 0.081}
+  m_LocalPosition: {x: 0, y: 0.985, z: 0.103}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -372,7 +372,7 @@ Light:
   m_Type: 2
   m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.8
+  m_Intensity: 0.12
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -926,7 +926,8 @@ MonoBehaviour:
   mistRange: 8
   linkDuration: 6
   aimTurnSpeed: 720
-  mistVfxPrefab: {fileID: 0}
+  mistVfxPrefab: {fileID: 1249446925191943152, guid: c7f82e74b5bf9f7409258d7cbbac6a01,
+    type: 3}
   linkMarkVfx: {fileID: 0}
   ringInnerRadius: 0.5
   ringOuterRadius: 4
@@ -1117,7 +1118,7 @@ Light:
   m_Type: 2
   m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.8
+  m_Intensity: 0.26
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208

@@ -67,8 +67,9 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
             return;
         }
 
-        Animator anim = owner.GetActiveAnimator();
-        if (anim != null) anim.SetTrigger("Mobility");
+        foreach (Animator animator in owner.GetComponentsInChildren<Animator>(false))
+            animator.SetTrigger("Mobility");
+
 
         StartCoroutine(GrappleRoutine(direction));
     }

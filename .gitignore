@@ -160,10 +160,8 @@ InitTestScene*.unity*
 .augment/
 .qoder/
 
-# CodeBuddy 本地态（项目数据保留，仅忽略本地设置与缓存）
-.codebuddy/**/settings.local.json
-.codebuddy/**/cache/
-.codebuddy/**/*.local.*
+# CodeBuddy（整个目录：AI 会话数据与本地态，不入库）
+.codebuddy/
 
 
 # 精英怪前台实现文档（本地工作文档，不入库）
