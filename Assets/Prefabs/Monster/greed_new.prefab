@@ -707,7 +707,7 @@ MonoBehaviour:
   handSpawnVfxPrefab: {fileID: 0}
   orbitRadius: 1.5
   orbitSpeed: 200
-  heightOffset: -2
+  heightOffset: -10
   detectRange: 8
   launchInterval: 0.3
   aimTurnSpeed: 720

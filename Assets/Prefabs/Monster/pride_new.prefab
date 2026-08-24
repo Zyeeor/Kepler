@@ -3556,7 +3556,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7180877996318577951
 Transform:
   m_ObjectHideFlags: 0
@@ -4470,6 +4470,8 @@ MonoBehaviour:
   passThroughDuration: 0.08
   untargetableEffect: {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   hideOwnerMeshes: 1
+  bossStrikeRadius: 1.25
+  bossBlinkInterval: 0.55
   activationDisplayA: {fileID: 8680161257192645168}
   activationDisplayB: {fileID: 5117285898771160820}
 --- !u!1 &8863776375583877577

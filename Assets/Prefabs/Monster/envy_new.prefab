@@ -1511,8 +1511,8 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   maxRange: 15
-  damagePerSecond: 2
-  tickInterval: 0.25
+  damagePerSecond: 0.5
+  tickInterval: 0.01
   markStorageCap: 100
   markWriteRatio: 0.2
   markGraceDuration: 0
@@ -1529,7 +1529,7 @@ MonoBehaviour:
   beamPrefab: {fileID: 2540417558773106788, guid: 3fdd30d0b52b3864e92fe3606bf66eff,
     type: 3}
   beamMaterial: {fileID: 0}
-  beamPositionOffset: {x: 0, y: 0.3, z: 0}
+  beamPositionOffset: {x: 0, y: -0.5, z: 0}
   beamRotationOffset: {x: 0, y: 0, z: 0}
   hitImpactPrefab: {fileID: 7331713304514311016, guid: da80e150793fe574f92041b77ee612dd,
     type: 3}

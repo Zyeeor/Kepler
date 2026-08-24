@@ -75,13 +75,16 @@ public static class ENGPOSS001ContractChecks
 
         EditorSceneManager.OpenScene("Assets/Scenes/CombatTest.unity", OpenSceneMode.Single);
         ENGPOSS001SceneInstaller installer = UnityEngine.Object.FindObjectOfType<ENGPOSS001SceneInstaller>();
-        Require(installer != null && installer.bossPrefab != null && installer.imprintHudPrefab != null,
-            "CombatTest scene installer references are incomplete.");
+        PossessionImprintHUD sceneHud = UnityEngine.Object.FindObjectOfType<PossessionImprintHUD>();
+        Require(installer != null && installer.bossPrefab != null && sceneHud != null,
+            "CombatTest scene bindings are incomplete.");
 
         EditorSceneManager.OpenScene("Assets/Scenes/EnemyAiTest.unity", OpenSceneMode.Single);
         installer = UnityEngine.Object.FindObjectOfType<ENGPOSS001SceneInstaller>();
-        Require(installer != null && installer.bossPrefab != null && installer.imprintHudPrefab != null,
-            "EnemyAiTest scene installer references are incomplete.");
+        sceneHud = UnityEngine.Object.FindObjectOfType<PossessionImprintHUD>();
+        Require(installer != null && installer.bossPrefab != null && sceneHud != null,
+            "EnemyAiTest scene bindings are incomplete.");
+
     }
 
     static bool Approximately(float a, float b) => Math.Abs(a - b) < 0.0001f;
