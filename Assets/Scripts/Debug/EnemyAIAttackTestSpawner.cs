@@ -49,6 +49,9 @@ public class EnemyAIAttackTestSpawner : MonoBehaviour
         int number = ReadNumberKeyDown();
         if (number < 0) return;
 
+        // Key 8 is reserved for the Sevenfold Boss summon in the shared combat scenes.
+        if (number == 8) return;
+
         if (number == 0)
             SpawnRandomEnemy();
         else
