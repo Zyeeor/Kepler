@@ -973,10 +973,21 @@ MonoBehaviour:
   absorbPerHand: 100
   absorbPerHandWithCard: 60
   guardEffect: {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
-  guardHandVfxPrefab: {fileID: 0}
+  leftGuardHandVfxPrefab: {fileID: 8690902010666443938, guid: eca1500cd06dd67489d6ded7d66cc49b,
+    type: 3}
+  rightGuardHandVfxPrefab: {fileID: 924242520053913144, guid: 67696e5168cf0a9479f2889a5fd12580,
+    type: 3}
   absorbVfxPrefab: {fileID: 0}
   convertVfxPrefab: {fileID: 0}
-  convertVfxDuration: 0.8
+  convertVfxDuration: 1
+  guardHandCenter: {fileID: 1508860585820233365}
+  guardHandSideOffset: 0.3
+  guardHandForwardOffset: -0.4
+  guardHandHeightOffset: -0.6
+  guardHandOrbitSweepAngle: 360
+  guardHandOrbitDuration: 0.3
+  guardHandScaleUpDuration: 0.1
+  guardHandInitialScale: 0.2
 --- !u!1 &8369696960358136200
 GameObject:
   m_ObjectHideFlags: 0

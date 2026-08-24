@@ -1,5 +1,7 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
+
 
 /// <summary>
 /// Greed Special: full-body Guard absorb. Rooted, cannot dump hands.
@@ -12,19 +14,41 @@ public class EnemyAbility_GreedGuard : EnemyAbility
     public float absorbPerHand = 100f;
     public float absorbPerHandWithCard = 60f;
     public GameplayEffectDefinition guardEffect;
-    public GameObject guardHandVfxPrefab;
+    [FormerlySerializedAs("guardHandVfxPrefab")]
+    public GameObject leftGuardHandVfxPrefab;
+    public GameObject rightGuardHandVfxPrefab;
     public GameObject absorbVfxPrefab;
+
     public GameObject convertVfxPrefab;
     public float convertVfxDuration = 0.8f;
 
+    [Header("Guard Hand Presentation")]
+    public Transform guardHandCenter;
+    public float guardHandSideOffset = 0.55f;
+    public float guardHandForwardOffset = 0.6f;
+    public float guardHandHeightOffset = 0.8f;
+    [FormerlySerializedAs("guardHandSpinSpeed")]
+    public float guardHandOrbitSweepAngle = 180f;
+    public float guardHandOrbitDuration = 0.75f;
+
+
+    public float guardHandScaleUpDuration = 0.25f;
+    public float guardHandInitialScale = 0.2f;
+
     public bool IsGuarding { get; private set; }
+
 
     private float _guardEndsAt;
     private float _absorbedTotal;
     private float _convertedRemainder;
     private int _handsGranted;
-    private GameObject _guardVfx;
+    private readonly GameObject[] _guardHandsVfx = new GameObject[2];
+    private readonly Vector3[] _guardHandBaseScales = new Vector3[2];
+    private readonly Vector3[] _guardHandEndOffsets = new Vector3[2];
+
+    private float _guardStartedAt;
     private EnemyAbility_GreedHands _hands;
+
     private Coroutine _guardRoutine;
     private bool _earlyCancelArmed;
 
@@ -84,20 +108,69 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         _absorbedTotal = 0f;
         _convertedRemainder = 0f;
         _handsGranted = 0;
+        _guardStartedAt = AbilityTime;
         _guardEndsAt = AbilityTime + duration;
         _earlyCancelArmed = IsUpgradeUnlocked("GR-S04");
+
 
         if (guardEffect != null && owner.Combat != null)
             owner.Combat.ApplyEffect(guardEffect, owner.Combat, abilityTags, out _);
 
-        if (guardHandVfxPrefab != null)
+        if (leftGuardHandVfxPrefab != null || rightGuardHandVfxPrefab != null)
         {
-            _guardVfx = VfxPool.Instance.Spawn(guardHandVfxPrefab, owner.transform.position, owner.transform.rotation, owner.transform);
-            _guardVfx.transform.localPosition = Vector3.forward * 0.6f + Vector3.up * 0.8f;
+            Transform guardCenter = guardHandCenter != null ? guardHandCenter : owner.transform;
+            for (int i = 0; i < _guardHandsVfx.Length; i++)
+            {
+                GameObject guardHandPrefab = i == 0 ? leftGuardHandVfxPrefab : rightGuardHandVfxPrefab;
+                if (guardHandPrefab == null) continue;
+                float side = i == 0 ? -1f : 1f;
+                GameObject guardHand = VfxPool.Instance.Spawn(
+                    guardHandPrefab,
+                    guardCenter.position,
+                    guardCenter.rotation,
+                    guardCenter);
+                _guardHandEndOffsets[i] = new Vector3(
+                    side * guardHandSideOffset,
+                    guardHandHeightOffset,
+                    guardHandForwardOffset);
+                guardHand.transform.localPosition = Quaternion.Euler(
+                    0f,
+                    -side * guardHandOrbitSweepAngle,
+                    0f) * _guardHandEndOffsets[i];
+
+                guardHand.transform.localRotation = Quaternion.identity;
+                _guardHandsVfx[i] = guardHand;
+                _guardHandBaseScales[i] = guardHand.transform.localScale;
+                guardHand.transform.localScale = _guardHandBaseScales[i] * Mathf.Max(0f, guardHandInitialScale);
+                PlayVfx(guardHand);
+            }
         }
 
         while (owner != null && IsGuarding && AbilityTime < _guardEndsAt)
+        {
+            float scaleT = Mathf.Clamp01((AbilityTime - _guardStartedAt) / Mathf.Max(0.01f, guardHandScaleUpDuration));
+            float orbitT = Mathf.Clamp01((AbilityTime - _guardStartedAt) / Mathf.Max(0.01f, guardHandOrbitDuration));
+            for (int i = 0; i < _guardHandsVfx.Length; i++)
+
+            {
+                GameObject guardHand = _guardHandsVfx[i];
+                if (guardHand == null) continue;
+                float side = i == 0 ? -1f : 1f;
+                guardHand.transform.localPosition = Quaternion.Euler(
+                    0f,
+                    Mathf.Lerp(-side * guardHandOrbitSweepAngle, 0f, orbitT),
+
+                    0f) * _guardHandEndOffsets[i];
+                guardHand.transform.localRotation = Quaternion.identity;
+                guardHand.transform.localScale = Vector3.Lerp(
+
+                    _guardHandBaseScales[i] * Mathf.Max(0f, guardHandInitialScale),
+                    _guardHandBaseScales[i],
+                    scaleT);
+            }
             yield return null;
+        }
+
 
         EndGuard(applyCooldown: true);
         EndActivationEffect();
@@ -152,7 +225,8 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
     private void EndGuard(bool applyCooldown)
     {
-        if (!IsGuarding && _guardVfx == null && guardEffect == null)
+        bool hasGuardHands = _guardHandsVfx[0] != null || _guardHandsVfx[1] != null;
+        if (!IsGuarding && !hasGuardHands && guardEffect == null)
         {
             if (applyCooldown) currentCooldown = EffectiveCooldown;
             return;
@@ -161,11 +235,16 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         IsGuarding = false;
         if (owner != null && owner.Combat != null && guardEffect != null)
             owner.Combat.RemoveEffect(guardEffect);
-        if (_guardVfx != null)
+        for (int i = 0; i < _guardHandsVfx.Length; i++)
         {
-            ReleaseVfx(_guardVfx);
-            _guardVfx = null;
+            if (_guardHandsVfx[i] != null)
+                ReleaseVfx(_guardHandsVfx[i]);
+            _guardHandsVfx[i] = null;
+            _guardHandBaseScales[i] = Vector3.zero;
+            _guardHandEndOffsets[i] = Vector3.zero;
+
         }
+
 
         // Zero absorb: no convert success feedback (already gated in ConvertAbsorbed).
         if (applyCooldown)

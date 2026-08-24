@@ -7,7 +7,8 @@ public class GreedHandProjectile : MonoBehaviour
 {
     public EnemyAbility_GreedHands sourceAbility;
     public Enemy ownerAtFire;
-    public Enemy target;
+    public Transform target;
+
     public float damage = 15f;
     public float moveSpeed = 20f;
     public float hitRadius = 0.8f;
@@ -46,7 +47,8 @@ public class GreedHandProjectile : MonoBehaviour
     public void Launch(
         EnemyAbility_GreedHands ability,
         Enemy firedBy,
-        Enemy initialTarget,
+        Transform initialTarget,
+
         float handDamage,
         bool retarget,
         bool spawnOnKill,
@@ -83,7 +85,8 @@ public class GreedHandProjectile : MonoBehaviour
 
 
         Vector3 toTarget = target != null
-            ? target.transform.position + Vector3.up * 0.6f - transform.position
+            ? target.position + Vector3.up * 0.6f - transform.position
+
             : (firedBy != null ? firedBy.transform.forward : Vector3.forward);
         if (toTarget.sqrMagnitude < 0.01f)
             toTarget = firedBy != null ? firedBy.transform.forward : Vector3.forward;
@@ -111,7 +114,8 @@ public class GreedHandProjectile : MonoBehaviour
         float deltaTime = ownerAtFire != null && ownerAtFire.IsPlayerControlled
             ? Time.unscaledDeltaTime
             : Time.deltaTime;
-        Vector3 goal = target.transform.position + Vector3.up * 0.6f;
+        Vector3 goal = target.position + Vector3.up * 0.6f;
+
         Vector3 toGoal = goal - transform.position;
         if (toGoal.sqrMagnitude > 0.001f)
         {
@@ -141,7 +145,8 @@ public class GreedHandProjectile : MonoBehaviour
         if (sourceAbility != null && sourceAbility.OwnerMonster != null)
             effectiveHitRadius *= sourceAbility.OwnerMonster.PossessionCombatScaleMultiplier;
         if (Time.time >= _canHitAt
-            && Vector3.Distance(transform.position, target.transform.position) <= effectiveHitRadius)
+            && Vector3.Distance(transform.position, target.position) <= effectiveHitRadius)
+
         {
             CombatHitboxDebug.DrawSphere(true, transform.position, effectiveHitRadius, 0f);
 
@@ -156,26 +161,40 @@ public class GreedHandProjectile : MonoBehaviour
         if (_settled || target == null) return;
         _settled = true;
 
-        Enemy hitTarget = target;
+        Enemy hitEnemy = target.GetComponentInParent<Enemy>();
+        PlayerHealth hitPlayer = hitEnemy == null ? target.GetComponentInParent<PlayerHealth>() : null;
         Vector3 hitPos = transform.position;
+        bool killed = false;
 
-        if (sourceAbility != null)
-            sourceAbility.SettleHandHit(hitTarget, damage);
+        if (hitEnemy != null)
+        {
+            if (sourceAbility != null)
+                sourceAbility.SettleHandHit(hitEnemy, damage);
+            else
+                hitEnemy.TakeDamage(damage);
+
+            killed = hitEnemy.isDowned
+                || hitEnemy.currentHealth <= 0f
+                || hitEnemy.Body == MonsterActor.BodyState.Downed
+                || hitEnemy.Body == MonsterActor.BodyState.Fading
+                || hitEnemy.Body == MonsterActor.BodyState.Despawned;
+        }
+        else if (hitPlayer != null)
+        {
+            if (sourceAbility != null)
+                sourceAbility.SettleHit(hitPlayer, damage);
+            else
+                hitPlayer.TakeDamage(damage);
+        }
         else
-            hitTarget.TakeDamage(damage);
-
-        bool killed = hitTarget == null
-            || hitTarget.isDowned
-            || hitTarget.currentHealth <= 0f
-            || hitTarget.Body == MonsterActor.BodyState.Downed
-            || hitTarget.Body == MonsterActor.BodyState.Fading
-            || hitTarget.Body == MonsterActor.BodyState.Despawned;
+        {
+            VfxPool.ReleaseOrDestroy(gameObject);
+            return;
+        }
 
         if (hitVfxPrefab != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(hitVfxPrefab, hitPos, Quaternion.identity);
-
-
             foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
                 ps.Play(true);
             VfxPool.ReleaseOrDestroy(vfx, Mathf.Max(0.05f, hitVfxDuration));
@@ -185,12 +204,12 @@ public class GreedHandProjectile : MonoBehaviour
         {
             if (allowRetargetOnce && !_retargetUsed && sourceAbility != null)
             {
-                Enemy next = sourceAbility.FindNearestLegalTarget(transform.position, hitTarget);
+                Enemy next = sourceAbility.FindNearestLegalTarget(transform.position, hitEnemy);
                 if (next != null)
                 {
                     _retargetUsed = true;
                     _settled = false;
-                    target = next;
+                    target = next.transform;
                     return;
                 }
             }
@@ -202,12 +221,21 @@ public class GreedHandProjectile : MonoBehaviour
         VfxPool.ReleaseOrDestroy(gameObject);
     }
 
-    private static bool IsLegalTarget(Enemy enemy)
+    private bool IsLegalTarget(Transform candidate)
     {
-        return enemy != null
-            && !enemy.isDowned
-            && enemy.Body != MonsterActor.BodyState.Fading
-            && enemy.Body != MonsterActor.BodyState.Despawned
-            && enemy.currentHealth > 0f;
+        Enemy enemy = candidate != null ? candidate.GetComponentInParent<Enemy>() : null;
+        if (enemy != null)
+        {
+            return ownerAtFire != null
+                && ownerAtFire.CanDamage(enemy)
+                && !enemy.isDowned
+                && enemy.Body != MonsterActor.BodyState.Fading
+                && enemy.Body != MonsterActor.BodyState.Despawned
+                && enemy.currentHealth > 0f;
+        }
+
+        PlayerHealth player = candidate != null ? candidate.GetComponentInParent<PlayerHealth>() : null;
+        return player != null && ownerAtFire != null && ownerAtFire.CanDamageSoul();
     }
+
 }
