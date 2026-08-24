@@ -61,6 +61,14 @@ public class EliteBuildDirector : MonoBehaviour
     [Tooltip("越级波次差：请求第 N 波精英时，筛选 sourceWave >= N + waveGap 的快照。1=别人多打一波的怪，0=同波次，2=越两级。")]
     [Min(0)] public int waveGap = 1;
 
+    [Header("精英强化参数")]
+    [Tooltip("精英最大生命值相对当前波次普通怪的倍率。波次难度倍率仍由 MonsterSpawnDifficulty 叠加。")]
+    [Min(1f)] public float eliteHealthMultiplier = 2f;
+    [Tooltip("精英攻击伤害相对当前波次普通怪的倍率。波次难度倍率仍由 MonsterSpawnDifficulty 叠加。")]
+    [Min(1f)] public float eliteAttackDamageMultiplier = 2f;
+    [Tooltip("精英视觉尺寸相对普通怪的倍率。只缩放视觉节点，不缩放 Actor 根节点、碰撞体或导航。")]
+    [Min(1f)] public float eliteVisualScaleMultiplier = 2f;
+
     [Header("网络状态")]
     [Tooltip("连续失败多少次后显示网络异常 UI 提示。")]
     [Min(1)] public int offlineThreshold = 2;
@@ -223,6 +231,7 @@ public class EliteBuildDirector : MonoBehaviour
     void HandleWaveStarted(int waveIndex, WaveConfig wave)
     {
         if (!eliteEnabled) return;
+        RefreshActiveEliteDifficulty();
         int waveNumber = waveIndex + 1;
         if (!ShouldSpawnEliteAt(waveNumber)) return;
 
@@ -233,6 +242,15 @@ public class EliteBuildDirector : MonoBehaviour
             return;
         }
         RequestElite(waveIndex, waveNumber);
+    }
+
+    void RefreshActiveEliteDifficulty()
+    {
+        RunSpawnDirector spawnDirector = RunSpawnDirector.Instance;
+        int tier = spawnDirector != null ? spawnDirector.CurrentTier : 0;
+        MonsterActor[] monsters = FindObjectsOfType<MonsterActor>();
+        for (int i = 0; i < monsters.Length; i++)
+            if (monsters[i] != null) monsters[i].RefreshEliteWaveDifficulty(tier);
     }
 
     /// <summary>
@@ -347,10 +365,24 @@ public class EliteBuildDirector : MonoBehaviour
 
         var carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
         carrier.Init(snapshot, entry.displayName);
+        ApplyEliteRuntimeSettings(monster);
         wm.RegisterExternalWaveMonster(monster);
         EnqueueEliteEvent("spawned", carrier, waveNumber); // 战果回传：精英成功生成（Meta §6.5）
 
         Debug.Log($"[EliteBuildDirector] W{waveNumber} 投放精英 '{monster.displayName}'（sin={snapshot.sin}, bdCount={snapshot.bdCount}, sourceWave={snapshot.sourceWave}, from={snapshot.sourcePlayerId}, relaxed={relaxed}）。");
+    }
+
+    /// <summary>
+    /// Applies the shared Elite runtime presentation and combat settings. The debug key [9]
+    /// uses this same entry point so testing and wave injection cannot drift apart.
+    /// </summary>
+    public void ApplyEliteRuntimeSettings(MonsterActor monster)
+    {
+        if (monster == null) return;
+        monster.ApplyEliteRuntimeModifiers(
+            eliteHealthMultiplier,
+            eliteAttackDamageMultiplier,
+            eliteVisualScaleMultiplier);
     }
 
     // ── 上传（Meta §6.1/§6.7）──
