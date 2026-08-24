@@ -18,6 +18,7 @@ public class ActorVisualFx : MonoBehaviour
     public static readonly int RimColorId = Shader.PropertyToID("_RimColor");
     public static readonly int HitFlashAmountId = Shader.PropertyToID("_HitFlashAmount");
     public static readonly int HitFlashColorId = Shader.PropertyToID("_HitFlashColor");
+    public static readonly int MainColorId = Shader.PropertyToID("_MainColor");
     public static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     public static readonly int ColorId = Shader.PropertyToID("_Color");
     public static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -170,7 +171,9 @@ public class ActorVisualFx : MonoBehaviour
                 Material mat = materials[m];
                 if (mat == null) continue;
                 int key = PackKey(r, m);
-                if (mat.HasProperty(BaseColorId))
+                if (mat.HasProperty(MainColorId))
+                    _baseColors[key] = mat.GetColor(MainColorId);
+                else if (mat.HasProperty(BaseColorId))
                     _baseColors[key] = mat.GetColor(BaseColorId);
                 else if (mat.HasProperty(ColorId))
                     _baseColors[key] = mat.GetColor(ColorId);
@@ -459,6 +462,7 @@ public class ActorVisualFx : MonoBehaviour
                 if (_hitFlash > 0.001f && !_usingDissolveMaterials && _baseColors.TryGetValue(key, out Color baseColor))
                 {
                     Color c = Color.Lerp(baseColor, hitFlashColor, _hitFlash);
+                    if (mat.HasProperty(MainColorId)) _block.SetColor(MainColorId, c);
                     if (mat.HasProperty(BaseColorId)) _block.SetColor(BaseColorId, c);
                     if (mat.HasProperty(ColorId)) _block.SetColor(ColorId, c);
                 }
