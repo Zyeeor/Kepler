@@ -9363,9 +9363,17 @@ MonoBehaviour:
     category: 0
     monsterType: 0
     foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
+    extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
+    extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
+    extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
+    extraBorderSprites: []
   - cardName: 
     textKey: 
     effectId: 
@@ -9378,9 +9386,17 @@ MonoBehaviour:
     category: 0
     monsterType: 0
     foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
+    extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
+    extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
+    extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
+    extraBorderSprites: []
   - cardName: 
     textKey: 
     effectId: 
@@ -9393,9 +9409,17 @@ MonoBehaviour:
     category: 0
     monsterType: 0
     foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
+    extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
+    extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
+    extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
+    extraBorderSprites: []
 --- !u!1 &1890522062
 GameObject:
   m_ObjectHideFlags: 0
