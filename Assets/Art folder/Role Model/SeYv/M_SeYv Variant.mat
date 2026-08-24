@@ -25,12 +25,13 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Dark_intensity: 0.554
-    - _Darksoft: 0.426
-    - _Highlight_range: -0.858
-    - _Highlight_soft: 0.64
-    - _OutlineWidth: 0.01
+    - _DarkRange: 0.59
+    - _Dark_intensity: 0.656
+    - _Darksoft: 0.73
+    - _Highlight_range: -0.922
+    - _Highlight_soft: 0.671
+    - _OutlineWidth: 0.001
     m_Colors:
     - _MainColor: {r: 1.4980394, g: 0.87306076, b: 0.7678628, a: 1}
-    - _Outline_color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 1}
+    - _Outline_color: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

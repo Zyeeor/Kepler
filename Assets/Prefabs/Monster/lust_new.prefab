@@ -748,7 +748,8 @@ MonoBehaviour:
   s05CollisionDistance: 0.75
   s05BlastDamage: 25
   s05BlastRadius: 2
-  s05BlastVfx: {fileID: 0}
+  s05BlastVfx: {fileID: 7359114929232555418, guid: 9a171ea7b11eb654faefbe331490f1ce,
+    type: 3}
   s06Grace: 0.15
 --- !u!1 &4818909537390097845
 GameObject:
@@ -933,13 +934,15 @@ MonoBehaviour:
   ringOuterRadius: 4
   ringExpandDuration: 0.8
   ringWidth: 0.8
-  ringMistVfx: {fileID: 0}
+  ringMistVfx: {fileID: 1249446925191943152, guid: c7f82e74b5bf9f7409258d7cbbac6a01,
+    type: 3}
   mirrorDelay: 0.1
   mirrorDamageMul: 0.5
   a03Delay: 0.1
   a03Damage: 30
   a03Radius: 2.5
-  a03BlastVfx: {fileID: 0}
+  a03BlastVfx: {fileID: 7359114929232555418, guid: 9a171ea7b11eb654faefbe331490f1ce,
+    type: 3}
 --- !u!1 &6718537225855363445
 GameObject:
   m_ObjectHideFlags: 0

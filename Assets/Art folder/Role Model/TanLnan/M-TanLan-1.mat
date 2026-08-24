@@ -99,7 +99,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DarkRange: -0.53
+    - _DarkRange: -0.72
     - _Dark_intensity: 0.769
     - _Darksoft: 0.874
     - _DetailAlbedoMapScale: 1
