@@ -81,13 +81,14 @@ public class EnemyAbility_EnvyFlight : EnemyAbility
         if (length < 0.01f) return;
 
         Vector3 dir = delta / length;
-        int steps = Mathf.Max(1, Mathf.CeilToInt(length / Mathf.Max(0.2f, pathMarkSampleRadius)));
+        float sampleRadius = ScaleAbilityRadius(pathMarkSampleRadius);
+        int steps = Mathf.Max(1, Mathf.CeilToInt(length / Mathf.Max(0.2f, sampleRadius)));
         EnemyAbility_EnvyLaser laser = owner.GetComponentInChildren<EnemyAbility_EnvyLaser>(true);
 
         for (int i = 0; i <= steps; i++)
         {
             Vector3 sample = from + dir * (length * i / steps);
-            foreach (Collider col in Physics.OverlapSphere(sample, pathMarkSampleRadius))
+            foreach (Collider col in Physics.OverlapSphere(sample, sampleRadius))
             {
                 if (col == null) continue;
                 Enemy enemy = col.GetComponentInParent<Enemy>();

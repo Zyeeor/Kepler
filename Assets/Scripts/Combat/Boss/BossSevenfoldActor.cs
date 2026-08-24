@@ -77,6 +77,9 @@ public sealed class BossSevenfoldActor : Enemy
         for (int i = 0; i < victims.Count; i++)
             if (victims[i] != null) victims[i].BeginDisappearing();
 
+        PossessionManager.Instance?.SetBossBattleSwitchMode(true);
+        RunSpawnDirector.Instance?.SpawnBossBattleReserveBodies();
+
         yield return new WaitForSecondsRealtime(2.2f);
         EnableBossCombat();
         yield return new WaitForSecondsRealtime(0.8f);
@@ -109,6 +112,16 @@ public sealed class BossSevenfoldActor : Enemy
         for (int i = 0; i < abilities.Length; i++)
             if (abilities[i] != null && abilities[i].type == EnemyAbility.AbilityType.Mobility)
                 abilities[i].enabled = false;
+    }
+
+    public override void BeginDisappearing()
+    {
+        if (!IsDefeated)
+        {
+            Debug.LogWarning("[BossSevenfold] 忽略非死亡路径的 Boss 消散请求：" + name, this);
+            return;
+        }
+        base.BeginDisappearing();
     }
 
     public Vector3 GetBossTargetPosition()
@@ -170,7 +183,12 @@ public sealed class BossSevenfoldActor : Enemy
         CancelInvoke();
         if (takeoverRoutine != null) StopCoroutine(takeoverRoutine);
         if (teleportRoutine != null) StopCoroutine(teleportRoutine);
-        if (RunSpawnDirector.Instance != null) RunSpawnDirector.Instance.MarkBossDefeated();
+        if (PossessionManager.Instance != null) PossessionManager.Instance.SetBossBattleSwitchMode(false);
+        if (RunSpawnDirector.Instance != null)
+        {
+            RunSpawnDirector.Instance.MarkBossDefeated();
+            RunSpawnDirector.Instance.ClearBossBattleReserveBodies();
+        }
         base.BeginDisappearing();
         if (RunSession.Instance != null && RunSession.Instance.CurrentPhase == RunPhase.Final)
             RunSession.Instance.TransitionTo(RunPhase.Result);

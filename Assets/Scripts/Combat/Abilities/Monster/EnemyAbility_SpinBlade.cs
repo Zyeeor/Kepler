@@ -124,8 +124,9 @@ public class EnemyAbility_SpinBlade : EnemyAbility
             foreach (var b in blades)
             {
                 if (b == null) continue;
-                CombatHitboxDebug.DrawSphere(drawHitboxes, b.transform.position, hitRadius, 0f);
-                Collider[] hits = Physics.OverlapSphere(b.transform.position, hitRadius, layerMask, QueryTriggerInteraction.Collide);
+                float effectiveHitRadius = ScaleAbilityRadius(hitRadius);
+                CombatHitboxDebug.DrawSphere(drawHitboxes, b.transform.position, effectiveHitRadius, 0f);
+                Collider[] hits = Physics.OverlapSphere(b.transform.position, effectiveHitRadius, layerMask, QueryTriggerInteraction.Collide);
                 foreach (var h in hits)
                 {
                     if (recentHits.Contains(h.transform.root)) continue;

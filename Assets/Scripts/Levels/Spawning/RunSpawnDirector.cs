@@ -30,6 +30,17 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     readonly List<float> successfulEchoTimes = new List<float>(8);
     readonly List<PendingEcho> pendingEchoes = new List<PendingEcho>(8);
+    readonly List<MonsterActor> bossBattleReserveBodies = new List<MonsterActor>(7);
+    static readonly SinType[] BossBattleReserveOrder =
+    {
+        SinType.Pride,
+        SinType.Wrath,
+        SinType.Gluttony,
+        SinType.Greed,
+        SinType.Envy,
+        SinType.Lust,
+        SinType.Sloth,
+    };
     float nextPressureTime;
     int spawnedBossCount;
 
@@ -45,6 +56,14 @@ public sealed class RunSpawnDirector : MonoBehaviour
     public bool BossSpawned => spawnedBossCount > 0;
     public bool BossDefeated { get; private set; }
     public int EchoesInWindow => successfulEchoTimes.Count;
+    public int BossBattleReserveBodyCount
+    {
+        get
+        {
+            PruneBossBattleReserveBodies();
+            return bossBattleReserveBodies.Count;
+        }
+    }
 
     public static RunSpawnDirector EnsureInstance()
     {
@@ -65,6 +84,85 @@ public sealed class RunSpawnDirector : MonoBehaviour
     public void ConfigureBoss(GameObject prefab)
     {
         if (prefab != null) bossPrefab = prefab;
+    }
+
+    /// <summary>
+    /// Creates one permanent possession corpse for each sin when the boss takeover starts.
+    /// These bodies intentionally bypass MonsterSpawner quota tracking: they are encounter
+    /// slots, not ordinary wave enemies, and remain available for repeated switching.
+    /// </summary>
+    public int SpawnBossBattleReserveBodies()
+    {
+        PruneBossBattleReserveBodies();
+        if (normalPrefabs == null || normalPrefabs.Count == 0 || MonsterPool.Instance == null) return 0;
+
+        int spawned = 0;
+        Vector3 center = GetBossBattleReserveCenter();
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        for (int i = 0; i < BossBattleReserveOrder.Length; i++)
+        {
+            SinType sin = BossBattleReserveOrder[i];
+            if (FindBossBattleReserveBody(sin) != null) continue;
+
+            GameObject prefab = FindNormalPrefabForSin(sin);
+            if (prefab == null)
+            {
+                Debug.LogWarning("[RunSpawnDirector] Missing normal prefab for Boss reserve sin=" + sin + ".");
+                continue;
+            }
+
+            float angle = (Mathf.PI * 2f * i) / BossBattleReserveOrder.Length;
+            Vector3 position;
+            if (spawner != null && spawner.TryGetWaveSpawnPosition(out position))
+            {
+                // Prefer the shared legal, loaded-tile spawn query. Reserve bodies are
+                // still not registered in MonsterSpawner, so they do not consume quota.
+            }
+            else
+            {
+                // Test scenes without MapStreamingSystem still get a deterministic field
+                // ring instead of silently losing a required reserve slot.
+                position = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 5f;
+            }
+            GameObject instance = MonsterPool.Instance.Spawn(prefab, position, Quaternion.Euler(0f, angle * Mathf.Rad2Deg + 180f, 0f));
+            if (instance == null) continue;
+
+            MonsterActor body = instance.GetComponentInChildren<MonsterActor>(true);
+            if (body == null)
+            {
+                Debug.LogWarning("[RunSpawnDirector] Reserve prefab has no MonsterActor: " + prefab.name);
+                instance.SetActive(false);
+                continue;
+            }
+
+            body.ResolveSinIdentityFromHint(prefab.name);
+            if (body.sinType != sin)
+            {
+                Debug.LogWarning("[RunSpawnDirector] Reserve prefab sin mismatch. expected=" + sin + ", actual=" + body.sinType + ", prefab=" + prefab.name);
+                body.BeginDisappearing();
+                continue;
+            }
+
+            body.SpawnAsBossBattleReserveCorpse();
+            bossBattleReserveBodies.Add(body);
+            spawned++;
+        }
+
+        Debug.Log("[RunSpawnDirector] Boss battle reserve bodies spawned=" + spawned + "/" + BossBattleReserveOrder.Length + ".");
+        return spawned;
+    }
+
+    /// <summary>Removes reserve corpses after the boss encounter, keeping the active body intact until result flow.</summary>
+    public void ClearBossBattleReserveBodies()
+    {
+        MonsterActor current = PossessionManager.Instance != null ? PossessionManager.Instance.CurrentBody : null;
+        for (int i = bossBattleReserveBodies.Count - 1; i >= 0; i--)
+        {
+            MonsterActor body = bossBattleReserveBodies[i];
+            if (body == null || body == current) continue;
+            body.BeginDisappearing();
+        }
+        bossBattleReserveBodies.Clear();
     }
 
     void Awake()
@@ -202,9 +300,68 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     public void RestoreRuntime(float activeSeconds, bool bossSpawned, bool bossDefeated)
     {
+        bossBattleReserveBodies.Clear();
         ActiveCombatSeconds = Mathf.Max(0f, activeSeconds);
         spawnedBossCount = bossSpawned ? 1 : 0;
         BossDefeated = bossDefeated;
         nextPressureTime = Mathf.Ceil(ActiveCombatSeconds / pressureInterval) * pressureInterval;
+    }
+
+    Vector3 GetBossBattleReserveCenter()
+    {
+        if (PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null)
+            return PossessionManager.Instance.CurrentBody.transform.position;
+        if (PlayerHealth.Instance != null)
+            return PlayerHealth.Instance.transform.position;
+        return Vector3.zero;
+    }
+
+    MonsterActor FindBossBattleReserveBody(SinType sin)
+    {
+        for (int i = 0; i < bossBattleReserveBodies.Count; i++)
+        {
+            MonsterActor body = bossBattleReserveBodies[i];
+            if (body != null && body.IsBossBattleReserveBody && body.sinType == sin && body.Body != MonsterActor.BodyState.Despawned)
+                return body;
+        }
+        return null;
+    }
+
+    void PruneBossBattleReserveBodies()
+    {
+        for (int i = bossBattleReserveBodies.Count - 1; i >= 0; i--)
+        {
+            MonsterActor body = bossBattleReserveBodies[i];
+            if (body == null || body.Body == MonsterActor.BodyState.Despawned || !body.IsBossBattleReserveBody)
+                bossBattleReserveBodies.RemoveAt(i);
+        }
+    }
+
+    GameObject FindNormalPrefabForSin(SinType sin)
+    {
+        for (int i = 0; i < normalPrefabs.Count; i++)
+        {
+            GameObject prefab = normalPrefabs[i];
+            if (prefab == null) continue;
+            MonsterActor actor = prefab.GetComponentInChildren<MonsterActor>(true);
+            if ((actor != null && actor.sinType == sin) || PrefabNameMatchesSin(prefab.name, sin)) return prefab;
+        }
+        return null;
+    }
+
+    static bool PrefabNameMatchesSin(string prefabName, SinType sin)
+    {
+        string id = prefabName != null ? prefabName.ToLowerInvariant() : string.Empty;
+        switch (sin)
+        {
+            case SinType.Pride: return id.Contains("pride") || id.Contains("傲慢");
+            case SinType.Wrath: return id.Contains("wrath") || id.Contains("愤怒");
+            case SinType.Gluttony: return id.Contains("gluttony") || id.Contains("暴食");
+            case SinType.Greed: return id.Contains("greed") || id.Contains("贪婪");
+            case SinType.Envy: return id.Contains("envy") || id.Contains("嫉妒");
+            case SinType.Lust: return id.Contains("lust") || id.Contains("色欲");
+            case SinType.Sloth: return id.Contains("sloth") || id.Contains("怠惰");
+            default: return false;
+        }
     }
 }

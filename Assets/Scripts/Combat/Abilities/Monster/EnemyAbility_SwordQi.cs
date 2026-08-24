@@ -133,7 +133,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         if (forward.sqrMagnitude < 0.0001f) forward = owner.transform.forward;
         forward.Normalize();
 
-        float effectiveMaxRange = IsUpgradeUnlocked("PR-A04") ? pride01MaxRange : maxRange;
+        float effectiveMaxRange = ScaleAbilityRadius(IsUpgradeUnlocked("PR-A04") ? pride01MaxRange : maxRange);
 
         float shotDamage = overrideDamage > 0f ? overrideDamage : GetShotDamage();
 
@@ -186,6 +186,7 @@ public class EnemyAbility_SwordQi : EnemyAbility
         float effectiveMaxRange = maxRange;
         if (IsUpgradeUnlocked("PR-A04"))
             effectiveMaxRange = pride01MaxRange;
+        effectiveMaxRange = ScaleAbilityRadius(effectiveMaxRange);
 
         bool pride02 = IsUpgradeUnlocked("PR-A01");
         float shotDamage = GetShotDamage();
@@ -263,14 +264,15 @@ public class EnemyAbility_SwordQi : EnemyAbility
             }
 
 
-            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f, projectileHeight * 0.5f, step * 0.5f);
+            Vector3 halfExtents = new Vector3(projectileWidth * 0.5f * OwnerCombatScaleMultiplier,
+                projectileHeight * 0.5f * OwnerCombatScaleMultiplier, step * 0.5f);
             Vector3 checkCenter = currentPos - forward * (step * 0.5f);
             Quaternion checkRot = Quaternion.LookRotation(forward, Vector3.up);
             CombatHitboxDebug.DrawBox(drawHitboxes, checkCenter, halfExtents, checkRot, 0f);
 
             int layerMask = owner.isPossessed ? ~0 : targetMask;
             if (IsUpgradeUnlocked("PR-A03"))
-                CutIncomingProjectiles(checkCenter, forward, projectileWidth * 0.5f);
+                CutIncomingProjectiles(checkCenter, forward, projectileWidth * 0.5f * OwnerCombatScaleMultiplier);
 
             Collider[] hits = Physics.OverlapBox(checkCenter, halfExtents, checkRot, layerMask, QueryTriggerInteraction.Collide);
             bool hitSomething = false;
@@ -332,8 +334,9 @@ public class EnemyAbility_SwordQi : EnemyAbility
         SpawnExplosionVfx(center);
 
         int layerMask = owner.isPossessed ? ~0 : targetMask;
-        Collider[] hits = Physics.OverlapSphere(center, blastRadius, layerMask, QueryTriggerInteraction.Collide);
-        CombatHitboxDebug.DrawSphere(drawHitboxes, center, blastRadius, explosionVfxDuration);
+        float effectiveBlastRadius = ScaleAbilityRadius(blastRadius);
+        Collider[] hits = Physics.OverlapSphere(center, effectiveBlastRadius, layerMask, QueryTriggerInteraction.Collide);
+        CombatHitboxDebug.DrawSphere(drawHitboxes, center, effectiveBlastRadius, explosionVfxDuration);
         foreach (var h in hits)
         {
             if (IsOwnerCollider(h)) continue;

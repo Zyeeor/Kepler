@@ -18,6 +18,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
     bool restoredRun;
 
     public float GreedBonusProgress { get; private set; }
+    public float LustHealProgress { get; private set; }
     public int GetStacks(SinType sin) => (int)sin > 0 && (int)sin < stacks.Length
         ? Mathf.Clamp(stacks[(int)sin], 0, Mathf.Max(1, PossessionImprintMath.MaxStacks))
         : 0;
@@ -77,6 +78,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
         consumedTransactions.Clear();
         shownTutorials.Clear();
         GreedBonusProgress = 0f;
+        LustHealProgress = 0f;
         hasRun = true;
         restoredRun = false;
     }
@@ -87,7 +89,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
         hasRun = false;
     }
 
-    public void LoadFromSave(List<PossessionImprintState> saved, float greedProgress)
+    public void LoadFromSave(List<PossessionImprintState> saved, float greedProgress, float lustHealProgress = 0f)
     {
         Array.Clear(stacks, 0, stacks.Length);
         consumedTransactions.Clear();
@@ -102,6 +104,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
             }
         }
         GreedBonusProgress = Mathf.Clamp01(greedProgress);
+        LustHealProgress = Mathf.Max(0f, lustHealProgress);
         hasRun = true;
         restoredRun = true;
     }
@@ -174,9 +177,28 @@ public sealed class PossessionImprintManager : MonoBehaviour
         return baseDuration + PossessionImprintMath.EnvyBulletTimeBonus(GetStacks(SinType.Envy));
     }
 
-    public float GetLustControlChance()
+    public float GetLustLifestealMultiplier(MonsterActor body)
     {
-        return PossessionImprintMath.LustControlChance(GetStacks(SinType.Lust));
+        return body != null && body.isPossessed
+            ? PossessionImprintMath.LustLifestealMultiplier(GetStacks(SinType.Lust)) : 0f;
+    }
+
+    /// <summary>
+    /// Accumulates fractional Lust healing and applies only the whole HP portion to the
+    /// currently possessed body. The remainder survives body switches within the run.
+    /// </summary>
+    public void ApplyLustLifesteal(MonsterActor body, float actualDamage)
+    {
+        if (body == null || !body.isPossessed || actualDamage <= 0f) return;
+        float multiplier = GetLustLifestealMultiplier(body);
+        if (multiplier <= 0f) return;
+
+        LustHealProgress += actualDamage * multiplier;
+        int wholeHealing = Mathf.FloorToInt(LustHealProgress);
+        if (wholeHealing <= 0) return;
+
+        LustHealProgress -= wholeHealing;
+        body.Heal(wholeHealing);
     }
 
     public bool HasSeenTutorial(SinType sin)

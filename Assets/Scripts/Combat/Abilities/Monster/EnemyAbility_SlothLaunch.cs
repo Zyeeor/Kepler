@@ -63,6 +63,7 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
         activeVfx = Instantiate(vfxPrefab, anchor);
         activeVfx.transform.localPosition = vfxPositionOffset;
         activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
+        activeVfx.transform.localScale *= OwnerCombatScaleMultiplier;
         PlayVfx(activeVfx);
         return activeVfx;
     }
@@ -157,6 +158,8 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
             mineGo = Instantiate(minePrefab, pos, Quaternion.identity);
         else
             mineGo = new GameObject("Mine");
+
+        mineGo.transform.localScale *= OwnerCombatScaleMultiplier;
 
         float radius = GetWorldRadiusXZ(mineGo);
         MineBehaviour mine = mineGo.GetComponent<MineBehaviour>();

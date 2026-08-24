@@ -247,7 +247,7 @@ public class RunSession : MonoBehaviour
         ActiveCombatSeconds = data.activeCombatSeconds;
         BossSpawned = data.bossSpawned;
         BossDefeated = data.bossDefeated;
-        PossessionImprintManager.EnsureInstance().LoadFromSave(data.possessionImprints, data.greedBonusProgress);
+        PossessionImprintManager.EnsureInstance().LoadFromSave(data.possessionImprints, data.greedBonusProgress, data.lustHealProgress);
         RunSpawnDirector.EnsureInstance().RestoreRuntime(ActiveCombatSeconds, BossSpawned, BossDefeated);
         // 读档延续同一 runId（老档/缺失字段时补生成，保证精英快照 upsert 键可用）
         RunId = !string.IsNullOrEmpty(data.runId) ? data.runId : NewRunId();
@@ -284,7 +284,8 @@ public class RunSession : MonoBehaviour
         SaveCoordinator.SaveSnapshot(completedWaveIndex, WorldSeed, UnlockedEffects,
             SoulPosition, SoulHealth, SoulTime, PossessedBody, Corpses, pendingChoice, ChoicePicks, GlobalMissStreak, RunId,
             ActiveCombatSeconds, PossessionImprintManager.EnsureInstance().CaptureStates(),
-            PossessionImprintManager.EnsureInstance().GreedBonusProgress, BossSpawned, BossDefeated);
+            PossessionImprintManager.EnsureInstance().GreedBonusProgress,
+            PossessionImprintManager.EnsureInstance().LustHealProgress, BossSpawned, BossDefeated);
         Debug.Log($"[RunSession] 波 {completedWaveIndex} 存档完成：位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count}");
     }
 
