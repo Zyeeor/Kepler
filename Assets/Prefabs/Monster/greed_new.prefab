@@ -707,13 +707,13 @@ MonoBehaviour:
   handSpawnVfxPrefab: {fileID: 0}
   orbitRadius: 1.5
   orbitSpeed: 200
-  heightOffset: 0
+  heightOffset: -2
   detectRange: 8
   launchInterval: 0.3
   aimTurnSpeed: 720
   homingSpeed: 20
   homingTurnRate: 720
-  homingCurveStrength: 0.757
+  homingCurveStrength: 0.565
   handDamage: 10
   damageMultiplier: 1
   impactVfxPrefab: {fileID: 1035977224672214417, guid: 1e69e3e21e6d86c45898d16044d351fa,
