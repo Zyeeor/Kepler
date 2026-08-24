@@ -506,6 +506,46 @@ public static class ChunkTileGenerator
         }
         return null;
     }
+
+    // ── 神龛放置（全图按 Chunk 分布） ──
+
+    /// <summary>
+    /// 在指定 Chunk 内部区域确定性放置一个神龛 Tile。
+    /// 选取规则：遍历内部区域（边沿留 1 格）中所有 Normal 可走格，按确定性顺序取一个
+    /// （优先避开已占用的 Trigger/Decoration），把该格 prefab 替换为神龛 prefab（kind=Decoration）。
+    /// 无可用格（极端全被占）时回退覆盖任意内部格。
+    /// 确定性：随机源仅 seed，同 seed 同 Chunk 永远放同一格。
+    /// </summary>
+    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed)
+    {
+        if (chunk == null || chunk.Tiles == null || shrinePrefab == null) return;
+        var tiles = chunk.Tiles;
+        int n = tiles.GetLength(0);
+        var rng = new System.Random(unchecked((int)seed) ^ 0x5E11);
+
+        // 收集内部区域（[1, n-2]）候选：优先 Normal 且可走格
+        var normalCandidates = new List<Vector2Int>();
+        var anyInternal = new List<Vector2Int>();
+        for (int x = 1; x < n - 1; x++)
+        for (int y = 1; y < n - 1; y++)
+        {
+            var t = tiles[x, y];
+            anyInternal.Add(new Vector2Int(x, y));
+            if (t.kind == TerrainKind.Normal && t.isWalkable)
+                normalCandidates.Add(new Vector2Int(x, y));
+        }
+
+        var pool = normalCandidates.Count > 0 ? normalCandidates : anyInternal;
+        if (pool.Count == 0) return;
+
+        // 确定性选格：随机起点 + 固定偏移（不依赖 UnityEngine.Random）
+        int idx = rng.Next(pool.Count);
+        var cell = pool[idx];
+
+        bool walkable = WalkableOf(shrinePrefab);
+        var kind = TileSemantics.ResolveKind(shrinePrefab);
+        tiles[cell.x, cell.y] = new TileData(cell.x, cell.y, shrinePrefab, walkable, kind);
+    }
 }
 
 /// <summary>

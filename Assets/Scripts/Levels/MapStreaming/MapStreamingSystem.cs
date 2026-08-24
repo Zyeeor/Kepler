@@ -79,6 +79,14 @@ public class MapStreamingSystem : MonoBehaviour
     [Tooltip("默认 Chunk 模板：WorldPlan 接入前所有 Chunk 共用；为空时 Tile 生成退化为纯随机（池内 prefab，可走性=无 solid Collider）。")]
     public ChunkDef defaultChunkDef;
 
+    [Header("神龛（PossessionBodyProvider 挂载 prefab；按 Chunk 分布放置）")]
+    [Tooltip("神龛 prefab（挂 PossessionBodyProvider 组件，如 RageStatue）。为空 = 不生成神龛。")]
+    public GameObject shrinePrefab;
+    [Tooltip("全图神龛总数。默认 3。")]
+    [Min(0)] public int shrineCount = 3;
+    [Tooltip("玩家出生点最近保底刷新的 Chunk 数（默认 4 = 出生点四邻接）。第 1 个神龛必定落在这几个 Chunk 之一。")]
+    [Min(1)] public int shrineNearbyChunkCount = 4;
+
     [Header("WorldPlan（宏观区域；空 = 全部用 defaultChunkDef）")]
     [Tooltip("主题映射表：按 RegionDef.themeCenter 排序后对连续噪声值做最近邻查表。空列表 = 不启用 WorldPlan。")]
     public List<RegionDef> regionTable = new List<RegionDef>();
@@ -168,6 +176,8 @@ public class MapStreamingSystem : MonoBehaviour
     WorldPlan worldPlan;
     /// <summary>全局模板分配器：协调「随机 ↔ 模板」融合与模板全局约束（mustGenerate/maxCount/weight），单局唯一。</summary>
     readonly ChunkTemplateAllocator templateAllocator = new ChunkTemplateAllocator();
+    /// <summary>神龛 Chunk 集合（Awake 规划，供 Tile 生成查询；空 = 无神龛）。</summary>
+    readonly HashSet<ChunkCoord> shrineChunks = new HashSet<ChunkCoord>();
     readonly List<MapStreamingJob> jobQueue = new List<MapStreamingJob>();
     readonly ChunkStateStore states = new ChunkStateStore();
     readonly PinRegistry pinRegistry = new PinRegistry();
@@ -210,6 +220,8 @@ public class MapStreamingSystem : MonoBehaviour
         BuildAnchorMap();
 
         InitBoundary();
+
+        PlanShrines();
     }
 
     /// <summary>
@@ -264,6 +276,47 @@ public class MapStreamingSystem : MonoBehaviour
         if (!boundaryEnabled) return true;
         return c.x >= boundaryMin.x && c.x <= boundaryMax.x
             && c.y >= boundaryMin.y && c.y <= boundaryMax.y;
+    }
+
+    /// <summary>
+    /// 神龛规划（Awake，边界初始化后）：基于出生点 + 世界种子，确定性选出全图神龛 Chunk 集合。
+    /// 规则见 ShrinePlacement。无 shrinePrefab / shrineCount≤0 / 无边界时不生成。
+    /// </summary>
+    void PlanShrines()
+    {
+        shrineChunks.Clear();
+        if (shrinePrefab == null || shrineCount <= 0) return;
+
+        ChunkCoord spawnChunk = boundaryEnabled
+            ? new ChunkCoord((boundaryMin.x + boundaryMax.x) / 2, (boundaryMin.y + boundaryMax.y) / 2)
+            : ChunkFromLocal(GetPlayerPosition());
+
+        // 无边界时用出生点外扩一个足够大的范围（保守 64×64），避免无限地图无法确定候选域
+        ChunkCoord min = boundaryEnabled ? boundaryMin : new ChunkCoord(spawnChunk.x - 64, spawnChunk.y - 64);
+        ChunkCoord max = boundaryEnabled ? boundaryMax : new ChunkCoord(spawnChunk.x + 64, spawnChunk.y + 64);
+
+        var planned = ShrinePlacement.Plan(worldSeed, spawnChunk, min, max, shrineCount, shrineNearbyChunkCount);
+        foreach (var c in planned) shrineChunks.Add(c);
+
+        Debug.Log($"[MapStreamingSystem] 神龛规划完成：共 {shrineChunks.Count}/{shrineCount} 个，出生点 chunk {spawnChunk}，坐标 {ShrineCoordsString()}");
+    }
+
+    /// <summary>该 Chunk 是否被规划为神龛所在地（Tile 生成层查询）。</summary>
+    public bool IsShrineChunk(ChunkCoord c)
+    {
+        return shrineChunks.Contains(c);
+    }
+
+    /// <summary>神龛坐标汇总（调试日志用）。</summary>
+    string ShrineCoordsString()
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in shrineChunks)
+        {
+            if (sb.Length > 0) sb.Append(", ");
+            sb.Append(c.ToString());
+        }
+        return sb.ToString();
     }
 
     void OnDestroy(){
@@ -712,9 +765,16 @@ public class MapStreamingSystem : MonoBehaviour
         if (anchorMap.TryGetValue(chunk.Coord, out var anchor) && anchor.IsValid)
         {
             ChunkTileGenerator.GenerateFixed(chunk, anchor.layout, anchor.chunkDef, anchor.fixedSeed);
-            return chunk.OpenEdges;
         }
-        ChunkTileGenerator.Generate(chunk, chunk.Def, seed, templateAllocator);
+        else
+        {
+            ChunkTileGenerator.Generate(chunk, chunk.Def, seed, templateAllocator);
+        }
+
+        // 神龛放置：若本 Chunk 被规划为神龛所在地，在内部区域确定性放一个神龛 Tile
+        if (shrinePrefab != null && shrineChunks.Contains(chunk.Coord))
+            ChunkTileGenerator.PlaceShrine(chunk, shrinePrefab, seed);
+
         return chunk.OpenEdges;
     }
 
