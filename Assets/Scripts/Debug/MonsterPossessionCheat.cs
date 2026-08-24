@@ -31,6 +31,8 @@ public class MonsterPossessionCheat : MonoBehaviour
     [Header("Input")]
     public bool enableCheats = true;
     public bool showOnScreenHint = true;
+    [Tooltip("When enabled, this instance only handles the Boss summon hotkey [8].")]
+    public bool bossSummonOnly;
 
     private MonsterActor lastCheatBody;
     private string lastStatus = "MonsterPossessionCheat ready.";
@@ -60,6 +62,8 @@ public class MonsterPossessionCheat : MonoBehaviour
             return;
         }
 
+        if (bossSummonOnly) return;
+
         if (TryGetHeldSkillType(out EnemyAbility.AbilityType skillType))
         {
             TryUnlockBuildEntry(skillType, number);
@@ -71,7 +75,7 @@ public class MonsterPossessionCheat : MonoBehaviour
 
     void OnGUI()
     {
-        if (!enableCheats || !showOnScreenHint || GameManager.IsFormalFlow) return; // 正式流程屏蔽屏幕提示
+        if (!enableCheats || !showOnScreenHint || bossSummonOnly || GameManager.IsFormalFlow) return; // 正式流程屏蔽屏幕提示
 
         const float width = 560f;
         List<string> buildLines = BuildHintLines(out string skillLabel);
