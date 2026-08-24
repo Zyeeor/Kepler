@@ -72,7 +72,7 @@
 | `EnemyAbility_GluttonyDevour`（吞噬） | `range` 1 m；`angle` 100°；`damageAmount` 40；`hitDelay` 0.5 s；`executeHealthFraction` 20% | 虚空行走后的优先追击之一；只在近身实际范围可释放。 |
 | `EnemyAbility_SlothDrone`（无人机） | `droneLifetime` 4 s；`tossHeight` 4；`tossDuration` 0.35 s；`deathBlastDamage` 20；`deathBlastRadius` 3 | 开战立即召唤；Boss 冷却固定 15 s。上限按阶段 P1/P2/P3 为 1/2/3；场上未达上限才会补召。 |
 | `EnemyAbility_LustRoundTrip`（迷情往返） | `segmentDamage` 20；`mistWidth` 1；`mistSpeed` 14；`mistRange` 8；`linkDuration` 6 | 以玩家方向扇形释放；P1/P2/P3 分别 1/2/3 发，三发总扇角当前为 ±24°（代码规则）。 |
-| `EnemyAbility_SlothChargeShot`（蓄力炮） | `bossPatternCooldown` 6 s；`maxChargeTime` 2 s；`min/maxBlastRadius` 1.5 / 4；`min/maxDamage` 2 / 100；`projectileSpeed` 30；`maxRange` 15 | Boss 序列为 1.5 s 内每 0.3 s 短射，随后蓄力 1.5 s 发射满蓄力炮；序列中禁止其他技能。时序当前为代码规则。 |
+| `EnemyAbility_SlothChargeShot`（蓄力炮） | `bossPatternCooldown` 6 s；`bossProjectileScaleMultiplier` 1.5；`maxChargeTime` 2 s；`min/maxBlastRadius` 1.5 / 4；`min/maxDamage` 2 / 100；`projectileSpeed` 30；`maxRange` 15 | Boss 序列为 1.5 s 内每 0.3 s 短射，随后蓄力 1.5 s 发射满蓄力炮；序列中禁止其他技能，且仅蓄力阶段锁定朝向。Boss 炮弹视觉、碰撞宽高与爆炸半径均使用 1.5 倍，而非通用 2 倍。时序当前为代码规则。 |
 | `EnemyAbility_EnvyLaser`（激光） | `maxRange` 15 m；`damagePerSecond` 2；`tickInterval` 0.25 s；`maxConnectDuration` 8 s | 激光长度和范围**不受 2 倍缩放**；蓄力炮序列期间停止发射。 |
 | `EnemyAbility_GreedHands`（念力魔手） | `maxDaggers` 6；`regenInterval` 1 s；`detectRange` 8 m；`launchInterval` 0.3 s；`homingSpeed` 20 | 调节库存、索敌、弹道和命中伤害；AI 以 `detectRange` 作为实际选择上限。 |
 | `EnemyAbility_GreedGuard`（大手 Guard） | `baseDuration` 1 s；`extendedDuration` 3 s；`absorbPerHand` 100 | 调节护盾时长和吸收转化效率。 |

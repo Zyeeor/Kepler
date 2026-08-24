@@ -147,10 +147,13 @@ public sealed class BossCombatBrain : MonoBehaviour
 
     void Update()
     {
-        if (owner == null || owner.IsDefeated || !owner.CanAct || owner.IsAbilitySequenceLocked) return;
+        if (owner == null || owner.IsDefeated || !owner.CanAct) return;
+        Vector3 targetPosition = owner.GetBossTargetPosition();
+        if (owner.IsAbilitySequenceLocked) return;
+
+        owner.FaceBossTarget(targetPosition);
         if (Time.unscaledTime < nextDecisionTime) return;
         nextDecisionTime = Time.unscaledTime + decisionInterval;
-        Vector3 targetPosition = owner.GetBossTargetPosition();
         EnemyAbility choice = ChooseAbility(targetPosition);
         float distance = Vector3.Distance(owner.transform.position, targetPosition);
         if (owner.TryRequestTacticalTeleport(targetPosition, distance, choice != null, failedDecisionCount))
@@ -166,7 +169,6 @@ public sealed class BossCombatBrain : MonoBehaviour
             return;
         }
         failedDecisionCount = 0;
-        owner.FaceBossTarget(targetPosition);
         choice.Trigger();
         owner.CompleteVoidWalkFollowUp(choice);
         Record(choice, FindFamily(choice));
