@@ -473,6 +473,19 @@ public class CardManager : SceneSingleton<CardManager>
     }
 
     /// <summary>
+    /// Debug：把指定槽位候选替换为卡库中任意一张卡（卡面浏览器用，想看哪张卡直接看哪张）。
+    /// 同步会话排除与 ChoicePicks（读档补弹候选一致）；不触发解锁（选择仍走 SelectCard）。
+    /// </summary>
+    public void DebugReplacePick(int slotIndex, CardData card)
+    {
+        if (card == null || currentPicks == null || slotIndex < 0 || slotIndex >= currentPicks.Length) return;
+        currentPicks[slotIndex] = card;
+        if (!string.IsNullOrEmpty(card.effectId)) shownThisSession.Add(card.effectId);
+        SyncChoicePicksToSession();
+        Debug.Log($"[CardManager] Debug 替换候选槽位 {slotIndex} → {card.cardName} ({card.effectId})");
+    }
+
+    /// <summary>
     /// Permanently unlock an effect for this run (same path as selecting a card).
     /// 所有卡都只会出现一次：取得后从池中剔除（EnumeratePool 排除）。
     /// </summary>
