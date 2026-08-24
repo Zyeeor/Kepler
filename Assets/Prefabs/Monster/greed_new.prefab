@@ -328,7 +328,7 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   displayName: "\u8D2A\u5A6A-\u4E07\u624B\u85CF\u4E3B"
-  sinType: 0
+  sinType: 6
   isPossessable: 1
   enemyStats:
     maxHealth: 200

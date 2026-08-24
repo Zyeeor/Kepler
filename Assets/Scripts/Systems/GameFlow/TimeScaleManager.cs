@@ -98,6 +98,13 @@ public class TimeScaleManager : MonoBehaviour
         Instance.Apply();
     }
 
+    /// <summary>某时间域当前是否处于激活（计数&gt;0）。叙事调度器高压门只读查询。</summary>
+    public static bool IsDomainActive(TimeDomain domain)
+    {
+        if (Instance == null || domain == TimeDomain.None) return false;
+        return Instance.entries.TryGetValue(domain, out var e) && e.count > 0;
+    }
+
     /// <summary>按最高优先级请求生效（单写点）。</summary>
     void Apply()
     {

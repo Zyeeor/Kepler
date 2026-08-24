@@ -112,9 +112,11 @@ public abstract class EnemyAbility : MonoBehaviour
     public GameplayEffectDefinition activationEffect;
 
     [Header("Audio (Combat Audio Manager)")]
-    [Tooltip("Named clip played when this ability Triggers (cast). Empty = silent.")]
+    [Tooltip("施放音（SfxId 下拉选择，clip 在 SfxBank 资产配置）。空 = 静默。")]
+    [SfxIdName]
     public string castAudioName;
-    [Tooltip("Named clip played on first hit settle of an attack. Empty = silent.")]
+    [Tooltip("首次命中音（SfxId 下拉选择，clip 在 SfxBank 资产配置）。空 = 静默。")]
+    [SfxIdName]
     public string hitAudioName;
 
     [Header("Hit Feedback (Combat Effect Manager)")]
@@ -313,6 +315,9 @@ public abstract class EnemyAbility : MonoBehaviour
         _hitAudioFiredThisAttack = false;
         if (!string.IsNullOrWhiteSpace(castAudioName))
             CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
+        else
+            // 施放音查表：owner.sinType + 技能类别 → MonsterSkillAudioConfig（七罪 × 位移/普攻/技能）
+            CombatAudioManager.PlayCastAudio(owner, type, owner != null ? owner.transform.position : transform.position);
         if (debugLogCooldown)
             Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)

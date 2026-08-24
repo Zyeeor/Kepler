@@ -123,7 +123,7 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   displayName: "\u8272\u6B32-\u7075\u5FF5\u5E08"
-  sinType: 0
+  sinType: 7
   isPossessable: 1
   enemyStats:
     maxHealth: 100

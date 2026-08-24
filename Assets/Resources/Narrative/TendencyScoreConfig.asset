@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 546354fabe88fd54dbcd806a354efd85, type: 3}
+  m_Name: TendencyScoreConfig
+  m_EditorClassIdentifier: 
+  wControlSeconds: 1
+  wPossession: 15
+  wAbilityUse: 2
+  wCardInvestment: 25
+  wKills: 5
+  secondaryMinRatio: 0.35
+  tieBreakByControlSeconds: 1
+  behaviorRules:
+  - ruleId: style.switcher
+    metric: 0
+    op: 0
+    threshold: 0.5
+    textKey: nar.firstclear.style.switcher
+    priority: 90
+  - ruleId: style.survivor
+    metric: 1
+    op: 0
+    threshold: 3
+    textKey: nar.firstclear.style.survivor
+    priority: 80
+  - ruleId: style.hunter
+    metric: 3
+    op: 0
+    threshold: 1
+    textKey: nar.firstclear.style.hunter
+    priority: 70
+  - ruleId: style.loyalist
+    metric: 5
+    op: 0
+    threshold: 0.8
+    textKey: nar.firstclear.style.loyalist
+    priority: 60
+  fallbackBehaviorTextKey: nar.firstclear.style.balanced
+  modelIdTemplate: CARRIER-{SIN}-V{VER}-I{N}

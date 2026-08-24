@@ -30,6 +30,7 @@ public static class SaveMigrator
         migrations[1] = MigrateV1ToV2;
         migrations[2] = MigrateV2ToV3;
         migrations[3] = MigrateV3ToV4;
+        migrations[4] = MigrateV4ToV5;
     }
 
     static SaveData MigrateV1ToV2(SaveData d)
@@ -46,6 +47,12 @@ public static class SaveMigrator
     static SaveData MigrateV3ToV4(SaveData d)
     {
         // New LustHealProgress is a run-local fractional remainder; old saves start at zero.
+        return d;
+    }
+
+    static SaveData MigrateV4ToV5(SaveData d)
+    {
+        d.narrative = null; // 旧档无叙事状态，恢复按新局初始化
         return d;
     }
 

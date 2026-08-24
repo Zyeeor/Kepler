@@ -521,6 +521,14 @@ public class MonsterActor : Actor
         targetPlayer = p != null ? p.transform : null;
     }
 
+    /// <summary>让击杀回声怪在刷出后的第一帧直接进入追击，不等待 AI 随机决策节拍。</summary>
+    public void BeginImmediateChase()
+    {
+        RefreshPlayerTarget();
+        AIController ai = GetComponent<AIController>();
+        if (ai != null) ai.BeginImmediateChase();
+    }
+
     bool BasicListContains(EnemyAbility a)
     {
         foreach (var e in basicAbilities) if (e != null && e.ability == a) return true;

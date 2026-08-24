@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"demo/server/internal/logx"
 	"demo/server/internal/server"
 	"demo/server/internal/service"
 )
@@ -54,7 +55,7 @@ func main() {
 		}
 		defer logFile.Close()
 		log.SetOutput(io.MultiWriter(os.Stderr, logFile))
-		log.Printf("log file: %s", *logPath)
+		logx.Event("log file · %s", *logPath)
 	}
 
 	srv, err := server.New(server.Config{

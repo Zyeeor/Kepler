@@ -36,11 +36,11 @@ public class PossessionHUD : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(true);
         if (enemyNameText != null) enemyNameText.text = actor.DisplayName;
         actor.FillAbilitySlots(abilitySlots);
-        string basicName = abilitySlots.Count > 0 ? abilitySlots[0].Name : "普攻";
-        string skillName = abilitySlots.Count > 1 ? abilitySlots[1].Name : "技能";
-        if (abilityQText != null) abilityQText.text = "左键 - " + basicName;
-        if (abilityWText != null) abilityWText.text = "Q - " + skillName;
-        if (abilityRText != null) abilityRText.text = "E - 子弹时间 / F - 脱离";
+        string basicName = abilitySlots.Count > 0 ? abilitySlots[0].Name : TextCatalog.Get("ui.hud.basic_default");
+        string skillName = abilitySlots.Count > 1 ? abilitySlots[1].Name : TextCatalog.Get("ui.hud.skill_default");
+        if (abilityQText != null) abilityQText.text = string.Format(TextCatalog.Get("ui.hud.attack"), basicName);
+        if (abilityWText != null) abilityWText.text = string.Format(TextCatalog.Get("ui.hud.skill"), skillName);
+        if (abilityRText != null) abilityRText.text = TextCatalog.Get("ui.hud.possess");
         // 委托 PlayerHealth 切换 HP 数据源（灵魂态由它显示 Soul 池；附身态切换到 Body 池）
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.BindActor(actor);
     }

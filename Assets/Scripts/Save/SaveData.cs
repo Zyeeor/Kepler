@@ -22,8 +22,8 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。v4：新增色欲浮点吸血进度。</summary>
-    public int schemaVersion = 4;
+    /// <summary>存档结构版本：任何字段增删/语义变更时 +1（纪律见类头注释）。读取端经 SaveMigrator 逐版本迁移；无法迁移的旧档返回 null 走新局。v4：新增战斗 imprint/贪婪/色欲/boss 字段。v5：新增 narrative（叙事调度 Run-local 状态）。</summary>
+    public int schemaVersion = 5;
     /// <summary>写入时间（Unix 秒，仅展示/调试）。</summary>
     public long savedAtUnix;
     /// <summary>本局 runId（精英 BD 快照 upsert 唯一键组成，读档恢复后延续）。</summary>
@@ -57,6 +57,8 @@ public class SaveData
     public float lustHealProgress;
     public bool bossSpawned;
     public bool bossDefeated;
+    /// <summary>叙事调度 Run-local 状态（Access/已播 Cue/触发计数/最小间隔时间戳）。null = 该档无叙事状态（旧档迁移，恢复按新局初始化）。</summary>
+    public NarrativeRunSave narrative;
 
     /// <summary>怪物身体快照（附身怪/尸体共用）：prefabId 存 prefab 名，恢复时在波表按名解析。</summary>
     [Serializable]

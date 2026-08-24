@@ -35,6 +35,9 @@ public class EliteBuildDirector : MonoBehaviour
 {
     public static EliteBuildDirector Instance { get; private set; }
 
+    /// <summary>精英投放成功事件（AudioEventBinder 等订阅；本 Meta 系统保持音频无感知）。</summary>
+    public event System.Action<MonsterActor> OnEliteSpawned;
+
     [Header("服务器")]
     [Tooltip("内容服务器 Base URL（Server/README.md；局域网填服务器内网 IP）。")]
     public string serverUrl = "http://127.0.0.1:8080";
@@ -368,6 +371,8 @@ public class EliteBuildDirector : MonoBehaviour
         ApplyEliteRuntimeSettings(monster);
         wm.RegisterExternalWaveMonster(monster);
         EnqueueEliteEvent("spawned", carrier, waveNumber); // 战果回传：精英成功生成（Meta §6.5）
+
+        OnEliteSpawned?.Invoke(monster); // 广播投放成功（音频等外部系统订阅，本系统不感知具体订阅方）
 
         Debug.Log($"[EliteBuildDirector] W{waveNumber} 投放精英 '{monster.displayName}'（sin={snapshot.sin}, bdCount={snapshot.bdCount}, sourceWave={snapshot.sourceWave}, from={snapshot.sourcePlayerId}, relaxed={relaxed}）。");
     }

@@ -51,7 +51,7 @@ go build -o server.exe .
 首次启动时，若 `data/game.db` 为空且存在种子文件，自动注入种子快照：
 
 ```text
-[elite] seeded 14 snapshots from data/seed_snapshots.json (pool was empty)
+2026/08/24 12:17:08 seeded 14 snapshots from data/seed_snapshots.json (pool was empty)
 ```
 
 ### 种子文件说明
@@ -82,47 +82,49 @@ go build -o server.exe .
 
 日志同时输出到**控制台**与日志文件（默认 `data/server.log`，追加写入，不轮转——Demo 阶段人工管理即可）。
 
+版式约定：顶层事件顶格输出，隶属事件的明细行以 `├` 树形前缀缩进，`·` 为字段分隔符。
+
 ### 上传日志
 
 ```text
-[elite] upload player=device-xxx run=run-xxx entries=3 stored=3 skipped=0
-  [stored] sin=lust monsterType=色欲-灵念师 bdCount=3 sourceWave=6 gameTime=280 (upsert key=(...))
-  [stored] sin=pride monsterType=pride bdCount=2 sourceWave=6 gameTime=280 (upsert key=(...))
-  [capacity] player=device-xxx snapshots=5/100 (within limit)
-  [capacity] global snapshots=12/10000 (within limit)
+2026/08/24 15:58:43 upload player=device-xxx run=run-xxx · entries=3 stored=3 skipped=0
+2026/08/24 15:58:43   ├ stored · sin=lust monsterType=色欲-灵念师 bdCount=3 sourceWave=6 gameTime=280 (upsert device-xxx/run-xxx/lust)
+2026/08/24 15:58:43   ├ stored · sin=pride monsterType=pride bdCount=2 sourceWave=6 gameTime=280 (upsert device-xxx/run-xxx/pride)
+2026/08/24 15:58:43   ├ capacity · player=device-xxx 5/100 (within limit)
+2026/08/24 15:58:43   ├ capacity · global 12/10000 (within limit)
 ```
 
 ### 筛选日志
 
 ```text
-[elite] pick START wave=5 player=device-xxx waveGap=1 config={minBD=1, topBandMode=percent, ...}
-  [step1-3] query: bdCount>=1 AND sourceWave>=6 AND player!=device-xxx -> candidates=3
-  [candidate#1] id=1 sin=lust bdCount=3 sourceWave=7 player=device-seed-default-a run=run-seed-001
-  [candidate#2] id=3 sin=envy bdCount=2 sourceWave=8 player=device-seed-default-b run=run-seed-002
-  [step4-topband] mode=percent bandSize=1 (from 3 candidates, percent=0.20, topK=5)
-  [step4-topband] band<=1, pick top: id=1 sin=lust bdCount=3
-[elite] pick RESULT wave=5 player=device-xxx -> sin=lust bdCount=3 sourceWave=7 by=device-seed-default-a (path=main, candidates=3)
+2026/08/24 15:13:40 pick wave=5 player=device-xxx gap=1 · minBD=1 band=percent/0.20 topK=5
+2026/08/24 15:13:40   ├ query · bdCount>=1 AND sourceWave>=6 AND player!=self → candidates=3
+2026/08/24 15:13:40   ├ cand #1  · id=1    lust      bd=3  wave=7   by=device-seed-default-a run=run-seed-001
+2026/08/24 15:13:40   ├ cand #2  · id=3    envy      bd=2  wave=8   by=device-seed-default-b run=run-seed-002
+2026/08/24 15:13:40   ├ band · mode=percent size=1/3 (percent=0.20, topK=5)
+2026/08/24 15:13:40   ├ band · size<=1 → pick top id=1 sin=lust bdCount=3
+2026/08/24 15:13:40 pick result wave=5 player=device-xxx → sin=lust bdCount=3 sourceWave=7 by=device-seed-default-a (path=main, 3 candidates)
 ```
 
 ### 兜底路径日志
 
 ```text
-[elite] pick START wave=8 player=device-xxx waveGap=1 config={...}
-  [step1-3] query: bdCount>=1 AND sourceWave>=9 AND player!=device-xxx -> candidates=0
-  [fallback1] main path empty, relaxing waveGap: sourceWave>=8 (was >=9)
-  [fallback1] query: ... -> candidates=1
-  ...
-[elite] pick RESULT ... (path=relaxed:wave-gap=0, candidates=1)
+2026/08/24 15:13:40 pick wave=8 player=device-xxx gap=1 · minBD=1 band=percent/0.20 topK=5
+2026/08/24 15:13:40   ├ query · bdCount>=1 AND sourceWave>=9 AND player!=self → candidates=0
+2026/08/24 15:13:40   ├ fallback1 · main path empty, relax waveGap → sourceWave>=8 (was >=9)
+2026/08/24 15:13:40   ├ fallback1 query · bdCount>=1 AND sourceWave>=8 AND player!=self → candidates=1
+2026/08/24 15:13:40   ├ ...
+2026/08/24 15:13:40 pick result wave=8 player=device-xxx → ... (path=relaxed:wave-gap=0, 1 candidates)
 ```
 
-观测要点：`pick RESULT` 的 `path=` 分布（main / relaxed:wave-gap=0 / relaxed:top-wave / none）反映候选库健康度——`relaxed` 占比高说明库的波次覆盖不足，`none` 说明库空。
+观测要点：`pick result` 的 `path=` 分布（main / relaxed:wave-gap=0 / relaxed:top-wave / none）反映候选库健康度——`relaxed` 占比高说明库的波次覆盖不足，`none` 说明库空。
 
 ### 战果回传日志
 
 ```text
-[elite] events reporter=device-xxx accepted=2/5
-  [skip] event[0] type=spawned owner="local-preset" (no real owner)
-  [skip] event[1] sin="not-a-sin" type="fatal" (invalid)
+2026/08/24 15:13:40 events · reporter=device-xxx accepted=2/5
+2026/08/24 15:13:40   ├ skip event[0] · type=spawned owner="local-preset" (no real owner)
+2026/08/24 15:13:40   ├ skip event[1] · sin="not-a-sin" type="fatal" (invalid)
 ```
 
 观测要点：`accepted < 上报总数` 说明存在跳过（本地 Preset 无主事件 / 非法 sin 或 type）——属正常防御分支，不影响其余条目聚合；`elite_build_stats` 表可核对聚合结果。
@@ -144,7 +146,7 @@ go run ./test/eliteeventtest
 
 # 验证种子数据：删库重启（需 data/seed_snapshots.json 存在，见「种子文件说明」）
 rm data/game.db && go run .
-# 日志应输出 "[elite] seeded 14 snapshots ..."
+# 日志应输出 "seeded 14 snapshots ..."
 ```
 
 ## 项目结构

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 /// <summary>
-/// 全局音频设置管理器（三路音量：SFX / Music / UI，跨场景常驻）。
+/// 全局音频设置管理器（四路独立音量：Voice / BGM / SFX / UI，跨场景常驻）。
 /// 由常驻 GameManager 统一创建（EnsureInstance），也可在场景内挂载（场景配置优先）。
 /// 生效链路（双轨）：
 ///   - 若配置了 AudioMixer（audioMixer 非空）：同步写入 mixer 暴露参数（传统方式）；
@@ -26,6 +26,8 @@ public class AudioSettingsManager : MonoBehaviour
 
     private const string SFX_KEY = "Audio_SFX";
     private const string MUSIC_KEY = "Audio_Music";
+    private const string VOICE_KEY = "Audio_Voice";
+    private const string UI_KEY = "Audio_UI";
     private const float DEFAULT_VOLUME = 0.8f;
 
     /// <summary>PlayerPrefs 落盘防抖：滑块拖动期间每帧 SetFloat，Save 只在停止变更 0.5s 后执行一次。</summary>
@@ -58,7 +60,21 @@ public class AudioSettingsManager : MonoBehaviour
     {
         // DontDestroyOnLoad 必须在场景加载完成后调用（Awake 期调用会随场景卸载被销毁）
         DontDestroyOnLoad(gameObject);
+        MigrateLegacyKeys();
         LoadAndApply();
+    }
+
+    /// <summary>
+    /// 旧用户数据一次性迁移：2026-08-24 前 UI 音量跟随 SFX（无独立 Audio_UI key），
+    /// 首次启动补写当前 SFX 值作为 UI 初始音量，之后独立调节。
+    /// </summary>
+    void MigrateLegacyKeys()
+    {
+        if (!PlayerPrefs.HasKey(UI_KEY))
+        {
+            PlayerPrefs.SetFloat(UI_KEY, GetSFXVolume());
+            PlayerPrefs.Save();
+        }
     }
 
     /// <summary>设置音效音量 (0.0 ~ 1.0)。</summary>
@@ -83,12 +99,15 @@ public class AudioSettingsManager : MonoBehaviour
 
     /// <summary>
     /// 设置 UI 音效音量 (0.0 ~ 1.0)。
-    /// 2026-08-18 决策：UI 音量跟随 SFX（设置面板不再提供独立 UI 滑块），写入同一键，
-    /// 与 SetSFXVolume 效果一致（保留 API 兼容旧调用）。
+    /// 2026-08-24 起独立（此前跟随 SFX）：菜单/Card/提示音独立一路，
+    /// 设置面板提供独立滑块（Audio_UI key）。
     /// </summary>
     public void SetUIVolume(float volume)
     {
-        SetSFXVolume(volume);
+        volume = Mathf.Clamp01(volume);
+        PlayerPrefs.SetFloat(UI_KEY, volume);
+        ScheduleSave();
+        if (AudioManager.Instance != null) AudioManager.Instance.RefreshVolumes();
     }
 
     /// <summary>
@@ -108,12 +127,28 @@ public class AudioSettingsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 获取当前 UI 音效音量 (0.0 ~ 1.0)。
-    /// UI 跟随 SFX：返回与 SFX 相同的音量值。
+    /// 获取当前 UI 音效音量 (0.0 ~ 1.0)。独立 key（2026-08-24 起不再跟随 SFX）。
     /// </summary>
     public float GetUIVolume()
     {
-        return GetSFXVolume();
+        return PlayerPrefs.GetFloat(UI_KEY, DEFAULT_VOLUME);
+    }
+
+    /// <summary>
+    /// 获取旁白音量 (0.0 ~ 1.0)。独立 key（2026-08-24 起设置面板提供独立滑块）。
+    /// </summary>
+    public float GetVoiceVolume()
+    {
+        return PlayerPrefs.GetFloat(VOICE_KEY, DEFAULT_VOLUME);
+    }
+
+    /// <summary>设置旁白音量 (0.0 ~ 1.0)；Debug 面板/未来 Voice 设置 UI 用。</summary>
+    public void SetVoiceVolume(float volume)
+    {
+        volume = Mathf.Clamp01(volume);
+        PlayerPrefs.SetFloat(VOICE_KEY, volume);
+        ScheduleSave();
+        if (AudioManager.Instance != null) AudioManager.Instance.RefreshVolumes();
     }
 
     /// <summary>防抖落盘：停止变更 SAVE_DEBOUNCE 秒后统一 Save（拖动滑块不再每帧写磁盘）。</summary>
