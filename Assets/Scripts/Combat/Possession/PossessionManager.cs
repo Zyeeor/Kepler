@@ -23,6 +23,8 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public SwitchState State { get; private set; }
     public MonsterActor CurrentBody { get; private set; }
     public float CooldownRemaining { get; private set; }
+    /// <summary>当前是否正在被动流逝附身 Body 的耐久（表现层读取，如血条燃烧特效）。</summary>
+    public bool IsBodyDecaying { get; private set; }
 
     public event System.Action<MonsterActor> OnPossessionStarted;
     public event System.Action OnPossessionEnded;
@@ -105,12 +107,14 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         if (CooldownRemaining > 0f) CooldownRemaining -= Time.deltaTime;
 
+        IsBodyDecaying = false;
         if (State != SwitchState.Possessing || CurrentBody == null) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
 
         // 平滑扣血：每帧按 deltaTime 连续扣血，避免 1s 一跳的视觉跳变。
         // 总速率：每 decayInterval 秒扣 maxHealth * possessionDecayPercent（与跳变一致）。
         if (decayInterval <= 0f) return;
+        IsBodyDecaying = true;
         float decayRate = CurrentBody.maxHealth * possessionDecayPercent / decayInterval;
         CurrentBody.currentHealth -= decayRate * Time.deltaTime;
         if (CurrentBody.currentHealth > 0f) return;
