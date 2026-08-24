@@ -33,6 +33,7 @@ public class AIController : MonoBehaviour, IController
     private float nextDecisionTime;
     private float nextTargetRetryTime;
     private float dormantTickAccum; // 休眠节拍累计（unscaled 时间）
+    private bool immediateChase;
 
     /// <summary>运行时自动挂载（CreateDefaultController 兜底 AddComponent）；Prefab 上无序列化需求。</summary>
     void Awake()
@@ -51,6 +52,15 @@ public class AIController : MonoBehaviour, IController
 
     public void OnDetached(){
         host = null;
+        immediateChase = false;
+    }
+
+    /// <summary>下一次 Tick 起直接向玩家移动，直到进入 AI 的停步距离。</summary>
+    public void BeginImmediateChase()
+    {
+        if (host == null) return;
+        immediateChase = true;
+        nextDecisionTime = Time.time;
     }
 
     /// <summary>
@@ -133,6 +143,19 @@ public class AIController : MonoBehaviour, IController
             nextTargetRetryTime = Time.time + 0.5f; // 查找失败重试节流，避免每帧 FindGameObjectWithTag
         }
         if (host.targetPlayer == null) return;
+
+        if (immediateChase)
+        {
+            Vector3 direction = host.targetPlayer.position - host.transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > host.aiMinRange * host.aiMinRange)
+            {
+                cmd.HasMove = true;
+                cmd.MoveDirection = direction.normalized;
+                return;
+            }
+            immediateChase = false;
+        }
 
         RefreshBlackboard(ctx);
 
