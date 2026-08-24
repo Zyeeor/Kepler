@@ -159,16 +159,84 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         }
     }
 
+    // ── 动态生成的额外并列素材层（extraXxxSprites[0..N-1]），随 ApplyLayers 清理 ──
+    private readonly System.Collections.Generic.List<Image> _extraForegroundImages = new System.Collections.Generic.List<Image>();
+    private readonly System.Collections.Generic.List<Image> _extraMiddlegroundImages = new System.Collections.Generic.List<Image>();
+    private readonly System.Collections.Generic.List<Image> _extraBackgroundImages = new System.Collections.Generic.List<Image>();
+    private readonly System.Collections.Generic.List<Image> _extraBorderImages = new System.Collections.Generic.List<Image>();
+
     /// <summary>
-    /// 应用 CardData 配置的四层素材（foreground/middleground/background/broader）。
-    /// 字段为 null 的层保持 prefab 默认素材不动（便于内容侧逐层配置）。
+    /// 应用 CardData 配置的多层素材（foreground/middleground/background/border，每层可扩展并列多张）。
+    /// 每层基础素材赋给 prefab 上已挂的 Image；extraXxxSprites 列表运行时动态生成 Image 作为其 sibling
+    /// （sibling index 越大越靠前，即列表索引越大越靠上）。字段为 null / 空列表的层保持 prefab 默认素材不动。
+    /// 供 CoreChoiceCard（Init/Replace）与 CardFaceBrowser（调试预览）复用。
     /// </summary>
-    void ApplyLayers(CardData data)
+    public void ApplyLayers(CardData data)
     {
+        ClearExtraLayers();
         if (data == null) return;
-        if (foregroundImage != null && data.foregroundSprite != null) foregroundImage.sprite = data.foregroundSprite;
-        if (middlegroundImage != null && data.middlegroundSprite != null) middlegroundImage.sprite = data.middlegroundSprite;
-        if (backgroundImage != null && data.backgroundSprite != null) backgroundImage.sprite = data.backgroundSprite;
-        if (borderImage != null && data.borderSprite != null) borderImage.sprite = data.borderSprite;
+        ApplyLayerGroup(data.foregroundSprite, data.extraForegroundSprites, foregroundImage, _extraForegroundImages, "ForegroundExtra");
+        ApplyLayerGroup(data.middlegroundSprite, data.extraMiddlegroundSprites, middlegroundImage, _extraMiddlegroundImages, "MiddlegroundExtra");
+        ApplyLayerGroup(data.backgroundSprite, data.extraBackgroundSprites, backgroundImage, _extraBackgroundImages, "BackgroundExtra");
+        ApplyLayerGroup(data.borderSprite, data.extraBorderSprites, borderImage, _extraBorderImages, "BorderExtra");
+    }
+
+    /// <summary>把一层素材（基础 + 额外并列列表）应用到展示位 Image，并动态生成其余并列层。</summary>
+    void ApplyLayerGroup(Sprite baseSprite, System.Collections.Generic.List<Sprite> extraSprites, Image first, System.Collections.Generic.List<Image> extraImages, string extraName)
+    {
+        if (first != null && baseSprite != null)
+            first.sprite = baseSprite;
+
+        if (extraSprites == null || extraSprites.Count == 0) return;
+
+        for (int i = 0; i < extraSprites.Count; i++)
+        {
+            Sprite sprite = extraSprites[i];
+            if (sprite == null || first == null) continue;
+
+            var go = new GameObject($"{extraName}_{i}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            RectTransform rt = (RectTransform)go.transform;
+            rt.SetParent(first.transform.parent, false);
+            CopyRectTransform(first.rectTransform, rt);
+
+            var img = go.GetComponent<Image>();
+            img.sprite = sprite;
+            img.color = first.color;
+            img.material = first.material;
+            img.raycastTarget = false;   // 扩展层不阻挡交互
+
+            // 排在基础素材之后（sibling index 越大越靠前），列表索引越大越靠上
+            rt.SetSiblingIndex(first.transform.GetSiblingIndex() + 1 + i);
+            extraImages.Add(img);
+        }
+    }
+
+    /// <summary>复制 RectTransform 布局参数，让动态扩展层与基础素材同位。</summary>
+    static void CopyRectTransform(RectTransform from, RectTransform to)
+    {
+        to.anchorMin = from.anchorMin;
+        to.anchorMax = from.anchorMax;
+        to.anchoredPosition = from.anchoredPosition;
+        to.sizeDelta = from.sizeDelta;
+        to.pivot = from.pivot;
+        to.localRotation = from.localRotation;
+        to.localScale = from.localScale;
+    }
+
+    /// <summary>销毁本次生成的动态扩展层（ApplyLayers 前调用，避免累积）。</summary>
+    void ClearExtraLayers()
+    {
+        DestroyExtra(_extraForegroundImages);
+        DestroyExtra(_extraMiddlegroundImages);
+        DestroyExtra(_extraBackgroundImages);
+        DestroyExtra(_extraBorderImages);
+    }
+
+    void DestroyExtra(System.Collections.Generic.List<Image> extras)
+    {
+        if (extras == null) return;
+        foreach (var img in extras)
+            if (img != null) Destroy(img.gameObject);
+        extras.Clear();
     }
 }

@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// UI 卡面浏览器（Debug，F3 切换）：浏览 CardLibrary 全池每张卡的卡面（四层素材叠画 + 名称/描述）。
+/// UI 卡面浏览器（Debug，F3 切换）：浏览 CardLibrary 全池每张卡的卡面（多层素材叠画 + 名称/描述）。
 /// 选卡弹窗（CoreChoiceUI）打开期间，可将选中卡替换选卡界面的第一张候选（点选即生效）。
 /// OnGUI 面板遵循项目 Debug 惯例：正式流程（GameManager.IsFormalFlow）屏蔽；
 /// 运行时自动确保实例（场景加载后创建，主菜单→对局不失效），与 CardProgressPanel 同模式。
@@ -37,7 +36,7 @@ public class CardFaceBrowser : MonoBehaviour
     // ── UGUI 预览卡（克隆 CoreChoiceUI 的真实卡片模板 → 100% 还原选卡界面多层视差/悬停效果）──
     GameObject previewCardGo;
     RectTransform previewRect;
-    Image previewBg, previewMg, previewFg, previewBorder;
+    CoreChoiceCard previewCC;   // 复用克隆卡的多层素材应用逻辑（enabled=false 禁用交互回调）
     TextMeshProUGUI previewTitle, previewDesc;
     int previewCardIndex = -1;   // 预览卡当前展示的池索引（-1 = 无）
 
@@ -188,16 +187,19 @@ public class CardFaceBrowser : MonoBehaviour
             PositionPreviewCard(Screen.width * 0.5f, Screen.height * 0.5f);
             if (!hasLivePreview)
             {
-                // 无选卡模板回退：屏幕中央静态四层叠画（与正式卡同尺寸 300x600 × 0.7）
+                // 无选卡模板回退：屏幕中央静态多层叠画（与正式卡同尺寸 300x600 × 0.7）
                 float fw = 300f * previewScale, fh = 600f * previewScale;
                 var faceRect = new Rect(Screen.width * 0.5f - fw * 0.5f, Screen.height * 0.5f - fh * 0.5f, fw, fh);
-                DrawSprite(card.backgroundSprite, faceRect);
-                DrawSprite(card.middlegroundSprite, faceRect);
-                DrawSprite(card.foregroundSprite, faceRect);
-                DrawSprite(card.borderSprite, faceRect);
-                if (card.backgroundSprite == null && card.middlegroundSprite == null
-                    && card.foregroundSprite == null && card.borderSprite == null)
-                    DrawSprite(card.image, faceRect);
+                bool anyLayer = false;
+                if (card.backgroundSprite != null) { DrawSprite(card.backgroundSprite, faceRect); anyLayer = true; }
+                if (card.extraBackgroundSprites != null) foreach (var s in card.extraBackgroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (card.middlegroundSprite != null) { DrawSprite(card.middlegroundSprite, faceRect); anyLayer = true; }
+                if (card.extraMiddlegroundSprites != null) foreach (var s in card.extraMiddlegroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (card.foregroundSprite != null) { DrawSprite(card.foregroundSprite, faceRect); anyLayer = true; }
+                if (card.extraForegroundSprites != null) foreach (var s in card.extraForegroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (card.borderSprite != null) { DrawSprite(card.borderSprite, faceRect); anyLayer = true; }
+                if (card.extraBorderSprites != null) foreach (var s in card.extraBorderSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (!anyLayer) DrawSprite(card.image, faceRect);
             }
         }
         else
@@ -211,7 +213,7 @@ public class CardFaceBrowser : MonoBehaviour
     /// <summary>
     /// 确保预览卡存在且展示目标卡：克隆 CoreChoiceUI 的 cardPrefab（真实选卡模板），
     /// 移除选择组件与按钮、保留 ChoiceCard（悬停缩放摆动）+ UIParallaxCardTilt（多层视差 tilt），
-    /// 应用四层素材 → 与选卡界面看到的效果完全一致。
+    /// 应用多层素材 → 与选卡界面看到的效果完全一致。
     /// </summary>
     bool EnsurePreviewCard(CardData card, int poolIndex)
     {
@@ -233,20 +235,16 @@ public class CardFaceBrowser : MonoBehaviour
 
             var go = Instantiate(ui.cardPrefab, previewRect);
             go.name = "CardFaceBrowserPreview";
-            var cc = go.GetComponent<CoreChoiceCard>();
-            if (cc != null)
+            previewCC = go.GetComponent<CoreChoiceCard>();
+            if (previewCC != null)
             {
-                previewBg = cc.backgroundImage;
-                previewMg = cc.middlegroundImage;
-                previewFg = cc.foregroundImage;
-                previewBorder = cc.borderImage;
-                previewTitle = cc.cardText;
-                previewDesc = cc.descriptionText;
-                if (cc.confirmButton != null) cc.confirmButton.gameObject.SetActive(false);
-                if (cc.rerollButton != null) cc.rerollButton.gameObject.SetActive(false);
-                if (cc.confirmedMark != null) cc.confirmedMark.SetActive(false);
-                if (cc.rerolledMark != null) cc.rerolledMark.SetActive(false);
-                Destroy(cc); // 去掉选卡交互逻辑，保留视觉与动态组件
+                previewTitle = previewCC.cardText;
+                previewDesc = previewCC.descriptionText;
+                if (previewCC.confirmButton != null) previewCC.confirmButton.gameObject.SetActive(false);
+                if (previewCC.rerollButton != null) previewCC.rerollButton.gameObject.SetActive(false);
+                if (previewCC.confirmedMark != null) previewCC.confirmedMark.SetActive(false);
+                if (previewCC.rerolledMark != null) previewCC.rerolledMark.SetActive(false);
+                previewCC.enabled = false; // 禁用交互回调，仅复用其多层素材应用逻辑
             }
             previewCardGo = wrapper;
             previewCardIndex = -1;
@@ -259,10 +257,7 @@ public class CardFaceBrowser : MonoBehaviour
         if (previewCardIndex != poolIndex)
         {
             previewCardIndex = poolIndex;
-            SetLayerSprite(previewBg, card.backgroundSprite);
-            SetLayerSprite(previewMg, card.middlegroundSprite);
-            SetLayerSprite(previewFg, card.foregroundSprite);
-            SetLayerSprite(previewBorder, card.borderSprite);
+            if (previewCC != null) previewCC.ApplyLayers(card);   // 复用 CoreChoiceCard 的多层素材应用
             if (previewTitle != null) previewTitle.text = card.cardName;
             if (previewDesc != null) previewDesc.text = card.description;
         }
@@ -305,15 +300,10 @@ public class CardFaceBrowser : MonoBehaviour
             Destroy(previewCardGo);
             previewCardGo = null;
             previewRect = null;
-            previewBg = previewMg = previewFg = previewBorder = null;
+            previewCC = null;
             previewTitle = previewDesc = null;
             previewCardIndex = -1;
         }
-    }
-
-    static void SetLayerSprite(Image img, Sprite s)
-    {
-        if (img != null && s != null) img.sprite = s;
     }
 
     static GUIStyle BoldStyle()
@@ -326,7 +316,7 @@ public class CardFaceBrowser : MonoBehaviour
     }
     static GUIStyle boldStyle;
 
-    /// <summary>按 Sprite 在纹理中的子矩形绘制（四层卡面叠画）。</summary>
+    /// <summary>按 Sprite 在纹理中的子矩形绘制（多层卡面叠画）。</summary>
     static void DrawSprite(Sprite s, Rect r)
     {
         if (s == null || s.texture == null) return;
