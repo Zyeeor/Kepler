@@ -1814,6 +1814,8 @@ MonoBehaviour:
   maxHealth: 80
   currentHealth: 20
   displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
+  sinType: 0
+  isPossessable: 1
   enemyStats:
     maxHealth: 80
     moveSpeed: 10
@@ -1840,6 +1842,7 @@ MonoBehaviour:
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
   rangeCircleSegments: 64
+  visualScaleRoot: {fileID: 0}
   bodyColor: {r: 0.44968545, g: 0.9802124, b: 1, a: 1}
   weakenedColor: {r: 1, g: 0.70712787, b: 0.41194963, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -1876,6 +1879,11 @@ MonoBehaviour:
   weaponDescription: "\u6FC0\u5149\u592A\u5200"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  spawnOrigin: 0
+  spawnDifficultyTier: 0
+  baseSpawnMaxHealth: 0
+  spawnHealthMultiplier: 1
+  spawnDamageMultiplier: 1
   soulAnchorPoint: {fileID: 3031908619099889803}
 --- !u!136 &7931589197715648695
 CapsuleCollider:

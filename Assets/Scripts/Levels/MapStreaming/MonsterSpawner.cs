@@ -151,9 +151,12 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(go);
             return null;
         }
+        monster.ResolveSinIdentityFromHint(prefab.name + " " + monster.displayName);
         monster.aiActiveOverride = true; // 波次怪直接激活索敌
         // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
         monster.InitAiRng(spawnSequence++);
+        RunSpawnDirector director = RunSpawnDirector.Instance;
+        monster.ApplySpawnDifficultySnapshot(SpawnOrigin.PeriodicPressure, director != null ? director.CurrentTier : 0);
         Track(home, monster, prefab, isWaveMonster: true); // 不随 Chunk 回收/写快照，退场由波次系统裁决
         if (logSpawns)
             Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}）。");
