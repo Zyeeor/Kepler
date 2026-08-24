@@ -64,6 +64,12 @@ public class MonsterAIConfigEntry
     [Tooltip("AI 转向速度达到最大值的加速度（度/秒²）。")]
     public float turnAcceleration = 1440f;
 
+    [Header("怪物间软分离（防重叠堆积）")]
+    [Tooltip("分离半径（米）：与其它活怪水平距离小于该值时产生排斥。0 = 关闭分离。")]
+    public float separationRadius = 1.2f;
+    [Tooltip("分离强度（0~2）：分离速度 = 强度 × moveSpeed。越大散开越积极，越小越柔和。")]
+    [Range(0f, 2f)] public float separationStrength = 0.8f;
+
     [Header("调试可视化")]
     [Tooltip("在游戏视图中用圆环可视化索敌/普攻/技能范围（Play 模式可见，运行中可勾选/取消）。")]
     public bool showDebugRanges = false;
