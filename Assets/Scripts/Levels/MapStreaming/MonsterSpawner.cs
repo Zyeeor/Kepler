@@ -211,6 +211,13 @@ public class MonsterSpawner : MonoBehaviour
     public void RecycleWaveMonster(MonsterActor monster)
     {
         if (monster == null) return;
+        if (monster.IsElite && monster.isDowned)
+        {
+            // Elite bodies are permanent scene corpses. Release the combat quota, but never
+            // return the instance to the pool while its EliteBuildCarrier is still alive.
+            ReleaseTracking(monster);
+            return;
+        }
         if (monster is BossSevenfoldActor)
         {
             // Boss owns its own death/fade/pool lifecycle. Wave cleanup must never
@@ -228,6 +235,15 @@ public class MonsterSpawner : MonoBehaviour
             Untrack(monster);
         }
         MonsterPool.Instance.Return(monster);
+    }
+
+    /// <summary>Releases a permanent corpse from the active combat quota without deactivating it.</summary>
+    public void ReleaseTracking(MonsterActor monster)
+    {
+        if (monster == null || !trackInfoByMonster.TryGetValue(monster, out var info)) return;
+        if (trackedByChunk.TryGetValue(info.homeChunk, out var list))
+            list.Remove(monster);
+        Untrack(monster);
     }
 
     /// <summary>世界坐标是否落在该 Chunk 的可走 Tile 上（经系统坐标换算，支持地图旋转）。</summary>

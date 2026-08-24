@@ -411,9 +411,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 1.8
+  possessionRimIntensity: 0.9
+  eliteRimColor: {r: 0.55, g: 0.7, b: 0.06, a: 1}
+  eliteRimIntensity: 0.65
+  elitePulseSpeed: 1.7
+  elitePulseAmount: 0.18
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 3.8
+  eliteMetallic: 0.4
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
-  hitFlashDuration: 0.12
+  hitFlashDuration: 0.25
   hitFlashPeak: 0.85
   dissolveEdgeColor: {r: 2.2, g: 1.55, b: 0.25, a: 1}
   dissolveEdgeIntensity: 4.5

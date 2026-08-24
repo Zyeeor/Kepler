@@ -120,6 +120,9 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         IsBodyDecaying = false;
         if (State != SwitchState.Possessing || CurrentBody == null) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
+        // Elite HP is not consumed by the passive possession timer. It can still be
+        // killed by explicit hostile damage, which goes through MonsterActor.TakeDamage.
+        if (CurrentBody.IsElite) return;
         if (CurrentBody.IsBossBattleReserveBody) return;
 
         if (decayInterval <= 0f) return;
@@ -446,7 +449,9 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             if (oldBody.Combat != null) oldBody.Combat.RemoveLooseTags(this);
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
+            if (oldBody.IsElite)
+                oldBody.KeepAsPermanentEliteCorpse();
+            else if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
                 oldBody.ReturnToBossBattleReserve();
             else
                 oldBody.BeginDisappearing();
@@ -480,7 +485,9 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         {
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            if (recycleBody)
+            if (oldBody.IsElite && reason != PossessionEndReason.BodyDied)
+                oldBody.KeepAsPermanentEliteCorpse();
+            else if (recycleBody)
             {
                 if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
                     oldBody.ReturnToBossBattleReserve();
