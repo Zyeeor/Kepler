@@ -67,20 +67,28 @@ public class CardData
     public SinType monsterType = SinType.None;
 
     [Header("Card Layers（UI 多层素材，可扩展为并列多张）")]
-    [Tooltip("前景层（foreground）基础素材；null = 使用卡 prefab 默认素材。")]
+    [Tooltip("前景层（foreground）基础素材；留空 = 不显示前景层。")]
     public Sprite foregroundSprite;
+    [Tooltip("勾选后不显示前景层（优先于前景素材和预制体默认图）。")]
+    public bool hideForegroundLayer;
     [Tooltip("前景层（foreground）额外并列素材（叠在 foregroundSprite 之上，列表索引越大越靠上）。")]
     public System.Collections.Generic.List<Sprite> extraForegroundSprites = new System.Collections.Generic.List<Sprite>();
-    [Tooltip("中景层（middleground）基础素材；null = 使用卡 prefab 默认素材。")]
+    [Tooltip("中景层（middleground）基础素材；留空 = 不显示中景层。")]
     public Sprite middlegroundSprite;
+    [Tooltip("勾选后不显示中景层（优先于中景素材和预制体默认图）。")]
+    public bool hideMiddlegroundLayer;
     [Tooltip("中景层（middleground）额外并列素材（叠在 middlegroundSprite 之上，列表索引越大越靠上）。")]
     public System.Collections.Generic.List<Sprite> extraMiddlegroundSprites = new System.Collections.Generic.List<Sprite>();
-    [Tooltip("背景层（background）基础素材；null = 使用卡 prefab 默认素材。")]
+    [Tooltip("背景层（background）基础素材；留空 = 不显示背景层。")]
     public Sprite backgroundSprite;
+    [Tooltip("勾选后不显示背景层（优先于背景素材和预制体默认图）。")]
+    public bool hideBackgroundLayer;
     [Tooltip("背景层（background）额外并列素材（叠在 backgroundSprite 之上，列表索引越大越靠上）。")]
     public System.Collections.Generic.List<Sprite> extraBackgroundSprites = new System.Collections.Generic.List<Sprite>();
-    [Tooltip("边框层（border）基础素材；null = 使用卡 prefab 默认素材。")]
+    [Tooltip("边框层（border）基础素材；留空 = 使用卡 prefab 默认边框。")]
     public Sprite borderSprite;
+    [Tooltip("勾选后不显示边框层（优先于边框素材和预制体默认图）。")]
+    public bool hideBorderLayer;
     [Tooltip("边框层（border）额外并列素材（叠在 borderSprite 之上，列表索引越大越靠上）。")]
     public System.Collections.Generic.List<Sprite> extraBorderSprites = new System.Collections.Generic.List<Sprite>();
 

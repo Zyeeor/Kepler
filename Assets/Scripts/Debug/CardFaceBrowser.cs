@@ -191,14 +191,14 @@ public class CardFaceBrowser : MonoBehaviour
                 float fw = 300f * previewScale, fh = 600f * previewScale;
                 var faceRect = new Rect(Screen.width * 0.5f - fw * 0.5f, Screen.height * 0.5f - fh * 0.5f, fw, fh);
                 bool anyLayer = false;
-                if (card.backgroundSprite != null) { DrawSprite(card.backgroundSprite, faceRect); anyLayer = true; }
-                if (card.extraBackgroundSprites != null) foreach (var s in card.extraBackgroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
-                if (card.middlegroundSprite != null) { DrawSprite(card.middlegroundSprite, faceRect); anyLayer = true; }
-                if (card.extraMiddlegroundSprites != null) foreach (var s in card.extraMiddlegroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
-                if (card.foregroundSprite != null) { DrawSprite(card.foregroundSprite, faceRect); anyLayer = true; }
-                if (card.extraForegroundSprites != null) foreach (var s in card.extraForegroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
-                if (card.borderSprite != null) { DrawSprite(card.borderSprite, faceRect); anyLayer = true; }
-                if (card.extraBorderSprites != null) foreach (var s in card.extraBorderSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (!card.hideBackgroundLayer && card.backgroundSprite != null) { DrawSprite(card.backgroundSprite, faceRect); anyLayer = true; }
+                if (!card.hideBackgroundLayer && card.extraBackgroundSprites != null) foreach (var s in card.extraBackgroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (!card.hideMiddlegroundLayer && card.middlegroundSprite != null) { DrawSprite(card.middlegroundSprite, faceRect); anyLayer = true; }
+                if (!card.hideMiddlegroundLayer && card.extraMiddlegroundSprites != null) foreach (var s in card.extraMiddlegroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (!card.hideForegroundLayer && card.foregroundSprite != null) { DrawSprite(card.foregroundSprite, faceRect); anyLayer = true; }
+                if (!card.hideForegroundLayer && card.extraForegroundSprites != null) foreach (var s in card.extraForegroundSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
+                if (!card.hideBorderLayer && card.borderSprite != null) { DrawSprite(card.borderSprite, faceRect); anyLayer = true; }
+                if (!card.hideBorderLayer && card.extraBorderSprites != null) foreach (var s in card.extraBorderSprites) if (s != null) { DrawSprite(s, faceRect); anyLayer = true; }
                 if (!anyLayer) DrawSprite(card.image, faceRect);
             }
         }
@@ -247,7 +247,8 @@ public class CardFaceBrowser : MonoBehaviour
                 if (previewCC.rerollButton != null) previewCC.rerollButton.gameObject.SetActive(false);
                 if (previewCC.confirmedMark != null) previewCC.confirmedMark.SetActive(false);
                 if (previewCC.rerolledMark != null) previewCC.rerolledMark.SetActive(false);
-                previewCC.enabled = false; // 禁用交互回调，仅复用其多层素材应用逻辑
+                // 保持组件启用，让 LateUpdate 继续驱动额外子图层；预览卡未绑定选择回调且按钮已隐藏。
+                previewCC.enabled = true;
             }
             previewCardGo = wrapper;
             previewCardIndex = -1;

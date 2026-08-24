@@ -8,6 +8,7 @@ using System;
 /// A single choice card. Instantiated by CoreChoiceUI.
 /// Has text, image, confirm/reroll buttons, and status marks.
 /// </summary>
+[DefaultExecutionOrder(100)]
 public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerClickHandler
 {
     public int Index { get; private set; }
@@ -31,6 +32,107 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     private Action<int> onSelectCallback;
 
+    // Cache prefab defaults so a card switch cannot leave stale layers.
+    private Sprite defaultForegroundSprite;
+    private Sprite defaultMiddlegroundSprite;
+    private Sprite defaultBackgroundSprite;
+    private Sprite defaultBorderSprite;
+    private bool defaultForegroundEnabled;
+    private bool defaultMiddlegroundEnabled;
+    private bool defaultBackgroundEnabled;
+    private bool defaultBorderEnabled;
+    private Vector3 defaultForegroundPosition;
+    private Vector3 defaultMiddlegroundPosition;
+    private Vector3 defaultBackgroundPosition;
+    private Vector3 defaultBorderPosition;
+    private Quaternion defaultForegroundRotation;
+    private Quaternion defaultMiddlegroundRotation;
+    private Quaternion defaultBackgroundRotation;
+    private Quaternion defaultBorderRotation;
+    private bool defaultLayersCached;
+
+    [Header("Same-Layer Parallax")]
+    [Tooltip("同层第一张额外素材跟随基础素材视差的比例。")]
+    [SerializeField, Range(0f, 1f)] private float firstExtraParallaxMultiplier = 0.75f;
+    [Tooltip("同层每往后一张额外素材减少的跟随比例。")]
+    [SerializeField, Range(0f, 0.5f)] private float extraParallaxStep = 0.25f;
+    [Tooltip("同层额外素材最低保留的视差跟随比例。")]
+    [SerializeField, Range(0f, 1f)] private float minimumExtraParallaxMultiplier = 0.25f;
+
+    private sealed class ExtraLayerMotionState
+    {
+        public RectTransform rect;
+        public RectTransform source;
+        public Vector3 basePosition;
+        public Quaternion baseRotation;
+        public Vector3 sourceBasePosition;
+        public Quaternion sourceBaseRotation;
+        public float multiplier;
+    }
+
+    private readonly System.Collections.Generic.List<ExtraLayerMotionState> _extraLayerMotionStates =
+        new System.Collections.Generic.List<ExtraLayerMotionState>();
+
+    void Awake()
+    {
+        EnsureDefaultLayersCached();
+    }
+
+    void EnsureDefaultLayersCached()
+    {
+        if (defaultLayersCached) return;
+
+        CacheDefaultLayers();
+        defaultLayersCached = true;
+    }
+
+    void CacheDefaultLayers()
+    {
+        if (foregroundImage != null)
+        {
+            defaultForegroundSprite = foregroundImage.sprite;
+            defaultForegroundEnabled = foregroundImage.enabled;
+            defaultForegroundPosition = foregroundImage.rectTransform.localPosition;
+            defaultForegroundRotation = foregroundImage.rectTransform.localRotation;
+        }
+        if (middlegroundImage != null)
+        {
+            defaultMiddlegroundSprite = middlegroundImage.sprite;
+            defaultMiddlegroundEnabled = middlegroundImage.enabled;
+            defaultMiddlegroundPosition = middlegroundImage.rectTransform.localPosition;
+            defaultMiddlegroundRotation = middlegroundImage.rectTransform.localRotation;
+        }
+        if (backgroundImage != null)
+        {
+            defaultBackgroundSprite = backgroundImage.sprite;
+            defaultBackgroundEnabled = backgroundImage.enabled;
+            defaultBackgroundPosition = backgroundImage.rectTransform.localPosition;
+            defaultBackgroundRotation = backgroundImage.rectTransform.localRotation;
+        }
+        if (borderImage != null)
+        {
+            defaultBorderSprite = borderImage.sprite;
+            defaultBorderEnabled = borderImage.enabled;
+            defaultBorderPosition = borderImage.rectTransform.localPosition;
+            defaultBorderRotation = borderImage.rectTransform.localRotation;
+        }
+    }
+
+    void LateUpdate()
+    {
+        for (int i = 0; i < _extraLayerMotionStates.Count; i++)
+        {
+            ExtraLayerMotionState state = _extraLayerMotionStates[i];
+            if (state.rect == null || state.source == null) continue;
+
+            Vector3 positionDelta = state.source.localPosition - state.sourceBasePosition;
+            Quaternion rotationDelta = Quaternion.Inverse(state.sourceBaseRotation) * state.source.localRotation;
+
+            state.rect.localPosition = state.basePosition + positionDelta * state.multiplier;
+            state.rect.localRotation = state.baseRotation
+                * Quaternion.SlerpUnclamped(Quaternion.identity, rotationDelta, state.multiplier);
+        }
+    }
     public void Init(int index, string text, Sprite sprite, string description, Action<int> onSelect, Action<int> onReroll, CardData data = null)
     {
         Index = index;
@@ -39,7 +141,7 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         onSelectCallback = onSelect;
 
         if (cardText != null) cardText.text = text;
-        if (cardImage != null && sprite != null) cardImage.sprite = sprite;
+        if (cardImage != null) cardImage.sprite = sprite;
         if (descriptionText != null) descriptionText.text = description;
         ApplyLayers(data);
         if (confirmedMark != null) confirmedMark.SetActive(false);
@@ -132,7 +234,7 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         IsRerolled = false;
         IsSelected = false;
         if (cardText != null) cardText.text = text;
-        if (cardImage != null && sprite != null) cardImage.sprite = sprite;
+        if (cardImage != null) cardImage.sprite = sprite;
         if (descriptionText != null) descriptionText.text = description;
         ApplyLayers(data);
         if (confirmedMark != null) confirmedMark.SetActive(false);
@@ -167,37 +269,93 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     /// <summary>
     /// 应用 CardData 配置的多层素材（foreground/middleground/background/border，每层可扩展并列多张）。
-    /// 每层基础素材赋给 prefab 上已挂的 Image；extraXxxSprites 列表运行时动态生成 Image 作为其 sibling
-    /// （sibling index 越大越靠前，即列表索引越大越靠上）。字段为 null / 空列表的层保持 prefab 默认素材不动。
+    /// 每层基础素材赋给 prefab 上已挂的 Image；额外素材生成为同级对象，并按顺序以递减比例跟随基础层视差。
+    /// 前景/中景/背景为空时隐藏，边框为空时使用 prefab 默认边框。
     /// 供 CoreChoiceCard（Init/Replace）与 CardFaceBrowser（调试预览）复用。
     /// </summary>
     public void ApplyLayers(CardData data)
     {
+        // Init can run while the popup hierarchy is inactive, before Unity invokes Awake.
+        // Cache serialized prefab defaults here so generated layers always receive valid baselines.
+        EnsureDefaultLayersCached();
         ClearExtraLayers();
-        if (data == null) return;
-        ApplyLayerGroup(data.foregroundSprite, data.extraForegroundSprites, foregroundImage, _extraForegroundImages, "ForegroundExtra");
-        ApplyLayerGroup(data.middlegroundSprite, data.extraMiddlegroundSprites, middlegroundImage, _extraMiddlegroundImages, "MiddlegroundExtra");
-        ApplyLayerGroup(data.backgroundSprite, data.extraBackgroundSprites, backgroundImage, _extraBackgroundImages, "BackgroundExtra");
-        ApplyLayerGroup(data.borderSprite, data.extraBorderSprites, borderImage, _extraBorderImages, "BorderExtra");
+        ApplyLayerGroup(
+            data != null ? data.foregroundSprite : null,
+            data != null ? data.extraForegroundSprites : null,
+            data != null && (data.hideForegroundLayer || data.foregroundSprite == null),
+            foregroundImage,
+            _extraForegroundImages,
+            defaultForegroundSprite,
+            defaultForegroundEnabled,
+            defaultForegroundPosition,
+            defaultForegroundRotation,
+            "ForegroundExtra");
+        ApplyLayerGroup(
+            data != null ? data.middlegroundSprite : null,
+            data != null ? data.extraMiddlegroundSprites : null,
+            data != null && (data.hideMiddlegroundLayer || data.middlegroundSprite == null),
+            middlegroundImage,
+            _extraMiddlegroundImages,
+            defaultMiddlegroundSprite,
+            defaultMiddlegroundEnabled,
+            defaultMiddlegroundPosition,
+            defaultMiddlegroundRotation,
+            "MiddlegroundExtra");
+        ApplyLayerGroup(
+            data != null ? data.backgroundSprite : null,
+            data != null ? data.extraBackgroundSprites : null,
+            data != null && (data.hideBackgroundLayer || data.backgroundSprite == null),
+            backgroundImage,
+            _extraBackgroundImages,
+            defaultBackgroundSprite,
+            defaultBackgroundEnabled,
+            defaultBackgroundPosition,
+            defaultBackgroundRotation,
+            "BackgroundExtra");
+        ApplyLayerGroup(
+            data != null ? data.borderSprite : null,
+            data != null ? data.extraBorderSprites : null,
+            data != null && data.hideBorderLayer,
+            borderImage,
+            _extraBorderImages,
+            defaultBorderSprite,
+            defaultBorderEnabled,
+            defaultBorderPosition,
+            defaultBorderRotation,
+            "BorderExtra");
     }
-
     /// <summary>把一层素材（基础 + 额外并列列表）应用到展示位 Image，并动态生成其余并列层。</summary>
-    void ApplyLayerGroup(Sprite baseSprite, System.Collections.Generic.List<Sprite> extraSprites, Image first, System.Collections.Generic.List<Image> extraImages, string extraName)
+    void ApplyLayerGroup(
+        Sprite baseSprite,
+        System.Collections.Generic.List<Sprite> extraSprites,
+        bool hidden,
+        Image first,
+        System.Collections.Generic.List<Image> extraImages,
+        Sprite defaultSprite,
+        bool defaultEnabled,
+        Vector3 defaultPosition,
+        Quaternion defaultRotation,
+        string extraName)
     {
-        if (first != null && baseSprite != null)
-            first.sprite = baseSprite;
+        if (first == null) return;
 
-        if (extraSprites == null || extraSprites.Count == 0) return;
+        // 前景、中景、背景为空时隐藏；边框为空时沿用预制体默认边框。Hide 仍可显式隐藏有配置的图层。
+        first.sprite = hidden ? null : (baseSprite != null ? baseSprite : defaultSprite);
+        first.enabled = hidden ? false : (first.sprite != null && (baseSprite != null || defaultEnabled));
 
+        if (hidden || extraSprites == null || extraSprites.Count == 0) return;
+
+        int insertedCount = 0;
         for (int i = 0; i < extraSprites.Count; i++)
         {
             Sprite sprite = extraSprites[i];
-            if (sprite == null || first == null) continue;
+            if (sprite == null) continue;
 
-            var go = new GameObject($"{extraName}_{i}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var go = new GameObject(extraName + "_" + i, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             RectTransform rt = (RectTransform)go.transform;
+            // 额外素材保持为基础 Image 的同级对象，并在 LateUpdate 中按递减比例跟随基础层视差。
             rt.SetParent(first.transform.parent, false);
-            CopyRectTransform(first.rectTransform, rt);
+            CopyRectTransform(first.rectTransform, rt, defaultPosition, defaultRotation);
 
             var img = go.GetComponent<Image>();
             img.sprite = sprite;
@@ -205,27 +363,47 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             img.material = first.material;
             img.raycastTarget = false;   // 扩展层不阻挡交互
 
-            // 排在基础素材之后（sibling index 越大越靠前），列表索引越大越靠上
-            rt.SetSiblingIndex(first.transform.GetSiblingIndex() + 1 + i);
+            // 排在基础素材之后，列表索引越大越靠上
+            rt.SetSiblingIndex(first.transform.GetSiblingIndex() + 1 + insertedCount);
+
+            float multiplier = Mathf.Max(
+                minimumExtraParallaxMultiplier,
+                firstExtraParallaxMultiplier - extraParallaxStep * insertedCount);
+            _extraLayerMotionStates.Add(new ExtraLayerMotionState
+            {
+                rect = rt,
+                source = first.rectTransform,
+                basePosition = defaultPosition,
+                baseRotation = defaultRotation,
+                sourceBasePosition = defaultPosition,
+                sourceBaseRotation = defaultRotation,
+                multiplier = multiplier
+            });
+
+            insertedCount++;
             extraImages.Add(img);
         }
     }
 
-    /// <summary>复制 RectTransform 布局参数，让动态扩展层与基础素材同位。</summary>
-    static void CopyRectTransform(RectTransform from, RectTransform to)
+    /// <summary>复制布局，并使用预制体基础位置作为同层视差的零点。</summary>
+    static void CopyRectTransform(
+        RectTransform from,
+        RectTransform to,
+        Vector3 defaultPosition,
+        Quaternion defaultRotation)
     {
         to.anchorMin = from.anchorMin;
         to.anchorMax = from.anchorMax;
-        to.anchoredPosition = from.anchoredPosition;
         to.sizeDelta = from.sizeDelta;
         to.pivot = from.pivot;
-        to.localRotation = from.localRotation;
+        to.localPosition = defaultPosition;
+        to.localRotation = defaultRotation;
         to.localScale = from.localScale;
     }
-
     /// <summary>销毁本次生成的动态扩展层（ApplyLayers 前调用，避免累积）。</summary>
     void ClearExtraLayers()
     {
+        _extraLayerMotionStates.Clear();
         DestroyExtra(_extraForegroundImages);
         DestroyExtra(_extraMiddlegroundImages);
         DestroyExtra(_extraBackgroundImages);
