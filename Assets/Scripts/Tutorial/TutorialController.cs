@@ -219,6 +219,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         yield return null; // 等一帧，确保所有 Awake 完成
 
         MonsterActor lastCarrier = null;
+        GameObject lastCarrierRoot = null;
         for (int attempt = 0; attempt < 2; attempt++)
         {
             var carrier = Instantiate(openingCarrierPrefab, soul.transform.position + openingCarrierSpawnOffset, Quaternion.identity);
@@ -234,6 +235,7 @@ public class TutorialController : SceneSingleton<TutorialController>
             // BeginPossessionFlight 要求目标处于 Downed 可附身态，且避免活怪 AI 在附身动画期间攻击灵魂。
             actor.SpawnAsPermanentCorpse();
             lastCarrier = actor;
+            lastCarrierRoot = carrier;
 
             var pm = PossessionManager.Instance;
             if (pm != null && pm.BeginPossessionFlight(actor))
@@ -242,10 +244,21 @@ public class TutorialController : SceneSingleton<TutorialController>
                 Debug.Log("[TutorialController] 开场载体：附身飞行已开始（pride_new 永久尸体态）。");
                 yield break;
             }
-            Debug.LogWarning($"[TutorialController] 开场载体附身飞行被拒（第 {attempt + 1} 次），清理载体。");
-            Destroy(carrier);
-            lastCarrier = null;
-            yield return new WaitForSeconds(0.5f);
+            // 拒因随警告输出（PossessionManager 侧 rejection 日志为 Debug 级易被折叠，此处汇总便于定位）
+            string rejectReason = pm == null ? "PossessionManager 未就绪"
+                : !pm.CanStartPossession(out var stateReason) ? stateReason
+                : !pm.ValidatePossessionTarget(actor, out var targetReason) ? targetReason
+                : "灵魂缺失或载体预留失败";
+            Debug.LogWarning($"[TutorialController] 开场载体附身飞行被拒（第 {attempt + 1} 次）：{rejectReason}。");
+            if (attempt == 0)
+            {
+                Destroy(carrier);   // 首次被拒：清理后短暂重试
+                lastCarrier = null;
+                lastCarrierRoot = null;
+                yield return new WaitForSeconds(0.5f);
+            }
+            // 末次被拒：保留载体（不销毁）交给下方保底——此前版本失败即销毁并置空 lastCarrier，
+            // 保底分支永远拿不到载体，恒走"保底附身也失败"。
         }
 
         // 保底：正常飞行路径均被拒 → 对最后一次刷出的载体强制附身（不卡开局；
@@ -260,6 +273,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         }
         else
         {
+            if (lastCarrierRoot != null) Destroy(lastCarrierRoot); // 清理滞留场上的永久尸体载体
             Debug.LogError("[TutorialController] 开场载体保底附身也失败，玩家将保持未附身（教学 TUT-01 无法完成）。");
         }
     }

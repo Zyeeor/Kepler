@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// Skill: Ghost Dash. Dash forward and damage enemies at the destination.
@@ -24,12 +25,16 @@ public class PlayerAbility_GhostDash : PlayerAbility
         newPos.y = owner.transform.position.y;
         owner.transform.position = newPos;
 
+        // Snapshot targets first: dealing damage may unregister enemies mid-enumeration.
+        var targets = new List<Enemy>();
         foreach (var enemy in EnemyRegistry.All)
         {
             if (enemy == null) continue;
             float dist = Vector3.Distance(owner.transform.position, enemy.transform.position);
             if (dist > 0.5f) continue;
-            DealDamageToEnemy(enemy, damage);
+            targets.Add(enemy);
         }
+        for (int i = 0; i < targets.Count; i++)
+            DealDamageToEnemy(targets[i], damage);
     }
 }
