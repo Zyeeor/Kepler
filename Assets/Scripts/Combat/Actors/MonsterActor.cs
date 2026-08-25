@@ -605,11 +605,32 @@ public class MonsterActor : Actor
     }
 
     /// <summary>
+    /// 与 Update 的尸体门对齐：消散中的身体不得再消费移动指令。
+    /// 基类 FixedUpdate 按 !IsPlayerControlled 分派移动，而脱离附身会把 Controller 置为
+    /// NullController，若不在此拦住，尸体会继续走 AI 移动分支（详见 ExecuteMovement 的尸体门）。
+    /// </summary>
+    protected override void FixedUpdate()
+    {
+        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        base.FixedUpdate();
+    }
+
+    /// <summary>
     /// 移动段：AI 态（AIController）匀速移动、朝移动方向；玩家附身态（PlayerController）
     /// 加速度平滑 + 静止朝鼠标。两者共用SphereCast预检测和Transform位移。
     /// </summary>
     protected override void ExecuteMovement(in ControlCommand cmd)
     {
+        // 尸体/消散中的身体不移动：脱离附身后 Controller 变为 NullController，
+        // 基类会把移动分派到 AI 分支，这里兜住残留指令带来的滑行。
+        if (isDowned || Body == BodyState.Downed || Body == BodyState.Fading || Body == BodyState.Despawned)
+        {
+            possessVelocity = Vector3.zero;
+            aiVelocity = Vector3.zero;
+            aiCurrentTurnSpeed = 0f;
+            return;
+        }
+
         if (IsMovementBlocked || IsAbilityLocomotionLocked)
         {
             possessVelocity = Vector3.zero;
@@ -1483,6 +1504,12 @@ public class MonsterActor : Actor
         isPossessed = false;
         gameObject.tag = "Enemy";
         ClearAbilityCostDeathState();
+        // 清空 stale 指令与惯性：脱离后 IsPlayerControlled 变 false，基类 FixedUpdate 会开始
+        // 消费 pendingCmd 驱动 AI 移动分支；若不清理，玩家最后一帧的移动指令会让身体继续滑行。
+        pendingCmd = new ControlCommand();
+        possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
         if (visualFx != null) visualFx.SetPossessionHighlight(false);
         // Cheat immortality must not linger on bodies left as normal enemies.
@@ -1645,6 +1672,11 @@ public class MonsterActor : Actor
         isDowned = true;
         Body = BodyState.Fading;
         possessionWindowEndsAt = 0f;
+        // 停下所有残留惯性与指令，尸体在淡出期间必须原地不动。
+        pendingCmd = new ControlCommand();
+        possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         SetController(NullController.Instance);
         foreach (Collider collider in GetComponentsInChildren<Collider>())
         {

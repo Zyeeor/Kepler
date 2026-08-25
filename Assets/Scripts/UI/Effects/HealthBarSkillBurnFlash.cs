@@ -36,21 +36,25 @@ public class HealthBarSkillBurnFlash : MaskableGraphic
     public Slider healthBar;
     [Tooltip("勾选后只点燃已填充的血量段；取消则铺满整条血条（含已空的槽位）。")]
     public bool limitToFilledPart = false;
-    [Tooltip("纵向散布占血条高度的比例。1 = 铺满条高，>1 会溢出条外。")]
-    [Range(0f, 2f)] public float verticalSpread = 0.8f;
+    [Tooltip("纵向散布占血条高度的比例。偏大更蓬松，偏小更像一条连续火带。")]
+    [Range(0f, 2f)] public float verticalSpread = 0.45f;
 
     [Header("Burst")]
-    [Tooltip("满强度时沿血条一次喷发的粒子数。")]
-    [Range(4, 512)] public int burstParticles = 90;
+    [Tooltip("相邻火苗的重叠比例。0 = 首尾相接（会看出一颗颗），越大越连缀成整条。粒子数由它与粒子尺寸自动推出。")]
+    [Range(0f, 0.95f)] public float overlap = 0.72f;
+    [Tooltip("横向随机抖动占间距的比例。纯等距会显出机械排列感，少量抖动更自然。")]
+    [Range(0f, 1f)] public float horizontalJitter = 0.6f;
     [Tooltip("单次代价达到 Body 最大生命的该比例时取满强度。")]
     [Range(0.002f, 0.5f)] public float costForFullStrength = 0.05f;
     [Tooltip("最小强度系数，保证微量代价（如普攻）也有可读反馈。")]
     [Range(0f, 1f)] public float minStrength = 0.4f;
+    [Tooltip("低强度时的火苗尺寸系数。强度只缩放尺寸而不减少数量，避免小额代价时火带断开。")]
+    [Range(0.1f, 1f)] public float minSizeScale = 0.55f;
     [Tooltip("两次喷发的最小间隔（秒）。激光类每秒付费的技能靠它避免刷爆 UI 网格。")]
     [Range(0f, 1f)] public float minInterval = 0.08f;
 
     [Header("Budget")]
-    [Tooltip("单帧最多烘录的粒子数（每个粒子 4 顶点），防止 UI 网格膨胀。")]
+    [Tooltip("单帧最多烘录的粒子数（每个粒子 4 顶点），防止 UI 网格膨胀。也是单次喷发的数量上限。")]
     [Range(16, 2048)] public int maxBakedParticles = 512;
 
     private ParticleSystem.Particle[] buffer;
@@ -142,10 +146,17 @@ public class HealthBarSkillBurnFlash : MaskableGraphic
     }
 
     /// <summary>
-    /// 沿血条铺开一次喷发。
+    /// 沿血条铺开一次喷发，火苗互相重叠连成一条连续火带。
     ///
     /// 取世界角点而非本地 rect：血条被 UIShake 抖动、被父级非均匀缩放时都能自动跟上，
     /// 与 HealthBarBurnParticles 的定位口径保持一致。
+    ///
+    /// 为什么粒子数是算出来的而不是填出来的：
+    ///   固定粒子数时，间距 = 血条长度 / 粒子数，与粒子自身尺寸无关。
+    ///   一旦间距 ≥ 粒子宽度，视觉上就断成一颗颗独立小火苗（本项目血条长 1252，
+    ///   90 粒 ⇒ 间距 14，而粒子宽约 19，几乎不重叠）。
+    ///   因此这里反过来：先取粒子实际宽度，再按 overlap 定步长，数量随血条长度自适应，
+    ///   换分辨率 / 换血条长度 / 改粒子尺寸都不会重新出现断裂。
     /// </summary>
     void EmitAlongBar(float strength)
     {
@@ -172,17 +183,50 @@ public class HealthBarSkillBurnFlash : MaskableGraphic
             else spanEnd = Vector3.Lerp(leftMid, rightMid, fill);
         }
 
-        int count = Mathf.Clamp(Mathf.RoundToInt(burstParticles * strength), 1, maxBakedParticles);
-        bool localSpace = particles.main.simulationSpace == ParticleSystemSimulationSpace.Local;
+        // 强度只缩放火苗尺寸，不减少数量 —— 否则小额代价（普攻）会让火带重新断成散点。
+        float sizeScale = Mathf.Lerp(minSizeScale, 1f, strength);
+
+        // 粒子宽度取 startSize 的均值：单颗尺寸是随机的，用均值定步长才能得到稳定的覆盖密度。
+        var main = particles.main;
+        float avgSize = (main.startSize.constantMin + main.startSize.constantMax) * 0.5f;
+        if (avgSize <= 0.01f) avgSize = main.startSize.constant;
+        if (avgSize <= 0.01f) avgSize = heightVector.magnitude;   // 仍取不到时退化为条高
+        avgSize *= sizeScale;
+
+        // 单位换算：startSize 是 ParticleSystem 本地单位，铺开距离在世界单位，两者不能直接比。
+        float psToWorld = particles.transform.lossyScale.x;
+        if (psToWorld <= 0.0001f) psToWorld = 1f;
+        float particleWorldWidth = avgSize * psToWorld;
+
+        float spanLength = Vector3.Distance(spanStart, spanEnd);
+        if (spanLength <= 0.0001f || particleWorldWidth <= 0.0001f) return;
+
+        float step = particleWorldWidth * (1f - overlap);
+        if (step <= 0.0001f) step = particleWorldWidth;
+        // +1 保证首尾都落上火苗；Ceil 保证末端不留空档。
+        int count = Mathf.Clamp(Mathf.CeilToInt(spanLength / step) + 1, 2, maxBakedParticles);
+
+        bool localSpace = main.simulationSpace == ParticleSystemSimulationSpace.Local;
         Transform psTransform = particles.transform;
         var emit = new ParticleSystem.EmitParams();
+        // 覆盖 startSize 的随机取值，保证实际尺寸与上面算步长时用的一致（否则密度又会失准）。
+        emit.startSize = avgSize;
+
+        // 抖动限制在半步长内：再大就会重新出现疏密团块，抵消掉重叠带来的连续感。
+        float jitterRange = step * horizontalJitter * 0.5f;
 
         for (int i = 0; i < count; i++)
         {
-            // 均匀分层 + 层内抖动：纯随机会出现明显的疏密团块，分层后才像"整条被同时点燃"。
-            float t = (i + Random.value) / count;
-            Vector3 world = Vector3.Lerp(spanStart, spanEnd, t)
-                          + heightVector * ((Random.value - 0.5f) * verticalSpread);
+            // 等距铺开（含两端）+ 半步长内抖动：等距保证连续，抖动去掉机械排列感。
+            float t = count > 1 ? (float)i / (count - 1) : 0.5f;
+            Vector3 world = Vector3.Lerp(spanStart, spanEnd, t);
+            if (jitterRange > 0.0001f)
+            {
+                Vector3 dir = (spanEnd - spanStart).normalized;
+                world += dir * Random.Range(-jitterRange, jitterRange);
+            }
+            world += heightVector * ((Random.value - 0.5f) * verticalSpread);
+
             // Local 模拟时 EmitParams.position 是 ParticleSystem 的本地坐标，World 模拟时是世界坐标。
             emit.position = localSpace ? psTransform.InverseTransformPoint(world) : world;
             particles.Emit(emit, 1);
