@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// 怪物生命周期基础设施（波次玩法驱动）：
 ///   - 波次怪刷出 / 取点 / 回收（API 由 WaveManager 调用）
-///   - 全场配额（maxCombatMonsters）：波次怪与未来其他来源的怪共享
+///   - 全场配额（maxCombatMonsters）：普通战斗来源共享，精英怪独立
 ///   - 追踪与修剪（trackedByChunk / trackInfoByMonster），供指引 UI 数据源与调试
 ///
 /// 职责边界：本类管"怎么刷出并管理怪"（生成基础设施），
@@ -19,9 +19,9 @@ public class MonsterSpawner : MonoBehaviour
     public static MonsterSpawner Instance { get; private set; }
 
     [Header("全场配额")]
-    [Tooltip("全局安全上限（所有来源共享）。连续自动刷怪另受 continuousSpawnMaxCount 限制，击杀回响不占该独立上限。")]
+    [Tooltip("全局安全上限（普通怪、怪潮、击杀回响等战斗来源共享）。精英怪不占用该上限。")]
     [Min(1)] public int maxCombatMonsters = 30;
-    [Tooltip("连续自动生成怪物的同时存在上限。常规刷怪、怪潮和新逻辑精英合计；达到上限后只有这些怪被击杀/离场才会继续生成。WaveManager 连续逻辑会按时间成长档位更新此值。")]
+    [Tooltip("连续自动生成普通怪的同时存在上限。常规刷怪与怪潮合计；精英怪不占用。达到上限后只有这些怪被击杀/离场才会继续生成。WaveManager 连续逻辑会按时间成长档位更新此值。")]
     [Min(1)] public int continuousSpawnMaxCount = 10;
 
     [Header("波次取点")]
@@ -65,7 +65,7 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("屏幕右上角显示在场怪计数面板。")]
     public bool showDebugHud = true;
 
-    /// <summary>当前在场怪物总数（含未回收的倒地尸体）。</summary>
+    /// <summary>当前计入全局战斗配额的在场怪物数（含未回收的倒地尸体；精英不计入）。</summary>
     public int TrackedMonsterCount { get; private set; }
 
     /// <summary>
@@ -144,6 +144,8 @@ public class MonsterSpawner : MonoBehaviour
         public bool isWaveMonster;
         /// <summary>新逻辑连续自动生成来源：受 continuousSpawnMaxCount 限制。</summary>
         public bool isContinuousAutomatic;
+        /// <summary>是否占用 maxCombatMonsters 全局战斗配额。</summary>
+        public bool countsTowardCombatLimit;
     }
     readonly Dictionary<MonsterActor, TrackedInfo> trackInfoByMonster = new Dictionary<MonsterActor, TrackedInfo>();
 
@@ -212,19 +214,27 @@ public class MonsterSpawner : MonoBehaviour
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: false);
 
     /// <summary>
-    /// 新逻辑连续自动刷怪：受 continuousSpawnMaxCount 独立限制，供常规刷怪、怪潮与定时精英使用。
+    /// 新逻辑连续自动刷怪：受 continuousSpawnMaxCount 独立限制，供常规刷怪与怪潮使用。
     /// </summary>
     public MonsterActor SpawnContinuousMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: true);
+
+    /// <summary>
+    /// 精英怪刷出：保留生命周期追踪和波次清点，但不占全局战斗配额或连续自动怪上限。
+    /// </summary>
+    public MonsterActor SpawnEliteMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
+        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure,
+            countAsContinuousAutomatic: false, countsTowardCombatLimit: false);
 
     /// <summary>击杀回响刷怪：不占连续自动刷怪上限。</summary>
     public MonsterActor SpawnKillEchoMonster(GameObject prefab, Vector3 pos, bool immediateChase = true)
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.KillEcho, countAsContinuousAutomatic: false);
 
     MonsterActor SpawnMonster(GameObject prefab, Vector3 pos, bool immediateChase,
-        SpawnOrigin origin, bool countAsContinuousAutomatic)
+        SpawnOrigin origin, bool countAsContinuousAutomatic, bool countsTowardCombatLimit = true)
     {
-        if (prefab == null || TrackedMonsterCount >= maxCombatMonsters) return null;
+        if (prefab == null) return null;
+        if (countsTowardCombatLimit && TrackedMonsterCount >= maxCombatMonsters) return null;
         if (countAsContinuousAutomatic && ActiveContinuousMonsterCount >= Mathf.Max(1, continuousSpawnMaxCount))
             return null;
         var system = MapStreamingSystem.Instance;
@@ -245,11 +255,13 @@ public class MonsterSpawner : MonoBehaviour
         monster.InitAiRng(spawnSequence++);
         RunSpawnDirector director = RunSpawnDirector.Instance;
         monster.ApplySpawnDifficultySnapshot(origin, director != null ? director.CurrentTier : 0);
-        Track(home, monster, prefab, isWaveMonster: true, isContinuousAutomatic: countAsContinuousAutomatic);
+        Track(home, monster, prefab, isWaveMonster: true,
+            isContinuousAutomatic: countAsContinuousAutomatic,
+            countsTowardCombatLimit: countsTowardCombatLimit);
         if (immediateChase)
             monster.BeginImmediateChase();
         if (logSpawns)
-            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}，连续自动 {ActiveContinuousMonsterCount}/{continuousSpawnMaxCount}）。");
+            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（配额内 {TrackedMonsterCount}/{maxCombatMonsters}，连续自动 {ActiveContinuousMonsterCount}/{continuousSpawnMaxCount}）。");
         return monster;
     }
 
@@ -651,7 +663,7 @@ public class MonsterSpawner : MonoBehaviour
         => Track(coord, monster, prefab, isWaveMonster: false, isContinuousAutomatic: false);
 
     void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab, bool isWaveMonster,
-        bool isContinuousAutomatic = false)
+        bool isContinuousAutomatic = false, bool countsTowardCombatLimit = true)
     {
         if (!trackedByChunk.TryGetValue(coord, out var list))
         {
@@ -665,15 +677,21 @@ public class MonsterSpawner : MonoBehaviour
             prefab = prefab,
             isWaveMonster = isWaveMonster,
             isContinuousAutomatic = isContinuousAutomatic,
+            countsTowardCombatLimit = countsTowardCombatLimit,
         };
-        TrackedMonsterCount++;
+        if (countsTowardCombatLimit)
+            TrackedMonsterCount++;
     }
 
     /// <summary>摘除单个追踪项（配额计数 + trackInfo 清理）。trackedByChunk 列表项由调用方移除。</summary>
     void Untrack(MonsterActor monster)
     {
+        bool countsTowardCombatLimit = true;
+        if (trackInfoByMonster.TryGetValue(monster, out var info))
+            countsTowardCombatLimit = info.countsTowardCombatLimit;
         trackInfoByMonster.Remove(monster);
-        TrackedMonsterCount = Mathf.Max(0, TrackedMonsterCount - 1);
+        if (countsTowardCombatLimit)
+            TrackedMonsterCount = Mathf.Max(0, TrackedMonsterCount - 1);
     }
 
     /// <summary>摘除失效追踪项：怪物可能经尸体 fade 自行回池（FadeAndReturnRoutine → MonsterPool.Return）。</summary>
@@ -688,8 +706,7 @@ public class MonsterSpawner : MonoBehaviour
                 if (m == null || !m.gameObject.activeInHierarchy || m.Body == MonsterActor.BodyState.Despawned)
                 {
                     list.RemoveAt(i);
-                    if (m != null) Untrack(m);
-                    else TrackedMonsterCount--; // 已销毁（Unity 假空）：trackInfo 查询无意义，仅减计数
+                    Untrack(m);
                 }
             }
             if (list.Count == 0) chunkPruneBuffer.Add(kv.Key);
