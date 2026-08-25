@@ -200,6 +200,7 @@ MonoBehaviour:
   middlegroundImage: {fileID: 9114436025755378517}
   backgroundImage: {fileID: 8811101112222333448}
   borderImage: {fileID: 2032533944205171193}
+  extraParallaxStep: 0.35
 --- !u!114 &3332846391236430953
 MonoBehaviour:
   m_ObjectHideFlags: 0
