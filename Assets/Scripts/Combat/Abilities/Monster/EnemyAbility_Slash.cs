@@ -94,6 +94,7 @@ public class EnemyAbility_Slash : EnemyAbility
 
     void CreateSlashArc(Vector3 position, Vector3 direction, float radius)
     {
+        float visualScale = OwnerCombatScaleMultiplier;
         float startAngle = -slashAngle / 2f;
         float angleStep = slashAngle / (slashEffectCount - 1);
         GameObject arcParent = new GameObject("SlashArc");
@@ -108,8 +109,8 @@ public class EnemyAbility_Slash : EnemyAbility
         var lineRenderer = trailObj.AddComponent<LineRenderer>();
         int lineSegments = slashEffectCount * 2;
         lineRenderer.positionCount = lineSegments;
-        lineRenderer.startWidth = 0.15f;
-        lineRenderer.endWidth = 0.02f;
+        lineRenderer.startWidth = 0.15f * visualScale;
+        lineRenderer.endWidth = 0.02f * visualScale;
         lineRenderer.useWorldSpace = false;
         lineRenderer.alignment = LineAlignment.View;
         Shader lineShader = Shader.Find("Universal Render Pipeline/Unlit");
@@ -129,7 +130,10 @@ public class EnemyAbility_Slash : EnemyAbility
             float t = (float)i / (lineSegments - 1);
             float angle = startAngle + slashAngle * t;
             float rad = angle * Mathf.Deg2Rad;
-            lineRenderer.SetPosition(i, new Vector3(Mathf.Sin(rad) * slashEffectRadius, slashEffectHeight * 0.5f, Mathf.Cos(rad) * slashEffectRadius));
+            lineRenderer.SetPosition(i, new Vector3(
+                Mathf.Sin(rad) * slashEffectRadius * visualScale,
+                slashEffectHeight * 0.5f * visualScale,
+                Mathf.Cos(rad) * slashEffectRadius * visualScale));
         }
         Gradient grad = new Gradient();
         grad.SetKeys(
@@ -143,14 +147,16 @@ public class EnemyAbility_Slash : EnemyAbility
         {
             float angle = startAngle + angleStep * i;
             float rad = angle * Mathf.Deg2Rad;
-            Vector3 localPos = new Vector3(Mathf.Sin(rad) * slashEffectRadius, slashEffectHeight * 0.5f, Mathf.Cos(rad) * slashEffectRadius);
+            Vector3 localPos = new Vector3(
+                Mathf.Sin(rad) * slashEffectRadius * visualScale,
+                slashEffectHeight * 0.5f * visualScale,
+                Mathf.Cos(rad) * slashEffectRadius * visualScale);
             if (slashEffectPrefab != null)
             {
                 GameObject obj = SpawnVfxTracked(slashEffectPrefab, arcParent.transform.position, arcParent.transform.rotation, slashEffectDuration);
                 obj.transform.SetParent(arcParent.transform, true);
                 obj.transform.localPosition = localPos;
                 obj.transform.localRotation = Quaternion.Euler(0, angle, 90);
-                obj.transform.localScale = Vector3.one;
             }
             else
             {

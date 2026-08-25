@@ -43,7 +43,7 @@ public class GreedBlackOilZone : MonoBehaviour
     {
         owner = oilOwner;
         MonsterActor ownerMonster = oilOwner as MonsterActor;
-        _ownerScaleMultiplier = ownerMonster != null ? ownerMonster.PossessionCombatScaleMultiplier : 1f;
+        _ownerScaleMultiplier = ownerMonster != null ? ownerMonster.CombatScaleMultiplier : 1f;
         lifetime = Mathf.Max(0.1f, life);
         width = Mathf.Max(0.2f, oilWidth);
         allySpeedMultiplier = Mathf.Max(0.01f, allyMult);
@@ -113,6 +113,7 @@ public class GreedBlackOilZone : MonoBehaviour
         GameObject prefab = isBurning ? burningVfxPrefab : normalVfxPrefab;
         if (prefab == null) return;
         _vfxInstance = Instantiate(prefab, transform.position, Quaternion.identity, transform);
+        _vfxInstance.transform.localScale *= Mathf.Max(1f, _ownerScaleMultiplier);
     }
 
     private void ScanOccupants()
