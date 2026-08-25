@@ -32,6 +32,13 @@ public class MonsterActor : Actor
     /// </summary>
     public static event Action<MonsterActor, float> AbilityHpCostPaid;
 
+    /// <summary>
+    /// Raised at the lethal damage settlement point, before the body enters its corpse
+    /// lifecycle. Player damage is explicitly marked so Elite rewards do not wait for
+    /// corpse fade/despawn and do not trigger for environmental damage.
+    /// </summary>
+    public static event Action<MonsterActor> OnMonsterKilled;
+
     [Serializable]
     public class AbilityHpCost
     {
@@ -268,6 +275,7 @@ public class MonsterActor : Actor
     private EnemyAbility abilityCostDeathSource;
     private bool payingAbilityCost;
     private EnemyAbility abilityCostPaymentSource;
+    private bool playerDamageContext;
 
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
@@ -285,6 +293,7 @@ public class MonsterActor : Actor
     private Quaternion initialLocalRotation;
     private Animator bodyAnimator;
     private AnimatorUpdateMode originalAnimatorUpdateMode;
+    private readonly Dictionary<Animator, AnimatorUpdateMode> possessedAnimatorUpdateModes = new Dictionary<Animator, AnimatorUpdateMode>();
     private LineRenderer detectRangeRing;
     private LineRenderer basicRangeRing;
     private LineRenderer skillRangeRing;
@@ -367,6 +376,7 @@ public class MonsterActor : Actor
     private bool healthBarLayoutCaptured;
     private float lastHealthBarLayoutScale = -1f;
     [NonSerialized] public MonsterActor lastDamageSource;
+    [NonSerialized] public bool wasKilledByPlayer;
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
     public bool IsAbilityLocomotionLocked { get; set; }
@@ -1221,6 +1231,21 @@ public class MonsterActor : Actor
         TakeDamage(amount, allowGreedGuardAbsorb: true);
     }
 
+    /// <summary>Damage dealt directly by the player's Soul form.</summary>
+    public void TakePlayerDamage(float amount)
+    {
+        bool previous = playerDamageContext;
+        playerDamageContext = true;
+        try
+        {
+            TakeDamage(amount);
+        }
+        finally
+        {
+            playerDamageContext = previous;
+        }
+    }
+
     public virtual void TakeDamage(float amount, bool allowGreedGuardAbsorb)
     {
         bool tracingBoss = this is BossSevenfoldActor;
@@ -1292,6 +1317,9 @@ public class MonsterActor : Actor
         if (currentHealth <= 0)
         {
             currentHealth = 0;
+            wasKilledByPlayer = playerDamageContext || (allowGreedGuardAbsorb
+                && lastDamageSource != null && lastDamageSource.isPossessed);
+            if (wasKilledByPlayer) OnMonsterKilled?.Invoke(this);
             if (RunSpawnDirector.Instance != null)
             {
                 RunSpawnDirector.Instance.RecordFatal(new MonsterFatalEvent(
@@ -1515,7 +1543,7 @@ public class MonsterActor : Actor
         SetAbilityComponentsEnabled(true);
         Body = BodyState.Active;
         gameObject.tag = "Player";
-        if (bodyAnimator != null) bodyAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+        SetPossessedAnimatorsUnscaled(true);
         isPossessionReserved = false;
         EnsureDualStatsMigrated();
         ApplyStatBlock(possessedStats.HasConfiguredHealth ? possessedStats : enemyStats,
@@ -1571,12 +1599,40 @@ public class MonsterActor : Actor
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
-        if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
+        SetPossessedAnimatorsUnscaled(false);
         if (visualFx != null) visualFx.SetPossessionHighlight(false);
         // Cheat immortality must not linger on bodies left as normal enemies.
         ClearCheatDefenseEffects();
         EnvyMarkTarget.ClearMarksFromSource(this as Enemy);
         ResetPossessionVisualScale();
+    }
+
+    /// <summary>
+    /// Gluttony and several other monsters keep their visible model Animator on child
+    /// objects. Switching only the root Animator leaves those child models slowed by
+    /// bullet time, so possession changes every Animator in the body hierarchy together.
+    /// </summary>
+    private void SetPossessedAnimatorsUnscaled(bool possessed)
+    {
+        if (possessed)
+        {
+            possessedAnimatorUpdateModes.Clear();
+            Animator[] animators = GetComponentsInChildren<Animator>(true);
+            for (int i = 0; i < animators.Length; i++)
+            {
+                Animator animator = animators[i];
+                if (animator == null) continue;
+                possessedAnimatorUpdateModes[animator] = animator.updateMode;
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            }
+            return;
+        }
+
+        foreach (KeyValuePair<Animator, AnimatorUpdateMode> pair in possessedAnimatorUpdateModes)
+        {
+            if (pair.Key != null) pair.Key.updateMode = pair.Value;
+        }
+        possessedAnimatorUpdateModes.Clear();
     }
 
     private void EnterHitState(){
@@ -1586,14 +1642,6 @@ public class MonsterActor : Actor
     }
 
     protected virtual void Die(){
-        // An Elite left behind by a voluntary release is a permanent corpse, but an
-        // Elite that is currently possessed must still follow the normal body-death
-        // path so hostile attacks can make it dissipate.
-        if (IsElite && !isPossessed)
-        {
-            KeepAsPermanentEliteCorpse();
-            return;
-        }
         if (!isPossessable)
         {
             isDowned = true;
@@ -1670,21 +1718,6 @@ public class MonsterActor : Actor
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
         Debug.Log($"[MonsterState] '{displayName}' spawned as permanent possession corpse.");
-    }
-
-    /// <summary>
-    /// Keeps an Elite body permanently downed without resetting its runtime state. This is
-    /// used both after an Elite dies and when the player switches away from an Elite body.
-    /// </summary>
-    public void KeepAsPermanentEliteCorpse()
-    {
-        if (!IsElite || Body == BodyState.Fading || Body == BodyState.Despawned) return;
-
-        float preservedHealth = Mathf.Clamp(currentHealth, 0f, Mathf.Max(0f, maxHealth));
-        SpawnAsPermanentCorpse();
-        currentHealth = preservedHealth;
-        UpdateHealthUI();
-        MonsterSpawner.Instance?.ReleaseTracking(this);
     }
 
     /// <summary>
@@ -1769,6 +1802,7 @@ public class MonsterActor : Actor
     }
 
     public void ResetForSpawn(){
+        SetPossessedAnimatorsUnscaled(false);
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -1784,6 +1818,7 @@ public class MonsterActor : Actor
         IsBossBattleReserveBody = false;
         isPossessable = true;
         lastDamageSource = null;
+        wasKilledByPlayer = false;
         ClearCheatDefenseEffects();
         isPossessionReserved = false;
         playerDetected = false;
@@ -1797,6 +1832,7 @@ public class MonsterActor : Actor
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
         bossDamageContext = false;
+        playerDamageContext = false;
         ClearAbilityCostDeathState();
         IsAbilityFacingLocked = false;
         IsAbilityLocomotionLocked = false;
@@ -1842,16 +1878,19 @@ public class MonsterActor : Actor
     protected virtual void OnResetForSpawn() { }
 
     public void ResetForPool(){
+        SetPossessedAnimatorsUnscaled(false);
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
         BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         bossDamageContext = false;
+        playerDamageContext = false;
         ClearAbilityCostDeathState();
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
+        wasKilledByPlayer = false;
         ResetEliteRuntimeState();
         if (corpseRoutine != null)
         {

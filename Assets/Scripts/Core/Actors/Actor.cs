@@ -69,7 +69,9 @@ public abstract class Actor : MonoBehaviour, IActor
         {
             Self = transform,
             PlayerTarget = PlayerTarget, // MonsterActor=targetPlayer；SoulActor=自身
-            DeltaTime = Time.deltaTime,
+            DeltaTime = IsPlayerControlled && Time.timeScale < 1f
+                ? Time.unscaledDeltaTime
+                : Time.deltaTime,
         };
         pendingCmd = new ControlCommand();
         Controller.Tick(in ctx, ref pendingCmd);
