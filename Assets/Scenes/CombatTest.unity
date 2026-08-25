@@ -9252,6 +9252,8 @@ MonoBehaviour:
   maxSpawnDistanceToPlayer: 50
   spawnHeightY: 0
   minSpawnPointSeparation: 6
+  invalidSpawnRelocationRadius: 6
+  invalidSpawnRelocationSamples: 32
   killEchoScreenPadding: 0.75
   spawnSectorOrder: 01000000020000000300000004000000050000000600000007000000
   screenEdgeSpawnOffset: 2
@@ -9500,7 +9502,7 @@ PrefabInstance:
     - target: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
