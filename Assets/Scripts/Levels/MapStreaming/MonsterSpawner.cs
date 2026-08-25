@@ -34,6 +34,12 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("群系中心之间的最小间距（米）：不同批次刷出的怪群出生即保持距离，避免源头重叠堆积。0 = 关闭。")]
     [Min(0f)] public float minSpawnPointSeparation = 6f;
 
+    [Header("出生点合法性")]
+    [Tooltip("初始出生点落入岩浆、地刺或可阻挡碰撞体时，在此半径内寻找可走且合法的位置；0 表示不重定位。")]
+    [Min(0f)] public float invalidSpawnRelocationRadius = 6f;
+    [Tooltip("非法出生点的周边采样次数。采样失败时取消本次生成，避免怪物出现在禁行区域。")]
+    [Range(8, 64)] public int invalidSpawnRelocationSamples = 32;
+
     [Header("击杀回声取点")]
     [Tooltip("新逻辑所有类型刷怪越过屏幕边界后的基础安全距离（米）。越小越贴近屏幕边缘。")]
     [Min(0f)] public float killEchoScreenPadding = 0.75f;
@@ -237,9 +243,6 @@ public class MonsterSpawner : MonoBehaviour
         if (countsTowardCombatLimit && TrackedMonsterCount >= maxCombatMonsters) return null;
         if (countAsContinuousAutomatic && ActiveContinuousMonsterCount >= Mathf.Max(1, continuousSpawnMaxCount))
             return null;
-        var system = MapStreamingSystem.Instance;
-        ChunkCoord home = system != null ? system.WorldToChunk(pos) : default;
-
         GameObject go = MonsterPool.Instance.Spawn(prefab, pos, Quaternion.identity);
         if (go == null) return null;
         var monster = go.GetComponentInChildren<MonsterActor>(true);
@@ -249,6 +252,21 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(go);
             return null;
         }
+        if (!TryResolveSpawnPosition(monster, pos, out Vector3 resolvedPosition))
+        {
+            Debug.LogWarning($"[MonsterSpawner] 波次刷怪 '{prefab.name}' 未能在 {invalidSpawnRelocationRadius:0.##}m 内找到合法出生点，已取消。", go);
+            MonsterPool.Instance.Return(monster);
+            return null;
+        }
+        if ((resolvedPosition - pos).sqrMagnitude > 0.0001f)
+        {
+            go.transform.position = resolvedPosition;
+            MonsterPool.SnapCapsuleBottomToGround(go);
+            pos = go.transform.position;
+        }
+
+        var system = MapStreamingSystem.Instance;
+        ChunkCoord home = system != null ? system.WorldToChunk(pos) : default;
         monster.ResolveSinIdentityFromHint(prefab.name + " " + monster.displayName);
         monster.aiActiveOverride = true; // 波次怪直接激活索敌
         // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
@@ -263,6 +281,41 @@ public class MonsterSpawner : MonoBehaviour
         if (logSpawns)
             Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（配额内 {TrackedMonsterCount}/{maxCombatMonsters}，连续自动 {ActiveContinuousMonsterCount}/{continuousSpawnMaxCount}）。");
         return monster;
+    }
+
+    bool TryResolveSpawnPosition(MonsterActor monster, Vector3 requestedPosition, out Vector3 resolvedPosition)
+    {
+        resolvedPosition = requestedPosition;
+        Transform spawnRoot = monster.transform.root;
+        if (!MonsterPathfinder.IsSpawnPositionBlocked(monster, spawnRoot, requestedPosition, forceHazardRefresh: true)) return true;
+
+        float searchRadius = Mathf.Max(0f, invalidSpawnRelocationRadius);
+        if (searchRadius <= 0f) return false;
+
+        int samples = Mathf.Max(8, invalidSpawnRelocationSamples);
+        float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
+        const float goldenAngle = 2.39996323f;
+        for (int i = 0; i < samples; i++)
+        {
+            float distance = searchRadius * Mathf.Sqrt((i + 0.5f) / samples);
+            float angle = startAngle + goldenAngle * i;
+            Vector3 candidate = requestedPosition + new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+            if (!IsRelocationTileWalkable(candidate)) continue;
+            if (MonsterPathfinder.IsSpawnPositionBlocked(monster, spawnRoot, candidate)) continue;
+
+            resolvedPosition = candidate;
+            return true;
+        }
+        return false;
+    }
+
+    bool IsRelocationTileWalkable(Vector3 worldPosition)
+    {
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return true;
+        if (!system.Registry.TryGetValue(system.WorldToChunk(worldPosition), out var chunk) || chunk == null || chunk.Tiles == null)
+            return false;
+        return IsWalkable(chunk, worldPosition);
     }
 
     /// <summary>

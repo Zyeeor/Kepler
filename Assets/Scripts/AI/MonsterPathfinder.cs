@@ -15,6 +15,7 @@ public sealed class MonsterPathfinder : MonoBehaviour
     private const int MaxSearchNodes = 768;
     private const float HazardBucketSize = 4f;
     private const float HazardRefreshInterval = 0.25f;
+    private const float ColliderClearance = 0.1f;
 
     private struct PathNode
     {
@@ -32,6 +33,7 @@ public sealed class MonsterPathfinder : MonoBehaviour
     }
 
     private static readonly Dictionary<Vector2Int, List<HazardRect>> HazardBuckets = new Dictionary<Vector2Int, List<HazardRect>>();
+    private static readonly Collider[] SpawnOverlapBuffer = new Collider[48];
     private static float nextHazardRefreshAt;
 
     private readonly List<Vector2Int> openCells = new List<Vector2Int>(MaxSearchNodes);
@@ -47,7 +49,7 @@ public sealed class MonsterPathfinder : MonoBehaviour
     private float nextRepathAt;
     private float cellSize;
     private float agentRadius;
-    private float agentCenterY;
+    private Vector3 agentCenterOffset;
     private float agentHalfHeight;
 
     private void Awake()
@@ -260,31 +262,56 @@ public sealed class MonsterPathfinder : MonoBehaviour
 
     private bool IsBlocked(Vector3 point)
     {
-        if (IsHazard(point)) return true;
+        Vector3 colliderCenter = point + agentCenterOffset;
+        colliderCenter.y = transform.position.y + agentCenterOffset.y;
+        return IsBlocked(colliderCenter, transform, agentRadius, agentHalfHeight, overlapBuffer);
+    }
 
-        Vector3 center = new Vector3(point.x, agentCenterY, point.z);
-        Vector3 extents = new Vector3(agentRadius, agentHalfHeight, agentRadius);
-        int count = Physics.OverlapBoxNonAlloc(center, extents, overlapBuffer, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+    /// <summary>
+    /// Checks a newly spawned monster against the same XZ hazards and solid obstacles used by pathfinding.
+    /// The caller supplies the candidate position; the monster's real collider determines the clearance.
+    /// </summary>
+    public static bool IsSpawnPositionBlocked(MonsterActor monster, Transform spawnRoot, Vector3 spawnPosition,
+        bool forceHazardRefresh = false)
+    {
+        if (monster == null) return true;
+
+        RefreshHazardCache(forceHazardRefresh);
+        Transform root = spawnRoot != null ? spawnRoot : monster.transform.root;
+        GetAgentFootprint(monster.transform, out float radius, out Vector3 centerOffset, out float halfHeight);
+        Vector3 rootToActor = monster.transform.position - root.position;
+        Vector3 colliderCenter = spawnPosition + rootToActor + centerOffset;
+        return IsBlocked(colliderCenter, root, radius, halfHeight, SpawnOverlapBuffer);
+    }
+
+    private static bool IsBlocked(Vector3 colliderCenter, Transform ownerTransform, float radius, float halfHeight,
+        Collider[] buffer)
+    {
+        float effectiveRadius = radius + ColliderClearance;
+        if (IsHazard(colliderCenter, effectiveRadius)) return true;
+
+        Vector3 extents = new Vector3(effectiveRadius, halfHeight, effectiveRadius);
+        int count = Physics.OverlapBoxNonAlloc(colliderCenter, extents, buffer, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
         for (int i = 0; i < count; i++)
         {
-            Collider collider = overlapBuffer[i];
+            Collider collider = buffer[i];
             if (collider == null || collider.isTrigger) continue;
-            if (collider.transform.IsChildOf(transform) || transform.IsChildOf(collider.transform)) continue;
+            if (collider.transform.IsChildOf(ownerTransform) || ownerTransform.IsChildOf(collider.transform)) continue;
             if (collider.GetComponentInParent<Actor>() != null) continue;
 
             Bounds bounds = collider.bounds;
-            if (bounds.max.y <= transform.position.y + 0.05f) continue;
-            bounds.Expand(new Vector3(agentRadius * 2f, 0f, agentRadius * 2f));
-            if (point.x >= bounds.min.x && point.x <= bounds.max.x
-                && point.z >= bounds.min.z && point.z <= bounds.max.z)
+            if (bounds.max.y <= colliderCenter.y - halfHeight + 0.05f) continue;
+            bounds.Expand(new Vector3(effectiveRadius * 2f, 0f, effectiveRadius * 2f));
+            if (colliderCenter.x >= bounds.min.x && colliderCenter.x <= bounds.max.x
+                && colliderCenter.z >= bounds.min.z && colliderCenter.z <= bounds.max.z)
                 return true;
         }
         return false;
     }
 
-    private bool IsHazard(Vector3 point)
+    private static bool IsHazard(Vector3 point, float radius)
     {
-        int range = Mathf.CeilToInt(agentRadius / HazardBucketSize) + 1;
+        int range = Mathf.CeilToInt(radius / HazardBucketSize) + 1;
         Vector2Int cell = ToHazardCell(point);
         for (int x = -range; x <= range; x++)
         for (int y = -range; y <= range; y++)
@@ -293,8 +320,8 @@ public sealed class MonsterPathfinder : MonoBehaviour
             for (int i = 0; i < hazards.Count; i++)
             {
                 HazardRect hazard = hazards[i];
-                if (point.x >= hazard.minX - agentRadius && point.x <= hazard.maxX + agentRadius
-                    && point.z >= hazard.minZ - agentRadius && point.z <= hazard.maxZ + agentRadius)
+                if (point.x >= hazard.minX - radius && point.x <= hazard.maxX + radius
+                    && point.z >= hazard.minZ - radius && point.z <= hazard.maxZ + radius)
                     return true;
             }
         }
@@ -303,24 +330,29 @@ public sealed class MonsterPathfinder : MonoBehaviour
 
     private void RefreshAgentFootprint()
     {
-        Collider collider = GetComponentInChildren<CapsuleCollider>();
-        if (collider == null) collider = GetComponent<Collider>();
+        GetAgentFootprint(transform, out agentRadius, out agentCenterOffset, out agentHalfHeight);
+        cellSize = Mathf.Clamp((agentRadius + ColliderClearance) * 2f, 0.75f, 2.5f);
+    }
+
+    private static void GetAgentFootprint(Transform ownerTransform, out float radius, out Vector3 centerOffset,
+        out float halfHeight)
+    {
+        Collider collider = ownerTransform.GetComponentInChildren<CapsuleCollider>();
+        if (collider == null) collider = ownerTransform.GetComponent<Collider>();
 
         if (collider != null)
         {
             Bounds bounds = collider.bounds;
-            agentRadius = Mathf.Max(0.25f, Mathf.Max(bounds.extents.x, bounds.extents.z));
-            agentCenterY = bounds.center.y;
-            agentHalfHeight = Mathf.Max(0.25f, bounds.extents.y);
+            radius = Mathf.Max(0.25f, Mathf.Max(bounds.extents.x, bounds.extents.z));
+            centerOffset = bounds.center - ownerTransform.position;
+            halfHeight = Mathf.Max(0.25f, bounds.extents.y);
         }
         else
         {
-            agentRadius = 0.4f;
-            agentCenterY = transform.position.y + 0.75f;
-            agentHalfHeight = 0.75f;
+            radius = 0.4f;
+            centerOffset = Vector3.up * 0.75f;
+            halfHeight = 0.75f;
         }
-
-        cellSize = Mathf.Clamp(agentRadius * 2f, 0.75f, 2.5f);
     }
 
     private float GetFarDistance()
@@ -364,9 +396,9 @@ public sealed class MonsterPathfinder : MonoBehaviour
         waypointIndex = 0;
     }
 
-    private static void RefreshHazardCache()
+    private static void RefreshHazardCache(bool force = false)
     {
-        if (Time.time < nextHazardRefreshAt) return;
+        if (!force && Time.time < nextHazardRefreshAt) return;
         nextHazardRefreshAt = Time.time + HazardRefreshInterval;
         HazardBuckets.Clear();
 
