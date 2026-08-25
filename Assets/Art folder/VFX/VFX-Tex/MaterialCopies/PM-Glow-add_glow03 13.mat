@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: PM-Glow-Hit_glow03 2
+  m_Name: PM-Glow-add_glow03 13
   m_Shader: {fileID: 4800000, guid: 65ba99a025f80f2458da7209d789d260, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -29,6 +29,7 @@ Material:
   - _CUSTOM8_CUSTOM2X
   - _CUSTOM9_CUSTOM2X
   - _FLIPBOOKBLENDING_OFF
+  - _FLOAT154_MULTIPLY
   - _FLOAT154_OFF
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -53,7 +54,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Mask:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 720d6b72324d96b42ad2a169e3622e5a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Mask1:
@@ -61,7 +62,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Ramptex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 0379e28498095344c897c5691a70e0e8, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureSample1:
@@ -81,7 +82,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _maintex:
-        m_Texture: {fileID: 2800000, guid: 46c06a03dd38c71499e92a515f9a8081, type: 3}
+        m_Texture: {fileID: 2800000, guid: 12b835183174518418eaafd91c0418ba, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _matcap:
@@ -89,7 +90,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _noise:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 4c302c24e9af22649ab2156410287839, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _noisemask:
@@ -184,11 +185,11 @@ Material:
     - _Float15: 1
     - _Float151: 0
     - _Float152: 2
-    - _Float154: 3
+    - _Float154: 0
     - _Float155: 0
     - _Float157: 0
     - _Float159: 0
-    - _Float16: 0.5
+    - _Float16: 0.1
     - _Float160: 0
     - _Float17: 0
     - _Float19: 1
@@ -210,7 +211,7 @@ Material:
     - _Float36: 1
     - _Float37: 1
     - _Float38: 0
-    - _Float39: 0
+    - _Float39: 0.5
     - _Float4: 0
     - _Float40: 0
     - _Float41: 0
@@ -255,7 +256,7 @@ Material:
     - _Float78: 0
     - _Float79: 0
     - _Float8: 0.5
-    - _Float80: 0
+    - _Float80: 0.31
     - _Float81: 0
     - _Float82: 0
     - _Float83: 0
@@ -265,7 +266,7 @@ Material:
     - _Float87: 0
     - _Float88: 0
     - _Float89: 0
-    - _Float9: 0
+    - _Float9: 3.3
     - _Fresnel_Group2: 0
     - _Maintex_Group: 0
     - _Maintex_Group2: 0
@@ -291,7 +292,7 @@ Material:
     - _Ztestmode2: 0
     - _maintex_alpha: 0
     - _maintex_alpha1: 1
-    - _mask01_alpha: 0
+    - _mask01_alpha: 1
     - _mask02_alpha: 0
     - _power3: 1
     - _refplane: 1
@@ -300,7 +301,7 @@ Material:
     - _BaseColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
     - _CameraFadeParams: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color0: {r: 63.253597, g: 63.253597, b: 63.253597, a: 1}
+    - _Color0: {r: 3.6886046, g: 3.6886046, b: 3.6886046, a: 1}
     - _Color1: {r: 1, g: 1, b: 1, a: 1}
     - _Color2: {r: 1, g: 1, b: 1, a: 1}
     - _Color3: {r: 1, g: 1, b: 1, a: 1}
@@ -310,13 +311,13 @@ Material:
     - _Color7: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
-    - _Vector0: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector0: {r: -1.5, g: 0, b: 0, a: 0}
     - _Vector10: {r: 0, g: 0, b: 0, a: 0}
     - _Vector11: {r: 0, g: 0, b: 0, a: 0}
     - _Vector13: {r: 0, g: 0, b: 0, a: 0}
     - _Vector15: {r: 0, g: 0, b: 0, a: 0}
     - _Vector16: {r: 0, g: 0, b: 0, a: 0}
-    - _Vector17: {r: 0, g: 0, b: 0, a: 0}
+    - _Vector17: {r: 0.02, g: 0, b: 0, a: 0}
     - _Vector19: {r: 0, g: 0, b: 0, a: 0}
     - _Vector21: {r: 0, g: 0, b: 0, a: 0}
     - _Vector23: {r: 0, g: 0, b: 0, a: 0}
