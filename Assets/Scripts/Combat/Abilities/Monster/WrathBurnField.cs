@@ -19,6 +19,7 @@ public class WrathBurnField : MonoBehaviour
     private float _expiresAt;
     private float _nextTickAt;
     private GameObject _vfx;
+    private Vector3 _vfxAuthoredScale = Vector3.one;
     private float _ownerScaleMultiplier = 1f;
 
     public void Configure(Enemy fieldOwner, EnemyAbility ability, float fieldRadius, float fieldDps, float fieldDuration, GameObject vfxPrefab, GameplayEffectDefinition effect)
@@ -26,7 +27,7 @@ public class WrathBurnField : MonoBehaviour
         owner = fieldOwner;
         sourceAbility = ability;
         MonsterActor ownerMonster = fieldOwner as MonsterActor;
-        _ownerScaleMultiplier = ownerMonster != null ? ownerMonster.PossessionCombatScaleMultiplier : 1f;
+        _ownerScaleMultiplier = ownerMonster != null ? ownerMonster.CombatScaleMultiplier : 1f;
         radius = Mathf.Max(0.1f, fieldRadius);
         dps = Mathf.Max(0f, fieldDps);
         duration = Mathf.Max(0.1f, fieldDuration);
@@ -35,6 +36,7 @@ public class WrathBurnField : MonoBehaviour
         _expiresAt = Time.time + duration;
         _nextTickAt = Time.time;
         EnsureVfx();
+        if (_vfx != null) _vfx.transform.localScale = _vfxAuthoredScale * Mathf.Max(1f, _ownerScaleMultiplier);
         TryIgniteOilsInRadius();
     }
 
@@ -48,6 +50,7 @@ public class WrathBurnField : MonoBehaviour
     {
         if (_vfx != null || burnVfxPrefab == null) return;
         _vfx = Instantiate(burnVfxPrefab, transform.position, Quaternion.identity, transform);
+        _vfxAuthoredScale = _vfx.transform.localScale;
         foreach (var ps in _vfx.GetComponentsInChildren<ParticleSystem>(true))
             ps.Play(true);
     }

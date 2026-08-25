@@ -158,7 +158,8 @@ public class EnemyAbility_WrathSlam : EnemyAbility
         if (vfx != null)
         {
             float scale = Mathf.Max(0.1f, slamRadius / Mathf.Max(0.1f, radius));
-            vfx.transform.localScale = Vector3.one * scale;
+            // Preserve the owner scale already applied by SpawnVfxTracked.
+            vfx.transform.localScale *= scale;
         }
     }
 

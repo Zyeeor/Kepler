@@ -132,7 +132,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
                 _guardHandEndOffsets[i] = new Vector3(
                     side * guardHandSideOffset,
                     guardHandHeightOffset,
-                    guardHandForwardOffset);
+                    guardHandForwardOffset) * OwnerCombatScaleMultiplier;
                 guardHand.transform.localPosition = Quaternion.Euler(
                     0f,
                     -side * guardHandOrbitSweepAngle,
@@ -140,7 +140,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
                 guardHand.transform.localRotation = Quaternion.identity;
                 _guardHandsVfx[i] = guardHand;
-                _guardHandBaseScales[i] = guardHand.transform.localScale;
+                _guardHandBaseScales[i] = guardHand.transform.localScale * OwnerCombatScaleMultiplier;
                 guardHand.transform.localScale = _guardHandBaseScales[i] * Mathf.Max(0f, guardHandInitialScale);
                 PlayVfx(guardHand);
             }
@@ -192,6 +192,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         if (absorbVfxPrefab != null && owner != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(absorbVfxPrefab, owner.transform.position + Vector3.up, Quaternion.identity);
+            ScaleAbilityObject(vfx);
             PlayVfx(vfx);
             ReleaseVfx(vfx, 0.6f);
         }
@@ -218,6 +219,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         if (convertVfxPrefab != null && owner != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(convertVfxPrefab, owner.transform.position + Vector3.up * 1.2f, Quaternion.identity);
+            ScaleAbilityObject(vfx);
             PlayVfx(vfx);
             ReleaseVfx(vfx, Mathf.Max(0.05f, convertVfxDuration));
         }

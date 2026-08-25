@@ -145,7 +145,8 @@ public class EnemyAbility_TKDagger : EnemyAbility
             {
                 if (e == null || !owner.CanDamage(e)) continue;
                 float d = Vector3.Distance(ownerPos, e.transform.position);
-                if (d <= detectRange && d < bestDist) { bestDist = d; best = e; }
+                float effectiveDetectRange = ScaleAbilityRadius(detectRange);
+                if (d <= effectiveDetectRange && d < bestDist) { bestDist = d; best = e; }
             }
             return best != null ? best.transform : null;
         }
@@ -202,8 +203,9 @@ public class EnemyAbility_TKDagger : EnemyAbility
     Vector3 GetOrbitPos(float angleDeg)
     {
         float rad = angleDeg * Mathf.Deg2Rad;
-        Vector3 offset = new Vector3(Mathf.Cos(rad), 0, Mathf.Sin(rad)) * orbitRadius;
-        return owner.transform.position + Vector3.up * heightOffset + offset;
+        float scale = OwnerCombatScaleMultiplier;
+        Vector3 offset = new Vector3(Mathf.Cos(rad), 0, Mathf.Sin(rad)) * orbitRadius * scale;
+        return owner.transform.position + Vector3.up * heightOffset * scale + offset;
     }
 
     protected override void OnDisable()

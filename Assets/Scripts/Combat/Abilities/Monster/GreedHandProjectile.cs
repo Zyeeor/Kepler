@@ -143,7 +143,7 @@ public class GreedHandProjectile : MonoBehaviour
 
         float effectiveHitRadius = hitRadius;
         if (sourceAbility != null && sourceAbility.OwnerMonster != null)
-            effectiveHitRadius *= sourceAbility.OwnerMonster.PossessionCombatScaleMultiplier;
+            effectiveHitRadius *= sourceAbility.OwnerMonster.CombatScaleMultiplier;
         if (Time.time >= _canHitAt
             && Vector3.Distance(transform.position, target.position) <= effectiveHitRadius)
 
@@ -195,6 +195,8 @@ public class GreedHandProjectile : MonoBehaviour
         if (hitVfxPrefab != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(hitVfxPrefab, hitPos, Quaternion.identity);
+            if (sourceAbility != null && sourceAbility.OwnerMonster != null)
+                vfx.transform.localScale *= sourceAbility.OwnerMonster.CombatScaleMultiplier;
             foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())
                 ps.Play(true);
             VfxPool.ReleaseOrDestroy(vfx, Mathf.Max(0.05f, hitVfxDuration));

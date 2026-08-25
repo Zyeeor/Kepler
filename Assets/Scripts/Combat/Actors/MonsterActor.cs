@@ -225,6 +225,13 @@ public class MonsterActor : Actor
     public bool IsBossBattleReserveBody { get; private set; }
     /// <summary>Current possessed-body scale used by ability visuals and hitboxes.</summary>
     public float PossessionCombatScaleMultiplier { get; private set; } = 1f;
+    /// <summary>
+    /// Effective combat scale shared by elite bodies and Gluttony-imprinted possessed bodies.
+    /// Visual scaling remains limited to the visual roots; abilities use this value explicitly
+    /// for hit volumes, projectile visuals, summon sizes and related effect offsets.
+    /// </summary>
+    public float CombatScaleMultiplier => Mathf.Max(1f, PossessionCombatScaleMultiplier)
+        * Mathf.Max(1f, eliteVisualScaleMultiplier);
     [Tooltip("流送 AI 激活开关：false 时 AI 完全休眠（不产出指令，仅 0.5s 低频维持索敌目标缓存）。由 MonsterSpawner 按 Chunk 状态机驱动；附身中的怪永不休眠。默认 true，非流送场景（调试刷怪等）行为不变。")]
     public bool aiActiveOverride = true;
 
@@ -312,6 +319,12 @@ public class MonsterActor : Actor
     private float eliteAttackDamageMultiplier = 1f;
     private float eliteVisualScaleMultiplier = 1f;
     private bool eliteRuntimeApplied;
+    private Vector3 healthBarBaseWorldPosition;
+    private Vector3 healthBarBaseWorldScale = Vector3.one;
+    private Vector3 healthBarBaseCenterOffset;
+    private float healthBarBaseHeightOffset;
+    private bool healthBarLayoutCaptured;
+    private float lastHealthBarLayoutScale = -1f;
     [NonSerialized] public MonsterActor lastDamageSource;
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
@@ -333,6 +346,8 @@ public class MonsterActor : Actor
 
     protected override void Awake(){
         ResolveSinIdentityIfUnset();
+        if (!(this is BossSevenfoldActor) && GetComponent<MonsterPathfinder>() == null)
+            gameObject.AddComponent<MonsterPathfinder>();
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
@@ -355,6 +370,7 @@ public class MonsterActor : Actor
         ApplyStatBlock(enemyStats, refillVitals: true);
         originalColor = bodyColor;
         bodyRenderers = GetComponentsInChildren<Renderer>(true);
+        CaptureHealthBarLayout();
         visualFx = GetComponent<ActorVisualFx>();
         if (visualFx == null) visualFx = gameObject.AddComponent<ActorVisualFx>();
         // Keep exactly one ActorVisualFx on the Enemy host. Extra copies on wrappers/children
@@ -509,6 +525,8 @@ public class MonsterActor : Actor
             healthSlider = healthCanvas.GetComponentInChildren<Slider>(true);
         if (healthSlider == null)
             healthSlider = GetComponentInChildren<Slider>(true);
+        CaptureHealthBarLayout();
+        RefreshHealthBarLayout(force: true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
         UpdateHealthUI();
     }
@@ -903,6 +921,7 @@ public class MonsterActor : Actor
 
         if (healthCanvas != null)
         {
+            RefreshHealthBarLayout();
             bool shouldShow = showHealthBar && ShowHealthBars && !isPossessed;
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
 
@@ -1618,7 +1637,7 @@ public class MonsterActor : Actor
 
     private void ApplyVisualScale()
     {
-        float multiplier = Mathf.Max(1f, PossessionCombatScaleMultiplier) * Mathf.Max(1f, eliteVisualScaleMultiplier);
+        float multiplier = CombatScaleMultiplier;
         if (visualScaleRoot != null)
         {
             if (!authoredVisualScaleCaptured)
@@ -1627,6 +1646,7 @@ public class MonsterActor : Actor
                 authoredVisualScaleCaptured = true;
             }
             visualScaleRoot.localScale = authoredVisualScale * multiplier;
+            RefreshHealthBarLayout(force: true);
             return;
         }
 
@@ -1635,6 +1655,96 @@ public class MonsterActor : Actor
             Transform root = fallbackVisualScaleRoots[i];
             if (root != null) root.localScale = fallbackAuthoredVisualScales[i] * multiplier;
         }
+        RefreshHealthBarLayout(force: true);
+    }
+
+    private void CaptureHealthBarLayout()
+    {
+        if (healthCanvas == null || healthBarLayoutCaptured) return;
+
+        healthBarBaseWorldPosition = healthCanvas.transform.position;
+        healthBarBaseWorldScale = healthCanvas.transform.lossyScale;
+        if (TryGetBodyVisualBounds(out Bounds bounds))
+        {
+            healthBarBaseCenterOffset = healthBarBaseWorldPosition - bounds.center;
+            healthBarBaseHeightOffset = healthBarBaseWorldPosition.y - bounds.max.y;
+        }
+        else
+        {
+            healthBarBaseCenterOffset = Vector3.zero;
+            healthBarBaseHeightOffset = 0f;
+        }
+        healthBarLayoutCaptured = true;
+    }
+
+    private void RefreshHealthBarLayout(bool force = false)
+    {
+        if (healthCanvas == null) return;
+        CaptureHealthBarLayout();
+        if (!healthBarLayoutCaptured) return;
+
+        float scale = CombatScaleMultiplier;
+        if (!force && Mathf.Abs(lastHealthBarLayoutScale - scale) < 0.001f) return;
+
+        if (scale <= 1.0001f)
+        {
+            healthCanvas.transform.position = healthBarBaseWorldPosition;
+            SetHealthBarWorldScale(healthBarBaseWorldScale);
+            lastHealthBarLayoutScale = scale;
+            return;
+        }
+
+        if (TryGetBodyVisualBounds(out Bounds bounds))
+        {
+            // Keep authored X/Z offsets, but always lift an enlarged bar above the
+            // current animated/model bounds. Some historical prefabs authored the
+            // canvas inside the body, so a negative source offset is not trusted.
+            float minimumClearance = Mathf.Max(0.2f, Mathf.Abs(healthBarBaseHeightOffset));
+            healthCanvas.transform.position = new Vector3(
+                bounds.center.x + healthBarBaseCenterOffset.x,
+                bounds.max.y + minimumClearance,
+                bounds.center.z + healthBarBaseCenterOffset.z);
+        }
+        else
+        {
+            healthCanvas.transform.position = healthBarBaseWorldPosition + Vector3.up * Mathf.Max(0.2f, scale - 1f);
+        }
+
+        SetHealthBarWorldScale(healthBarBaseWorldScale * scale);
+        lastHealthBarLayoutScale = scale;
+    }
+
+    private void SetHealthBarWorldScale(Vector3 worldScale)
+    {
+        Transform parent = healthCanvas.transform.parent;
+        Vector3 parentScale = parent != null ? parent.lossyScale : Vector3.one;
+        healthCanvas.transform.localScale = new Vector3(
+            worldScale.x / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)),
+            worldScale.y / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
+            worldScale.z / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z)));
+    }
+
+    private bool TryGetBodyVisualBounds(out Bounds bounds)
+    {
+        bounds = new Bounds(transform.position, Vector3.zero);
+        bool hasBounds = false;
+        if (bodyRenderers == null || bodyRenderers.Length == 0)
+            bodyRenderers = GetComponentsInChildren<Renderer>(true);
+
+        for (int i = 0; i < bodyRenderers.Length; i++)
+        {
+            Renderer renderer = bodyRenderers[i];
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy
+                || IsUnderForeignSoul(renderer.transform)
+                || !IsEliteVisualRenderer(renderer)) continue;
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else bounds.Encapsulate(renderer.bounds);
+        }
+        return hasBounds;
     }
 
     private void CaptureFallbackVisualScaleRoots()

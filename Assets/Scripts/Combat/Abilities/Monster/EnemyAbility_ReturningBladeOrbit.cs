@@ -43,8 +43,9 @@ public class EnemyAbility_ReturningBladeOrbit : EnemyAbility
             {
                 if (blades[i] == null) { blades.RemoveAt(i); continue; }
                 float angle = elapsed * orbitSpeed + i * 360f / Mathf.Max(1, blades.Count);
-                Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * orbitRadius;
-                blades[i].transform.position = owner.transform.position + Vector3.up + offset;
+                float scale = OwnerCombatScaleMultiplier;
+                Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * orbitRadius * scale;
+                blades[i].transform.position = owner.transform.position + Vector3.up * scale + offset;
             }
             if (elapsed >= nextHit)
             {

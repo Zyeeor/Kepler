@@ -287,6 +287,7 @@ public class MonsterPossessionCheat : MonoBehaviour
         EliteBuildCarrier carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
         carrier.Init(snapshot, entry.displayName);
         director.ApplyEliteRuntimeSettings(monster);
+        director.AnnounceEliteSpawn(monster, entry.displayName);
         string label = !string.IsNullOrEmpty(entry.displayName) ? entry.displayName : monster.displayName;
         SetStatus($"Spawned random Elite '{label}' (HP x{director.eliteHealthMultiplier:0.##}, ATK x{director.eliteAttackDamageMultiplier:0.##}, Scale x{director.eliteVisualScaleMultiplier:0.##})");
     }
