@@ -403,7 +403,9 @@ public class EliteBuildDirector : MonoBehaviour
             return;
         }
 
-        var monster = spawner.SpawnWaveMonster(entry.prefab, pos);
+        var monster = useScreenEdgePosition
+            ? spawner.SpawnContinuousMonster(entry.prefab, pos)
+            : spawner.SpawnWaveMonster(entry.prefab, pos);
         if (monster == null)
         {
             Debug.Log("[EliteBuildDirector] 全场配额已满，精英未刷出。");

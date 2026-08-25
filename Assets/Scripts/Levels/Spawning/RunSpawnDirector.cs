@@ -130,10 +130,29 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (prefab == null || spawner == null) return null;
         if (!spawner.TryGetWaveSpawnPosition(sin, out Vector3 position)) return null;
 
-        MonsterActor monster = spawner.SpawnWaveMonster(prefab, position);
+        MonsterActor monster = spawner.SpawnContinuousMonster(prefab, position);
         if (monster == null) return null;
-        monster.ApplySpawnDifficultySnapshot(SpawnOrigin.PeriodicPressure, CurrentTier);
         return monster;
+    }
+
+    /// <summary>
+    /// 玩家按方向移动达到一屏距离后的定向一换一：从不可见的连续自动普通怪中
+    /// 随机选一只，在目标罪印扇区重新生成，连续自动怪数量保持不变。
+    /// </summary>
+    public bool TryReplaceInvisibleContinuousMonster(SinType targetSin)
+    {
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        if (spawner == null) return false;
+        GameObject prefab = FindNormalPrefabForSin(targetSin);
+        if (prefab == null) return false;
+        if (!spawner.TryGetRandomInvisibleContinuousMonster(targetSin, out MonsterActor victim)) return false;
+        if (!spawner.TryGetWaveSpawnPosition(targetSin, out Vector3 position)) return false;
+
+        MonsterActor replacement = spawner.ReplaceContinuousMonster(victim, prefab, position);
+        if (replacement == null) return false;
+        if (WaveManager.Instance != null)
+            WaveManager.Instance.ReplaceContinuousWaveMonster(victim, replacement);
+        return true;
     }
 
     public void ConfigureBoss(GameObject prefab)
@@ -323,7 +342,9 @@ public sealed class RunSpawnDirector : MonoBehaviour
         else if (position == default(Vector3) && !spawner.TryGetLegacyWaveSpawnPosition(out position)) return false;
         if (request.minDistanceFromAvoid > 0f && (position - request.avoidPosition).sqrMagnitude < request.minDistanceFromAvoid * request.minDistanceFromAvoid)
             return false;
-        MonsterActor monster = spawner.SpawnWaveMonster(prefab, position, request.origin == SpawnOrigin.KillEcho);
+        MonsterActor monster = request.origin == SpawnOrigin.KillEcho
+            ? spawner.SpawnKillEchoMonster(prefab, position, immediateChase: true)
+            : spawner.SpawnWaveMonster(prefab, position, immediateChase: false);
         if (monster == null) return false;
         monster.ApplySpawnDifficultySnapshot(request.origin, request.difficultyTier);
         if (request.origin == SpawnOrigin.KillEcho

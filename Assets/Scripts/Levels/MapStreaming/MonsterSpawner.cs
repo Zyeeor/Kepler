@@ -19,8 +19,10 @@ public class MonsterSpawner : MonoBehaviour
     public static MonsterSpawner Instance { get; private set; }
 
     [Header("全场配额")]
-    [Tooltip("在场怪物上限（波次怪与未来其他来源的怪共享）。满时不再刷怪。")]
+    [Tooltip("全局安全上限（所有来源共享）。连续自动刷怪另受 continuousSpawnMaxCount 限制，击杀回响不占该独立上限。")]
     [Min(1)] public int maxCombatMonsters = 30;
+    [Tooltip("连续自动生成怪物的同时存在上限。常规刷怪、怪潮和新逻辑精英合计；达到上限后只有这些怪被击杀/离场才会继续生成。WaveManager 连续逻辑会按时间成长档位更新此值。")]
+    [Min(1)] public int continuousSpawnMaxCount = 20;
 
     [Header("波次取点")]
     [Tooltip("波次刷怪点到玩家的最小距离（米）——别在玩家面前刷。")]
@@ -67,6 +69,35 @@ public class MonsterSpawner : MonoBehaviour
     public int TrackedMonsterCount { get; private set; }
 
     /// <summary>
+    /// 当前仍占用连续自动刷怪槽位的怪物数。倒地、附身或已离场的身体不再占用槽位，
+    /// 但仍可继续由波次清点/尸体生命周期管理。
+    /// </summary>
+    public int ActiveContinuousMonsterCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (var pair in trackInfoByMonster)
+            {
+                MonsterActor monster = pair.Key;
+                if (!pair.Value.isContinuousAutomatic || monster == null || !monster.gameObject.activeInHierarchy)
+                    continue;
+                if (monster.isDowned || monster.isPossessed || monster.Body == MonsterActor.BodyState.Fading
+                    || monster.Body == MonsterActor.BodyState.Despawned)
+                    continue;
+                count++;
+            }
+            return count;
+        }
+    }
+
+    /// <summary>设置连续自动刷怪的当前时间档位上限。</summary>
+    public void ConfigureContinuousSpawnMaxCount(int maxCount)
+    {
+        continuousSpawnMaxCount = Mathf.Max(1, maxCount);
+    }
+
+    /// <summary>
     /// 全局递增刷怪序号：作为 AI 种子流的 salt（MonsterActor.InitAiRng）。
     /// 刷怪顺序由 DomainWave 种子流决定（同种子同顺序），故序号随顺序可复现。
     /// </summary>
@@ -111,11 +142,14 @@ public class MonsterSpawner : MonoBehaviour
         public GameObject prefab;
         /// <summary>波次怪：永不随 Chunk 休眠/回收/写快照，退场由 WaveManager 波次系统裁决。</summary>
         public bool isWaveMonster;
+        /// <summary>新逻辑连续自动生成来源：受 continuousSpawnMaxCount 限制。</summary>
+        public bool isContinuousAutomatic;
     }
     readonly Dictionary<MonsterActor, TrackedInfo> trackInfoByMonster = new Dictionary<MonsterActor, TrackedInfo>();
 
     // 低频维护复用缓冲（避免每 0.25s 分配）
     readonly List<ChunkCoord> chunkPruneBuffer = new List<ChunkCoord>();
+    readonly List<MonsterActor> invisibleReplacementCandidates = new List<MonsterActor>(32);
 
     float nextUpkeepTime;
     Camera mainCamera;
@@ -175,8 +209,24 @@ public class MonsterSpawner : MonoBehaviour
     /// <param name="immediateChase">是否在生成后立即向玩家移动（用于击杀回声怪物）。</param>
     /// <returns>刷出的 MonsterActor；配额满 / prefab 无效 / 无 Actor 时返回 null。</returns>
     public MonsterActor SpawnWaveMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
+        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: false);
+
+    /// <summary>
+    /// 新逻辑连续自动刷怪：受 continuousSpawnMaxCount 独立限制，供常规刷怪、怪潮与定时精英使用。
+    /// </summary>
+    public MonsterActor SpawnContinuousMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
+        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: true);
+
+    /// <summary>击杀回响刷怪：不占连续自动刷怪上限。</summary>
+    public MonsterActor SpawnKillEchoMonster(GameObject prefab, Vector3 pos, bool immediateChase = true)
+        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.KillEcho, countAsContinuousAutomatic: false);
+
+    MonsterActor SpawnMonster(GameObject prefab, Vector3 pos, bool immediateChase,
+        SpawnOrigin origin, bool countAsContinuousAutomatic)
     {
         if (prefab == null || TrackedMonsterCount >= maxCombatMonsters) return null;
+        if (countAsContinuousAutomatic && ActiveContinuousMonsterCount >= Mathf.Max(1, continuousSpawnMaxCount))
+            return null;
         var system = MapStreamingSystem.Instance;
         ChunkCoord home = system != null ? system.WorldToChunk(pos) : default;
 
@@ -194,12 +244,12 @@ public class MonsterSpawner : MonoBehaviour
         // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
         monster.InitAiRng(spawnSequence++);
         RunSpawnDirector director = RunSpawnDirector.Instance;
-        monster.ApplySpawnDifficultySnapshot(SpawnOrigin.PeriodicPressure, director != null ? director.CurrentTier : 0);
-        Track(home, monster, prefab, isWaveMonster: true); // 不随 Chunk 回收/写快照，退场由波次系统裁决
+        monster.ApplySpawnDifficultySnapshot(origin, director != null ? director.CurrentTier : 0);
+        Track(home, monster, prefab, isWaveMonster: true, isContinuousAutomatic: countAsContinuousAutomatic);
         if (immediateChase)
             monster.BeginImmediateChase();
         if (logSpawns)
-            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}）。");
+            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}，连续自动 {ActiveContinuousMonsterCount}/{continuousSpawnMaxCount}）。");
         return monster;
     }
 
@@ -368,6 +418,55 @@ public class MonsterSpawner : MonoBehaviour
         return Quaternion.AngleAxis(angle, Vector3.up) * forward;
     }
 
+    /// <summary>根据玩家在世界中的水平移动方向，解析其对应的七等分罪印扇区。</summary>
+    public bool TryGetSinForWorldDirection(Vector3 worldDirection, out SinType sin)
+    {
+        sin = SinType.None;
+        worldDirection.y = 0f;
+        if (worldDirection.sqrMagnitude < 0.0001f) return false;
+
+        Camera camera = GetMainCamera();
+        Vector3 forward = camera != null ? camera.transform.forward : Vector3.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+        forward.Normalize();
+        worldDirection.Normalize();
+
+        float signedAngle = Vector3.SignedAngle(forward, worldDirection, Vector3.up);
+        const int sectorCount = 7;
+        float sectorWidth = 360f / sectorCount;
+        float normalized = Mathf.Repeat(signedAngle + sectorWidth * 0.5f, 360f);
+        int sectorIndex = Mathf.Min(sectorCount - 1, Mathf.FloorToInt(normalized / sectorWidth));
+        sin = GetSinForSectorIndex(sectorIndex);
+        return sin != SinType.None;
+    }
+
+    /// <summary>
+    /// 计算玩家所在平面上当前镜头的水平屏幕直径。用于移动达到一屏距离时触发定向替换。
+    /// </summary>
+    public float GetScreenDiameterWorldDistance()
+    {
+        Camera camera = GetMainCamera();
+        if (camera == null)
+            return Mathf.Max(1f, maxSpawnDistanceToPlayer - minSpawnDistanceToPlayer) * 2f;
+
+        Vector3 origin = GetPlayerPosition();
+        origin.y = spawnHeightY;
+        Vector3 right = camera.transform.right;
+        right.y = 0f;
+        if (right.sqrMagnitude < 0.0001f)
+            return Mathf.Max(1f, maxSpawnDistanceToPlayer - minSpawnDistanceToPlayer) * 2f;
+        right.Normalize();
+
+        if (TryGetScreenExitDistance(camera, origin, right, out float rightDistance)
+            && TryGetScreenExitDistance(camera, origin, -right, out float leftDistance))
+            return Mathf.Max(1f, rightDistance + leftDistance);
+
+        if (camera.orthographic)
+            return Mathf.Max(1f, camera.orthographicSize * 2f * camera.aspect);
+        return Mathf.Max(1f, maxSpawnDistanceToPlayer - minSpawnDistanceToPlayer) * 2f;
+    }
+
     int GetSpawnSectorIndex(SinType sin)
     {
         if (sin == SinType.None) return -1;
@@ -378,6 +477,14 @@ public class MonsterSpawner : MonoBehaviour
         }
         int fallback = (int)sin - 1;
         return fallback >= 0 && fallback < 7 ? fallback : -1;
+    }
+
+    SinType GetSinForSectorIndex(int sectorIndex)
+    {
+        if (sectorIndex < 0 || sectorIndex >= 7) return SinType.None;
+        if (spawnSectorOrder != null && sectorIndex < spawnSectorOrder.Count)
+            return spawnSectorOrder[sectorIndex];
+        return (SinType)(sectorIndex + 1);
     }
 
     float Random01()
@@ -483,6 +590,50 @@ public class MonsterSpawner : MonoBehaviour
         MonsterPool.Instance.Return(monster);
     }
 
+    /// <summary>从连续自动刷怪池中随机挑选一个玩家当前不可见的非目标普通怪。</summary>
+    public bool TryGetRandomInvisibleContinuousMonster(SinType targetSin, out MonsterActor victim)
+    {
+        victim = null;
+        Camera camera = GetMainCamera();
+        if (camera == null) return false;
+
+        invisibleReplacementCandidates.Clear();
+        foreach (var pair in trackInfoByMonster)
+        {
+            MonsterActor monster = pair.Key;
+            if (!pair.Value.isContinuousAutomatic || monster == null || !monster.gameObject.activeInHierarchy)
+                continue;
+            if (monster.sinType == targetSin || monster.isDowned || monster.isPossessed || monster.IsElite)
+                continue;
+            if (monster.Body == MonsterActor.BodyState.Fading || monster.Body == MonsterActor.BodyState.Despawned)
+                continue;
+            if (IsOnScreen(camera, monster.transform.position)) continue;
+            invisibleReplacementCandidates.Add(monster);
+        }
+
+        if (invisibleReplacementCandidates.Count == 0) return false;
+        int index = Mathf.Min(invisibleReplacementCandidates.Count - 1,
+            Mathf.FloorToInt(Random01() * invisibleReplacementCandidates.Count));
+        victim = invisibleReplacementCandidates[index];
+        return victim != null;
+    }
+
+    /// <summary>
+    /// 一换一替换连续自动刷怪：先释放旧怪的追踪槽位，再在目标罪印的合法屏幕外位置生成新怪。
+    /// </summary>
+    public MonsterActor ReplaceContinuousMonster(MonsterActor victim, GameObject prefab, Vector3 position)
+    {
+        if (victim == null || prefab == null || !trackInfoByMonster.TryGetValue(victim, out var info)
+            || !info.isContinuousAutomatic || victim.isDowned || victim.isPossessed || victim.IsElite)
+            return null;
+
+        if (trackedByChunk.TryGetValue(info.homeChunk, out var list))
+            list.Remove(victim);
+        Untrack(victim);
+        MonsterPool.Instance.Return(victim);
+        return SpawnContinuousMonster(prefab, position);
+    }
+
     /// <summary>Releases a permanent corpse from the active combat quota without deactivating it.</summary>
     public void ReleaseTracking(MonsterActor monster)
     {
@@ -504,9 +655,10 @@ public class MonsterSpawner : MonoBehaviour
     // ── 追踪与配额 ──
 
     void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab)
-        => Track(coord, monster, prefab, isWaveMonster: false);
+        => Track(coord, monster, prefab, isWaveMonster: false, isContinuousAutomatic: false);
 
-    void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab, bool isWaveMonster)
+    void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab, bool isWaveMonster,
+        bool isContinuousAutomatic = false)
     {
         if (!trackedByChunk.TryGetValue(coord, out var list))
         {
@@ -514,7 +666,13 @@ public class MonsterSpawner : MonoBehaviour
             trackedByChunk.Add(coord, list);
         }
         list.Add(monster);
-        trackInfoByMonster[monster] = new TrackedInfo { homeChunk = coord, prefab = prefab, isWaveMonster = isWaveMonster };
+        trackInfoByMonster[monster] = new TrackedInfo
+        {
+            homeChunk = coord,
+            prefab = prefab,
+            isWaveMonster = isWaveMonster,
+            isContinuousAutomatic = isContinuousAutomatic,
+        };
         TrackedMonsterCount++;
     }
 
@@ -522,7 +680,7 @@ public class MonsterSpawner : MonoBehaviour
     void Untrack(MonsterActor monster)
     {
         trackInfoByMonster.Remove(monster);
-        TrackedMonsterCount--;
+        TrackedMonsterCount = Mathf.Max(0, TrackedMonsterCount - 1);
     }
 
     /// <summary>摘除失效追踪项：怪物可能经尸体 fade 自行回池（FadeAndReturnRoutine → MonsterPool.Return）。</summary>
@@ -565,6 +723,9 @@ public class MonsterSpawner : MonoBehaviour
         // 场景无玩家时以自身位置为基准（与 MapStreamingSystem 同款兜底）
         return playerFallback != null ? playerFallback.position : transform.position;
     }
+
+    /// <summary>当前玩家位置，供连续刷怪编排读取移动距离。</summary>
+    public Vector3 CurrentPlayerPosition => GetPlayerPosition();
 
     // ── 调试可视化 ──
 
