@@ -24,6 +24,14 @@ public class MonsterActor : Actor
     /// <summary>当前控制状态（是否被玩家控制）。</summary>
     public ControlState Control => IsPlayerControlled ? ControlState.Possessed : ControlState.AI;
 
+    /// <summary>
+    /// Raised right after an ability HP cost is actually deducted from a possessed body.
+    /// Args: the body that paid, and the deducted amount.
+    /// Presentation listeners (health bar burn flash) use this instead of watching the
+    /// slider, because the slider cannot tell a paid cost apart from incoming damage.
+    /// </summary>
+    public static event Action<MonsterActor, float> AbilityHpCostPaid;
+
     [Serializable]
     public class AbilityHpCost
     {
@@ -236,6 +244,23 @@ public class MonsterActor : Actor
     [Min(0f)] public float corpsePossessionWindow = 5f;
     [Min(0f)] public float corpseFadeDuration = 3f;
     [Min(0f)] public float hitStateDuration = 0.12f;
+
+    [Header("Ability HP Cost Death")]
+    [Tooltip("附身技能烧血把耐久扣到 0 时，延迟死亡结算的最长宽限秒数。窗口内让该次技能跑完伤害判定（如砸地的延迟命中），随后立即死亡。充能/持续类技能会等到本次释放结束。")]
+    [Min(0f)] public float abilityCostDeathGrace = 0.6f;
+    [Tooltip("充能/持续类技能在濒死宽限期内可额外续命的上限秒数（防止一直按住不放无限续命）。超时强制结算死亡。")]
+    [Min(0f)] public float abilityCostDeathHoldCap = 3f;
+
+    /// <summary>
+    /// 附身技能 HP 代价已把耐久扣到 0，死亡结算被推迟到该次技能判定完成之后。
+    /// 宽限期内 Body 仍可正常结算伤害（阵营/命中判定不变），但不得再触发新技能，
+    /// 且后续任何代价都不再扣血（耐久已为 0）。
+    /// </summary>
+    public bool IsAbilityCostDeathPending { get; private set; }
+    private Coroutine abilityCostDeathRoutine;
+    private EnemyAbility abilityCostDeathSource;
+    private bool payingAbilityCost;
+    private EnemyAbility abilityCostPaymentSource;
 
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
@@ -902,14 +927,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    float basicCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
-                    if (isPossessed && PossessionImprintManager.Instance != null)
-                        basicCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
-                    if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
-                    {
-                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
-                        TakeDamage(basicCost, allowGreedGuardAbsorb: false);
-                    }
+                    SettleAbilityHpCost(entry.ability, entry.hpCost, "Basic");
                     any = true;
                 }
             }
@@ -921,14 +939,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    float skillCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
-                    if (isPossessed && PossessionImprintManager.Instance != null)
-                        skillCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
-                    if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
-                    {
-                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
-                        TakeDamage(skillCost, allowGreedGuardAbsorb: false);
-                    }
+                    SettleAbilityHpCost(entry.ability, entry.hpCost, "Skill");
                     any = true;
                 }
             }
@@ -940,19 +951,54 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    float mobilityCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
-                    if (isPossessed && PossessionImprintManager.Instance != null)
-                        mobilityCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
-                    if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
-                    {
-                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
-                        TakeDamage(mobilityCost, allowGreedGuardAbsorb: false);
-                    }
+                    SettleAbilityHpCost(entry.ability, entry.hpCost, "Mobility");
                     any = true;
                 }
             }
         }
         return any;
+    }
+
+    /// <summary>
+    /// 结算一次附身技能的 HP 代价（三槽触发共用）。
+    /// 代价扣血在 payingAbilityCost 上下文里进行，TakeDamage 因此可以把"代价致死"
+    /// 与"敌人伤害致死"区分开：前者延迟死亡结算，保证该次技能判定跑完。
+    /// </summary>
+    private void SettleAbilityHpCost(EnemyAbility ability, float baseCost, string label)
+    {
+        if (ability == null) return;
+        float cost = baseCost * ability.GetHpCostMultiplier();
+        if (isPossessed && PossessionImprintManager.Instance != null)
+            cost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
+        if (!isPossessed || suppressPossessionDrain || cost <= 0f) return;
+
+        Debug.Log($"[HpCost] {label} {ability.abilityName}: cost={cost}, hp before={currentHealth}");
+        PayAbilityHpCostAmount(ability, cost);
+    }
+
+    /// <summary>
+    /// 实际扣除代价：进入 payingAbilityCost 上下文后走标准 TakeDamage，
+    /// 使代价致死能被识别并转为"延迟死亡"。
+    /// </summary>
+    private void PayAbilityHpCostAmount(EnemyAbility ability, float cost)
+    {
+        // 濒死宽限期内耐久已为 0：不再重复扣血、不再重置宽限窗口。
+        if (IsAbilityCostDeathPending) return;
+
+        bool previousPaying = payingAbilityCost;
+        EnemyAbility previousSource = abilityCostPaymentSource;
+        payingAbilityCost = true;
+        abilityCostPaymentSource = ability;
+        try
+        {
+            TakeDamage(cost, allowGreedGuardAbsorb: false);
+        }
+        finally
+        {
+            payingAbilityCost = previousPaying;
+            abilityCostPaymentSource = previousSource;
+        }
+        if (AbilityHpCostPaid != null) AbilityHpCostPaid(this, cost);
     }
 
     /// <summary>
@@ -1014,8 +1060,82 @@ public class MonsterActor : Actor
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
-            TakeDamage(cost, allowGreedGuardAbsorb: false);
+            PayAbilityHpCostAmount(a, cost);
         }
+    }
+
+    /// <summary>
+    /// 进入"代价致死待结算"状态：耐久已归零（血条显示 0），但 Body 保持可结算，
+    /// 让触发这次代价的技能把伤害判定跑完后再死亡。
+    /// </summary>
+    private void BeginAbilityCostDeath(EnemyAbility source)
+    {
+        if (IsAbilityCostDeathPending) return;
+        IsAbilityCostDeathPending = true;
+        abilityCostDeathSource = source;
+        Debug.Log($"[HpCost] Durability spent by '{(source != null ? source.abilityName : "ability")}'. Death deferred until its judgement finishes.");
+        if (abilityCostDeathRoutine != null) StopCoroutine(abilityCostDeathRoutine);
+        abilityCostDeathRoutine = StartCoroutine(AbilityCostDeathRoutine());
+    }
+
+    /// <summary>
+    /// 宽限窗口：先等固定宽限秒数覆盖一次性 / 延迟命中类技能（如砸地 firstHitDelay），
+    /// 再等充能 / 持续类技能（IsActivationInProgress）本次释放结束，最后结算死亡。
+    /// hold 上限防止一直按住不放无限续命。
+    /// </summary>
+    private System.Collections.IEnumerator AbilityCostDeathRoutine()
+    {
+        float grace = Mathf.Max(0f, abilityCostDeathGrace);
+        float elapsed = 0f;
+        while (elapsed < grace)
+        {
+            if (!isPossessed || Body == BodyState.Fading || Body == BodyState.Despawned) break;
+            elapsed += IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        float held = 0f;
+        float holdCap = Mathf.Max(0f, abilityCostDeathHoldCap);
+        while (isPossessed
+               && Body != BodyState.Fading
+               && Body != BodyState.Despawned
+               && abilityCostDeathSource != null
+               && abilityCostDeathSource.IsActivationInProgress
+               && held < holdCap)
+        {
+            held += IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        abilityCostDeathRoutine = null;
+        abilityCostDeathSource = null;
+        if (!isPossessed || Body == BodyState.Fading || Body == BodyState.Despawned)
+        {
+            IsAbilityCostDeathPending = false;
+            yield break;
+        }
+
+        currentHealth = 0f;
+        UpdateHealthUI();
+        // 先清标记再判死：NotifyBodyDied 可能同步回收 Body（协程随之中止），
+        // 标记必须在那之前落到 false，避免残留到下一次复用。
+        IsAbilityCostDeathPending = false;
+        PossessionManager pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody == this) pm.NotifyBodyDied();
+    }
+
+    /// <summary>清理代价致死待结算状态（脱离附身 / 池回收 / 复用时调用）。</summary>
+    private void ClearAbilityCostDeathState()
+    {
+        if (abilityCostDeathRoutine != null)
+        {
+            StopCoroutine(abilityCostDeathRoutine);
+            abilityCostDeathRoutine = null;
+        }
+        abilityCostDeathSource = null;
+        IsAbilityCostDeathPending = false;
+        payingAbilityCost = false;
+        abilityCostPaymentSource = null;
     }
 
     void LateUpdate(){
@@ -1081,6 +1201,12 @@ public class MonsterActor : Actor
             if (currentHealth <= 0)
             {
                 currentHealth = 0;
+                // 技能烧血把耐久扣到 0：先让该次技能完整释放并跑完伤害判定，再结算死亡。
+                if (payingAbilityCost)
+                {
+                    BeginAbilityCostDeath(abilityCostPaymentSource);
+                    return;
+                }
                 PossessionManager pm = PossessionManager.Instance;
                 if (pm != null && pm.CurrentBody == this) pm.NotifyBodyDied();
             }
@@ -1356,6 +1482,7 @@ public class MonsterActor : Actor
     public void OnUnpossessed(){
         isPossessed = false;
         gameObject.tag = "Enemy";
+        ClearAbilityCostDeathState();
         if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
         if (visualFx != null) visualFx.SetPossessionHighlight(false);
         // Cheat immortality must not linger on bodies left as normal enemies.
@@ -1577,6 +1704,7 @@ public class MonsterActor : Actor
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
         bossDamageContext = false;
+        ClearAbilityCostDeathState();
         IsAbilityFacingLocked = false;
         IsAbilityLocomotionLocked = false;
         SetAbilityComponentsEnabled(true);
@@ -1627,6 +1755,7 @@ public class MonsterActor : Actor
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         bossDamageContext = false;
+        ClearAbilityCostDeathState();
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;

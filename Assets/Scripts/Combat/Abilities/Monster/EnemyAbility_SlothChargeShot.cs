@@ -74,6 +74,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     public float crushScaleThreshold = 2f;
 
     private bool isCharging;
+    private bool isFiringRoutineActive;
 
     private float chargeTimer;
     private float lastChargeTime;
@@ -106,6 +107,12 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         return owner != null && owner.targetPlayer != null;
     }
 
+    /// <summary>
+    /// 蓄力中 / 出膛协程未走完 / Boss 连射序列进行中视为释放未结束：
+    /// 附身代价致死时先把这一发打出去，再结算死亡。
+    /// </summary>
+    public override bool IsActivationInProgress => isCharging || isFiringRoutineActive || bossPatternRoutine != null;
+
     void Update()
     {
         base.Update();
@@ -119,6 +126,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             wantFire = owner.targetPlayer != null;
 
         bool canStart = currentCooldown <= 0f && !owner.isDowned;
+        // 附身代价致死宽限期：耐久已归零，不得再起新一轮蓄力（进行中的这轮不受影响）。
+        if (owner.IsAbilityCostDeathPending) canStart = false;
         string reason;
         if (owner.Combat != null && !owner.Combat.CanActivate(this, requiredTags, out reason))
             canStart = false;
@@ -161,10 +170,12 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
     IEnumerator FireShotRoutine(float chargeTime)
     {
+        isFiringRoutineActive = true;
         if (owner != null && owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
             yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
 
         FireShot(chargeTime);
+        isFiringRoutineActive = false;
     }
 
     void FireShot(float chargeTime)
@@ -525,6 +536,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         if (recoilTarget != null && hasRecoilBasePosition) recoilTarget.transform.localPosition = recoilBasePosition;
         recoilRoutine = null;
         hasRecoilBasePosition = false;
+        isFiringRoutineActive = false;
         base.OnDisable();
     }
 }

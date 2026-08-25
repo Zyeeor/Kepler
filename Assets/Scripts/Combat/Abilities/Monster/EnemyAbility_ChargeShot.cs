@@ -65,6 +65,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
     // State
     private bool isCharging;
+    private bool isFiringRoutineActive;
     private float chargeTimer;
     private float lastChargeTime; // snapshot used by DoBlast (chargeTimer gets reset before blast)
     private GameObject chargeVfxInstance;
@@ -81,6 +82,12 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         if (!base.CanTrigger()) return false;
         return owner != null && (owner.isPossessed || owner.targetPlayer != null);
     }
+
+    /// <summary>
+    /// 蓄力中或出膛协程未走完时视为释放未结束：
+    /// 附身代价致死时先把这一发打出去，再结算死亡。
+    /// </summary>
+    public override bool IsActivationInProgress => isCharging || isFiringRoutineActive;
 
     void Update()
     {
@@ -127,10 +134,12 @@ public class EnemyAbility_ChargeShot : EnemyAbility
 
     IEnumerator FireShotRoutine(float chargeTime)
     {
+        isFiringRoutineActive = true;
         if (owner != null && owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
             yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
 
         FireShot(chargeTime);
+        isFiringRoutineActive = false;
     }
 
     void FireShot(float chargeTime)
@@ -326,6 +335,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
     protected override void OnDisable()
     {
         if (isCharging) StopCharging();
+        isFiringRoutineActive = false;
         base.OnDisable();
     }
 }

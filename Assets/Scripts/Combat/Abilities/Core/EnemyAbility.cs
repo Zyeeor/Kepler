@@ -146,6 +146,15 @@ public abstract class EnemyAbility : MonoBehaviour
     protected float currentCooldown;
     public float CurrentCooldown { get { return currentCooldown; } }
 
+    /// <summary>
+    /// 本次释放是否仍在进行中（蓄力中、持续开火中、冲刺中等"判定尚未结算完"的阶段）。
+    /// 附身 HP 代价致死时，MonsterActor 用它把死亡结算推迟到本次释放判定完成之后，
+    /// 避免"血量刚好不足一次技能"时技能被打断而白扣血。
+    /// 默认 false：一次性 / 短延迟命中类技能由 MonsterActor 的代价死亡宽限窗口覆盖，
+    /// 只有充能 / 持续类能力需要覆写此属性。
+    /// </summary>
+    public virtual bool IsActivationInProgress { get { return false; } }
+
     /// <summary>能力归属的怪物（Run Analytics 采集用：判断是否当前玩家控制的身体触发）。</summary>
     public MonsterActor OwnerMonster => owner;
 
@@ -300,6 +309,9 @@ public abstract class EnemyAbility : MonoBehaviour
     public virtual bool CanTrigger()
     {
         if (currentCooldown > 0f || owner == null || owner.isDowned)
+            return false;
+        // 附身 HP 代价致死宽限期：只允许把已经开始的那次释放跑完，不得再起新技能。
+        if (owner.IsAbilityCostDeathPending && !IsActivationInProgress)
             return false;
 
         CombatAbilityComponent combat = owner.Combat;
