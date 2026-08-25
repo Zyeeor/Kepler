@@ -1,5 +1,5 @@
-// Package service 实现业务逻辑层：UGC 内容服务。
-package service
+// Package ugc — UGC 内容平台域：地图/怪物模版的上传、下载、列表、搜索、订阅、评分。
+package ugc
 
 import (
 	"crypto/rand"
@@ -9,18 +9,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"demo/server/internal/logx"
-	"demo/server/internal/store"
+	"demo/server/tools/logx"
 )
 
 // ContentService UGC 内容服务。
 type ContentService struct {
-	store     store.Store
+	store     Store
 	uploadDir string // 文件存储目录
 }
 
 // NewContentService 创建内容服务。
-func NewContentService(st store.Store, uploadDir string) *ContentService {
+func NewContentService(st Store, uploadDir string) *ContentService {
 	return &ContentService{
 		store:     st,
 		uploadDir: uploadDir,
@@ -41,7 +40,7 @@ type UploadRequest struct {
 }
 
 // Upload 上传创作内容，返回入库后的完整元数据。
-func (s *ContentService) Upload(req *UploadRequest) (*store.Creation, error) {
+func (s *ContentService) Upload(req *UploadRequest) (*Creation, error) {
 	// 生成创作 ID
 	creationID := newCreationID()
 
@@ -65,7 +64,7 @@ func (s *ContentService) Upload(req *UploadRequest) (*store.Creation, error) {
 	}
 
 	// 保存元数据到数据库
-	creation := &store.Creation{
+	creation := &Creation{
 		ID:           creationID,
 		CreatorID:    req.CreatorID,
 		CreatorName:  req.CreatorName,
@@ -86,7 +85,7 @@ func (s *ContentService) Upload(req *UploadRequest) (*store.Creation, error) {
 }
 
 // Download 下载创作内容，返回元数据与文件字节。
-func (s *ContentService) Download(creationID string) (*store.Creation, []byte, error) {
+func (s *ContentService) Download(creationID string) (*Creation, []byte, error) {
 	// 查询元数据
 	creation, err := s.store.GetCreation(creationID)
 	if err != nil {
@@ -106,12 +105,12 @@ func (s *ContentService) Download(creationID string) (*store.Creation, []byte, e
 }
 
 // List 列表查询。
-func (s *ContentService) List(filter *store.CreationFilter) ([]*store.Creation, int, error) {
+func (s *ContentService) List(filter *CreationFilter) ([]*Creation, int, error) {
 	return s.store.ListCreations(filter)
 }
 
 // Search 搜索。
-func (s *ContentService) Search(keyword, creationType string, page, pageSize int) ([]*store.Creation, int, error) {
+func (s *ContentService) Search(keyword, creationType string, page, pageSize int) ([]*Creation, int, error) {
 	return s.store.SearchCreations(keyword, creationType, page, pageSize)
 }
 
