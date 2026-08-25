@@ -116,8 +116,10 @@ public class AbilityCooldownUI : MonoBehaviour
         if (overlay == null) return;
         overlay.color = cooldownOverlayColor;
         overlay.type = Image.Type.Filled;
-        overlay.fillMethod = Image.FillMethod.Vertical;
-        overlay.fillOrigin = 0;
+        overlay.fillMethod = Image.FillMethod.Radial360;
+        overlay.fillOrigin = (int)Image.Origin360.Top;
+        overlay.fillClockwise = false;
+
     }
 
     void RefreshIcons()
