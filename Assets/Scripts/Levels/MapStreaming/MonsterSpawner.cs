@@ -305,16 +305,16 @@ public class MonsterSpawner : MonoBehaviour
     /// </summary>
     public bool TryGetWaveSpawnPosition(SinType sin, out Vector3 pos)
     {
-        if (TrySampleSpawnPosition(minSpawnPointSeparation, out pos)) return true;
+        if (TrySampleSpawnPosition(sin, minSpawnPointSeparation, out pos)) return true;
         // P2 兜底：严格间距下采样被 recentSpawnCenters 全部拦截（窗口内的点尚未随怪移动释放），
         // 放宽到一半间距再试一轮，避免本 tick 静默少刷；仍失败才放弃。
-        if (minSpawnPointSeparation > 0f && TrySampleSpawnPosition(minSpawnPointSeparation * 0.5f, out pos))
+        if (minSpawnPointSeparation > 0f && TrySampleSpawnPosition(sin, minSpawnPointSeparation * 0.5f, out pos))
             return true;
         return false;
     }
 
     /// <summary>在玩家周围环形带内采样一个合法刷怪点（与已刷点保持 separation 间距）。</summary>
-    bool TrySampleSpawnPosition(float separation, out Vector3 pos)
+    bool TrySampleSpawnPosition(SinType sin, float separation, out Vector3 pos)
     {
         pos = default;
         var system = MapStreamingSystem.Instance;

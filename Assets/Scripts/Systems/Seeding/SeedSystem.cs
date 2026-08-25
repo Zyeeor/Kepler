@@ -8,8 +8,8 @@ using System;
 ///
 /// 使用：SeedSystem.CreateFlow(DomainCard, waveIndex) —— 每波/每会话固定 salt，同种子整局可复现。
 /// 例外：worldSeed 本身的生成允许全局随机（种子必须随机，见 RunSession.BeginNewRun）。
-/// 遗留：AI 行为（MonsterBTNodes/BTComposite）与旧房间刷怪（EnemySpawner/RoomLoader）仍用全局
-/// UnityEngine.Random，接入时改经本工厂（战斗侧）。
+/// 遗留：AI 行为（MonsterBTNodes/BTComposite）仍用全局 UnityEngine.Random，
+/// 接入时改经本工厂（战斗侧）。
 /// </summary>
 public static class SeedSystem
 {

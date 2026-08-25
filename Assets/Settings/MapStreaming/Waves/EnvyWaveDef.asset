@@ -15,7 +15,7 @@ MonoBehaviour:
   id: wave_envy
   spawnWeight: 1
   monsters:
-  - prefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
+  - prefab: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342,
       type: 3}
     count: 1
   statMult:

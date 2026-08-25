@@ -385,8 +385,8 @@ public class MonsterActor : Actor
 
     protected override void Awake(){
         ResolveSinIdentityIfUnset();
-        if (!(this is BossSevenfoldActor) && GetComponent<MonsterPathfinder>() == null)
-            gameObject.AddComponent<MonsterPathfinder>();
+        // 注：远程 54d4fe8 曾尝试给非 Boss 怪物挂载 MonsterPathfinder，但该类型从未合入任何分支，
+        // 导致 main 编译失败；此处暂时移除引用，待原作者补交 MonsterPathfinder 后再恢复。
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 

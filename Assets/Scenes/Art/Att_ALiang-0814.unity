@@ -186,6 +186,7 @@ MonoBehaviour:
   possessIconImage: {fileID: 2002548940}
   possessCooldownOverlay: {fileID: 399063972}
   possessKeyHint: {fileID: 1583520227}
+  iconConfig: {fileID: 0}
   readyColor: {r: 1, g: 1, b: 1, a: 1}
   cooldownOverlayColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
 --- !u!114 &5513539
@@ -1634,7 +1635,6 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.05
   decayInterval: 1
-  bulletTimeScale: 0.2
   bulletTimeDuration: 2
 --- !u!4 &216610167
 Transform:
@@ -2624,7 +2624,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 439783315}
-  - component: {fileID: 439783314}
   m_Layer: 0
   m_Name: roomspawner3
   m_TagString: Untagged
@@ -2632,103 +2631,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &439783314
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 439783313}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7726763e7589cfd42bb5e2cbf006ff43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roomName: Room3
-  roomType: 0
-  roomPosition: {x: 68, y: 0, z: 68}
-  roomRotation: {x: 0, y: 0, z: 0}
-  roomPrefab: {fileID: 8362725386519874428, guid: 979d26642c171cf409be09bd3532f08b,
-    type: 3}
-  spawnRadius: 18
-  spawnClearRadius: 3
-  waves:
-  - waveType: 0
-    mode: 0
-    weightedTable: []
-    totalCount: 20
-    duration: 60
-    startTime: 0
-    enemies:
-    - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
-        type: 3}
-      count: 3
-      delay: 0
-    - enemyPrefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-        type: 3}
-      count: 3
-      delay: 0
-    - enemyPrefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
-        type: 3}
-      count: 3
-      delay: 0
-    - enemyPrefab: {fileID: 6572464085868828155, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-        type: 3}
-      count: 2
-      delay: 0
-    spawnPointGroup: 
-  gracePeriod: 2
-  placedObjects:
-  - prefab: {fileID: 5456221770746920125, guid: b6e23dddb7f287f49a43d0345446c470,
-      type: 3}
-    amount: 2
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 6638311500354422082, guid: 4ff82add722d11f4f8fdf95e0633851d,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 2068928316399844927, guid: 39ba06f93de72c545ac63c789a839ec2,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 322514145854915315, guid: 3f070f569defad346b8314c6a53709b1, type: 3}
-    amount: 1
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 3540211967857431404, guid: cbf931e5060414b418eb838cc22cda2d,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  exits:
-  - prefab: {fileID: 604893975317882805}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 4389861424097001087}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 4952962686016727127}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  core:
-    prefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
-      type: 3}
-    locationTransform: {fileID: 7779607747578229800}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    interactRadius: 2
-    spawnAfterWavesCleared: 1
 --- !u!4 &439783315
 Transform:
   m_ObjectHideFlags: 0
@@ -4274,6 +4176,9 @@ MonoBehaviour:
   cardParent: {fileID: 1170007485}
   confirmAllButton: {fileID: 1361398536}
   titleText: {fileID: 342066982}
+  cardOpenSfx: {fileID: 0}
+  cardSelectSfx: {fileID: 0}
+  cardRerollSfx: {fileID: 0}
 --- !u!114 &786004063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5762,7 +5667,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1094812918}
-  - component: {fileID: 1094812917}
   m_Layer: 0
   m_Name: roomspawner1 (new)
   m_TagString: Untagged
@@ -5770,62 +5674,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1094812917
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1094812916}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7726763e7589cfd42bb5e2cbf006ff43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roomName: Room3
-  roomType: 0
-  roomPosition: {x: 0, y: 0, z: 0}
-  roomRotation: {x: 0, y: 0, z: 0}
-  roomPrefab: {fileID: 2560896938858465871, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-    type: 3}
-  spawnRadius: 18
-  spawnClearRadius: 3
-  waves:
-  - waveType: 0
-    mode: 0
-    weightedTable: []
-    totalCount: 20
-    duration: 60
-    startTime: 0
-    enemies:
-    - enemyPrefab: {fileID: 3744361111654940414, guid: ec5bb6704faff894cadeb058433abcfb,
-        type: 3}
-      count: 1
-      delay: 0
-    - enemyPrefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-        type: 3}
-      count: 1
-      delay: 0
-    - enemyPrefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
-        type: 3}
-      count: 1
-      delay: 0
-    - enemyPrefab: {fileID: 6572464085868828155, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-        type: 3}
-      count: 1
-      delay: 0
-    spawnPointGroup: 
-  gracePeriod: 2
-  placedObjects: []
-  exits: []
-  core:
-    prefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
-      type: 3}
-    locationTransform: {fileID: 7779607747578229800}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    interactRadius: 2
-    spawnAfterWavesCleared: 1
 --- !u!4 &1094812918
 Transform:
   m_ObjectHideFlags: 0
@@ -5895,8 +5743,10 @@ MonoBehaviour:
   quitButtonOnGameOverText: {fileID: 0}
   healthBarToggleButton: {fileID: 0}
   healthBarToggleText: {fileID: 0}
+  bringSoulToMainMenu: 1
   settingsPanel: {fileID: 1731005095}
   confirmDialog: {fileID: 153670386}
+  resultDelaySeconds: 2
 --- !u!114 &1096202199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7082,7 +6932,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1365854272}
-  - component: {fileID: 1365854271}
   m_Layer: 0
   m_Name: roomspawner2
   m_TagString: Untagged
@@ -7090,103 +6939,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1365854271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1365854270}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7726763e7589cfd42bb5e2cbf006ff43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roomName: Room2
-  roomType: 0
-  roomPosition: {x: 34, y: 0, z: 34}
-  roomRotation: {x: 0, y: 0, z: 0}
-  roomPrefab: {fileID: 8362725386519874428, guid: 979d26642c171cf409be09bd3532f08b,
-    type: 3}
-  spawnRadius: 18
-  spawnClearRadius: 3
-  waves:
-  - waveType: 0
-    mode: 0
-    weightedTable: []
-    totalCount: 20
-    duration: 60
-    startTime: 0
-    enemies:
-    - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
-        type: 3}
-      count: 2
-      delay: 0
-    - enemyPrefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-        type: 3}
-      count: 2
-      delay: 0
-    - enemyPrefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
-        type: 3}
-      count: 2
-      delay: 0
-    - enemyPrefab: {fileID: 6572464085868828155, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-        type: 3}
-      count: 1
-      delay: 0
-    spawnPointGroup: 
-  gracePeriod: 2
-  placedObjects:
-  - prefab: {fileID: 5456221770746920125, guid: b6e23dddb7f287f49a43d0345446c470,
-      type: 3}
-    amount: 2
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 6638311500354422082, guid: 4ff82add722d11f4f8fdf95e0633851d,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 2068928316399844927, guid: 39ba06f93de72c545ac63c789a839ec2,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 322514145854915315, guid: 3f070f569defad346b8314c6a53709b1, type: 3}
-    amount: 1
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 3540211967857431404, guid: cbf931e5060414b418eb838cc22cda2d,
-      type: 3}
-    amount: 2
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  exits:
-  - prefab: {fileID: 604893975317882805}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 4389861424097001087}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 4952962686016727127}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  core:
-    prefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
-      type: 3}
-    locationTransform: {fileID: 7779607747578229800}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    interactRadius: 2
-    spawnAfterWavesCleared: 1
 --- !u!4 &1365854272
 Transform:
   m_ObjectHideFlags: 0
@@ -12998,108 +12750,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1592253014}
   m_CullTransparentMesh: 1
---- !u!1 &1593985459
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1593985461}
-  - component: {fileID: 1593985460}
-  - component: {fileID: 1593985464}
-  - component: {fileID: 1593985463}
-  - component: {fileID: 1593985462}
-  m_Layer: 0
-  m_Name: RoomManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1593985460
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1593985459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 908cc92a35b7f6c42918ed4559809d4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rooms:
-  - enabled: 0
-    template: {fileID: 2060799539}
-  - enabled: 0
-    template: {fileID: 1365854271}
-  - enabled: 0
-    template: {fileID: 439783314}
-  - enabled: 0
-    template: {fileID: 1719002760}
-  - enabled: 1
-    template: {fileID: 1094812917}
---- !u!4 &1593985461
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1593985459}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.630235, y: -0.14899717, z: -25.552662}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1593985462
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1593985459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3d08547a5962d84fa624eeef2517a55, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawnInterval: 0.5
-  choiceBuffer: 2
-  autoShowChoiceUI: 1
-  recycleRemainingOnTimeUp: 1
-  waves: []
-  gracePeriod: 2
-  autoStart: 1
-  autoStartTimeout: 30
---- !u!114 &1593985463
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1593985459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1c8ffb61fe1bb2479d543681094a909, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1593985464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1593985459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73929390d83297b43a6b025db525c6c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1638491025
 GameObject:
   m_ObjectHideFlags: 0
@@ -13441,7 +13091,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1719002761}
-  - component: {fileID: 1719002760}
   m_Layer: 0
   m_Name: roomspawner4
   m_TagString: Untagged
@@ -13449,103 +13098,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1719002760
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1719002759}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7726763e7589cfd42bb5e2cbf006ff43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roomName: Room3
-  roomType: 0
-  roomPosition: {x: 102, y: 0, z: 102}
-  roomRotation: {x: 0, y: 0, z: 0}
-  roomPrefab: {fileID: 8362725386519874428, guid: 979d26642c171cf409be09bd3532f08b,
-    type: 3}
-  spawnRadius: 18
-  spawnClearRadius: 3
-  waves:
-  - waveType: 0
-    mode: 0
-    weightedTable: []
-    totalCount: 20
-    duration: 60
-    startTime: 0
-    enemies:
-    - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
-        type: 3}
-      count: 4
-      delay: 0
-    - enemyPrefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-        type: 3}
-      count: 3
-      delay: 0
-    - enemyPrefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
-        type: 3}
-      count: 3
-      delay: 0
-    - enemyPrefab: {fileID: 6572464085868828155, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-        type: 3}
-      count: 5
-      delay: 0
-    spawnPointGroup: 
-  gracePeriod: 2
-  placedObjects:
-  - prefab: {fileID: 5456221770746920125, guid: b6e23dddb7f287f49a43d0345446c470,
-      type: 3}
-    amount: 2
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 6638311500354422082, guid: 4ff82add722d11f4f8fdf95e0633851d,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 2068928316399844927, guid: 39ba06f93de72c545ac63c789a839ec2,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 322514145854915315, guid: 3f070f569defad346b8314c6a53709b1, type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 3540211967857431404, guid: cbf931e5060414b418eb838cc22cda2d,
-      type: 3}
-    amount: 3
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  exits:
-  - prefab: {fileID: 604893975317882805}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 4389861424097001087}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 4952962686016727127}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  core:
-    prefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
-      type: 3}
-    locationTransform: {fileID: 7779607747578229800}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    interactRadius: 2
-    spawnAfterWavesCleared: 1
 --- !u!4 &1719002761
 Transform:
   m_ObjectHideFlags: 0
@@ -13593,10 +13145,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settingsPanel: {fileID: 1731005094}
-  sfxSlider: {fileID: 1955493869}
+  voiceSlider: {fileID: 0}
   musicSlider: {fileID: 47050285}
-  sfxLabel: {fileID: 1168605123}
+  sfxSlider: {fileID: 1955493869}
+  uiSlider: {fileID: 0}
+  voiceLabel: {fileID: 0}
   musicLabel: {fileID: 170477594}
+  sfxLabel: {fileID: 1168605123}
+  uiLabel: {fileID: 0}
   closeButton: {fileID: 98437697}
   closeButtonText: {fileID: 1130805877}
 --- !u!114 &1731005096
@@ -13936,8 +13492,9 @@ MonoBehaviour:
   gameOverPanel: {fileID: 837435964}
   useFixedSeed: 0
   fixedSeed: 12345
+  forceTutorial: 0
   useFormalFlow: 0
-
+  bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -13967,8 +13524,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 11400000, guid: f16753855c04a438eb9ae4fe1c54da4d, type: 2}
+  maxRerollsPerCard: 1
+  debugDoublePickOnStart: 0
   currentPicks:
   - cardName: 
+    textKey: 
     effectId: 
     image: {fileID: 0}
     description: 
@@ -13976,7 +13536,22 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 0
+    monsterType: 0
+    foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
+    extraForegroundSprites: []
+    middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
+    extraMiddlegroundSprites: []
+    backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
+    extraBackgroundSprites: []
+    borderSprite: {fileID: 0}
+    hideBorderLayer: 0
+    extraBorderSprites: []
   - cardName: 
+    textKey: 
     effectId: 
     image: {fileID: 0}
     description: 
@@ -13984,7 +13559,22 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 0
+    monsterType: 0
+    foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
+    extraForegroundSprites: []
+    middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
+    extraMiddlegroundSprites: []
+    backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
+    extraBackgroundSprites: []
+    borderSprite: {fileID: 0}
+    hideBorderLayer: 0
+    extraBorderSprites: []
   - cardName: 
+    textKey: 
     effectId: 
     image: {fileID: 0}
     description: 
@@ -13992,6 +13582,20 @@ MonoBehaviour:
     targetAbilityTags: []
     grantedEffectTags: []
     abilityParameters: []
+    category: 0
+    monsterType: 0
+    foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
+    extraForegroundSprites: []
+    middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
+    extraMiddlegroundSprites: []
+    backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
+    extraBackgroundSprites: []
+    borderSprite: {fileID: 0}
+    hideBorderLayer: 0
+    extraBorderSprites: []
 --- !u!1 &1890522062
 GameObject:
   m_ObjectHideFlags: 0
@@ -14970,7 +14574,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2060799540}
-  - component: {fileID: 2060799539}
   m_Layer: 0
   m_Name: roomspawner1
   m_TagString: Untagged
@@ -14978,103 +14581,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2060799539
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2060799538}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7726763e7589cfd42bb5e2cbf006ff43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roomName: Room1
-  roomType: 0
-  roomPosition: {x: 0, y: 0, z: 0}
-  roomRotation: {x: 0, y: 0, z: 0}
-  roomPrefab: {fileID: 237825726053667382, guid: b30793652b68d5e4db709d1665e0d3f3,
-    type: 3}
-  spawnRadius: 18
-  spawnClearRadius: 3
-  waves:
-  - waveType: 0
-    mode: 0
-    weightedTable: []
-    totalCount: 20
-    duration: 60
-    startTime: 0
-    enemies:
-    - enemyPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
-        type: 3}
-      count: 1
-      delay: 0
-    - enemyPrefab: {fileID: 1418491709266848708, guid: b5f1bbc179bb9bf428551c8f7e9f2e6e,
-        type: 3}
-      count: 1
-      delay: 0
-    - enemyPrefab: {fileID: 3551598183782676372, guid: 66d90218762cbc74c8a67b828c7e4e85,
-        type: 3}
-      count: 1
-      delay: 0
-    - enemyPrefab: {fileID: 6572464085868828155, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
-        type: 3}
-      count: 1
-      delay: 0
-    spawnPointGroup: 
-  gracePeriod: 2
-  placedObjects:
-  - prefab: {fileID: 5456221770746920125, guid: b6e23dddb7f287f49a43d0345446c470,
-      type: 3}
-    amount: 0
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 6638311500354422082, guid: 4ff82add722d11f4f8fdf95e0633851d,
-      type: 3}
-    amount: 0
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 2068928316399844927, guid: 39ba06f93de72c545ac63c789a839ec2,
-      type: 3}
-    amount: 0
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 322514145854915315, guid: 3f070f569defad346b8314c6a53709b1, type: 3}
-    amount: 0
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  - prefab: {fileID: 3540211967857431404, guid: cbf931e5060414b418eb838cc22cda2d,
-      type: 3}
-    amount: 2
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 0, y: 0, z: 0}
-  exits:
-  - prefab: {fileID: 7176671417018674592}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 6275274359078499434}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  - prefab: {fileID: 3405247086198448706}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    leadsToRoomIndex: -1
-  core:
-    prefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
-      type: 3}
-    locationTransform: {fileID: 7779607747578229800}
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0}
-    interactRadius: 2
-    spawnAfterWavesCleared: 1
 --- !u!4 &2060799540
 Transform:
   m_ObjectHideFlags: 0
@@ -15601,12 +15107,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2117743002}
   m_CullTransparentMesh: 1
---- !u!1 &604893975317882805 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3934300856118417544, guid: 979d26642c171cf409be09bd3532f08b,
-    type: 3}
-  m_PrefabInstance: {fileID: 3233468057010482444}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1611918046506368975
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15912,12 +15412,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 979d26642c171cf409be09bd3532f08b, type: 3}
---- !u!1 &3405247086198448706 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3405247085261002796, guid: b30793652b68d5e4db709d1665e0d3f3,
-    type: 3}
-  m_PrefabInstance: {fileID: 1210088046}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3885980663454135717
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16006,12 +15500,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4086736707067642174, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a,
     type: 3}
   m_PrefabInstance: {fileID: 6173735037821395699}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &4389861424097001087 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6779395070975400380, guid: 979d26642c171cf409be09bd3532f08b,
-    type: 3}
-  m_PrefabInstance: {fileID: 3233468057010482444}
   m_PrefabAsset: {fileID: 0}
 --- !u!198 &4626954530745404460
 ParticleSystem:
@@ -20803,12 +20291,6 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!1 &4952962686016727127 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5148887359771032046, guid: 979d26642c171cf409be09bd3532f08b,
-    type: 3}
-  m_PrefabInstance: {fileID: 3233468057010482444}
-  m_PrefabAsset: {fileID: 0}
 --- !u!199 &5014530354208653651
 ParticleSystemRenderer:
   serializedVersion: 6
@@ -21074,12 +20556,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1ab8c2dc7f1bb9f4a889def7f24a468a, type: 3}
---- !u!1 &6275274359078499434 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6275274360284368388, guid: b30793652b68d5e4db709d1665e0d3f3,
-    type: 3}
-  m_PrefabInstance: {fileID: 1210088046}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6566499547500551811
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21386,18 +20862,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5, type: 3}
---- !u!1 &7176671417018674592 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7176671416081225678, guid: b30793652b68d5e4db709d1665e0d3f3,
-    type: 3}
-  m_PrefabInstance: {fileID: 1210088046}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &7779607747578229800 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7779607748519824966, guid: b30793652b68d5e4db709d1665e0d3f3,
-    type: 3}
-  m_PrefabInstance: {fileID: 1210088046}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -21406,7 +20870,6 @@ SceneRoots:
   - {fileID: 209799705}
   - {fileID: 30411472}
   - {fileID: 1103910708}
-  - {fileID: 1593985461}
   - {fileID: 1807762708}
   - {fileID: 1914671953}
   - {fileID: 2060799540}
