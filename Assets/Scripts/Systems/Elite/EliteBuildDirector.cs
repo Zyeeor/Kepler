@@ -333,8 +333,48 @@ public class EliteBuildDirector : MonoBehaviour
         InjectElite(boundWaveManager, snapshot, waveNumber, false);
     }
 
+    /// <summary>
+    /// New continuous schedule entry point: injects the requested Sin as an Elite at a
+    /// deterministic cycle slot, without depending on the network or old wave callbacks.
+    /// The catalog still owns the actual Elite prefab mapping and runtime modifiers.
+    /// </summary>
+    public bool TryInjectScheduledElite(SinType sin, int cycleIndex)
+    {
+        if (!eliteEnabled) return false;
+        if (catalog == null)
+            catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
+        if (catalog == null || catalog.Find(sin) == null || catalog.Find(sin).prefab == null)
+        {
+            Debug.LogWarning($"[EliteBuildDirector] 新逻辑精英缺少 Catalog 条目：{sin}。");
+            return false;
+        }
+
+        WaveManager wm = boundWaveManager != null ? boundWaveManager : FindObjectOfType<WaveManager>();
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        if (wm == null || spawner == null || spawner.TrackedMonsterCount >= spawner.maxCombatMonsters)
+            return false;
+
+        EliteMonsterCatalog.Entry entry = catalog.Find(sin);
+        EliteSnapshotItem snapshot = new EliteSnapshotItem
+        {
+            snapshotId = 0,
+            sourcePlayerId = "scheduled",
+            runId = RunSession.Instance != null ? RunSession.Instance.RunId : "scheduled",
+            sin = EliteMonsterCatalog.WireName(sin),
+            monsterType = entry.displayName,
+            bdData = new List<BdCardEntry>(),
+            bdCount = 0,
+            sourceWave = cycleIndex + 1,
+            gameTime = (long)(RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : 0f),
+        };
+
+        int before = spawner.TrackedMonsterCount;
+        InjectElite(wm, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
+        return spawner.TrackedMonsterCount > before;
+    }
+
     /// <summary>F9 注入：解析快照 → 刷出 → 挂载体还原历史 BD → 计入本波清点。</summary>
-    void InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed)
+    void InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed, bool useScreenEdgePosition = false)
     {
         if (catalog == null)
         {
@@ -353,7 +393,11 @@ public class EliteBuildDirector : MonoBehaviour
             Debug.LogWarning("[EliteBuildDirector] 场景中无 MonsterSpawner，本波不投放。");
             return;
         }
-        if (!spawner.TryGetWaveSpawnPosition(out Vector3 pos))
+        Vector3 pos;
+        bool hasPosition = useScreenEdgePosition
+            ? spawner.TryGetWaveSpawnPosition(entry.sin, out pos)
+            : spawner.TryGetLegacyWaveSpawnPosition(out pos);
+        if (!hasPosition)
         {
             Debug.LogWarning("[EliteBuildDirector] 无合法精英刷怪点，本波不投放。");
             return;
@@ -369,6 +413,7 @@ public class EliteBuildDirector : MonoBehaviour
         var carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
         carrier.Init(snapshot, entry.displayName);
         ApplyEliteRuntimeSettings(monster);
+        AnnounceEliteSpawn(monster, entry.displayName);
         wm.RegisterExternalWaveMonster(monster);
         EnqueueEliteEvent("spawned", carrier, waveNumber); // 战果回传：精英成功生成（Meta §6.5）
 
@@ -388,6 +433,18 @@ public class EliteBuildDirector : MonoBehaviour
             eliteHealthMultiplier,
             eliteAttackDamageMultiplier,
             eliteVisualScaleMultiplier);
+    }
+
+    /// <summary>Shows the Catalog-designed monster name when an Elite appears.</summary>
+    public void AnnounceEliteSpawn(MonsterActor monster, string designedName = null)
+    {
+        string name = !string.IsNullOrWhiteSpace(designedName)
+            ? designedName.Trim()
+            : (monster != null ? monster.displayName : string.Empty);
+        const string elitePrefix = "精英·";
+        if (name.StartsWith(elitePrefix, StringComparison.Ordinal))
+            name = name.Substring(elitePrefix.Length);
+        EliteAnnouncementUI.ShowElite(name);
     }
 
     // ── 上传（Meta §6.1/§6.7）──

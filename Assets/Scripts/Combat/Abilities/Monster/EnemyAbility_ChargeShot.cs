@@ -122,7 +122,8 @@ public class EnemyAbility_ChargeShot : EnemyAbility
             if (chargeVfxInstance != null)
             {
                 float ct = Mathf.Clamp01(chargeTimer / maxChargeTime);
-                chargeVfxInstance.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 2f, ct);
+                chargeVfxInstance.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 2f, ct)
+                    * OwnerCombatScaleMultiplier;
             }
         }
         else if (isCharging)
@@ -229,7 +230,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         if (blastVfxPrefab != null)
         {
             var blast = VfxPool.Instance.Spawn(blastVfxPrefab, pos, Quaternion.identity);
-            blast.transform.localScale = Vector3.one * scale;
+            blast.transform.localScale = Vector3.one * scale * OwnerCombatScaleMultiplier;
             PlayVfx(blast);
             ReleaseVfx(blast, blastVfxDuration);
         }

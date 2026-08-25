@@ -98,8 +98,9 @@ public class EnemyAbility_SlothDrone : EnemyAbility
                 if (oldest != null) Destroy(oldest.gameObject);
             }
 
-            Vector3 start = owner.transform.position + Vector3.up * 1.2f;
-            Vector3 apex = start + Vector3.up * tossHeight;
+            float ownerScale = OwnerCombatScaleMultiplier;
+            Vector3 start = owner.transform.position + Vector3.up * 1.2f * ownerScale;
+            Vector3 apex = start + Vector3.up * tossHeight * ownerScale;
             GameObject go = Instantiate(dronePrefab, start, Quaternion.identity);
             go.transform.localScale *= OwnerCombatScaleMultiplier;
             SummonActor summon = go.GetComponent<SummonActor>();

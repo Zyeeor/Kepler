@@ -237,6 +237,13 @@ public class MonsterActor : Actor
     public bool IsBossBattleReserveBody { get; private set; }
     /// <summary>Current possessed-body scale used by ability visuals and hitboxes.</summary>
     public float PossessionCombatScaleMultiplier { get; private set; } = 1f;
+    /// <summary>
+    /// Effective combat scale shared by elite bodies and Gluttony-imprinted possessed bodies.
+    /// Visual scaling remains limited to the visual roots; abilities use this value explicitly
+    /// for hit volumes, projectile visuals, summon sizes and related effect offsets.
+    /// </summary>
+    public float CombatScaleMultiplier => Mathf.Max(1f, PossessionCombatScaleMultiplier)
+        * Mathf.Max(1f, eliteVisualScaleMultiplier);
     [Tooltip("流送 AI 激活开关：false 时 AI 完全休眠（不产出指令，仅 0.5s 低频维持索敌目标缓存）。由 MonsterSpawner 按 Chunk 状态机驱动；附身中的怪永不休眠。默认 true，非流送场景（调试刷怪等）行为不变。")]
     public bool aiActiveOverride = true;
 
@@ -351,6 +358,14 @@ public class MonsterActor : Actor
     private float eliteAttackDamageMultiplier = 1f;
     private float eliteVisualScaleMultiplier = 1f;
     private bool eliteRuntimeApplied;
+    private Vector3 healthBarBaseWorldPosition;
+    private Vector3 healthBarBaseWorldScale = Vector3.one;
+    private Vector3 healthBarBaseLocalPosition;
+    private Vector3 healthBarBaseLocalScale = Vector3.one;
+    private Vector3 healthBarBaseCenterOffset;
+    private float healthBarBaseHeightOffset;
+    private bool healthBarLayoutCaptured;
+    private float lastHealthBarLayoutScale = -1f;
     [NonSerialized] public MonsterActor lastDamageSource;
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
@@ -372,6 +387,8 @@ public class MonsterActor : Actor
 
     protected override void Awake(){
         ResolveSinIdentityIfUnset();
+        // 注：远程 54d4fe8 曾尝试给非 Boss 怪物挂载 MonsterPathfinder，但该类型从未合入任何分支，
+        // 导致 main 编译失败；此处暂时移除引用，待原作者补交 MonsterPathfinder 后再恢复。
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
@@ -394,6 +411,7 @@ public class MonsterActor : Actor
         ApplyStatBlock(enemyStats, refillVitals: true);
         originalColor = bodyColor;
         bodyRenderers = GetComponentsInChildren<Renderer>(true);
+        CaptureHealthBarLayout();
         visualFx = GetComponent<ActorVisualFx>();
         if (visualFx == null) visualFx = gameObject.AddComponent<ActorVisualFx>();
         // Keep exactly one ActorVisualFx on the Enemy host. Extra copies on wrappers/children
@@ -548,6 +566,8 @@ public class MonsterActor : Actor
             healthSlider = healthCanvas.GetComponentInChildren<Slider>(true);
         if (healthSlider == null)
             healthSlider = GetComponentInChildren<Slider>(true);
+        CaptureHealthBarLayout();
+        RefreshHealthBarLayout(force: true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
         UpdateHealthUI();
     }
@@ -605,11 +625,32 @@ public class MonsterActor : Actor
     }
 
     /// <summary>
+    /// 与 Update 的尸体门对齐：消散中的身体不得再消费移动指令。
+    /// 基类 FixedUpdate 按 !IsPlayerControlled 分派移动，而脱离附身会把 Controller 置为
+    /// NullController，若不在此拦住，尸体会继续走 AI 移动分支（详见 ExecuteMovement 的尸体门）。
+    /// </summary>
+    protected override void FixedUpdate()
+    {
+        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        base.FixedUpdate();
+    }
+
+    /// <summary>
     /// 移动段：AI 态（AIController）匀速移动、朝移动方向；玩家附身态（PlayerController）
     /// 加速度平滑 + 静止朝鼠标。两者共用SphereCast预检测和Transform位移。
     /// </summary>
     protected override void ExecuteMovement(in ControlCommand cmd)
     {
+        // 尸体/消散中的身体不移动：脱离附身后 Controller 变为 NullController，
+        // 基类会把移动分派到 AI 分支，这里兜住残留指令带来的滑行。
+        if (isDowned || Body == BodyState.Downed || Body == BodyState.Fading || Body == BodyState.Despawned)
+        {
+            possessVelocity = Vector3.zero;
+            aiVelocity = Vector3.zero;
+            aiCurrentTurnSpeed = 0f;
+            return;
+        }
+
         if (IsMovementBlocked || IsAbilityLocomotionLocked)
         {
             possessVelocity = Vector3.zero;
@@ -1145,6 +1186,7 @@ public class MonsterActor : Actor
 
         if (healthCanvas != null)
         {
+            RefreshHealthBarLayout();
             bool shouldShow = showHealthBar && ShowHealthBars && !isPossessed;
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
 
@@ -1181,13 +1223,35 @@ public class MonsterActor : Actor
 
     public virtual void TakeDamage(float amount, bool allowGreedGuardAbsorb)
     {
-        if (IsBossBattleReserveBody && !bossDamageContext) return;
-        if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
-        if (IsUntargetable(this) || IsDamageImmune(this)) return;
+        bool tracingBoss = this is BossSevenfoldActor;
+        float incomingAmount = amount;
+        if (tracingBoss)
+            Debug.Log($"[BossDamage] Base settlement received: incoming={incomingAmount:F2}, hp={currentHealth:F1}/{maxHealth:F1}, downed={isDowned}, body={Body}, possessed={isPossessed}, reserve={IsBossBattleReserveBody}, immune={IsDamageImmune(this)}, untargetable={IsUntargetable(this)}", this);
+
+        if (IsBossBattleReserveBody && !bossDamageContext)
+        {
+            if (tracingBoss) Debug.LogWarning("[BossDamage] Blocked in base settlement: reason=BossReserveBodyOutsideBossContext", this);
+            return;
+        }
+        if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned)
+        {
+            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=InvalidBodyState, downed={isDowned}, body={Body}", this);
+            return;
+        }
+        if (IsUntargetable(this) || IsDamageImmune(this))
+        {
+            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=DefenseState, immune={IsDamageImmune(this)}, untargetable={IsUntargetable(this)}", this);
+            return;
+        }
         if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
-        if (amount <= 0f) return;
+        if (amount <= 0f)
+        {
+            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=NonPositiveAfterIncomingModifier, incoming={incomingAmount:F2}, modified={amount:F2}", this);
+            return;
+        }
         if (allowGreedGuardAbsorb && TryGreedGuardAbsorb(amount, environmental: false))
         {
+            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=GreedGuard, incoming={incomingAmount:F2}, modified={amount:F2}", this);
             FlashDamage();
             return;
         }
@@ -1217,6 +1281,8 @@ public class MonsterActor : Actor
         currentTenacity -= amount;
         FlashDamage();
         UpdateHealthUI();
+        if (tracingBoss)
+            Debug.Log($"[BossDamage] Applied: incoming={incomingAmount:F2}, modified={amount:F2}, hp={currentHealth:F1}/{maxHealth:F1}, tenacity={currentTenacity:F1}/{maxTenacity:F1}", this);
         EnvyMarkTarget.NotifyDamageTaken(this as Enemy, amount);
         if (currentTenacity <= 0)
         {
@@ -1342,14 +1408,28 @@ public class MonsterActor : Actor
 
     public void ApplyOffensiveDamage(MonsterActor target, float amount)
     {
-        if (!CanDamage(target) || amount <= 0f) return;
+        bool targetsBoss = target is BossSevenfoldActor;
+        float authoredAmount = amount;
+        if (!CanDamage(target) || amount <= 0f)
+        {
+            if (targetsBoss)
+                Debug.LogWarning($"[BossDamage] Attack rejected before settlement: source={name}({GetType().Name}), authored={authoredAmount:F2}, canDamage={CanDamage(target)}, sourcePossessed={isPossessed}, targetDowned={target.isDowned}, targetBody={target.Body}, targetUntargetable={IsUntargetable(target)}", this);
+            return;
+        }
         // Lust LU-S06: pulled sources cannot damage the player's Possessed Body during pull + grace.
-        if (LustPullDamageGate.ShouldBlock(this, target)) return;
+        if (LustPullDamageGate.ShouldBlock(this, target))
+        {
+            if (targetsBoss) Debug.LogWarning($"[BossDamage] Attack rejected before settlement: reason=LustPullDamageGate, source={name}, authored={authoredAmount:F2}", this);
+            return;
+        }
         if (Combat != null) amount = Combat.ModifyOutgoingDamage(amount);
+        float afterOutgoingModifier = amount;
         if (isPossessed && PossessionImprintManager.Instance != null)
             amount *= PossessionImprintManager.Instance.GetOutgoingDamageMultiplier(this);
         else if (!isPossessed)
             amount *= Mathf.Max(0f, spawnDamageMultiplier);
+        if (targetsBoss)
+            Debug.Log($"[BossDamage] Attack accepted: source={name}({GetType().Name}), authored={authoredAmount:F2}, afterOutgoing={afterOutgoingModifier:F2}, final={amount:F2}, sourcePossessed={isPossessed}, targetHp={target.currentHealth:F1}/{target.maxHealth:F1}", this);
         target.lastDamageSource = this;
         float healthBefore = target.currentHealth;
         if (target.IsBossBattleReserveBody && target.isPossessed)
@@ -1362,6 +1442,8 @@ public class MonsterActor : Actor
             target.TakeDamage(amount);
         }
         float actualDamage = Mathf.Clamp(healthBefore - target.currentHealth, 0f, amount);
+        if (targetsBoss)
+            Debug.Log($"[BossDamage] Attack result: source={name}, target={target.name}, final={amount:F2}, actual={actualDamage:F2}, hp={healthBefore:F1}->{target.currentHealth:F1}/{target.maxHealth:F1}", this);
         OnDealtDamage(actualDamage);
 
         float totalBurnPercent = 0f;
@@ -1483,6 +1565,12 @@ public class MonsterActor : Actor
         isPossessed = false;
         gameObject.tag = "Enemy";
         ClearAbilityCostDeathState();
+        // 清空 stale 指令与惯性：脱离后 IsPlayerControlled 变 false，基类 FixedUpdate 会开始
+        // 消费 pendingCmd 驱动 AI 移动分支；若不清理，玩家最后一帧的移动指令会让身体继续滑行。
+        pendingCmd = new ControlCommand();
+        possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
         if (visualFx != null) visualFx.SetPossessionHighlight(false);
         // Cheat immortality must not linger on bodies left as normal enemies.
@@ -1645,6 +1733,11 @@ public class MonsterActor : Actor
         isDowned = true;
         Body = BodyState.Fading;
         possessionWindowEndsAt = 0f;
+        // 停下所有残留惯性与指令，尸体在淡出期间必须原地不动。
+        pendingCmd = new ControlCommand();
+        possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         SetController(NullController.Instance);
         foreach (Collider collider in GetComponentsInChildren<Collider>())
         {
@@ -1869,7 +1962,7 @@ public class MonsterActor : Actor
 
     private void ApplyVisualScale()
     {
-        float multiplier = Mathf.Max(1f, PossessionCombatScaleMultiplier) * Mathf.Max(1f, eliteVisualScaleMultiplier);
+        float multiplier = CombatScaleMultiplier;
         if (visualScaleRoot != null)
         {
             if (!authoredVisualScaleCaptured)
@@ -1878,6 +1971,7 @@ public class MonsterActor : Actor
                 authoredVisualScaleCaptured = true;
             }
             visualScaleRoot.localScale = authoredVisualScale * multiplier;
+            RefreshHealthBarLayout(force: true);
             return;
         }
 
@@ -1886,6 +1980,104 @@ public class MonsterActor : Actor
             Transform root = fallbackVisualScaleRoots[i];
             if (root != null) root.localScale = fallbackAuthoredVisualScales[i] * multiplier;
         }
+        RefreshHealthBarLayout(force: true);
+    }
+
+    private void CaptureHealthBarLayout()
+    {
+        if (healthCanvas == null || healthBarLayoutCaptured) return;
+
+        healthBarBaseWorldPosition = healthCanvas.transform.position;
+        healthBarBaseWorldScale = healthCanvas.transform.lossyScale;
+        healthBarBaseLocalPosition = healthCanvas.transform.localPosition;
+        healthBarBaseLocalScale = healthCanvas.transform.localScale;
+        if (TryGetBodyVisualBounds(out Bounds bounds))
+        {
+            healthBarBaseCenterOffset = healthBarBaseWorldPosition - bounds.center;
+            healthBarBaseHeightOffset = healthBarBaseWorldPosition.y - bounds.max.y;
+        }
+        else
+        {
+            healthBarBaseCenterOffset = Vector3.zero;
+            healthBarBaseHeightOffset = 0f;
+        }
+        healthBarLayoutCaptured = true;
+    }
+
+    private void RefreshHealthBarLayout(bool force = false)
+    {
+        if (healthCanvas == null) return;
+        CaptureHealthBarLayout();
+        if (!healthBarLayoutCaptured) return;
+
+        float scale = CombatScaleMultiplier;
+        if (!force && Mathf.Abs(lastHealthBarLayoutScale - scale) < 0.001f) return;
+
+        if (scale <= 1.0001f)
+        {
+            // Pool reset moves the actor root after this method runs. Restore the
+            // authored local layout so ordinary health bars continue following the
+            // newly spawned actor instead of being pinned to the old world position.
+            healthCanvas.transform.localPosition = healthBarBaseLocalPosition;
+            healthCanvas.transform.localScale = healthBarBaseLocalScale;
+            lastHealthBarLayoutScale = scale;
+            return;
+        }
+
+        if (TryGetBodyVisualBounds(out Bounds bounds))
+        {
+            // Keep authored X/Z offsets, but always lift an enlarged bar above the
+            // current animated/model bounds. Some historical prefabs authored the
+            // canvas inside the body, so a negative source offset is not trusted.
+            float minimumClearance = Mathf.Max(0.2f, Mathf.Abs(healthBarBaseHeightOffset));
+            healthCanvas.transform.position = new Vector3(
+                bounds.center.x + healthBarBaseCenterOffset.x,
+                bounds.max.y + minimumClearance,
+                bounds.center.z + healthBarBaseCenterOffset.z);
+        }
+        else
+        {
+            Vector3 authoredPosition = healthCanvas.transform.parent != null
+                ? healthCanvas.transform.parent.TransformPoint(healthBarBaseLocalPosition)
+                : healthBarBaseWorldPosition;
+            healthCanvas.transform.position = authoredPosition + Vector3.up * Mathf.Max(0.2f, scale - 1f);
+        }
+
+        SetHealthBarWorldScale(healthBarBaseWorldScale * scale);
+        lastHealthBarLayoutScale = scale;
+    }
+
+    private void SetHealthBarWorldScale(Vector3 worldScale)
+    {
+        Transform parent = healthCanvas.transform.parent;
+        Vector3 parentScale = parent != null ? parent.lossyScale : Vector3.one;
+        healthCanvas.transform.localScale = new Vector3(
+            worldScale.x / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)),
+            worldScale.y / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
+            worldScale.z / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z)));
+    }
+
+    private bool TryGetBodyVisualBounds(out Bounds bounds)
+    {
+        bounds = new Bounds(transform.position, Vector3.zero);
+        bool hasBounds = false;
+        if (bodyRenderers == null || bodyRenderers.Length == 0)
+            bodyRenderers = GetComponentsInChildren<Renderer>(true);
+
+        for (int i = 0; i < bodyRenderers.Length; i++)
+        {
+            Renderer renderer = bodyRenderers[i];
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy
+                || IsUnderForeignSoul(renderer.transform)
+                || !IsEliteVisualRenderer(renderer)) continue;
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else bounds.Encapsulate(renderer.bounds);
+        }
+        return hasBounds;
     }
 
     private void CaptureFallbackVisualScaleRoots()

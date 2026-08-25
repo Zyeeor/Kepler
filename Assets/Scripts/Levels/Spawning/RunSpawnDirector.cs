@@ -24,7 +24,9 @@ public sealed class RunSpawnDirector : MonoBehaviour
     public float echoMaxDelay = 1.1f;
     public float echoExpirySeconds = 2f;
     [Header("Boss")]
-    public float bossCombatTime = 480f;
+    [Min(1f)] public float bossCombatTime = 420f;
+    [Tooltip("怪物数值成长周期（秒）。RunSpawnDirector.CurrentTier 在每个周期开始时提升 1 级。")]
+    [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
     public GameObject bossPrefab;
     public List<GameObject> normalPrefabs = new List<GameObject>();
 
@@ -43,6 +45,9 @@ public sealed class RunSpawnDirector : MonoBehaviour
     };
     float nextPressureTime;
     int spawnedBossCount;
+    bool periodicPressureEnabled = true;
+    bool bossTimeReached;
+    bool matchFatalSinForEcho;
 
     struct PendingEcho
     {
@@ -52,9 +57,10 @@ public sealed class RunSpawnDirector : MonoBehaviour
     }
 
     public float ActiveCombatSeconds { get; private set; }
-    public int CurrentTier => MonsterSpawnDifficulty.TierAt(ActiveCombatSeconds);
+    public int CurrentTier => MonsterSpawnDifficulty.TierAt(ActiveCombatSeconds, difficultyGrowthIntervalSeconds);
     public bool BossSpawned => spawnedBossCount > 0;
     public bool BossDefeated { get; private set; }
+    public bool NonBossTimeReached => bossTimeReached || BossSpawned;
     public int EchoesInWindow => successfulEchoTimes.Count;
     public int BossBattleReserveBodyCount
     {
@@ -79,6 +85,55 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (prefabs == null) return;
         foreach (GameObject prefab in prefabs)
             if (prefab != null && !normalPrefabs.Contains(prefab)) normalPrefabs.Add(prefab);
+    }
+
+    public void SetPeriodicPressureEnabled(bool enabled)
+    {
+        periodicPressureEnabled = enabled;
+        if (enabled)
+            nextPressureTime = ActiveCombatSeconds + Mathf.Max(0.1f, pressureInterval);
+    }
+
+    public void ConfigureKillEchoWindow(int maxCount, float windowSeconds, bool newEchoRules)
+    {
+        maxEchoesPerWindow = Mathf.Max(0, maxCount);
+        echoWindowSeconds = Mathf.Max(0.1f, windowSeconds);
+        matchFatalSinForEcho = newEchoRules;
+        echoMinDelay = newEchoRules ? 0f : 0.6f;
+        echoMaxDelay = newEchoRules ? 0f : 1.1f;
+        PruneEchoWindow(Time.unscaledTime);
+    }
+
+    public void ConfigureKillEchoMaxCount(int maxCount)
+    {
+        int safeMaxCount = Mathf.Max(0, maxCount);
+        if (maxEchoesPerWindow == safeMaxCount) return;
+        maxEchoesPerWindow = safeMaxCount;
+        PruneEchoWindow(Time.unscaledTime);
+    }
+
+    public void ConfigureRunTiming(float nonBossSeconds, float growthIntervalSeconds)
+    {
+        bossCombatTime = Mathf.Max(1f, nonBossSeconds);
+        difficultyGrowthIntervalSeconds = Mathf.Max(0.1f, growthIntervalSeconds);
+        bossTimeReached = BossSpawned || ActiveCombatSeconds >= bossCombatTime;
+    }
+
+    /// <summary>
+    /// New WaveManager schedule entry point: resolve a normal prefab by Sin and spawn it
+    /// at the shared screen-edge legal position logic.
+    /// </summary>
+    public MonsterActor SpawnScheduledMonster(SinType sin)
+    {
+        GameObject prefab = FindNormalPrefabForSin(sin);
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        if (prefab == null || spawner == null) return null;
+        if (!spawner.TryGetWaveSpawnPosition(sin, out Vector3 position)) return null;
+
+        MonsterActor monster = spawner.SpawnWaveMonster(prefab, position);
+        if (monster == null) return null;
+        monster.ApplySpawnDifficultySnapshot(SpawnOrigin.PeriodicPressure, CurrentTier);
+        return monster;
     }
 
     public void ConfigureBoss(GameObject prefab)
@@ -169,6 +224,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         }
         Instance = this;
         nextPressureTime = pressureInterval;
+        bossTimeReached = false;
     }
 
     void OnDestroy()
@@ -189,9 +245,13 @@ public sealed class RunSpawnDirector : MonoBehaviour
             if (Time.unscaledTime <= echo.request.expiryTime)
                 spawnedEchoThisFrame = TrySpawn(echo.prefab, echo.request);
         }
-        if (!BossSpawned && ActiveCombatSeconds >= bossCombatTime)
-            DebugSpawnBossNow();
-        if (!BossSpawned && ActiveCombatSeconds >= nextPressureTime)
+        if (!bossTimeReached && ActiveCombatSeconds >= bossCombatTime)
+        {
+            bossTimeReached = true;
+            if (!BossSpawned && !DebugSpawnBossNow())
+                Debug.LogWarning($"[RunSpawnDirector] 非 Boss 时长已到 {bossCombatTime:F1}s，但 Boss 未能生成。");
+        }
+        if (periodicPressureEnabled && !bossTimeReached && !BossSpawned && ActiveCombatSeconds >= nextPressureTime)
         {
             nextPressureTime += pressureInterval;
             SpawnPressure();
@@ -215,7 +275,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         int desired = Mathf.Min(perTick, Mathf.Max(0, target - spawner.TrackedMonsterCount));
         for (int i = 0; i < desired; i++)
         {
-            if (!spawner.TryGetWaveSpawnPosition(out Vector3 position)) break;
+            if (!spawner.TryGetLegacyWaveSpawnPosition(out Vector3 position)) break;
             GameObject prefab = normalPrefabs[(i + CurrentTier) % normalPrefabs.Count];
             TrySpawn(prefab, new SpawnRequest(SpawnOrigin.PeriodicPressure, CurrentTier, Vector3.zero, 0f,
                 Time.unscaledTime + 1f), position);
@@ -229,12 +289,16 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (fatal.actor.isPossessed || fatal.actor is BossSevenfoldActor) return false;
         PruneEchoWindow(Time.unscaledTime);
         if (successfulEchoTimes.Count >= maxEchoesPerWindow) return false;
-        if (normalPrefabs == null || normalPrefabs.Count == 0) return false;
+        GameObject prefab = matchFatalSinForEcho
+            ? FindNormalPrefabForSin(fatal.actor.sinType)
+            : (normalPrefabs != null && normalPrefabs.Count > 0 ? normalPrefabs[0] : null);
+        if (prefab == null) return false;
         successfulEchoTimes.Add(Time.unscaledTime);
         float delay = Mathf.Lerp(echoMinDelay, echoMaxDelay, fatal.killer.AiRandomValue());
-        SpawnRequest request = new SpawnRequest(SpawnOrigin.KillEcho, CurrentTier, fatal.actor.transform.position, 0f,
+        SpawnRequest request = new SpawnRequest(SpawnOrigin.KillEcho, CurrentTier, fatal.actor.sinType,
+            fatal.actor.transform.position, 0f,
             Time.unscaledTime + echoExpirySeconds);
-        PendingEcho pending = new PendingEcho { prefab = normalPrefabs[0], request = request, readyAt = Time.unscaledTime + delay };
+        PendingEcho pending = new PendingEcho { prefab = prefab, request = request, readyAt = Time.unscaledTime + delay };
         int insertAt = pendingEchoes.Count;
         while (insertAt > 0 && pendingEchoes[insertAt - 1].readyAt > pending.readyAt) insertAt--;
         pendingEchoes.Insert(insertAt, pending);
@@ -254,21 +318,25 @@ public sealed class RunSpawnDirector : MonoBehaviour
         Vector3 position = explicitPosition;
         if (request.origin == SpawnOrigin.KillEcho)
         {
-            if (!spawner.TryGetKillEchoSpawnPosition(request.avoidPosition, out position)) return false;
+            if (!spawner.TryGetKillEchoSpawnPosition(request.sin, request.avoidPosition, out position)) return false;
         }
-        else if (position == default(Vector3) && !spawner.TryGetWaveSpawnPosition(out position)) return false;
+        else if (position == default(Vector3) && !spawner.TryGetLegacyWaveSpawnPosition(out position)) return false;
         if (request.minDistanceFromAvoid > 0f && (position - request.avoidPosition).sqrMagnitude < request.minDistanceFromAvoid * request.minDistanceFromAvoid)
             return false;
         MonsterActor monster = spawner.SpawnWaveMonster(prefab, position, request.origin == SpawnOrigin.KillEcho);
         if (monster == null) return false;
         monster.ApplySpawnDifficultySnapshot(request.origin, request.difficultyTier);
+        if (request.origin == SpawnOrigin.KillEcho
+            && WaveManager.Instance != null
+            && WaveManager.Instance.IsUsingNewSpawnLogic)
+            WaveManager.Instance.RegisterExternalWaveMonster(monster);
         return true;
     }
 
     public bool DebugSpawnBossNow()
     {
         if (BossSpawned || bossPrefab == null || MonsterSpawner.Instance == null) return false;
-        if (!MonsterSpawner.Instance.TryGetWaveSpawnPosition(out Vector3 position)) return false;
+        if (!MonsterSpawner.Instance.TryGetLegacyWaveSpawnPosition(out Vector3 position)) return false;
         MonsterActor actor = MonsterSpawner.Instance.SpawnWaveMonster(bossPrefab, position);
         if (actor == null) return false;
         actor.ApplySpawnDifficultySnapshot(SpawnOrigin.Boss, CurrentTier);
@@ -284,6 +352,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 session.TransitionTo(RunPhase.Final);
         }
         spawnedBossCount++;
+        bossTimeReached = true;
         return true;
     }
 
@@ -294,7 +363,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             MonsterSpawner spawner = MonsterSpawner.Instance;
-            if (spawner == null || !spawner.TryGetWaveSpawnPosition(out Vector3 position)) break;
+            if (spawner == null || !spawner.TryGetLegacyWaveSpawnPosition(out Vector3 position)) break;
             GameObject prefab = normalPrefabs[(CurrentTier + i) % normalPrefabs.Count];
             if (TrySpawn(prefab, new SpawnRequest(SpawnOrigin.BossMinion, CurrentTier, Vector3.zero, 0f,
                 Time.unscaledTime + 1f), position)) spawned++;
@@ -313,6 +382,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         ActiveCombatSeconds = Mathf.Max(0f, activeSeconds);
         spawnedBossCount = bossSpawned ? 1 : 0;
         BossDefeated = bossDefeated;
+        bossTimeReached = BossSpawned || ActiveCombatSeconds >= bossCombatTime;
         nextPressureTime = Mathf.Ceil(ActiveCombatSeconds / pressureInterval) * pressureInterval;
     }
 

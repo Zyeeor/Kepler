@@ -4,11 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// 管理房间内所有波次的生命周期。
+/// 管理正式连续战场中的所有波次生命周期。
 ///
 /// 波次玩法（2026-08-17 重构）：接入当前地图怪物生成框架（MonsterSpawner / MonsterPool /
 /// MonsterWaveDef 权重表），替代旧"直接 MonsterPool.Spawn + Enemy 轮询"逻辑。
-/// 波次模式为整体配置（WaveManager.waveMode / RoomTemplate.waveMode，全局统一）：
+/// 波次模式为 WaveManager 的整体配置（全局统一）：
 ///   CountKill 数量波：按权重表持续补刷，累计刷满 totalCount 只后不再补；
 ///                     玩家清完场上本波怪 → 触发选卡 → 下一波。
 ///   Timed 时间波：持续补刷 duration 秒，时间到即结算（可选回收剩余在场怪）→ 选卡 → 下一波。
@@ -19,9 +19,8 @@ using System.Collections.Generic;
 ///   - 场上所有怪物由本系统驱动（地图静态怪模式已于 2026-08-18 移除）；
 ///   - 时间波结算回收剩余怪（不写快照，永久退场）。
 ///
-/// 选卡衔接：波次完成 → choiceBuffer 缓冲（看清战果）→ 触发 OnWaveCompleted
-/// （RoomFlowController 或 autoShowChoiceUI 打开 CoreChoiceUI，timeScale=0）→
-/// IsDrafting 轮询等待选卡会话结束 → 下一波自动开始（选卡暂停期间不会刷怪）。
+/// 选卡衔接：波次完成 → choiceBuffer 缓冲（看清战果）→ 自动打开 CoreChoiceUI
+/// （timeScale=0）→ IsDrafting 轮询等待选卡会话结束 → 下一波自动开始。
 /// </summary>
 public class WaveManager : SceneSingleton<WaveManager>
 {
@@ -55,25 +54,74 @@ public class WaveManager : SceneSingleton<WaveManager>
     float nextPruneTime;
     [Tooltip("波次完成 → 下一波/选卡前的缓冲（秒），用于看清战果。选卡期间 timeScale=0 会冻结此等待。")]
     [Min(0f)] public float choiceBuffer = 2f;
-    [Tooltip("波次完成时自动打开选卡弹窗（无 RoomFlowController 场景的兜底；有 RoomFlow 时其也会触发，CoreChoiceUI 有防重入）。")]
+    [Tooltip("波次完成时自动打开选卡弹窗（CoreChoiceUI 有防重入）。")]
     public bool autoShowChoiceUI = true;
     [Tooltip("时间波结算时回收本波剩余在场怪（不写快照，永久退场）。")]
     public bool recycleRemainingOnTimeUp = true;
 
-    [Header("独立波次配置（无房间模式）")]
-    [Tooltip("无房间模式波次模式（整体）：CountKill=全部波为数量波；Timed=全部波为时间波。有 RoomTemplate 时用模板的 waveMode。")]
+    [Header("新刷怪逻辑开关")]
+    [Tooltip("开启：使用新的连续刷怪 / 周期怪潮 / 定时精英逻辑；关闭：完全使用原有 CountKill / Timed 波次逻辑。")]
+    public bool continuousSpawning = true;
+
+    [Header("新逻辑：常规刷怪")]
+    [Tooltip("常规刷怪间隔（秒）。每次默认生成 1 只，并按 continuousSpawnOrder 轮换罪印类型。")]
+    [Min(0.1f)] public float normalSpawnInterval = 2f;
+    [Tooltip("每次常规刷怪生成数量。默认 1。")]
+    [Min(0)] public int normalSpawnCountPerTick = 1;
+    [Tooltip("常规刷怪与怪潮使用的罪印轮换顺序。默认七种怪各出现一次后循环。")]
+    public List<SinType> continuousSpawnOrder = new List<SinType>
+    {
+        SinType.Pride,
+        SinType.Sloth,
+        SinType.Gluttony,
+        SinType.Envy,
+        SinType.Wrath,
+        SinType.Greed,
+        SinType.Lust,
+    };
+
+    [Header("新逻辑：每分钟怪潮")]
+    [Tooltip("怪潮周期（秒）。")]
+    [Min(0.1f)] public float spawnCycleSeconds = 60f;
+    [Tooltip("每个周期开始后多少秒进入怪潮。默认第 30 秒。")]
+    [Min(0f)] public float tideStartSeconds = 30f;
+    [Tooltip("怪潮持续时间（秒）。默认 9 秒。")]
+    [Min(0f)] public float tideDurationSeconds = 9f;
+    [Tooltip("怪潮注入间隔（秒）。默认每 3 秒注入一次。")]
+    [Min(0.1f)] public float tideSpawnInterval = 3f;
+    [Tooltip("怪潮每次为每种罪印生成的数量。默认每种 1 只，即每次 7 只。")]
+    [Min(0)] public int tideSpawnCountPerSin = 1;
+
+    [Header("新逻辑：精英与成长")]
+    [Tooltip("每个周期开始后多少秒生成精英。默认第 40 秒。")]
+    [Min(0f)] public float eliteSpawnOffsetSeconds = 40f;
+    [Tooltip("每个周期生成的精英数量。默认 1 只。")]
+    [Min(0)] public int eliteCountPerCycle = 1;
+    [Tooltip("Boss 前非 Boss 战斗时长（秒）。默认 7 分钟，倒计时从该值开始。")]
+    [Min(1f)] public float nonBossDurationSeconds = 420f;
+    [Tooltip("怪物数值成长周期（秒）。每次成长点必须先于同一时刻的怪潮注入生效。")]
+    [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
+
+    [Header("新逻辑：击杀回响")]
+    [Tooltip("击杀回响在窗口内的全局数量上限，所有罪印类型合计。")]
+    [Min(0)] public int killEchoMaxCountPerWindow = 2;
+    [Tooltip("怪潮持续期间击杀回响在窗口内的全局数量上限，所有罪印类型合计。")]
+    [Min(0)] public int tideKillEchoMaxCountPerWindow = 7;
+    [Tooltip("击杀回响数量上限的刷新窗口（秒）。")]
+    [Min(0.1f)] public float killEchoWindowSeconds = 2f;
+
+    [Header("波次配置")]
+    [Tooltip("整体波次模式：CountKill=全部波为数量波；Timed=全部波为时间波。")]
     public WaveMode waveMode = WaveMode.CountKill;
-    [Tooltip("无房间模式波次列表：场景没有 RoomTemplate/RoomFlowController（纯流送大地图）时，波次管理器直接使用本配置。有 RoomTemplate 时忽略。")]
+    [Tooltip("本场连续战斗的波次列表，由 WaveManager 直接持有和执行。")]
     public List<WaveConfig> waves = new List<WaveConfig>();
-    [Tooltip("无房间模式：首波开始前的准备时间（秒）。")]
+    [Tooltip("首波开始前的准备时间（秒）。")]
     [Min(0f)] public float gracePeriod = 2f;
-    [Tooltip("无房间模式：场景加载后自动启动波次（等待地图流送就绪后开刷）。有 RoomTemplate（房间流程接管）时无效。")]
+    [Tooltip("场景加载后自动启动波次（等待地图流送就绪后开刷）。")]
     public bool autoStart = true;
     [Tooltip("自动启动前等待地图流送就绪的最长时间（秒），超时仍强开（刷怪点会自动重试）。")]
     [Min(1f)] public float autoStartTimeout = 30f;
 
-    private RoomTemplate currentTemplate;
-    private RoomInstance currentRoom;
     private Coroutine waveRoutine;
     private readonly List<MonsterActor> waveAlive = new List<MonsterActor>();
     private bool isRunning;
@@ -89,7 +137,48 @@ public class WaveManager : SceneSingleton<WaveManager>
     {
         base.Awake();   // 防重复注册（已有实例则销毁本对象）
         if (Instance != this) return;
+        ApplyEnemyAiTestDefaults();
         TimeWaveRemaining = 0f;
+    }
+
+    void ApplyEnemyAiTestDefaults()
+    {
+        if (gameObject.scene.name != "EnemyAiTest") return;
+        bool fieldsWereAbsentFromScene = normalSpawnInterval < 0.1f || killEchoWindowSeconds < 0.1f;
+        if (fieldsWereAbsentFromScene)
+        {
+            continuousSpawning = true;
+            normalSpawnInterval = 2f;
+            normalSpawnCountPerTick = 1;
+            spawnCycleSeconds = 60f;
+            tideStartSeconds = 30f;
+            tideDurationSeconds = 9f;
+            tideSpawnInterval = 3f;
+            tideSpawnCountPerSin = 1;
+            eliteSpawnOffsetSeconds = 40f;
+            eliteCountPerCycle = 1;
+            nonBossDurationSeconds = 420f;
+            difficultyGrowthIntervalSeconds = 30f;
+            killEchoMaxCountPerWindow = 2;
+            tideKillEchoMaxCountPerWindow = 7;
+            killEchoWindowSeconds = 2f;
+        }
+        if (continuousSpawnOrder == null || continuousSpawnOrder.Count == 0)
+            continuousSpawnOrder = DefaultContinuousSpawnOrder();
+    }
+
+    static List<SinType> DefaultContinuousSpawnOrder()
+    {
+        return new List<SinType>
+        {
+            SinType.Pride,
+            SinType.Sloth,
+            SinType.Gluttony,
+            SinType.Envy,
+            SinType.Wrath,
+            SinType.Greed,
+            SinType.Lust,
+        };
     }
 
     protected override void OnDestroy()
@@ -128,11 +217,12 @@ public class WaveManager : SceneSingleton<WaveManager>
             }
         }
         director.SetNormalPrefabs(directorPrefabs);
+        ConfigureSpawnDirector(director);
 
         // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
         EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
 
-        // 无房间模式：未被 RoomFlowController 初始化时，等待地图就绪后自动启动
+        // 等待地图就绪后自动启动正式波次
         if (!autoStart) return;
         StartCoroutine(AutoStartRoutine());
     }
@@ -161,14 +251,11 @@ public class WaveManager : SceneSingleton<WaveManager>
         float waited = 0f;
         while (waited < autoStartTimeout)
         {
-            if (initialized && currentTemplate != null) yield break; // 已被房间流程接管
             var system = MapStreamingSystem.Instance;
             if (system != null && system.Registry != null && system.Registry.Count > 0) break;
             waited += Time.unscaledDeltaTime;
             yield return null;
         }
-        if (waited >= autoStartTimeout && initialized)
-            yield break;
         if (!initialized) Initialize();
 
         // 读档恢复：从会话（RunSession，主菜单[继续]时已填充）的已完成波次之后继续（跳过 grace）
@@ -200,44 +287,27 @@ public class WaveManager : SceneSingleton<WaveManager>
             }
         }
 
-        Debug.Log($"[WaveManager] 无房间模式自动启动：地图已就绪（等待 {waited:F1}s），波次 {ActiveWaves.Count} 个。");
+        Debug.Log($"[WaveManager] 连续战场自动启动：地图已就绪（等待 {waited:F1}s），波次 {ActiveWaves.Count} 个。");
         StartWaves();
     }
 
-    /// <summary>房间模式初始化：由 RoomFlowController 调用。</summary>
-    public void Initialize(RoomTemplate template, RoomInstance room)
-    {
-        initialized = true;
-        currentTemplate = template;
-        currentRoom = room;
-        CurrentWaveIndex = -1;
-        EnemiesAlive = 0;
-        AllWavesComplete = false;
-        isRunning = true;
-        waveAlive.Clear();
-        Debug.Log($"[WaveManager] Initialize: room='{template.roomName}', waves={ActiveWaves.Count}");
-        if (MonsterSpawner.Instance == null)
-            Debug.LogWarning("[WaveManager] 场景中无 MonsterSpawner，波次无法刷怪（怪物生成框架未接入）。");
-    }
-
-    /// <summary>无房间模式初始化：使用自身 waves 配置。</summary>
+    /// <summary>初始化正式连续战场的波次运行状态。</summary>
     public void Initialize()
     {
         initialized = true;
-        currentTemplate = null;
-        currentRoom = null;
         CurrentWaveIndex = -1;
         EnemiesAlive = 0;
         AllWavesComplete = false;
         isRunning = true;
         waveAlive.Clear();
-        Debug.Log($"[WaveManager] Initialize(无房间): waves={ActiveWaves.Count}");
+        ConfigureSpawnDirector(RunSpawnDirector.Instance);
+        Debug.Log($"[WaveManager] Initialize: waves={waves.Count}");
         if (MonsterSpawner.Instance == null)
             Debug.LogWarning("[WaveManager] 场景中无 MonsterSpawner，波次无法刷怪（怪物生成框架未接入）。");
     }
 
-    /// <summary>当前生效的波次配置（房间模板优先，无房间用自身配置）。</summary>
-    List<WaveConfig> ActiveWaves => currentTemplate != null ? currentTemplate.waves : waves;
+    /// <summary>正式流程直接使用 WaveManager 自身的波次配置。</summary>
+    List<WaveConfig> ActiveWaves => waves;
 
     /// <summary>当前生效波次总数（精英投放节奏判断用，1-based 波次的边界）。</summary>
     public int TotalWaveCount => ActiveWaves != null ? ActiveWaves.Count : 0;
@@ -253,8 +323,8 @@ public class WaveManager : SceneSingleton<WaveManager>
         EnemiesAlive = waveAlive.Count;
     }
 
-    /// <summary>当前生效的首波前准备时间（房间模板优先，无房间用自身配置）。</summary>
-    float ActiveGracePeriod => currentTemplate != null ? currentTemplate.gracePeriod : gracePeriod;
+    /// <summary>当前首波前准备时间。</summary>
+    float ActiveGracePeriod => gracePeriod;
 
     /// <summary>查询指定波清场后选卡是否双选（越界返回 false=单选）。</summary>
     public bool GetWaveDoublePick(int waveIndex)
@@ -264,8 +334,22 @@ public class WaveManager : SceneSingleton<WaveManager>
         return ActiveWaves[waveIndex].doublePick;
     }
 
-    /// <summary>当前生效的整体波次模式（房间模板优先，无房间用自身配置）。</summary>
-    WaveMode ActiveWaveMode => currentTemplate != null ? currentTemplate.waveMode : waveMode;
+    /// <summary>当前整体波次模式。</summary>
+    WaveMode ActiveWaveMode => waveMode;
+
+    bool UsesContinuousSpawning => continuousSpawning;
+    public bool IsUsingNewSpawnLogic => UsesContinuousSpawning;
+
+    void ConfigureSpawnDirector(RunSpawnDirector director)
+    {
+        if (director == null) return;
+        director.SetPeriodicPressureEnabled(!UsesContinuousSpawning);
+        director.ConfigureKillEchoWindow(
+            UsesContinuousSpawning ? killEchoMaxCountPerWindow : 4,
+            UsesContinuousSpawning ? killEchoWindowSeconds : 10f,
+            UsesContinuousSpawning);
+        director.ConfigureRunTiming(nonBossDurationSeconds, difficultyGrowthIntervalSeconds);
+    }
 
     /// <summary>
     /// 波次刷怪随机流（种子确定性）：本波开始前由 WaveRandomFor(waveIndex) 设置，
@@ -295,7 +379,7 @@ public class WaveManager : SceneSingleton<WaveManager>
             Debug.LogWarning($"[WaveManager] StartWaves SKIPPED: isRunning={isRunning}, waves={ActiveWaves?.Count}");
             return;
         }
-        Debug.Log($"[WaveManager] StartWaves: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}");
+        Debug.Log($"[WaveManager] StartWaves: waves={ActiveWaves.Count}");
         waveRoutine = StartCoroutine(WaveRoutine());
     }
 
@@ -340,7 +424,7 @@ public class WaveManager : SceneSingleton<WaveManager>
 
     IEnumerator WaveRoutine()
     {
-        Debug.Log($"[WaveManager] WaveRoutine START: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
+        Debug.Log($"[WaveManager] WaveRoutine START: waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
 
         // 教学/开场降落双门：首波开始前等待教学系统与开场演出（OpeningLandingSequence 降落完成）都开门。
         // 未配置/关闭时恒开（无感知）；读档恢复不走开场演出，LandingComplete 默认 true → 无感。
@@ -369,14 +453,26 @@ public class WaveManager : SceneSingleton<WaveManager>
             resumePendingChoice = false;
         }
 
+        if (UsesContinuousSpawning)
+        {
+            var runSession = RunSession.Instance;
+            if (runSession != null)
+            {
+                if (runSession.CurrentPhase == RunPhase.Opening)
+                    runSession.TransitionTo(RunPhase.Tutorial);
+                if (runSession.CurrentPhase == RunPhase.Tutorial)
+                    runSession.TransitionTo(RunPhase.Waves);
+            }
+            yield return RunContinuousWaves();
+            yield break;
+        }
+
         for (int i = resumeFromWaveIndex + 1; i < ActiveWaves.Count; i++)
         {
             if (!isRunning) yield break;
 
             var wave = ActiveWaves[i];
             CurrentWaveIndex = i;
-            if (currentRoom != null && currentRoom.context != null)
-                currentRoom.context.CurrentWaveIndex = i;
 
             IsWaveActive = true;
             waveAlive.Clear();
@@ -403,8 +499,6 @@ public class WaveManager : SceneSingleton<WaveManager>
         }
 
         AllWavesComplete = true;
-        if (currentRoom != null && currentRoom.context != null)
-            currentRoom.context.State = RoomState.Cleared;
 
     /// <summary>
     /// 弹卡阶段（波清场后执行）：
@@ -422,8 +516,7 @@ public class WaveManager : SceneSingleton<WaveManager>
         if (choiceBuffer > 0f)
             yield return new WaitForSecondsRealtime(choiceBuffer);
 
-        // 弹选卡：房间模式由 RoomFlowController（订阅 OnWaveCompleted）触发；
-        // 无房间模式 autoShowChoiceUI 兜底自己弹（CoreChoiceUI 有防重入）。
+        // 弹卡：先广播波次完成，再由 autoShowChoiceUI 打开 CoreChoiceUI；CoreChoiceUI 负责防重入。
         // 读档补弹（fireCompletionEvent=false）时 keepPicks=true：保留已恢复的候选（与退出时一致）。
         if (fireCompletionEvent) OnWaveCompleted?.Invoke(waveIndex);
         if (autoShowChoiceUI && CoreChoiceUI.Instance != null)
@@ -459,25 +552,21 @@ public class WaveManager : SceneSingleton<WaveManager>
             RunSession.Instance.TransitionTo(RunPhase.Waves); // RunFlow：选卡完成 → 回波次阶段
         }
     }
-        Debug.Log($"[WaveManager] ALL WAVES COMPLETE for '{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}'");
+        Debug.Log("[WaveManager] ALL WAVES COMPLETE");
         OnAllWavesComplete?.Invoke();
 
         // 整局流程走 Run 级状态链（RunFlow）：
-        //   Waves → Final（三阶段压力战未实现，先用一波普通怪占位：清完这波才 → Result）。
-        // 房间模式由 RoomFlowController 的 OnAllWavesCompleteHandler 处理（Cleared/出口/Core），不在此推进阶段。
-        if (currentTemplate == null)
-        {
-            var session = RunSession.EnsureInstance();
-            session.TransitionTo(RunPhase.Final);
+        // Waves → Final（三阶段压力战未实现，先用一波普通怪占位：清完这波才 → Result）。
+        var session = RunSession.EnsureInstance();
+        session.TransitionTo(RunPhase.Final);
 
-            // Contract ENG-POSS-001: Final remains active until the exact 480s combat-time
-            // Sevenfold boss is defeated; no early victory after the ordinary waves.
-            RunSpawnDirector finalDirector = RunSpawnDirector.EnsureInstance();
-            while (finalDirector != null && !finalDirector.BossDefeated)
-                yield return null;
-            if (finalDirector != null && finalDirector.BossDefeated)
-                session.TransitionTo(RunPhase.Result);
-        }
+        // Contract ENG-POSS-001: Final remains active until the configured non-Boss combat time
+        // Sevenfold boss is defeated; no early victory after the ordinary waves.
+        RunSpawnDirector finalDirector = RunSpawnDirector.EnsureInstance();
+        while (finalDirector != null && !finalDirector.BossDefeated)
+            yield return null;
+        if (finalDirector != null && finalDirector.BossDefeated)
+            session.TransitionTo(RunPhase.Result);
     }
 
     /// <summary>
@@ -512,6 +601,178 @@ public class WaveManager : SceneSingleton<WaveManager>
     }
 
     // ── 数量波：刷满 totalCount 不再补，清场过波 ──
+
+    // ── 新模式：常规刷怪 + 每分钟怪潮 + 周期精英 ──
+
+    IEnumerator RunContinuousWaves()
+    {
+        RunSpawnDirector director = RunSpawnDirector.Instance;
+        if (director == null || continuousSpawnOrder == null || continuousSpawnOrder.Count == 0)
+        {
+            Debug.LogWarning("[WaveManager] 新刷怪逻辑缺少 RunSpawnDirector 或罪印轮换表，无法启动。");
+            yield break;
+        }
+
+        IsWaveActive = true;
+        PrepareWaveRandom(0);
+        float combatTime = director.ActiveCombatSeconds;
+        float nextNormalTime = NextIntervalTime(combatTime, normalSpawnInterval);
+        float nextTideTickTime = NextTideTickTimeAfter(combatTime);
+        float nextEliteTime = NextCycleEventTimeAfter(combatTime, eliteSpawnOffsetSeconds);
+        int normalOrderIndex = 0;
+
+        while (isRunning)
+        {
+            combatTime = director.ActiveCombatSeconds;
+            CurrentWaveIndex = Mathf.Max(0, Mathf.FloorToInt(combatTime / Mathf.Max(0.1f, spawnCycleSeconds)));
+            TimeWaveRemaining = Mathf.Max(0f, nonBossDurationSeconds - combatTime);
+            PruneWaveAlive();
+            ApplyKillEchoCapForTime(director, combatTime);
+
+            while (combatTime >= nextNormalTime && nextNormalTime < nonBossDurationSeconds)
+            {
+                ApplyKillEchoCapForTime(director, nextNormalTime);
+                int spawned = 0;
+                int spawnCount = Mathf.Max(0, normalSpawnCountPerTick);
+                for (int i = 0; i < spawnCount; i++)
+                {
+                    SinType sin = continuousSpawnOrder[normalOrderIndex % continuousSpawnOrder.Count];
+                    normalOrderIndex++;
+                    MonsterActor monster = director.SpawnScheduledMonster(sin);
+                    if (monster != null)
+                    {
+                        waveAlive.Add(monster);
+                        spawned++;
+                    }
+                }
+                Debug.Log($"[WaveManager] 新逻辑常规刷怪：t={nextNormalTime:F1}s，生成 {spawned}/{spawnCount}，在场 {waveAlive.Count}。");
+                nextNormalTime += Mathf.Max(0.1f, normalSpawnInterval);
+            }
+
+            while (combatTime >= nextTideTickTime && nextTideTickTime < nonBossDurationSeconds)
+            {
+                ApplyKillEchoCapForTime(director, nextTideTickTime);
+                int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(nextTideTickTime / Mathf.Max(0.1f, spawnCycleSeconds)));
+                int spawned = SpawnContinuousTide(director, cycleIndex);
+                Debug.Log($"[WaveManager] 新逻辑怪潮：周期 {cycleIndex + 1}，t={nextTideTickTime:F1}s，生成 {spawned} 只（目标 {continuousSpawnOrder.Count * Mathf.Max(0, tideSpawnCountPerSin)}）。");
+                nextTideTickTime = NextTideTickTimeAfter(nextTideTickTime);
+            }
+
+            while (combatTime >= nextEliteTime && nextEliteTime < nonBossDurationSeconds)
+            {
+                ApplyKillEchoCapForTime(director, nextEliteTime);
+                int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(nextEliteTime / Mathf.Max(0.1f, spawnCycleSeconds)));
+                int spawned = SpawnContinuousElites(cycleIndex);
+                Debug.Log($"[WaveManager] 新逻辑精英：周期 {cycleIndex + 1}，t={nextEliteTime:F1}s，生成 {spawned}/{Mathf.Max(0, eliteCountPerCycle)} 只。");
+                nextEliteTime += Mathf.Max(0.1f, spawnCycleSeconds);
+            }
+
+            EnemiesAlive = waveAlive.Count;
+            if (director.NonBossTimeReached || combatTime >= nonBossDurationSeconds)
+                break;
+
+            yield return null;
+        }
+
+        IsWaveActive = false;
+        TimeWaveRemaining = 0f;
+        EnemiesAlive = waveAlive.Count;
+    }
+
+    void ApplyKillEchoCapForTime(RunSpawnDirector director, float time)
+    {
+        if (director == null) return;
+        int maxCount = IsTideActive(time) ? tideKillEchoMaxCountPerWindow : killEchoMaxCountPerWindow;
+        director.ConfigureKillEchoMaxCount(maxCount);
+    }
+
+    bool IsTideActive(float time)
+    {
+        float cycle = Mathf.Max(0.1f, spawnCycleSeconds);
+        float start = Mathf.Clamp(tideStartSeconds, 0f, cycle);
+        float duration = Mathf.Clamp(tideDurationSeconds, 0f, cycle - start);
+        if (duration <= 0f) return false;
+
+        float phase = Mathf.Repeat(Mathf.Max(0f, time), cycle);
+        return phase >= start && phase < start + duration;
+    }
+
+    float NextIntervalTime(float current, float interval)
+    {
+        float safeInterval = Mathf.Max(0.1f, interval);
+        return (Mathf.Floor(Mathf.Max(0f, current) / safeInterval) + 1f) * safeInterval;
+    }
+
+    float NextTideTickTimeAfter(float current)
+    {
+        float cycle = Mathf.Max(0.1f, spawnCycleSeconds);
+        float start = Mathf.Clamp(tideStartSeconds, 0f, cycle);
+        float duration = Mathf.Clamp(tideDurationSeconds, 0f, cycle - start);
+        float interval = Mathf.Max(0.1f, tideSpawnInterval);
+        if (duration <= 0f) return (Mathf.Floor(Mathf.Max(0f, current) / cycle) + 1f) * cycle + start;
+
+        int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(Mathf.Max(0f, current) / cycle));
+        float cycleStart = cycleIndex * cycle;
+        float first = cycleStart + start;
+        float candidate = first;
+        if (current >= first - 0.0001f)
+        {
+            int passed = Mathf.FloorToInt((current - first) / interval) + 1;
+            candidate = first + passed * interval;
+        }
+        if (candidate < first + duration - 0.0001f)
+            return candidate;
+        return cycleStart + cycle + start;
+    }
+
+    float NextCycleEventTimeAfter(float current, float offset)
+    {
+        float cycle = Mathf.Max(0.1f, spawnCycleSeconds);
+        float safeOffset = Mathf.Clamp(offset, 0f, Mathf.Max(0f, cycle - 0.0001f));
+        int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(Mathf.Max(0f, current) / cycle));
+        float candidate = cycleIndex * cycle + safeOffset;
+        if (candidate <= current + 0.0001f)
+            candidate += cycle;
+        return candidate;
+    }
+
+    int SpawnContinuousTide(RunSpawnDirector director, int cycleIndex)
+    {
+        int spawned = 0;
+        int perSin = Mathf.Max(0, tideSpawnCountPerSin);
+        for (int sinIndex = 0; sinIndex < continuousSpawnOrder.Count; sinIndex++)
+        {
+            SinType sin = continuousSpawnOrder[sinIndex];
+            for (int i = 0; i < perSin; i++)
+            {
+                MonsterActor monster = director.SpawnScheduledMonster(sin);
+                if (monster != null)
+                {
+                    waveAlive.Add(monster);
+                    spawned++;
+                }
+            }
+        }
+        return spawned;
+    }
+
+    int SpawnContinuousElites(int cycleIndex)
+    {
+        EliteBuildDirector eliteDirector = EliteBuildDirector.Instance != null
+            ? EliteBuildDirector.Instance
+            : EliteBuildDirector.EnsureInstance();
+        if (eliteDirector == null) return 0;
+
+        int spawned = 0;
+        int eliteCount = Mathf.Max(0, eliteCountPerCycle);
+        for (int i = 0; i < eliteCount; i++)
+        {
+            SinType sin = continuousSpawnOrder[(cycleIndex + i) % continuousSpawnOrder.Count];
+            if (eliteDirector.TryInjectScheduledElite(sin, cycleIndex))
+                spawned++;
+        }
+        return spawned;
+    }
 
     IEnumerator RunCountKillWave(WaveConfig wave)
     {
@@ -604,9 +865,9 @@ public class WaveManager : SceneSingleton<WaveManager>
 
     /// <summary>
     /// 按权重表抽 1 个 MonsterWaveDef，刷出其一整组怪物（受 quota 与全场配额裁剪）。
-    /// 刷怪位置由 MonsterSpawner.TryGetWaveSpawnPosition 提供（B 带、视野外、可走）。
+    /// 刷怪位置由 MonsterSpawner.TryGetLegacyWaveSpawnPosition 提供（原 B 带、可走）。
     /// </summary>
-    int SpawnBatch(WaveConfig wave, int quota)
+    int SpawnBatch(WaveConfig wave, int quota, bool scatterGroup = true)
     {
         var spawner = MonsterSpawner.Instance;
         if (spawner == null) return 0;
@@ -614,9 +875,8 @@ public class WaveManager : SceneSingleton<WaveManager>
         var def = PickWeighted(wave.weightedTable);
         if (def == null || def.monsters == null || def.monsters.Count == 0) return 0;
 
-        // 怪物群系：抽中编队后先取一个组中心（玩家 B 带内合法点），组内所有怪围绕中心小半径散射——
-        // 同一编队的怪聚集出现，不再每只独立环形采样散落全图。
-        if (!spawner.TryGetWaveSpawnPosition(out var center))
+        Vector3 center = default;
+        if (scatterGroup && !spawner.TryGetLegacyWaveSpawnPosition(out center))
         {
             Debug.LogWarning("[WaveManager] 无合法群系中心点，本组跳过。");
             return 0;
@@ -629,8 +889,16 @@ public class WaveManager : SceneSingleton<WaveManager>
             if (entry == null || entry.prefab == null) continue;
             for (int i = 0; i < entry.count && spawned < quota; i++)
             {
-                Vector2 offset = ScatterOffset(); // 种子流群系散射（y 沿用 center 的统一高度）
-                Vector3 pos = center + new Vector3(offset.x, 0f, offset.y);
+                Vector3 pos;
+                if (scatterGroup)
+                {
+                    Vector2 offset = ScatterOffset(); // 种子流群系散射（y 沿用 center 的统一高度）
+                    pos = center + new Vector3(offset.x, 0f, offset.y);
+                }
+                else if (!spawner.TryGetLegacyWaveSpawnPosition(out pos))
+                {
+                    break;
+                }
                 var m = spawner.SpawnWaveMonster(entry.prefab, pos);
                 if (m != null)
                 {

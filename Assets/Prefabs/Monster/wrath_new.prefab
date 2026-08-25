@@ -1631,9 +1631,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 4
-  acceleration: 0
-  deceleration: 0
+  moveSpeed: 8
+  acceleration: 120
+  deceleration: 120
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -1684,6 +1684,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 4883219645347327985}
   healthCanvas: {fileID: 6935736334371690934}
   showHealthBar: 1

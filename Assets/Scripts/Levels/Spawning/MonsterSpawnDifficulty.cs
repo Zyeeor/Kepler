@@ -3,8 +3,11 @@ using UnityEngine;
 public static class MonsterSpawnDifficulty
 {
     public static int TierAt(float activeCombatSeconds)
+        => TierAt(activeCombatSeconds, 30f);
+
+    public static int TierAt(float activeCombatSeconds, float growthIntervalSeconds)
     {
-        return Mathf.Max(0, Mathf.FloorToInt(Mathf.Max(0f, activeCombatSeconds) / 30f));
+        return Mathf.Max(0, Mathf.FloorToInt(Mathf.Max(0f, activeCombatSeconds) / Mathf.Max(0.1f, growthIntervalSeconds)));
     }
 
     public static float HealthMultiplier(int tier)

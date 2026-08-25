@@ -166,7 +166,7 @@ public abstract class EnemyAbility : MonoBehaviour
             BossSevenfoldActor boss = owner as BossSevenfoldActor;
             if (boss != null) return boss.BossCombatScaleMultiplier;
             MonsterActor monster = owner as MonsterActor;
-            return monster != null ? Mathf.Max(1f, monster.PossessionCombatScaleMultiplier) : 1f;
+            return monster != null ? monster.CombatScaleMultiplier : 1f;
         }
     }
 
