@@ -22,7 +22,7 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("全局安全上限（所有来源共享）。连续自动刷怪另受 continuousSpawnMaxCount 限制，击杀回响不占该独立上限。")]
     [Min(1)] public int maxCombatMonsters = 30;
     [Tooltip("连续自动生成怪物的同时存在上限。常规刷怪、怪潮和新逻辑精英合计；达到上限后只有这些怪被击杀/离场才会继续生成。WaveManager 连续逻辑会按时间成长档位更新此值。")]
-    [Min(1)] public int continuousSpawnMaxCount = 20;
+    [Min(1)] public int continuousSpawnMaxCount = 10;
 
     [Header("波次取点")]
     [Tooltip("波次刷怪点到玩家的最小距离（米）——别在玩家面前刷。")]
@@ -564,13 +564,6 @@ public class MonsterSpawner : MonoBehaviour
     public void RecycleWaveMonster(MonsterActor monster)
     {
         if (monster == null) return;
-        if (monster.IsElite && monster.isDowned)
-        {
-            // Elite bodies are permanent scene corpses. Release the combat quota, but never
-            // return the instance to the pool while its EliteBuildCarrier is still alive.
-            ReleaseTracking(monster);
-            return;
-        }
         if (monster is BossSevenfoldActor)
         {
             // Boss owns its own death/fade/pool lifecycle. Wave cleanup must never

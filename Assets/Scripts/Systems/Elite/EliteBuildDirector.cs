@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -20,7 +21,7 @@ using UnityEngine;
 ///   - 来源：在线真实快照优先；无网（探活/请求失败）或服务器空候选库时使用本地 Preset 兜底
 ///     （Catalog.presetSnapshots，OD-CAN-001 内容 OPEN；兜底不改变 Run 流程、不产生 Gameplay buff）；
 ///   - 命中快照 → 按 sin 从 Catalog 解析 prefab → 刷出 → 挂 EliteBuildCarrier 还原历史 BD
-///     → 计入本波清点（精英不死，本波不算清场）；
+///     → 计入本波清点（精英未死亡/未被附身前，本波不算清场）；
 ///   - 响应到达时波次已推进（异步往返期间清场）→ 丢弃本次投放。
 ///
 /// 战果回传（Meta §6.5）：精英生成 / Fatal / 被 Possess / 造成 Body Fatal / 直接导致 Run Fail
@@ -94,6 +95,12 @@ public class EliteBuildDirector : MonoBehaviour
     EliteBuildCarrier lastEliteDamager;
     float lastEliteDamageTime = float.NegativeInfinity;
 
+    const int EliteKillCardRewardLimit = 6;
+    string eliteRewardRunId;
+    int eliteKillRewardCount;
+    int pendingEliteCardRewards;
+    Coroutine eliteCardRewardRoutine;
+
     /// <summary>确保实例存在（场景挂载优先，否则创建常驻对象）。</summary>
     public static EliteBuildDirector EnsureInstance()
     {
@@ -113,6 +120,7 @@ public class EliteBuildDirector : MonoBehaviour
             return;
         }
         Instance = this;
+        MonsterActor.OnMonsterKilled += HandleMonsterKilled;
         if (catalog == null)
             catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
         if (EliteNetworkStatusUI.Instance == null)
@@ -123,6 +131,12 @@ public class EliteBuildDirector : MonoBehaviour
 
     void OnDestroy()
     {
+        MonsterActor.OnMonsterKilled -= HandleMonsterKilled;
+        if (eliteCardRewardRoutine != null)
+        {
+            StopCoroutine(eliteCardRewardRoutine);
+            eliteCardRewardRoutine = null;
+        }
         if (Instance == this) Instance = null;
         Attach(null);
         if (boundRunSession != null)
@@ -199,18 +213,17 @@ public class EliteBuildDirector : MonoBehaviour
         if (boundWaveManager != null)
         {
             boundWaveManager.OnWaveStarted -= HandleWaveStarted;
-            boundWaveManager.OnWaveEnemyKilled -= HandleEnemyKilled;
         }
         boundWaveManager = wm;
         if (boundWaveManager != null)
         {
             boundWaveManager.OnWaveStarted += HandleWaveStarted;
-            boundWaveManager.OnWaveEnemyKilled += HandleEnemyKilled; // 战果回传：精英 Fatal（Meta §6.5）
         }
     }
 
     void Update()
     {
+        EnsureEliteRewardRun();
         // PossessionManager 为场景级实例（场景重载后重建），轮询重绑（同 RunStatsCollector 模式）
         var pm = PossessionManager.Instance;
         if (pm == boundPossessionManager) return;
@@ -573,10 +586,69 @@ public class EliteBuildDirector : MonoBehaviour
     bool HasRecentEliteDamage =>
         lastEliteDamager != null && Time.unscaledTime - lastEliteDamageTime <= fatalAttributionWindow;
 
-    void HandleEnemyKilled(MonsterActor monster)
+    void HandleMonsterKilled(MonsterActor monster)
     {
-        // 精英 Fatal（§6.5）：OnWaveEnemyKilled 对注册进本波清点的精英同样触发
-        EnqueueEliteEvent("fatal", EliteBuildCarrier.Get(monster));
+        if (monster == null || !monster.wasKilledByPlayer)
+            return;
+        EliteBuildCarrier carrier = EliteBuildCarrier.Get(monster);
+        if (carrier == null) return;
+
+        // 精英 Fatal（§6.5）：在致死伤害结算时计入；脱离附身时的消散和调试清场不计入。
+        EnqueueEliteEvent("fatal", carrier);
+        QueueEliteCardReward();
+    }
+
+    void EnsureEliteRewardRun()
+    {
+        string currentRunId = RunSession.Instance != null ? RunSession.Instance.RunId : null;
+        if (eliteRewardRunId == currentRunId) return;
+
+        eliteRewardRunId = currentRunId;
+        eliteKillRewardCount = 0;
+        pendingEliteCardRewards = 0;
+        if (eliteCardRewardRoutine != null)
+        {
+            StopCoroutine(eliteCardRewardRoutine);
+            eliteCardRewardRoutine = null;
+        }
+    }
+
+    void QueueEliteCardReward()
+    {
+        EnsureEliteRewardRun();
+        if (string.IsNullOrEmpty(eliteRewardRunId) || eliteKillRewardCount >= EliteKillCardRewardLimit)
+            return;
+
+        eliteKillRewardCount++;
+        pendingEliteCardRewards++;
+        if (eliteCardRewardRoutine == null)
+            eliteCardRewardRoutine = StartCoroutine(DrainEliteCardRewards());
+
+        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，获得双选卡机会。", this);
+    }
+
+    IEnumerator DrainEliteCardRewards()
+    {
+        while (pendingEliteCardRewards > 0)
+        {
+            while (CoreChoiceUI.Instance == null || CoreChoiceUI.Instance.IsDrafting)
+                yield return null;
+
+            if (string.IsNullOrEmpty(eliteRewardRunId))
+            {
+                pendingEliteCardRewards = 0;
+                break;
+            }
+
+            pendingEliteCardRewards--;
+            int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
+            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: true, keepPicks: false, waveIndex: waveIndex);
+
+            while (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting)
+                yield return null;
+        }
+
+        eliteCardRewardRoutine = null;
     }
 
     void HandlePossessionStarted(MonsterActor body)

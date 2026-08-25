@@ -64,6 +64,9 @@ public class SoulActor : Actor
         if (hoverHeight <= 0f) hoverHeight = 1f;
         base.Awake(); // 挂载默认 Controller（PlayerController.Instance）
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Soul" });
+        Animator[] animators = GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < animators.Length; i++)
+            if (animators[i] != null) animators[i].updateMode = AnimatorUpdateMode.UnscaledTime;
     }
 
     /// <summary>
