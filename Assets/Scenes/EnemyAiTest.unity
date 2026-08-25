@@ -1153,7 +1153,7 @@ MonoBehaviour:
   tideDurationSeconds: 9
   tideSpawnInterval: 3
   tideSpawnCountPerSin: 1
-  eliteSpawnOffsetSeconds: 40
+  eliteSpawnOffsetSeconds: 30
   eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
   difficultyGrowthIntervalSeconds: 30
