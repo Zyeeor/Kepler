@@ -36,6 +36,10 @@ func named(name string, h http.HandlerFunc) http.Handler {
 	})
 }
 
+// maxRequestBodyBytes 全局请求体上限（UGC 上传含 base64 文件 + 缩略图，是最大的合法 body）。
+// 超限时 MaxBytesReader 使后续 Decode 失败 → handler 走 400 分支，防异常/恶意客户端打爆内存。
+const maxRequestBodyBytes = 16 << 20 // 16MB
+
 // logRequests 访问日志中间件：日志显示 Server handler 函数名（未匹配路由回退为 URL 路径），
 // 附状态码、耗时、来源地址。同时处理 CORS（MonsterBuildEditor 工具为浏览器页面，直连本服务需跨源许可与 OPTIONS 预检）。
 func logRequests(next http.Handler) http.Handler {
@@ -46,6 +50,9 @@ func logRequests(next http.Handler) http.Handler {
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
+		}
+		if r.Body != nil {
+			r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 		}
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w}

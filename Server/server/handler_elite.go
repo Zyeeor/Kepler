@@ -101,9 +101,8 @@ func (s *Server) handleUserBDUpload(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleElitePick 第 N 次投放请求精英怪（策划案 §3/§5；wave = 本次投放序号，即第几次投放精英怪）。
-//
-// snapshot == null 表示本次不投放（兜底 3，正常业务分支，前台按不投放处理）。
+// handleElitePick 第 N 次投放请求精英怪（§3/§5；wave = 投放序号）。
+// snapshot == null = 本次不投放（兜底 3，正常业务分支）。
 func (s *Server) handleElitePick(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		PlayerID string `json:"playerId"`

@@ -19,7 +19,18 @@ func Event(format string, args ...any) {
 	log.Printf("%s", fmt.Sprintf(format, args...))
 }
 
+// detailEnabled Detail 级日志开关（P3 级别过滤）：默认开启保持既有观测行为；
+// main 可用 -detail=false 关闭（明细行量大：stored/skip/cand/容量检查等，长跑减噪用）。
+var detailEnabled = true
+
+// EnableDetail 开关 Detail 级日志。
+func EnableDetail(on bool) { detailEnabled = on }
+
 // Detail 输出一条隶属事件的明细行（与 Event 版式相同，仅作代码语义区分）。
+// 可通过 EnableDetail(false) / -detail=false 整级关闭。
 func Detail(format string, args ...any) {
+	if !detailEnabled {
+		return
+	}
 	log.Printf("%s", fmt.Sprintf(format, args...))
 }

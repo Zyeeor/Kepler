@@ -29,6 +29,7 @@ func main() {
 	logDir := flag.String("log", "log", "log directory (daily files YYYY-MM-DD.log, append; empty = console only)")
 	seedFile := flag.String("seedFile", "config/seed_snapshots.json", "elite seed snapshot file (empty = no seed)")
 	userBDDir := flag.String("userBDDir", "repo", "user BD import directory (MonsterBuildEditor exports; imported on every startup, content-dedup)")
+	detailLog := flag.Bool("detail", true, "log detail lines (stored/skip/cand/capacity checks...; set false to reduce noise on long runs)")
 
 	// 精英怪投放参数（策划案 §6 TUNABLE + §8.2/§8.4 容量，默认值为首版 Baseline）
 	eliteCfg := elite.DefaultEliteConfig()
@@ -40,6 +41,7 @@ func main() {
 	flag.IntVar(&eliteCfg.MaxSnapshots, "maxSnapshots", eliteCfg.MaxSnapshots, "global snapshot pool cap (FIFO evicts oldest)")
 	flag.IntVar(&eliteCfg.MaxSnapshotsPerPlayer, "maxSnapshotsPerPlayer", eliteCfg.MaxSnapshotsPerPlayer, "per-player snapshot cap")
 	flag.Parse()
+	logx.EnableDetail(*detailLog)
 
 	// 日志初始化：控制台 + 文件双写；文件按天一个（log/YYYY-MM-DD.log，追加，不轮转——单机 Demo 阶段人工管理即可）。
 	if *logDir != "" {

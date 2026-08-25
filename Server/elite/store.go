@@ -91,8 +91,7 @@ type EliteStore interface {
 	RecordEliteEvents(events []*EliteEvent) (int, error)
 	// GetEliteBuildStats 查询构筑主人的异步战绩聚合（荣誉殿堂 §5.4 字段的数据源）。
 	GetEliteBuildStats(ownerPlayerID string) ([]*EliteBuildStats, error)
-	// Leaderboard 荣誉殿堂排行榜（§5.4/§5.8 Top N 视图）：聚合表 JOIN 快照表，
-	// 按击杀玩家次数（body_fatal）降序取 Top limit；悬空聚合行（快照已被
-	// 容量治理淘汰）不上榜。
+	// Leaderboard 荣誉殿堂排行榜（§5.4/§5.8）：按击杀玩家次数（body_fatal）降序取
+	// Top limit，INNER JOIN 快照表（悬空聚合行不上榜）。
 	Leaderboard(limit int) ([]*LeaderboardEntry, error)
 }

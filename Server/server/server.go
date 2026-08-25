@@ -8,7 +8,13 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"demo/server/elite"
 	"demo/server/store"
@@ -100,10 +106,38 @@ func (s *Server) Handler() http.Handler {
 	return logRequests(mux)
 }
 
-// Run 启动服务。
+// Run 启动服务（阻塞直至出错或收到退出信号）。全链路超时防慢客户端占用连接；
+// SIGINT/SIGTERM → Shutdown（10s 排空在途请求）后返回。
 func (s *Server) Run() error {
+	httpSrv := &http.Server{
+		Addr:              s.cfg.HTTPAddr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- httpSrv.ListenAndServe() }()
+
 	logx.Event("listening on %s · upload dir=%s", s.cfg.HTTPAddr, s.cfg.UploadDir)
-	return http.ListenAndServe(s.cfg.HTTPAddr, s.Handler())
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-errCh:
+		return err // 启动失败（端口占用等）
+	case sig := <-sigCh:
+		logx.Event("shutdown · signal=%s · draining (10s)", sig)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := httpSrv.Shutdown(ctx); err != nil {
+			return fmt.Errorf("graceful shutdown: %w", err)
+		}
+		return nil
+	}
 }
 
 // handleHealth 健康检查（客户端启动探活用）。

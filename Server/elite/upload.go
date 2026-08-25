@@ -27,9 +27,7 @@ type UploadSnapshotsRequest struct {
 }
 
 // Upload 批量 upsert 快照，返回实际入库条数（无效条目静默跳过）。
-//
-// 同 (playerId, runId, sin) 后传覆盖前传（投放序号更高的版本覆盖更低的）——库中始终保留该局该 Sin 的最深版本；
-// 上传后执行容量治理：每玩家上限 + 全局 FIFO（§8.2/§8.4）。
+// 同 (playerId, runId, sin) 后传覆盖前传；上传后执行容量治理（§8.2/§8.4）。
 func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 	if req.PlayerID == "" || req.RunID == "" {
 		return 0, fmt.Errorf("playerId and runId are required")
@@ -72,8 +70,8 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 	if err := s.store.UpsertSnapshots(snaps); err != nil {
 		return 0, fmt.Errorf("upsert snapshots: %w", err)
 	}
+	s.trackFingerprints(snaps) // 入库内容并入指纹缓存（保持 userBD 查重语义一致）
 
-	// 详细记录每条入库快照
 	logx.Event("upload player=%s run=%s · entries=%d stored=%d skipped=%d",
 		req.PlayerID, req.RunID, len(req.Snapshots), len(snaps), len(req.Snapshots)-len(snaps))
 	for _, snap := range snaps {
@@ -85,7 +83,6 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 		logx.Detail("%s", reason)
 	}
 
-	// 容量治理：每玩家上限 → 全局 FIFO（覆盖更新不占新额度）。
 	s.enforceCapacity(req.PlayerID)
 	s.invalidateLeaderboard() // 快照 upsert / 淘汰改变榜单 JOIN 内容 → 失效缓存
 

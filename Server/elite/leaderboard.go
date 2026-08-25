@@ -17,17 +17,10 @@ const (
 const leaderboardCacheTTL = 30 * time.Second
 
 // Leaderboard 荣誉殿堂排行榜：按击杀玩家次数（body_fatal）降序取 Top limit 个 BD 怪物。
-//
-// 排序主键 = body_fatal（击杀玩家 Body Fatal 次数；run_fail 不并入主键——同一次玩家死亡
-// 前台会同时上报 bodyFatal 与 runFail，相加会双计数）。tie-break：run_fail → deployed →
-// updated_at（全部降序，保证顺序稳定）。
-// 排行主体 = BD 快照（INNER JOIN：被容量治理淘汰的悬空聚合行不上榜——怪物与构筑信息
-// 已不可考，无展示意义）。快照按 (player, run, sin) upsert 滚动覆盖，榜单展示的 BD 为
-// 该键当前最新版本，战绩为跨版本累积（现有数据模型固有的归因粒度）。
-//
-// 进程内缓存：一次查库回填全库 Top MaxLimit 条，任意 limit ≤ MaxLimit 的请求切片命中；
-// 写路径（战果聚合 / 快照 upsert / 容量淘汰）即调 invalidateLeaderboard 失效，
-// TTL 兜底防漏。返回切片与缓存共享底层数组，调用方只读（handler 仅序列化）。
+// run_fail 不并入主键——同一次死亡前台双报 bodyFatal/runFail，相加会双计数；
+// tie-break：run_fail → deployed → updated_at。INNER JOIN 快照表，悬空聚合行不上榜
+//（被容量治理淘汰，构筑信息不可考）。进程内缓存：查库回填 Top MaxLimit 条，任意
+// limit 切片命中；写路径失效 + TTL 兜底。返回切片与缓存共享底层数组，调用方只读。
 func (s *EliteService) Leaderboard(limit int) ([]*LeaderboardEntry, error) {
 	if limit < 1 {
 		limit = LeaderboardDefaultLimit

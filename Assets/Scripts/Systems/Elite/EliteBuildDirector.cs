@@ -773,6 +773,7 @@ public class EliteBuildDirector : MonoBehaviour
             ownerRunId = carrier.RunId,
             sin = carrier.Sin,
             type = type,
+            eventId = System.Guid.NewGuid().ToString("N"), // 幂等去重键：上报失败重发同一批事件时，服务端按此跳过重复计数
             wave = waveOverride > 0 ? waveOverride
                 : (boundWaveManager != null ? boundWaveManager.CurrentWaveIndex + 1 : 0),
             gameTime = (long)(GameManager.Instance != null ? GameManager.Instance.gameTimer : 0f),

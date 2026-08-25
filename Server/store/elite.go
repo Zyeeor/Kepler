@@ -175,7 +175,7 @@ func (s *SQLiteStore) ListAllSnapshots() ([]*elite.BuildSnapshot, error) {
 
 // scanSnapshots 扫描快照查询结果。
 func scanSnapshots(rows *sql.Rows) ([]*elite.BuildSnapshot, error) {
-	var out []*elite.BuildSnapshot
+	out := make([]*elite.BuildSnapshot, 0, 64)
 	for rows.Next() {
 		var snap elite.BuildSnapshot
 		if err := rows.Scan(
@@ -294,7 +294,7 @@ func (s *SQLiteStore) Leaderboard(limit int) ([]*elite.LeaderboardEntry, error) 
 	}
 	defer rows.Close()
 
-	var out []*elite.LeaderboardEntry
+	out := make([]*elite.LeaderboardEntry, 0, 32)
 	for rows.Next() {
 		var e elite.LeaderboardEntry
 		if err := rows.Scan(

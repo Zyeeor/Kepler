@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"demo/server/ugc"
@@ -118,9 +119,7 @@ func (s *SQLiteStore) ListCreations(filter *ugc.CreationFilter) ([]*ugc.Creation
 	}
 
 	// 分页
-	if filter.PageSize <= 0 {
-		filter.PageSize = 20
-	}
+	filter.PageSize = clampPageSize(filter.PageSize)
 	if filter.Page <= 0 {
 		filter.Page = 1
 	}
@@ -140,8 +139,10 @@ func (s *SQLiteStore) ListCreations(filter *ugc.CreationFilter) ([]*ugc.Creation
 
 // SearchCreations 搜索。
 func (s *SQLiteStore) SearchCreations(keyword string, creationType string, page, pageSize int) ([]*ugc.Creation, int, error) {
-	where := "status = 'published' AND (name LIKE ? OR description LIKE ?)"
-	args := []any{"%" + keyword + "%", "%" + keyword + "%"}
+	// LIKE 转义（P2）：关键词中的 %/_/\ 按字面匹配（ESCAPE '\'），用户搜 "%" 不再意外命中全部。
+	like := "%" + escapeLike(keyword) + "%"
+	where := "status = 'published' AND (name LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')"
+	args := []any{like, like}
 	if creationType != "" {
 		where += " AND type = ?"
 		args = append(args, creationType)
@@ -153,9 +154,7 @@ func (s *SQLiteStore) SearchCreations(keyword string, creationType string, page,
 		return nil, 0, err
 	}
 
-	if pageSize <= 0 {
-		pageSize = 20
-	}
+	pageSize = clampPageSize(pageSize)
 	if page <= 0 {
 		page = 1
 	}
@@ -171,6 +170,25 @@ func (s *SQLiteStore) SearchCreations(keyword string, creationType string, page,
 	defer rows.Close()
 
 	return s.scanCreations(rows, total)
+}
+
+// clampPageSize 分页大小归一（P2）：<=0 取默认 20，>100 截到 100——防止一次拉全表。
+func clampPageSize(pageSize int) int {
+	if pageSize <= 0 {
+		return 20
+	}
+	if pageSize > 100 {
+		return 100
+	}
+	return pageSize
+}
+
+// escapeLike 转义 LIKE 通配符（\、%、_），配合 ESCAPE '\' 子句按字面匹配（P2）。
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
 }
 
 // scanCreations 扫描查询结果。

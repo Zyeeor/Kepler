@@ -193,6 +193,8 @@ public class EliteEventEntry
     public string type;
     public int wave;
     public long gameTime;
+    /// <summary>客户端生成的唯一事件 ID：上报失败重发同一批事件时，服务端按 (playerId, eventId) 幂等去重（P1 防重试重放刷计数）。</summary>
+    public string eventId;
 }
 
 [Serializable]
