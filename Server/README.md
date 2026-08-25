@@ -14,7 +14,7 @@
 - **精英怪四步筛选**：BD 数量门槛 → 波次差（越级难度，由客户端指定）→ 玩家隔离 → TOP_BAND 高档内加权随机；候选为空时三级兜底（放宽波次差 → 最高波次档最大 BD → 本波不投放）
 - **种子数据**：首次启动空库时自动注入预设快照（7 Sin × 2 虚拟玩家），保障首位玩家也能遇到精英怪；真实数据积累后自然 FIFO 淘汰（见下方「种子文件说明」）
 - **战果回传**：精英在他人游戏中的五类战果事件（`spawned` / `fatal` / `possessed` / `bodyFatal` / `runFail`，设计依据：Meta_Progression §6.5）批量上报 `POST /api/elite/events`，按构筑主人 `(ownerPlayerId, ownerRunId, sin)` 聚合计数；`GET /api/elite/stats?playerId=` 查询聚合（荣誉殿堂「异步战绩」数据出口）；无主事件（本地 Preset）与非法 sin/type 逐条跳过，不整批失败
-- **MonsterBuildEditor 构筑导入**：工具在线上传走 `POST /api/user-bd`；`-userBDDir` 目录内导出的 JSON 每次启动自动导入（内容指纹幂等去重，重复不占额度）
+- **MonsterBuildEditor 构筑导入**：工具在线上传走 `POST /api/user-bd`（严格校验通过后保存到 `repo/{playerId}/bd-{runId}.json` 并实时入池）；`repo/`（`-userBDDir`）内的构筑 JSON 每次启动自动导入（内容指纹幂等去重，重复不占额度）
 - **透传存储原则**：`bdData` 结构、`sourceWave` 语义由前台定义，后台只存不解析
 - **容量治理**：多局独立保留；全局 FIFO 上限 + 每玩家上限（参数可配）
 - **健康检查**：`GET /api/health` 供客户端启动探活，不可达时 UI 提示"精英服务器离线"
@@ -37,26 +37,37 @@
 | POST | `/api/user-bd` | MonsterBuildEditor 工具在线上传构筑（严格校验，实时入池） |
 | GET | `/api/health` | 健康检查（客户端启动探活） |
 
-请求/响应字段以 `internal/server/server.go` 的 handler 与 DTO 定义为准。
+请求/响应字段以 `server/` 包的 handler 与 DTO 定义为准。
 
 ## 快速开始
 
-环境要求：Go 1.22+（`net/http` 路由模式匹配需要）。
+环境要求：Go 1.26.5+（以 `go.mod` 为准；`net/http` 方法路由模式匹配需要 1.22+）。
+
+**一键启动**（自动检测 Go、构建到 `bin/` 并运行；额外参数原样透传给服务器）：
+
+```bash
+start-server.bat        # Windows（也可直接双击）
+./start-server.sh       # Linux / macOS（首次先 chmod +x start-server.sh）
+
+# 带参示例（两平台相同）：start-server.bat -addr :9000  /  ./start-server.sh -addr :9000
+```
+
+**手动构建运行**：
 
 ```bash
 go build -o server.exe .
-./server.exe          # 默认 HTTP :8080，数据落 data/
+./server.exe          # 默认 HTTP :8080，数据库落 data/，文件落 repo/，日志按天落 log/
 ```
 
 首次启动时，若 `data/game.db` 为空且存在种子文件，自动注入种子快照：
 
 ```text
-2026/08/24 12:17:08 seeded 14 snapshots from data/seed_snapshots.json (pool was empty)
+2026/08/24 12:17:08 seeded 14 snapshots from config/seed_snapshots.json (pool was empty)
 ```
 
 ### 种子文件说明
 
-`data/` 下除种子快照配置外的运行时数据（数据库/日志/UGC 文件/userBD 导入）均被 `Server/.gitignore` 忽略；**`data/seed_snapshots.json` 随仓库分发**（策划可编辑，改动直接提交）——clone 后即可正常种子注入。种子注入仅在空库时执行一次（幂等）；删除 `data/seed_snapshots.json` 或传 `-seedFile ""` 可禁用。
+运行时数据目录（`data/` 数据库、`repo/` 文件仓库、`log/` 日志）均被 `Server/.gitignore` 忽略；**`config/seed_snapshots.json` 随仓库分发**（策划可编辑，改动直接提交）——clone 后即可正常种子注入。种子注入仅在空库时执行一次（幂等）；删除 `config/seed_snapshots.json` 或传 `-seedFile ""` 可禁用。
 
 ### 启动参数
 
@@ -64,10 +75,10 @@ go build -o server.exe .
 |------|--------|------|
 | `-addr` | `:8080` | HTTP 监听地址 |
 | `-db` | `data/game.db` | SQLite 数据库路径 |
-| `-upload` | `data/ugc` | UGC 文件存储目录 |
-| `-log` | `data/server.log` | 日志文件路径（控制台+文件双写，追加；传空 `""` 禁用文件日志） |
-| `-seedFile` | `data/seed_snapshots.json` | 种子快照文件路径（空 `""` = 不 seed；库非空或文件不存在时自动跳过） |
-| `-userBDDir` | `data/userBD` | 用户 BD 构筑导入目录（MonsterBuildEditor 工具导出 JSON；每次启动导入，重复导入自动去重） |
+| `-upload` | `repo/ugc` | UGC 文件存储目录 |
+| `-log` | `log` | 日志目录（控制台+文件双写，按天 `YYYY-MM-DD.log`，追加；传空 `""` 禁用文件日志） |
+| `-seedFile` | `config/seed_snapshots.json` | 种子快照文件路径（空 `""` = 不 seed；库非空或文件不存在时自动跳过） |
+| `-userBDDir` | `repo` | 用户 BD 构筑导入目录（MonsterBuildEditor 工具导出 JSON；每次启动导入，重复导入自动去重） |
 | `-minBd` | `1` | 精英怪筛选：最低 BD 数量门槛（MIN_BD） |
 | `-waveGap` | `0` | 精英怪筛选：服务端兜底波次差（正常由客户端 pick 请求指定 waveGap） |
 | `-topBandMode` | `percent` | TOP_BAND 模式：`percent`（前 X%）/ `topk`（前 K 条） |
@@ -80,29 +91,29 @@ go build -o server.exe .
 
 ## 日志
 
-日志同时输出到**控制台**与日志文件（默认 `data/server.log`，追加写入，不轮转——Demo 阶段人工管理即可）。
+日志同时输出到**控制台**与日志文件（默认目录 `log/`，按天一个文件 `log/YYYY-MM-DD.log`，跨天自动切换；追加写入，不轮转——Demo 阶段人工管理即可）。
 
-版式约定：顶层事件顶格输出，隶属事件的明细行以 `├` 树形前缀缩进，`·` 为字段分隔符。
+版式约定：所有日志行顶格输出，`·` 为字段分隔符；访问日志显示 Server handler 函数名（如 `handleElitePick → 200 · 3ms · 127.0.0.1:51303`）。
 
 ### 上传日志
 
 ```text
 2026/08/24 15:58:43 upload player=device-xxx run=run-xxx · entries=3 stored=3 skipped=0
-2026/08/24 15:58:43   ├ stored · sin=lust monsterType=色欲-灵念师 bdCount=3 sourceWave=6 gameTime=280 (upsert device-xxx/run-xxx/lust)
-2026/08/24 15:58:43   ├ stored · sin=pride monsterType=pride bdCount=2 sourceWave=6 gameTime=280 (upsert device-xxx/run-xxx/pride)
-2026/08/24 15:58:43   ├ capacity · player=device-xxx 5/100 (within limit)
-2026/08/24 15:58:43   ├ capacity · global 12/10000 (within limit)
+2026/08/24 15:58:43 stored · sin=lust monsterType=色欲-灵念师 bdCount=3 sourceWave=6 gameTime=280 (upsert device-xxx/run-xxx/lust)
+2026/08/24 15:58:43 stored · sin=pride monsterType=pride bdCount=2 sourceWave=6 gameTime=280 (upsert device-xxx/run-xxx/pride)
+2026/08/24 15:58:43 capacity · player=device-xxx 5/100 (within limit)
+2026/08/24 15:58:43 capacity · global 12/10000 (within limit)
 ```
 
 ### 筛选日志
 
 ```text
 2026/08/24 15:13:40 pick wave=5 player=device-xxx gap=1 · minBD=1 band=percent/0.20 topK=5
-2026/08/24 15:13:40   ├ query · bdCount>=1 AND sourceWave>=6 AND player!=self → candidates=3
-2026/08/24 15:13:40   ├ cand #1  · id=1    lust      bd=3  wave=7   by=device-seed-default-a run=run-seed-001
-2026/08/24 15:13:40   ├ cand #2  · id=3    envy      bd=2  wave=8   by=device-seed-default-b run=run-seed-002
-2026/08/24 15:13:40   ├ band · mode=percent size=1/3 (percent=0.20, topK=5)
-2026/08/24 15:13:40   ├ band · size<=1 → pick top id=1 sin=lust bdCount=3
+2026/08/24 15:13:40 query · bdCount>=1 AND sourceWave>=6 AND player!=self → candidates=3
+2026/08/24 15:13:40 cand #1  · id=1    lust      bd=3  wave=7   by=device-seed-default-a run=run-seed-001
+2026/08/24 15:13:40 cand #2  · id=3    envy      bd=2  wave=8   by=device-seed-default-b run=run-seed-002
+2026/08/24 15:13:40 band · mode=percent size=1/3 (percent=0.20, topK=5)
+2026/08/24 15:13:40 band · size<=1 → pick top id=1 sin=lust bdCount=3
 2026/08/24 15:13:40 pick result wave=5 player=device-xxx → sin=lust bdCount=3 sourceWave=7 by=device-seed-default-a (path=main, 3 candidates)
 ```
 
@@ -110,10 +121,10 @@ go build -o server.exe .
 
 ```text
 2026/08/24 15:13:40 pick wave=8 player=device-xxx gap=1 · minBD=1 band=percent/0.20 topK=5
-2026/08/24 15:13:40   ├ query · bdCount>=1 AND sourceWave>=9 AND player!=self → candidates=0
-2026/08/24 15:13:40   ├ fallback1 · main path empty, relax waveGap → sourceWave>=8 (was >=9)
-2026/08/24 15:13:40   ├ fallback1 query · bdCount>=1 AND sourceWave>=8 AND player!=self → candidates=1
-2026/08/24 15:13:40   ├ ...
+2026/08/24 15:13:40 query · bdCount>=1 AND sourceWave>=9 AND player!=self → candidates=0
+2026/08/24 15:13:40 fallback1 · main path empty, relax waveGap → sourceWave>=8 (was >=9)
+2026/08/24 15:13:40 fallback1 query · bdCount>=1 AND sourceWave>=8 AND player!=self → candidates=1
+2026/08/24 15:13:40 ...
 2026/08/24 15:13:40 pick result wave=8 player=device-xxx → ... (path=relaxed:wave-gap=0, 1 candidates)
 ```
 
@@ -123,8 +134,8 @@ go build -o server.exe .
 
 ```text
 2026/08/24 15:13:40 events · reporter=device-xxx accepted=2/5
-2026/08/24 15:13:40   ├ skip event[0] · type=spawned owner="local-preset" (no real owner)
-2026/08/24 15:13:40   ├ skip event[1] · sin="not-a-sin" type="fatal" (invalid)
+2026/08/24 15:13:40 skip event[0] · type=spawned owner="local-preset" (no real owner)
+2026/08/24 15:13:40 skip event[1] · sin="not-a-sin" type="fatal" (invalid)
 ```
 
 观测要点：`accepted < 上报总数` 说明存在跳过（本地 Preset 无主事件 / 非法 sin 或 type）——属正常防御分支，不影响其余条目聚合；`elite_build_stats` 表可核对聚合结果。
@@ -144,7 +155,7 @@ go run ./test/elitepicktest
 # 战果回传端到端测试（事件上报 → 校验跳过 → 按构筑主人聚合 → 战绩查询；自包含）
 go run ./test/eliteeventtest
 
-# 验证种子数据：删库重启（需 data/seed_snapshots.json 存在，见「种子文件说明」）
+# 验证种子数据：删库重启（需 config/seed_snapshots.json 存在，见「种子文件说明」）
 rm data/game.db && go run .
 # 日志应输出 "seeded 14 snapshots ..."
 ```
@@ -152,21 +163,24 @@ rm data/game.db && go run .
 ## 项目结构
 
 ```
-├── main.go                  # 入口（启动参数 + 装配）
-├── internal/
-│   ├── server/              # 装配层：HTTP 路由 + handler + 种子注入
-│   ├── service/             # 业务层：UGC 内容服务 + 精英怪 BD 快照服务（上传/筛选/战果回传）
-│   └── store/               # 存储层：Store/EliteStore 接口 + SQLite 实现
+├── main.go                  # 入口（启动参数 + 装配 + 按天日志初始化）
+├── start-server.bat         # 一键启动（Windows，可双击）
+├── start-server.sh          # 一键启动（Linux / macOS）
+├── config/
+│   └── seed_snapshots.json  # 种子快照配置（策划可编辑，随仓库分发）
+├── server/                  # HTTP 装配层：路由 + handler + DTO + 日志中间件
+├── ugc/                     # UGC 域：ContentService + Store 接口 + 模型
+├── elite/                   # 精英域：EliteService（上传/筛选/战果回传）+ EliteStore 接口 + 模型
+├── store/                   # SQLite 实现（单连接实现两域接口，可换 MySQL）
+├── tools/
+│   └── logx/                # 通用日志工具（Event/Detail 版式 + 按天文件 Writer）
 ├── test/
 │   ├── ugctest/             # UGC 端到端测试（需预启动服务器）
 │   ├── elitepicktest/       # 精英怪投放端到端测试（自包含）
 │   └── eliteeventtest/      # 战果回传端到端测试（自包含）
-└── data/                    # 运行时数据（除种子配置外均被 .gitignore 忽略）
-    ├── game.db              # SQLite 数据库（运行时生成）
-    ├── seed_snapshots.json  # 种子快照配置（策划可编辑，随仓库分发）
-    ├── server.log           # 日志文件
-    ├── ugc/                 # UGC 上传文件
-    └── userBD/              # MonsterBuildEditor 导出构筑（启动时自动导入）
+├── data/                    # SQLite 数据库（运行时生成，gitignore）
+├── repo/                    # 文件仓库（运行时，gitignore）：{playerId}/ 构筑导入文件、ugc/ UGC 上传文件
+└── log/                     # 按天日志 YYYY-MM-DD.log（运行时，gitignore）
 ```
 
 ## 数据表
@@ -181,8 +195,67 @@ rm data/game.db && go run .
 
 ## 部署
 
-- **局域网**：一台机器跑 `./server.exe`，客户端填该机内网 IP；
-- **公网**：`GOOS=linux GOARCH=amd64 go build -o server-linux .`，安全组放行 **8080/TCP**，可选 Nginx 反代 + TLS。
+服务器是**零依赖单二进制**（SQLite 内嵌、纯 Go 实现、无 CGO），部署 = 拷贝二进制 + `config/` 目录；首次启动自动创建 `data/`、`repo/`、`log/`。
+
+### Windows 部署
+
+```powershell
+cd Server
+go build -o server.exe .
+./server.exe                    # 默认 :8080；改端口：./server.exe -addr :9000
+```
+
+1. **防火墙放行**：首次运行会弹窗询问，或命令行添加规则：
+   ```powershell
+   New-NetFirewallRule -DisplayName "Possession Server" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
+   ```
+2. **客户端接入**：填本机内网 IP（`ipconfig` 查看），如 `http://192.168.1.10:8080`。
+3. **常驻运行**：Demo 规模直接开控制台窗口即可；需开机自启可用任务计划程序或 NSSM 注册为 Windows 服务。
+
+### Linux 部署
+
+1. **构建**（二选一）：
+   ```powershell
+   # 在 Windows 上交叉编译（PowerShell；纯 Go 无 CGO，直接可编）
+   $env:GOOS="linux"; $env:GOARCH="amd64"; $env:CGO_ENABLED="0"; go build -o server-linux .; Remove-Item Env:GOOS,Env:GOARCH,Env:CGO_ENABLED
+   ```
+   ```bash
+   # 或在 Linux 上直接构建
+   go build -o server .
+   ```
+2. **上传**：把二进制与 `config/` 目录放到部署目录，如 `/opt/possession/`。
+3. **运行**：
+   ```bash
+   cd /opt/possession && chmod +x server-linux
+   ./server-linux
+   ```
+4. **防火墙**：`sudo ufw allow 8080/tcp`；云服务器还需在控制台安全组放行 **8080/TCP**。
+5. **systemd 常驻**（推荐）：
+   ```ini
+   # /etc/systemd/system/possession.service
+   [Unit]
+   Description=Possession Server
+   After=network.target
+
+   [Service]
+   WorkingDirectory=/opt/possession
+   ExecStart=/opt/possession/server-linux
+   Restart=always
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+   ```bash
+   sudo systemctl enable --now possession
+   sudo journalctl -u possession -f   # 查看控制台输出；文件日志在 /opt/possession/log/
+   ```
+
+### 部署检查清单
+
+- 二进制同目录带上 **`config/seed_snapshots.json`**——否则首位玩家空库无种子精英可投；
+- 默认路径（`data/`、`repo/`、`log/`）是**相对路径**，解析到启动时的工作目录——用 systemd / 脚本启动务必设 `WorkingDirectory`，或用 `-db` / `-upload` / `-userBDDir` / `-log` 传绝对路径；
+- 备份只需打包 `data/game.db` 与 `repo/`；
+- 公网部署建议 Nginx 反代 + TLS。
 
 ## Roadmap
 

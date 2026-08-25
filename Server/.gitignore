@@ -1,9 +1,12 @@
 # 编译产物
-/server
+/bin/
+/server.exe
+/server-linux
 
-# 运行时数据（种子快照配置除外：策划可编辑，随仓库分发）
-/data/*
-!data/seed_snapshots.json
+# 运行时数据（数据库 / 文件仓库 / 日志），不入库
+/data/
+/repo/
+/log/
 *.db
 
 # 系统文件

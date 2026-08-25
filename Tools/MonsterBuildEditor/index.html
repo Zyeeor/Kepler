@@ -9,19 +9,19 @@
   怪物：.vibe/doc/Canonical/02_CONTENT_CANONICAL.md §2 Roster / §3 21 个基础技能
 
   ── 输出格式（Wire Contract）──
-  Server/docs/api-guide.md §4.1 POST /api/bd-snapshots 的请求体结构
+  Server/elite/upload.go UploadSnapshotsRequest / SnapshotInput —— POST /api/bd-snapshots（/api/user-bd 同构）的请求体结构；接口一览见 Server/README.md
   Assets/Scripts/Systems/Elite/EliteNetClient.cs：UploadSnapshotsReq / SnapshotEntry / BdCardEntry
   Assets/Scripts/Systems/Elite/EliteBuildDirector.cs BuildSnapshots()：
       bdData 只含 MonsterType / TypeGrowth 卡；stack 恒 1；bdCount = bdData.length
   sin 编码：EliteMonsterCatalog.WireName(SinType) —— 小写枚举名
   monsterType：EliteMonsterCatalog.Entry.displayName —— 透传字段
-  上传：POST {serverUrl}/api/user-bd（server.go handleUserBDUpload）——
-  严格校验（elite.go validateUserBD）通过后存文件到 userBD/{playerId}/bd-{runId}.json
+  上传：POST {serverUrl}/api/user-bd（server/handler_elite.go handleUserBDUpload）——
+  严格校验（elite/userbd.go validateUserBD）通过后存文件到 repo/{playerId}/bd-{runId}.json
   并实时进入投放候选池；内容重复不入库（返回 duplicates 计数）；数据有误返回 400；
   服务器不可达提示离线。服务器重启时 ImportUserBD 遍历顶层与 {playerId} 子目录，
   按内容指纹（sin + 排序 cardId 集合）去重加载。
 
-  本工具只在本地生成文件，不发起任何网络请求。
+  构筑数据在本地生成（导出 / 复制不联网）；仅「上传构筑到服务器」会发起一次 POST 请求。
   Repository 实现事实（如 Assets/Configs/CardLibrary.asset 的 effectId 现状）按 Canonical Authority Order
   排在设计真源之后，故不参与本工具的卡牌内容与 ID 判定。
 
@@ -373,7 +373,7 @@
             <button class="big" id="btnUpload" style="margin-bottom:9px">上传构筑到服务器</button>
             <button class="ghost" id="btnMd" style="margin-bottom:9px">导出可读清单（.md）</button>
             <button class="ghost" id="btnCopy">复制到剪贴板</button>
-            <p class="hint">上传前请先启动服务器（默认 <code>http://127.0.0.1:8080</code>）。上传的构筑经服务器校验后保存到 <code>Server/data/userBD/{playerId}/</code> 并<b>实时进入精英怪候选池</b>；内容重复的构筑不会重复入库；数据有误会提示重新构筑；服务器未启动会提示不可达。</p>
+            <p class="hint">上传前请先启动服务器（默认 <code>http://127.0.0.1:8080</code>）。上传的构筑经服务器校验后保存到 <code>Server/repo/{playerId}/</code> 并<b>实时进入精英怪候选池</b>；内容重复的构筑不会重复入库；数据有误会提示重新构筑；服务器未启动会提示不可达。</p>
           </div>
         </div>
         <div class="box">
@@ -1350,7 +1350,7 @@ function buildMarkdown(){
 }
 
 /* ── 上传构筑到服务器（POST /api/user-bd）──
-   服务器严格校验：通过 → 存文件到 userBD/{playerId}/ 并实时进入投放候选池；
+   服务器严格校验：通过 → 存文件到 repo/{playerId}/ 并实时进入投放候选池；
    数据有误 → 400（提示重新构筑）；服务器未启动/不可达 → 提示离线。 */
 function serverUrl(){
   const v = ($("#serverUrl").value || "").trim() || "http://127.0.0.1:8080";

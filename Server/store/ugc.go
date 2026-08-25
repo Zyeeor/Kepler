@@ -1,161 +1,62 @@
-// Package store 定义存储层接口与实现。
+// UGC 域 SQLite 实现（实现 ugc.Store）。
 package store
 
 import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"demo/server/ugc"
 )
 
-// ErrNotFound 目标记录不存在。
-var ErrNotFound = errors.New("not found")
+// ugcMigrateStmts UGC 域建表语句（由 sqlite.go 的 migrate 统一执行）。
+var ugcMigrateStmts = []string{
+	// UGC 创作表
+	`CREATE TABLE IF NOT EXISTS creations (
+		id            TEXT PRIMARY KEY,
+		creator_id    TEXT NOT NULL,
+		creator_name  TEXT NOT NULL,
+		type          TEXT NOT NULL,
+		name          TEXT NOT NULL,
+		description   TEXT,
+		tags          TEXT,  -- JSON array
+		file_url      TEXT,
+		thumbnail_url TEXT,
+		status        TEXT DEFAULT 'draft',
+		downloads     INTEGER DEFAULT 0,
+		likes         INTEGER DEFAULT 0,
+		rating        REAL DEFAULT 0,
+		version       INTEGER DEFAULT 1,
+		created_at    INTEGER NOT NULL,
+		updated_at    INTEGER NOT NULL
+	)`,
+	`CREATE INDEX IF NOT EXISTS idx_creations_type_status ON creations(type, status)`,
+	`CREATE INDEX IF NOT EXISTS idx_creations_creator ON creations(creator_id)`,
 
-// Store 存储接口（抽象，便于切换 MySQL）。
-type Store interface {
-	// UGC 内容
-	CreateCreation(c *Creation) error
-	GetCreation(id string) (*Creation, error)
-	ListCreations(filter *CreationFilter) ([]*Creation, int, error)
-	SearchCreations(keyword string, creationType string, page, pageSize int) ([]*Creation, int, error)
-	IncrementDownloads(id string) error
+	// 订阅表
+	`CREATE TABLE IF NOT EXISTS subscriptions (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		player_id   TEXT NOT NULL,
+		creation_id TEXT NOT NULL,
+		created_at  INTEGER NOT NULL,
+		UNIQUE(player_id, creation_id)
+	)`,
 
-	// 订阅
-	Subscribe(playerID, creationID string) error
-	Unsubscribe(playerID, creationID string) error
-	IsSubscribed(playerID, creationID string) (bool, error)
-
-	// 评分
-	RateCreation(playerID, creationID string, rating int, comment string) error
-
-	Close() error
-}
-
-// Creation UGC 创作内容。
-type Creation struct {
-	ID           string
-	CreatorID    string
-	CreatorName  string
-	Type         string // map | monster | template
-	Name         string
-	Description  string
-	Tags         []string
-	FileURL      string
-	ThumbnailURL string
-	Status       string // draft | published | reviewing | banned
-	Downloads    int
-	Likes        int
-	Rating       float64
-	Version      int
-	CreatedAt    int64
-	UpdatedAt    int64
-}
-
-// CreationFilter 查询过滤器。
-type CreationFilter struct {
-	Type       string
-	Page       int
-	PageSize   int
-	SortBy     string // downloads | rating | created_at
-	Descending bool
-}
-
-// ============================================================================
-// SQLite 实现
-// ============================================================================
-
-// SQLiteStore SQLite 存储实现。
-type SQLiteStore struct {
-	db *sql.DB
-}
-
-// NewSQLite 创建 SQLite 存储。
-func NewSQLite(path string) (*SQLiteStore, error) {
-	if dir := filepath.Dir(path); dir != "." && dir != "" {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return nil, fmt.Errorf("create data dir: %w", err)
-		}
-	}
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, fmt.Errorf("open db: %w", err)
-	}
-	db.SetMaxOpenConns(1)
-
-	s := &SQLiteStore{db: db}
-	if err := s.migrate(); err != nil {
-		db.Close()
-		return nil, err
-	}
-	return s, nil
-}
-
-func (s *SQLiteStore) migrate() error {
-	stmts := []string{
-		// UGC 创作表
-		`CREATE TABLE IF NOT EXISTS creations (
-			id            TEXT PRIMARY KEY,
-			creator_id    TEXT NOT NULL,
-			creator_name  TEXT NOT NULL,
-			type          TEXT NOT NULL,
-			name          TEXT NOT NULL,
-			description   TEXT,
-			tags          TEXT,  -- JSON array
-			file_url      TEXT,
-			thumbnail_url TEXT,
-			status        TEXT DEFAULT 'draft',
-			downloads     INTEGER DEFAULT 0,
-			likes         INTEGER DEFAULT 0,
-			rating        REAL DEFAULT 0,
-			version       INTEGER DEFAULT 1,
-			created_at    INTEGER NOT NULL,
-			updated_at    INTEGER NOT NULL
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_creations_type_status ON creations(type, status)`,
-		`CREATE INDEX IF NOT EXISTS idx_creations_creator ON creations(creator_id)`,
-
-		// 订阅表
-		`CREATE TABLE IF NOT EXISTS subscriptions (
-			id          INTEGER PRIMARY KEY AUTOINCREMENT,
-			player_id   TEXT NOT NULL,
-			creation_id TEXT NOT NULL,
-			created_at  INTEGER NOT NULL,
-			UNIQUE(player_id, creation_id)
-		)`,
-
-		// 评分表
-		`CREATE TABLE IF NOT EXISTS creation_reviews (
-			id          INTEGER PRIMARY KEY AUTOINCREMENT,
-			creation_id TEXT NOT NULL,
-			player_id   TEXT NOT NULL,
-			rating      INTEGER NOT NULL,
-			comment     TEXT,
-			created_at  INTEGER NOT NULL,
-			UNIQUE(creation_id, player_id)
-		)`,
-	}
-
-	// 精英怪 BD 快照表（他人 BD 怪物投放候选库，见 elite.go）
-	stmts = append(stmts, snapshotMigrateStmts...)
-
-	// 精英怪战果回传聚合表（策划案 §6.5，见 elite.go）
-	stmts = append(stmts, eliteStatsMigrateStmts...)
-
-	for _, stmt := range stmts {
-		if _, err := s.db.Exec(stmt); err != nil {
-			return fmt.Errorf("migrate: %w", err)
-		}
-	}
-	return nil
+	// 评分表
+	`CREATE TABLE IF NOT EXISTS creation_reviews (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		creation_id TEXT NOT NULL,
+		player_id   TEXT NOT NULL,
+		rating      INTEGER NOT NULL,
+		comment     TEXT,
+		created_at  INTEGER NOT NULL,
+		UNIQUE(creation_id, player_id)
+	)`,
 }
 
 // CreateCreation 创建 UGC 内容。
-func (s *SQLiteStore) CreateCreation(c *Creation) error {
+func (s *SQLiteStore) CreateCreation(c *ugc.Creation) error {
 	tagsJSON, _ := json.Marshal(c.Tags)
 	now := time.Now().Unix()
 	_, err := s.db.Exec(`
@@ -167,8 +68,8 @@ func (s *SQLiteStore) CreateCreation(c *Creation) error {
 }
 
 // GetCreation 获取 UGC 内容。
-func (s *SQLiteStore) GetCreation(id string) (*Creation, error) {
-	var c Creation
+func (s *SQLiteStore) GetCreation(id string) (*ugc.Creation, error) {
+	var c ugc.Creation
 	var tagsJSON string
 	err := s.db.QueryRow(`
 		SELECT id, creator_id, creator_name, type, name, description, tags, file_url, thumbnail_url, status, downloads, likes, rating, version, created_at, updated_at
@@ -177,7 +78,7 @@ func (s *SQLiteStore) GetCreation(id string) (*Creation, error) {
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, ugc.ErrNotFound
 		}
 		return nil, err
 	}
@@ -186,7 +87,7 @@ func (s *SQLiteStore) GetCreation(id string) (*Creation, error) {
 }
 
 // ListCreations 列表查询。
-func (s *SQLiteStore) ListCreations(filter *CreationFilter) ([]*Creation, int, error) {
+func (s *SQLiteStore) ListCreations(filter *ugc.CreationFilter) ([]*ugc.Creation, int, error) {
 	where := "status = 'published'"
 	args := []any{}
 	if filter.Type != "" {
@@ -238,7 +139,7 @@ func (s *SQLiteStore) ListCreations(filter *CreationFilter) ([]*Creation, int, e
 }
 
 // SearchCreations 搜索。
-func (s *SQLiteStore) SearchCreations(keyword string, creationType string, page, pageSize int) ([]*Creation, int, error) {
+func (s *SQLiteStore) SearchCreations(keyword string, creationType string, page, pageSize int) ([]*ugc.Creation, int, error) {
 	where := "status = 'published' AND (name LIKE ? OR description LIKE ?)"
 	args := []any{"%" + keyword + "%", "%" + keyword + "%"}
 	if creationType != "" {
@@ -273,10 +174,10 @@ func (s *SQLiteStore) SearchCreations(keyword string, creationType string, page,
 }
 
 // scanCreations 扫描查询结果。
-func (s *SQLiteStore) scanCreations(rows *sql.Rows, total int) ([]*Creation, int, error) {
-	var out []*Creation
+func (s *SQLiteStore) scanCreations(rows *sql.Rows, total int) ([]*ugc.Creation, int, error) {
+	var out []*ugc.Creation
 	for rows.Next() {
-		var c Creation
+		var c ugc.Creation
 		var tagsJSON string
 		if err := rows.Scan(&c.ID, &c.CreatorID, &c.CreatorName, &c.Type, &c.Name, &c.Description, &tagsJSON, &c.FileURL, &c.ThumbnailURL, &c.Status, &c.Downloads, &c.Likes, &c.Rating, &c.Version, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, 0, err
@@ -335,6 +236,3 @@ func (s *SQLiteStore) RateCreation(playerID, creationID string, rating int, comm
 		) WHERE id = ?`, creationID, creationID)
 	return err
 }
-
-// Close 关闭数据库。
-func (s *SQLiteStore) Close() error { return s.db.Close() }
