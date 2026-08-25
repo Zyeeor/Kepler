@@ -30,8 +30,20 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
     public GameObject stormVfxPrefab;
     public float stormVfxLifetimePadding = 0.25f;
 
+    [Header("Storm Model")]
+    public GameObject modelToDisable;
+    public GameObject stormModelPrefab;
+    public Transform stormModelSpawnPoint;
+    public Vector3 stormModelTransformOffset = Vector3.zero;
+    public Vector3 stormModelScale = Vector3.one;
+    public float stormModelClockwiseSpinSpeed = 360f;
+
+
     private Coroutine _stormRoutine;
     private GameObject _stormVfx;
+    private GameObject _stormModel;
+    private bool _restoreDisabledModel;
+
 
     private void OnEnable()
     {
@@ -78,11 +90,20 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
         }
 
         Vector3 aim = owner.transform.forward;
-        if (owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 mouseAim))
-            aim = mouseAim;
+        if (owner.isPossessed)
+        {
+            if (TryGetPossessedMouseDirection(out Vector3 mouseAim))
+                aim = mouseAim;
+        }
+        else if (owner.targetPlayer != null)
+        {
+            aim = owner.targetPlayer.position - owner.transform.position;
+        }
+
         aim.y = 0f;
         if (aim.sqrMagnitude > 0.0001f)
-            yield return RotatePossessedOwnerTowards(aim.normalized, aimTurnSpeed);
+            yield return RotateOwnerTowards(aim.normalized, aimTurnSpeed);
+
 
         if (owner == null)
         {
@@ -103,13 +124,16 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
             owner.Combat.ApplyEffect(stormSpeedEffect, owner.Combat, abilityTags, out _);
 
         SpawnStormVfx(duration);
+        SpawnStormModel();
         float elapsed = 0f;
+
         float nextTick = 0f;
 
         while (owner != null && !owner.isDowned && elapsed < duration)
         {
             // Body fatal / swap ends via OnDisable / ResetForOwnerReuse.
             elapsed += AbilityDeltaTime;
+            RotateStormModel();
             if (elapsed >= nextTick)
             {
                 nextTick += tickInterval;
@@ -118,15 +142,41 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
             yield return null;
         }
 
+
         if (speedBuff && owner != null && owner.Combat != null)
             owner.Combat.RemoveEffect(stormSpeedEffect);
 
         CleanupStormVfx();
+        CleanupStormModel();
         _stormRoutine = null;
+
         EndActivationEffect();
     }
 
+    private IEnumerator RotateOwnerTowards(Vector3 direction, float turnSpeed)
+    {
+        if (owner == null || direction.sqrMagnitude < 0.0001f) yield break;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        owner.IsAbilityFacingLocked = true;
+        while (owner != null && Quaternion.Angle(owner.transform.rotation, targetRotation) > 0.1f)
+        {
+            owner.transform.rotation = Quaternion.RotateTowards(
+                owner.transform.rotation,
+                targetRotation,
+                turnSpeed * AbilityDeltaTime);
+            yield return null;
+        }
+
+        if (owner != null)
+        {
+            owner.transform.rotation = targetRotation;
+            owner.IsAbilityFacingLocked = false;
+        }
+    }
+
     private void TickStorm()
+
     {
         if (owner == null) return;
         Vector3 center = owner.transform.position;
@@ -199,7 +249,42 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
         ReleaseVfx(_stormVfx, duration + stormVfxLifetimePadding);
     }
 
+    private void SpawnStormModel()
+    {
+        CleanupStormModel();
+        if (stormModelPrefab == null || owner == null) return;
+
+        Transform anchor = stormModelSpawnPoint != null ? stormModelSpawnPoint : owner.transform;
+        if (modelToDisable != null)
+        {
+            _restoreDisabledModel = modelToDisable.activeSelf;
+            modelToDisable.SetActive(false);
+        }
+
+        _stormModel = Instantiate(stormModelPrefab, anchor);
+        _stormModel.transform.localPosition = stormModelTransformOffset;
+        _stormModel.transform.localRotation = Quaternion.identity;
+        _stormModel.transform.localScale = Vector3.Scale(_stormModel.transform.localScale, stormModelScale);
+
+    }
+
+    private void RotateStormModel()
+    {
+        if (_stormModel == null) return;
+        _stormModel.transform.Rotate(Vector3.up, -stormModelClockwiseSpinSpeed * AbilityDeltaTime, Space.Self);
+    }
+
+    private void CleanupStormModel()
+    {
+        if (_stormModel != null) Destroy(_stormModel);
+        _stormModel = null;
+        if (modelToDisable != null && _restoreDisabledModel)
+            modelToDisable.SetActive(true);
+        _restoreDisabledModel = false;
+    }
+
     private void CleanupStormVfx()
+
     {
         if (_stormVfx != null)
         {
@@ -218,9 +303,11 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
         if (owner != null && owner.Combat != null && stormSpeedEffect != null)
             owner.Combat.RemoveEffect(stormSpeedEffect);
         CleanupStormVfx();
+        CleanupStormModel();
     }
 
     private void EnsureTag(string tag)
+
     {
         if (abilityTags == null) abilityTags = new List<string>();
         if (!abilityTags.Exists(t => string.Equals(t, tag, System.StringComparison.OrdinalIgnoreCase)))

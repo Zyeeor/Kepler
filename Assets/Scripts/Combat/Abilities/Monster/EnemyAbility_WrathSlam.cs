@@ -62,10 +62,26 @@ public class EnemyAbility_WrathSlam : EnemyAbility
         return base.CanTrigger() && owner != null && owner.targetPlayer != null;
     }
 
+    protected override GameObject SpawnVfx()
+    {
+        SpawnWeaponVfx();
+        if (vfxPrefab == null || owner == null) return null;
+
+        Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : owner.transform;
+        activeVfx = VfxPool.Instance.Spawn(vfxPrefab, anchor.position, anchor.rotation, anchor);
+        activeVfx.transform.localPosition = vfxPositionOffset;
+        activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
+        ScaleAbilityObject(activeVfx);
+        PlayVfx(activeVfx);
+        ReleaseVfx(activeVfx, ResolveVfxPlayDuration(activeVfx));
+        return activeVfx;
+    }
+
     protected override void OnTrigger()
     {
         StartCoroutine(SlamRoutine());
     }
+
 
     private IEnumerator SlamRoutine()
     {
