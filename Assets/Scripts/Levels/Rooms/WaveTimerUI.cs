@@ -63,6 +63,7 @@ public class WaveTimerUI : MonoBehaviour
         label.fontStyle = FontStyles.Bold;
         label.color = normalColor;
         label.raycastTarget = false;
+        UiFontAssets.ApplyTo(label);
         label.text = "";
     }
 

@@ -91,6 +91,7 @@ public sealed class RunCountdownUI : MonoBehaviour
         label.color = textColor;
         label.raycastTarget = false;
         label.enableWordWrapping = false;
+        UiFontAssets.ApplyTo(label);
         label.text = FormatSeconds(Mathf.CeilToInt(durationSeconds));
     }
 

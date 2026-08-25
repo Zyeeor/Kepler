@@ -146,6 +146,7 @@ public class FirstClearController : MonoBehaviour
             var tmp = tgo.GetComponent<TextMeshProUGUI>();
             tmp.text = TextCatalog.Get(config.declarationKeys[idx]);
             tmp.fontSize = 28f; tmp.alignment = TextAlignmentOptions.Center; tmp.color = Color.white;
+            UiFontAssets.ApplyTo(tmp);
         }
 
         // 等待选择（任意按钮点击后 chosenId 非空）
@@ -193,6 +194,7 @@ public class FirstClearController : MonoBehaviour
         tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
         _text = textGo.GetComponent<TextMeshProUGUI>();
         _text.fontSize = 40f; _text.alignment = TextAlignmentOptions.Center; _text.color = Color.white;
+        UiFontAssets.ApplyTo(_text);
 
         _buttonGroup = new GameObject("Buttons", typeof(RectTransform));
         _buttonGroup.transform.SetParent(_panel.transform, false);

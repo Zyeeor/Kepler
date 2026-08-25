@@ -6,8 +6,6 @@ using UnityEngine.UI;
 public sealed class BossBattleAnnouncementUI : MonoBehaviour
 {
     const string BossBattleText = "boss战开启，使用场上的七具不朽尸身与之作战！";
-    static readonly string[] ChineseSystemFonts = { "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", "Noto Sans CJK SC" };
-    static TMP_FontAsset fallbackChineseFont;
 
     [Min(0.1f)] public float displayDuration = 5f;
     [Min(0.01f)] public float fadeDuration = 0.4f;
@@ -86,30 +84,7 @@ public sealed class BossBattleAnnouncementUI : MonoBehaviour
     void ApplyChineseFont()
     {
         if (label == null) return;
-        TMP_FontAsset font = UiFontAssets.Chinese;
-        if (font == null) font = ResolveFallbackChineseFont();
-        if (font == null) font = UiFontAssets.ChineseOrDefault;
-        if (font != null) label.font = font;
-    }
-
-    static TMP_FontAsset ResolveFallbackChineseFont()
-    {
-        if (fallbackChineseFont != null) return fallbackChineseFont;
-        for (int i = 0; i < ChineseSystemFonts.Length; i++)
-        {
-            try
-            {
-                Font source = Font.CreateDynamicFontFromOSFont(ChineseSystemFonts[i], 48);
-                if (source == null) continue;
-                fallbackChineseFont = TMP_FontAsset.CreateFontAsset(source);
-                if (fallbackChineseFont != null) return fallbackChineseFont;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning("[BossBattleAnnouncementUI] 中文字体兜底失败：" + e.Message);
-            }
-        }
-        return null;
+        UiFontAssets.ApplyTo(label, FontSlots.Default);
     }
 
     static Canvas FindHudCanvas()

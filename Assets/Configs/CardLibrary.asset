@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cards:
   - cardName: "\u5341\u5B57\u5723\u88C1"
+    textKey: 
     effectId: PR-A02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Sword Qi becomes a cross-shaped slash with one shared hit instance.
@@ -25,16 +26,21 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 21300000, guid: 6ff122357d32b7a4c94b5d6c0849fc61, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 13383d2e4d7249d4d92ffec83436ec9a, type: 3}
     - {fileID: 21300000, guid: 82f493acd6f38564bacb4b3cfdff59d4, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u738B\u51A0\u52BF"
+    textKey: 
     effectId: PR-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Fires three Sword Qi blades in a fixed spread.
@@ -46,16 +52,21 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 21300000, guid: 7c672fc7b70c6d848b410ad0887e2819, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 3687f17f407894b4db7eb270401d9a42, type: 3}
     middlegroundSprite: {fileID: 21300000, guid: 1269b2f14d175164691069b8e47b6967,
       type: 3}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u738B\u547D\u8FDC\u5F81"
+    textKey: 
     effectId: PR-A04
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Increases the legal range of Sword Qi.
@@ -67,15 +78,20 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 21300000, guid: cc6af5e051fafb844abe5137848d6081, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 30c5c5209a9cb1e418c88867208c98ab, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u738B\u5EA7\u4E4B\u6B65"
+    textKey: 
     effectId: PR-M01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Increases dash distance and front strike damage.
@@ -89,15 +105,20 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 21300000, guid: 49b05e8719097b34e97620b467ab526b, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 6ff122357d32b7a4c94b5d6c0849fc61, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5F81\u670D\u8005\u4E4B\u5F84"
+    textKey: 
     effectId: PR-X01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Each blink creates one linear Sword Qi slash along its path.
@@ -109,15 +130,20 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 21300000, guid: 1680940e95e94bf42ad21ed9dddf7287, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: c57286152e23d054e8ec9086b7c06f8b, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u738B\u6743\u5DE1\u730E"
+    textKey: 
     effectId: PR-S01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: Blink Chain performs two additional strikes.
@@ -131,15 +157,20 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 21300000, guid: 6ff122357d32b7a4c94b5d6c0849fc61, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 21300000, guid: 1269b2f14d175164691069b8e47b6967,
       type: 3}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 8d2d118f77de8da4db577984f577703c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u8FDF\u6765\u7684\u5730\u9E23"
+    textKey: 
     effectId: SL-M02
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: Creates an immediate ground blast after a legal landing.
@@ -150,15 +181,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 0b813e96574736247958a58e58f24082, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 9d5d722bb3dd5a640bff1027e8ff736c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5723\u9AB8\u5206\u88C2"
+    textKey: 
     effectId: SL-A03
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: After the cannon blast, fires charged-time-scaled scatter fragments.
@@ -169,15 +205,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 682e1233c663bd14ca9f5c9fe3ddb24f, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: dc11a6cac2c449344adff03fc5d01cc0, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u9057\u4E0B\u7684\u5B88\u671B\u8005"
+    textKey: 
     effectId: SL-M01
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: Places a short-lived mine at the takeoff point before jumping.
@@ -188,15 +229,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 018a2c60d987bd5448e72fc1ea81dfd1, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 9d5d722bb3dd5a640bff1027e8ff736c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u540C\u6B32\u76F8\u566C"
+    textKey: 
     effectId: LU-S05
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u540C\u6B21 Pull \u4E2D Linked \u76EE\u6807\u4E92\u649E\u7206\u70B8\u3002"
@@ -214,14 +260,19 @@ MonoBehaviour:
     category: 2
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: a035db9559bd5f2468b86775c96b32e0, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 5e1b110bb8af79e4890e8af9ce1ed619, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u540C\u6B32\u4E4B\u5F71"
+    textKey: 
     effectId: LU-M05
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u6709\u6548 Anchor \u5EF6\u8FDF\u6A21\u4EFF\u672C\u4F53 Attack\uFF0C\u4F24\u5BB350%\u3002"
@@ -237,15 +288,20 @@ MonoBehaviour:
     category: 2
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: a97d3d5010dd2e649b4c4062a16847c4, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 6b32846955b373e41afa97ff20326cf7, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 5e1b110bb8af79e4890e8af9ce1ed619, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u80CC\u79BB\u4E4B\u7F5A"
+    textKey: 
     effectId: LU-M03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u6362\u4F4D\u6210\u529F\u540E\uFF0C\u65E7 Anchor \u4F4D\u7F6E\u5EF6\u8FDF\u7206\u70B8\u3002"
@@ -257,16 +313,21 @@ MonoBehaviour:
     category: 2
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: a4df5e059f67b47468196cdd1aa8ed5d, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 4b25bbfbf7016904db69fb3ebefe1255, type: 3}
     - {fileID: 21300000, guid: a4afcf6d9c3c9634f9d84821db9e598a, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: d3d3135e0a88b3c4eb2e6046243aec28, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u6B32\u75D5\u6B96\u7206"
+    textKey: 
     effectId: LU-A03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "Linked \u76EE\u6807\u6B7B\u4EA1\u6D88\u8D39\u7206\u70B8\u3002"
@@ -284,15 +345,20 @@ MonoBehaviour:
     category: 2
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: adacea30928b0a04696d5fd5134482ed, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 21300000, guid: 0d2b9db1bacd2dc42b9bc300adff3fa1,
       type: 3}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 884ed8ca5636f9a4ab93b156f23e3a1a, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u65E0\u5BB3\u4E4B\u62E5"
+    textKey: 
     effectId: LU-S06
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u7275\u5F15\u6765\u6E90\u4F24\u5BB3\u9694\u79BB\uFF08Pull + grace\uFF09\u3002"
@@ -306,15 +372,20 @@ MonoBehaviour:
     category: 2
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: 58b5c63f9d16d584886d21a935b4a304, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 21300000, guid: 185689042bc83bb428456ee1faf18d82,
       type: 3}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 5e1b110bb8af79e4890e8af9ce1ed619, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u8272\u6B32\u6F6E\u6C50"
+    textKey: 
     effectId: LU-A04
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "Attack \u66FF\u6362\u4E3A\u73AF\u5F62\u8FF7\u6C14\u3002"
@@ -336,15 +407,20 @@ MonoBehaviour:
     category: 2
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: ebbf95c8d97de9048bc1308f29250cc1, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 4a982f8ef1fdea0449aaf0bd622ae3c9, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 5dc4611717c3b6a4f910795881236647, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u6B32\u6F6E\u4E0D\u606F"
+    textKey: 
     effectId: LU-TG01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u79FB\u901F +15%\uFF1B\u4E09\u69FD CD \xD70.70\u3002"
@@ -360,15 +436,20 @@ MonoBehaviour:
     category: 3
     monsterType: 7
     foregroundSprite: {fileID: 21300000, guid: 14048c454e171904ab211633b900c09c, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 2750f370c16e86f4b9fe43252ccff06e, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 884ed8ca5636f9a4ab93b156f23e3a1a, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4E07\u773C\u540C\u89C6"
+    textKey: 
     effectId: EN-A01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
     description: "\u6BCF\u96943\u79D2\uFF0C\u6FC0\u5149\u4F1A\u77ED\u6682\u540C\u65F6\u7167\u5411\u56DB\u4E2A\u76EE\u6807\u3002"
@@ -380,14 +461,19 @@ MonoBehaviour:
     category: 2
     monsterType: 4
     foregroundSprite: {fileID: 21300000, guid: 9f88acd6c777b874ba3ee77a1b925f05, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: 524ea96504a3cf7498d4fd26511b059e, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u7A7F\u955C\u5723\u5149"
+    textKey: 
     effectId: EN-A03
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
     description: "\u6FC0\u5149\u4F1A\u5728\u77ED\u6682\u9636\u6BB5\u83B7\u5F97\u7A7F\u900F\u80FD\u529B\uFF0C\u53EF\u4EE5\u7EE7\u7EED\u547D\u4E2D\u540E\u65B9\u76EE\u6807\u3002"
@@ -402,15 +488,20 @@ MonoBehaviour:
       value: 4
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 33353b4e4cb802e47a06fbc3a1134c7d, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 24d3b2a0bf536e144a514caeb115ba9d, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
-    borderSprite: {fileID: 0}
+    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5992\u7130\u6E10\u70BC"
+    textKey: 
     effectId: EN-A05
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
     description: "\u6FC0\u5149\u7EF4\u6301\u8D8A\u4E45\uFF0C\u4F24\u5BB3\u8D8A\u9AD8\uFF0C\u6700\u9AD8\u8FBE\u5230\u6BCF\u79D250\u70B9\u3002"
@@ -425,15 +516,21 @@ MonoBehaviour:
       value: 8
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 0}
-    extraForegroundSprites: []
+    foregroundSprite: {fileID: 21300000, guid: 83983f3e84383e7499a3647eca71a8de, type: 3}
+    hideForegroundLayer: 0
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: fbba7a15bef06434892cbc7936cbb024, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 0ef729c33a245c14e9d014609a9ff77f, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u955C\u75D5\u5DE1\u730E"
+    textKey: 
     effectId: EN-M01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
     description: "\u98DE\u884C\u7ECF\u8FC7\u7684\u654C\u4EBA\u4F1A\u7559\u4E0B\u5370\u8BB0\u3002"
@@ -444,15 +541,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 25eb2e6a97c5f474fa26eaa581191935, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: b12a6ed9711f8e343b9462a9ce817824, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u65E0\u5E95\u4E4B\u955C"
+    textKey: 
     effectId: EN-R01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
     description: "\u76EE\u6807\u8EAB\u4E0A\u7684\u5370\u8BB0\u80FD\u50A8\u5B58\u66F4\u591A\u4F24\u5BB3\u3002"
@@ -465,15 +567,20 @@ MonoBehaviour:
       value: 0.5
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 2715754d6ad8fa345a325d8e3a2deb68, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u96F7\u9706\u4F5C\u8BC1"
+    textKey: 
     effectId: EN-S01
     image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
     description: "\u96F7\u66B4\u547D\u4E2D\u540E\uFF0C\u4F1A\u5728\u8BE5\u4F4D\u7F6E1\u79D2\u540E\u7EE7\u7EED\u964D\u4E0B\u96F7\u9706\uFF0C\u968F\u540E\u518D\u964D\u4E0B\u7B2C\u4E09\u6B21\u3002"
@@ -488,15 +595,22 @@ MonoBehaviour:
       value: 1
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 0}
-    extraForegroundSprites: []
+    foregroundSprite: {fileID: 21300000, guid: 3a3beba460c18b74c8e5e95539b0ede0, type: 3}
+    hideForegroundLayer: 0
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: 5c9351288ac6ef64c9d21ba4fe72bda6, type: 3}
+    - {fileID: 21300000, guid: c5037867434411e42950dbc9e56002f2, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: c5037867434411e42950dbc9e56002f2, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u9ED1\u6CB9\u5723\u8DEF"
+    textKey: 
     effectId: GR-M01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u9ED1\u6CB9\u66F4\u957F\u66F4\u5BBD\uFF1B\u654C\u4EBA\u8E0F\u5165\u51CF\u901F\u3002"
@@ -507,15 +621,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 3c0fbea2ea1b9b74c8d38965a4a9b4b3, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5723\u8DEF\u6069\u8D50"
+    textKey: 
     effectId: GR-M02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u7AD9\u5728\u81EA\u8EAB\u666E\u901A\u9ED1\u6CB9\u4E0A\u514D\u75AB\u5730\u5F62\u4F24\u5BB3\u3002"
@@ -526,15 +645,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: ff4c688f529afe24d93d06a185033cdf, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4E07\u624B\u5723\u5E93"
+    textKey: 
     effectId: GR-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u63D0\u9AD8\u9B54\u624B\u5E93\u5B58/\u5355\u6B21\u91CA\u653E\u4E0A\u9650\u3002"
@@ -545,15 +669,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: e0066807bc24b1e4d9c9fd9cfd6c5eff, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u672A\u6536\u4E4B\u8D21"
+    textKey: 
     effectId: GR-A02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u9B54\u624B\u81F4\u547D\u540E\u518D\u7D22\u654C\u4E00\u6B21\u3002"
@@ -564,15 +693,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 0af74499f034d434489fc03841460be0, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4EA1\u8005\u9057\u4EA7"
+    textKey: 
     effectId: GR-A03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u9B54\u624B\u51FB\u6740\u540E\u751F\u62101-2\u53EA\u65B0\u624B\u3002"
@@ -583,15 +717,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 4901bbc61a6327b449823dda88e7417e, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u8FC2\u56DE\u7EB3\u8D21"
+    textKey: 
     effectId: GR-A07
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u9B54\u624B\u4FA7\u7FFC\u5F27\u7EBF\u518D\u6536\u675F\u8FFD\u51FB\u3002"
@@ -602,15 +741,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: b80fffcb4c78a564d9ae1cf6fe7688ed, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5723\u5E93\u7EB3\u8D21"
+    textKey: 
     effectId: GR-S01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "Guard\u6BCF60\u70B9\u5438\u6536\u8F6C1\u624B\u3002"
@@ -621,15 +765,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: ee4762d9696aaaa4487e1dd418aba93c, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u8D2A\u795E\u5E87\u62A4"
+    textKey: 
     effectId: GR-S04
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "Guard\u6301\u7EED3\u79D2\uFF0C\u53EF\u63D0\u524D\u7ED3\u675F\u3002"
@@ -640,15 +789,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 81d6038e9d3ea42419c34f69b5017e01, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: bf7adea3475f3d442a30fec6fdb7c316, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u711A\u9014\u8A93\u7EA6"
+    textKey: 
     effectId: WR-M01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
     description: "\u94A9\u7D22\u8DEF\u5F84\u4E00\u6B21\u4F24\u5BB3"
@@ -660,15 +814,20 @@ MonoBehaviour:
     category: 2
     monsterType: 5
     foregroundSprite: {fileID: 21300000, guid: 8280ab1e5162bfa4ab1c1b639ab14b86, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: d50cd9f09c0cef449aa38fd7409bc95c, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u672B\u65E5\u9501\u94FE"
+    textKey: 
     effectId: WR-M02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
     description: "\u94A9\u7D22\u8DDD\u79BB\u63D0\u5347\u5E76\u5728\u843D\u70B9\u51B2\u51FB"
@@ -682,17 +841,22 @@ MonoBehaviour:
     category: 2
     monsterType: 5
     foregroundSprite: {fileID: 21300000, guid: 83d72233d889eca4db23b13803ecdcb9, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5, type: 3}
     - {fileID: 21300000, guid: 883ebf9a31ccfb54aa387e7ef0ec06c2, type: 3}
     - {fileID: 21300000, guid: a09ec944f327d484b85cf4619c1c2e76, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u6B89\u8EAB\u52A0\u5195"
+    textKey: 
     effectId: WR-B01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
     description: "\u7F3A\u5931\u8010\u4E45\u63D0\u9AD8\u4F24\u5BB3/\u8303\u56F4\u5E76\u7F29\u77EDAttack
@@ -705,16 +869,21 @@ MonoBehaviour:
     category: 2
     monsterType: 5
     foregroundSprite: {fileID: 21300000, guid: 2032b1ef77daadb4888c14c553cbca1b, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites:
     - {fileID: 21300000, guid: c90bcfa810b20584badd16aa659a5c0d, type: 3}
     - {fileID: 21300000, guid: 179a994600bb6234096e3fdcbc0ca446, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4EE5\u8EAB\u4E3A\u85AA"
+    textKey: 
     effectId: WR-B02
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
     description: "\u5E38\u9A7B\u8D34\u8EAB\u71C3\u70E7\u5149\u73AF"
@@ -726,14 +895,19 @@ MonoBehaviour:
     category: 2
     monsterType: 5
     foregroundSprite: {fileID: 21300000, guid: 66244c6db3772e34b87543d516da8f0a, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u98CE\u66B4\u9501\u94FE"
+    textKey: 
     effectId: WR-S01
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
     description: "\u9F99\u5377\u98CE\u671F\u95F4\u79FB\u901F+300%"
@@ -745,15 +919,20 @@ MonoBehaviour:
     category: 2
     monsterType: 5
     foregroundSprite: {fileID: 21300000, guid: 782ea6a9b4d89b64ea2cc3ddc0dcd502, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
       type: 3}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u7EC8\u672B\u98D3\u98CE"
+    textKey: 
     effectId: WR-S03
     image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
     description: "\u9F99\u5377\u98CE\u65F6\u957F+2\u79D2"
@@ -765,15 +944,20 @@ MonoBehaviour:
     category: 2
     monsterType: 5
     foregroundSprite: {fileID: 21300000, guid: bf6bd93e7fbe87241aaae07a1cd9bef3, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
       type: 3}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 21300000, guid: db60b6b182cc27f4db2d25301e9e4e79, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u7FA4\u53E3\u5723\u5BB4"
+    textKey: 
     effectId: GL-A01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u83B7\u5F97\u8FC7\u9971\u540E\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u4F1A\u6210\u5BF9\u964D\u4E0B\uFF1B\u7B2C\u4E8C\u4E2A\u5DE8\u53E3\u7A0D\u540E\u51FA\u73B0\u3002"
@@ -784,15 +968,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 3179b9730dabe3e45bc73f3675440c50, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 1
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 2b7ef6405df462540bef153c2811c041, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 1
     extraBorderSprites: []
   - cardName: "\u730E\u6B65\u5723\u9910"
+    textKey: 
     effectId: GL-A02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u5C0F\u732B\u5316\u4F4D\u79FB\u540E\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u8303\u56F4\u6269\u5927100%\u3002"
@@ -803,15 +992,22 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
-    extraForegroundSprites: []
+    foregroundSprite: {fileID: 21300000, guid: 2e3bb4f446f397143b64fe425612825a, type: 3}
+    hideForegroundLayer: 0
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: a8833d1d069865e4ebce33210f1d47e9, type: 3}
+    - {fileID: 21300000, guid: 1d98673405bbe0342b76876eb5e5cab8, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 5686ac109f1ca374290c6eb47f9b0872, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u8FDC\u65B9\u5723\u9910"
+    textKey: 
     effectId: GL-A03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u6DF1\u6E0A\u5DE8\u53E3\u53EF\u5728\u66F4\u8FDC\u4F4D\u7F6E\u751F\u6210\uFF1B\u4ECD\u4E0D\u8FFD\u8E2A\u3002"
@@ -824,15 +1020,20 @@ MonoBehaviour:
       value: 12
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 6b9ae761ed1099743a6c3cb3fcb934cd, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 1
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: f9484c390d375a641bea4e3d29cfba0a, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u9965\u795E\u730E\u6B65"
+    textKey: 
     effectId: GL-M01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u5C0F\u732B\u5F62\u6001\u79FB\u52A8\u66F4\u5FEB\u3001\u8F6C\u5411\u66F4\u7075\u6D3B\u3002"
@@ -845,15 +1046,20 @@ MonoBehaviour:
       value: 1.25
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 52f7f47f87b62ce479416e1f0ba3cfb9, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 1f63279cadc74fd4aaa4c80ddc08d6a3, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u9C9C\u8840\u5723\u9910"
+    textKey: 
     effectId: GL-S01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u6BCF\u5177\u8EAF\u4F53\u7B2C\u4E00\u6B21\u6210\u529F\u541E\u566C\u654C\u4EBA\u65F6\u6062\u590D50\u70B9\u8010\u4E45\u3002"
@@ -866,15 +1072,22 @@ MonoBehaviour:
       value: 50
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
-    extraForegroundSprites: []
+    foregroundSprite: {fileID: 21300000, guid: 3fe71c3c6bf496844aea2d0a03d4efd1, type: 3}
+    hideForegroundLayer: 0
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: dee59b6e22c137e4393da5472506331b, type: 3}
+    - {fileID: 21300000, guid: c07572853e454e34592287fb278ac1f9, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 5686ac109f1ca374290c6eb47f9b0872, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u6700\u540E\u4E00\u9910"
+    textKey: 
     effectId: GL-S02
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u541E\u566C\u547D\u4E2D\u4F4E\u8010\u4E45\u654C\u4EBA\u65F6\u5904\u51B3\u3002"
@@ -887,15 +1100,20 @@ MonoBehaviour:
       value: 0.2
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 88e12591130199e43a783a3d2e159d21, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 2b7ef6405df462540bef153c2811c041, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4E07\u7269\u7686\u98DF"
+    textKey: 
     effectId: GL-S03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u541E\u566C\u524D\u65B9\u6247\u5F62\u5185\u5168\u90E8\u5408\u6CD5\u98DE\u884C\u653B\u51FB\u5E76\u83B7\u5F97\u8FC7\u9971\u3002"
@@ -906,15 +1124,21 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 0}
-    extraForegroundSprites: []
+    foregroundSprite: {fileID: 21300000, guid: 6376131503e63d042b7e445c9b90459d, type: 3}
+    hideForegroundLayer: 0
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: 823a5645bb33c3f44a6ba9de4eba8aab, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 2b7ef6405df462540bef153c2811c041, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5F02\u7AEF\u5664\u58F0"
+    textKey: 
     effectId: PR-A03
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u5251\u6C14\u4E0E\u7A81\u8FDB\u524D\u7AEF\u53EF\u5207\u65AD\u8FCE\u9762\u98DE\u884C\u653B\u51FB\uFF1B\u7A81\u8FDB\u7ED3\u675F\u540E\u524D\u65B9\u5207\u65AD\u533A\u4FDD\u75591\u79D2\u3002"
@@ -926,14 +1150,19 @@ MonoBehaviour:
     category: 2
     monsterType: 1
     foregroundSprite: {fileID: 0}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u738B\u6743\u75BE\u4EE4"
+    textKey: 
     effectId: PR-TG01
     image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
     description: "\u63D0\u9AD8\u50B2\u6162\u4F4D\u79FB\u63A8\u8FDB\u901F\u5EA6\u4E0E\u5251\u6C14\u5C55\u5F00\u3001\u5EF6\u4F38\u901F\u5EA6\u3002"
@@ -948,15 +1177,21 @@ MonoBehaviour:
       value: 1.15
     category: 3
     monsterType: 1
-    foregroundSprite: {fileID: 0}
-    extraForegroundSprites: []
+    foregroundSprite: {fileID: 21300000, guid: d351fa9a84c857645b60bbc928277647, type: 3}
+    hideForegroundLayer: 0
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: 8f3ae82327d036441b7a084ba464840d, type: 3}
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4F17\u4EC6\u9F50\u9E23"
+    textKey: 
     effectId: SL-A04
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: "\u91CD\u70AE\u66FF\u6362\u4E3A\u56FA\u5B9A\u6247\u5F62\u591A\u53D1\uFF1B\u4F24\u5BB3\u5E73\u644A\u4E14\u6BCF\u679A\u6700\u4F4E3\u70B9\u3002"
@@ -971,15 +1206,20 @@ MonoBehaviour:
       value: 24
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 0b68bbb287f53e649a6f7e93714f1fdb, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 19c04a6210ebb284b87410cb57caed6c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u5DE8\u50CF\u8DF5\u8E0F"
+    textKey: 
     effectId: SL-A05
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: "\u8FBE\u5230\u6307\u5B9A\u70AE\u4F53\u6863\u4F4D\u540E\uFF0C\u6BCF\u53D1\u91CD\u70AE\u53EF\u538B\u788E\u4E00\u679A\u8F83\u5C0F\u7684\u8FCE\u9762\u98DE\u884C\u653B\u51FB\u3002"
@@ -990,15 +1230,20 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 725e5668be8c39948897285e1df09017, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 19c04a6210ebb284b87410cb57caed6c, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u6C89\u7720\u4F8D\u4ECE"
+    textKey: 
     effectId: SL-S01
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: "\u7279\u6B8A\u6280\u80FD\u989D\u5916\u751F\u6210\u4E24\u53F0\u6728\u7075\uFF1B\u8D85\u8FC7\u540C\u6E90\u4E0A\u9650\u66FF\u6362\u6700\u65E7\u6728\u7075\u3002"
@@ -1011,15 +1256,20 @@ MonoBehaviour:
       value: 2
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 7822db2cebd149a42a35ace0efbc01f5, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 0}
+    backgroundSprite: {fileID: 21300000, guid: 0c2f154bb9de3b24c963e9a3b9a6d18e, type: 3}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u4F8D\u4ECE\u5723\u6B66"
+    textKey: 
     effectId: SL-S03
     image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
     description: "\u6728\u7075\u653B\u51FB\u66F4\u5FEB\uFF0C\u5E76\u6301\u7EED\u8FFD\u51FB\u6700\u8FD1\u7684\u5408\u6CD5\u654C\u4EBA\u3002"
@@ -1032,13 +1282,17 @@ MonoBehaviour:
       value: 0.6
     category: 2
     monsterType: 2
-    foregroundSprite: {fileID: 0}
+    foregroundSprite: {fileID: 21300000, guid: 1b8f097c43133294cbf2493fa09373d0, type: 3}
+    hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
+    hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
     backgroundSprite: {fileID: 0}
+    hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
+    hideBorderLayer: 0
     extraBorderSprites: []
   disabledEffectIds:
   - GL-X01

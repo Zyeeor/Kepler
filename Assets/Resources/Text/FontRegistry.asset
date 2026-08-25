@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slots:
   - slotName: default
-    font: {fileID: 0}
+    font: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
   - slotName: title
-    font: {fileID: 0}
+    font: {fileID: 11400000, guid: 4b12a5941bcb057488f46fe8251cb15e, type: 2}
   - slotName: number
     font: {fileID: 0}
   - slotName: card
-    font: {fileID: 0}
+    font: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}

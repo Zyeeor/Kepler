@@ -112,6 +112,7 @@ public sealed class BossHealthBarUI : MonoBehaviour
         label.alignment = TextAlignmentOptions.MidlineLeft;
         label.color = new Color(1f, 0.55f, 0.72f, 1f);
         label.raycastTarget = false;
+        UiFontAssets.ApplyTo(label);
     }
 
     static Image CreateImage(Transform parent, string name, Color color)

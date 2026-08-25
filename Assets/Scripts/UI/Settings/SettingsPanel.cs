@@ -119,6 +119,8 @@ public class SettingsPanel : MonoBehaviour
         go.name = goName;
         var rt = go.GetComponent<RectTransform>();
         rt.anchoredPosition = anchoredPos;
+        if (FontRegistry.Instance != null)
+            FontRegistry.Instance.ApplyToTree(go.transform);
         return go.GetComponent<TMP_Text>();
     }
 

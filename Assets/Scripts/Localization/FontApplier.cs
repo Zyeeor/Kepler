@@ -17,12 +17,20 @@ public class FontApplier : MonoBehaviour
 {
     public static FontApplier Instance { get; private set; }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void Bootstrap()
+    {
+        EnsureInstance();
+    }
+
     public static FontApplier EnsureInstance()
     {
         if (Instance != null) return Instance;
         var go = new GameObject("[FontApplier]");
         DontDestroyOnLoad(go);
-        return go.AddComponent<FontApplier>();
+        var applier = go.AddComponent<FontApplier>();
+        applier.ApplyActiveScene();
+        return applier;
     }
 
     void Awake()
@@ -36,6 +44,12 @@ public class FontApplier : MonoBehaviour
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
+    void Start()
+    {
+        // BeforeSceneLoad 可能早于首个场景完成加载；Start 再补一次，确保直接 Play 当前场景也被覆盖。
+        ApplyActiveScene();
+    }
+
     void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -44,15 +58,29 @@ public class FontApplier : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // 只处理有根对象的正式场景（DontDestroyOnLoad 场景无根对象，跳过防重复）
-        if (!scene.IsValid() || scene.rootCount == 0) return;
+        ApplyScene(scene);
+    }
+
+    /// <summary>把指定场景内全部 TMP 文本交给 FontRegistry 统一应用（含 inactive 对象）。</summary>
+    public int ApplyScene(Scene scene)
+    {
+        if (!scene.IsValid() || scene.rootCount == 0) return 0;
         var registry = FontRegistry.Instance;
-        if (registry == null) return;
+        if (registry == null) return 0;
+
         int count = 0;
         foreach (var root in scene.GetRootGameObjects())
         {
             if (root != null) count += registry.ApplyToTree(root.transform);
         }
-        Debug.Log($"[FontApplier] 场景 '{scene.name}' 字体统一应用完成（替换 {count} 个 TMP 文本）。");
+
+        Debug.Log($"[FontApplier] 场景 '{scene.name}' 字体统一应用完成（同步 {count} 个 TMP 文本）。");
+        return count;
+    }
+
+    /// <summary>应用当前活动场景；用于首场景初始化和动态 UI 创建后的兜底刷新。</summary>
+    public int ApplyActiveScene()
+    {
+        return ApplyScene(SceneManager.GetActiveScene());
     }
 }
