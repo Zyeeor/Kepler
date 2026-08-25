@@ -9,10 +9,10 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public sealed class RunCountdownUI : MonoBehaviour
 {
-    const float DefaultDurationSeconds = 480f;
+    const float DefaultDurationSeconds = 420f;
 
     [Header("显示")]
-    [Tooltip("倒计时总时长；默认 8 分钟。运行时优先读取 RunSpawnDirector.bossCombatTime。")]
+    [Tooltip("倒计时总时长；默认 7 分钟。运行时优先读取 RunSpawnDirector.bossCombatTime。")]
     [Min(1f)] public float durationSeconds = DefaultDurationSeconds;
     [Tooltip("右下角安全边距（像素）。")]
     public Vector2 screenMargin = new Vector2(32f, 32f);

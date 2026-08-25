@@ -4,6 +4,7 @@ using UnityEngine;
 public sealed class ENGPOSS001SceneInstaller : MonoBehaviour
 {
     public GameObject bossPrefab;
+    public PossessionImprintHUD imprintHudPrefab;
 
 
     void Awake()
@@ -18,6 +19,7 @@ public sealed class ENGPOSS001SceneInstaller : MonoBehaviour
         }
 #endif
         PossessionImprintManager.EnsureInstance();
-
+        if (imprintHudPrefab != null && FindObjectOfType<PossessionImprintHUD>() == null)
+            Instantiate(imprintHudPrefab);
     }
 }
