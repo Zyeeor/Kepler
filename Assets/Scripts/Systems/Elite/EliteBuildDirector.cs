@@ -470,10 +470,9 @@ public class EliteBuildDirector : MonoBehaviour
         else if (next == RunPhase.Final)
         {
             // Meta §6.7：Final 上传使用独立阶段标记 stage="final"，不借用虚构 Wave 编号；
-            // sourceWave 记真实已完成波数（= 最后一波），服务器 schema 支持 stage 前透传忽略。
-            int finalWave = boundWaveManager != null ? boundWaveManager.TotalWaveCount : 0;
-            if (finalWave <= 0) finalWave = run.CompletedWaveIndex + 1;
-            UploadBuildSnapshots(finalWave, "final");
+            // sourceWave 记真实已完成波数——Boss 可能提前于最后一波刷出（RunSpawnDirector 按时长/难度触发），
+            // 取 TotalWaveCount 会虚高并污染 pick 的 sourceWave 越级筛选；服务器 schema 支持 stage 前透传忽略。
+            UploadBuildSnapshots(run.CompletedWaveIndex + 1, "final");
         }
     }
 

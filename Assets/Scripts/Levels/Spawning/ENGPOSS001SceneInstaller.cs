@@ -6,6 +6,7 @@ public sealed class ENGPOSS001SceneInstaller : MonoBehaviour
     public GameObject bossPrefab;
     public PossessionImprintHUD imprintHudPrefab;
 
+
     void Awake()
     {
         MonsterSpawner.EnsureInstance();

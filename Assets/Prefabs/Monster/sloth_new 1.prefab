@@ -185,6 +185,8 @@ MonoBehaviour:
   projectileHeight: 2
   projectileSpeed: 20
   maxRange: 15
+  bossProjectileScaleMultiplier: 1.5
+  bossPatternCooldown: 6
   impactVfxPrefab: {fileID: 246936507347790118, guid: 6d995a367a9261d47917272ca396605a,
     type: 3}
   impactVfxDuration: 1
@@ -410,9 +412,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 4
-  acceleration: 0
-  deceleration: 0
+  moveSpeed: 8
+  acceleration: 120
+  deceleration: 120
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -463,6 +465,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}
   healthCanvas: {fileID: 0}
   showHealthBar: 1
@@ -753,7 +757,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2198037863452027752, guid: 2432de6f6f19ca748b46795456b8104b, type: 3}
+  - {fileID: 2100000, guid: a4e6ca10e2644da469b1cdcaccb3a893, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1377,6 +1381,16 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -7961035909067654917, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a4e6ca10e2644da469b1cdcaccb3a893, type: 2}
+    - target: {fileID: -3373055484574382507, guid: 5e96704d06f50ea469b133fa12abd573,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a4e6ca10e2644da469b1cdcaccb3a893, type: 2}
     - target: {fileID: 919132149155446097, guid: 5e96704d06f50ea469b133fa12abd573,
         type: 3}
       propertyPath: m_Name

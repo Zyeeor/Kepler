@@ -320,8 +320,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 8
-  acceleration: 0
-  deceleration: 0
+  acceleration: 120
+  deceleration: 120
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -372,6 +372,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 9015894102159341057}
   healthCanvas: {fileID: 5679323062078869185}
   showHealthBar: 1
@@ -707,7 +709,7 @@ MonoBehaviour:
   handSpawnVfxPrefab: {fileID: 0}
   orbitRadius: 1.5
   orbitSpeed: 200
-  heightOffset: -2
+  heightOffset: -10
   detectRange: 8
   launchInterval: 0.3
   aimTurnSpeed: 720

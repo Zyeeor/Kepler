@@ -24,6 +24,14 @@ public class MonsterActor : Actor
     /// <summary>当前控制状态（是否被玩家控制）。</summary>
     public ControlState Control => IsPlayerControlled ? ControlState.Possessed : ControlState.AI;
 
+    /// <summary>
+    /// Raised right after an ability HP cost is actually deducted from a possessed body.
+    /// Args: the body that paid, and the deducted amount.
+    /// Presentation listeners (health bar burn flash) use this instead of watching the
+    /// slider, because the slider cannot tell a paid cost apart from incoming damage.
+    /// </summary>
+    public static event Action<MonsterActor, float> AbilityHpCostPaid;
+
     [Serializable]
     public class AbilityHpCost
     {
@@ -187,6 +195,10 @@ public class MonsterActor : Actor
     public float aiTurnSpeed => AiConfig.turnSpeed;
     /// <summary>AI 转向加速度（AI 配置）。</summary>
     public float aiTurnAcceleration => AiConfig.turnAcceleration;
+    /// <summary>怪物间软分离半径（AI 配置，米）。</summary>
+    public float separationRadius => AiConfig.separationRadius;
+    /// <summary>怪物间软分离强度（AI 配置，0~2）。</summary>
+    public float separationStrength => AiConfig.separationStrength;
     /// <summary>调试圆环开关（AI 配置，是否可视化索敌/普攻/技能范围）。</summary>
     public bool showDebugRanges => forceDebugRanges || AiConfig.showDebugRanges;
 
@@ -239,6 +251,23 @@ public class MonsterActor : Actor
     [Min(0f)] public float corpsePossessionWindow = 5f;
     [Min(0f)] public float corpseFadeDuration = 3f;
     [Min(0f)] public float hitStateDuration = 0.12f;
+
+    [Header("Ability HP Cost Death")]
+    [Tooltip("附身技能烧血把耐久扣到 0 时，延迟死亡结算的最长宽限秒数。窗口内让该次技能跑完伤害判定（如砸地的延迟命中），随后立即死亡。充能/持续类技能会等到本次释放结束。")]
+    [Min(0f)] public float abilityCostDeathGrace = 0.6f;
+    [Tooltip("充能/持续类技能在濒死宽限期内可额外续命的上限秒数（防止一直按住不放无限续命）。超时强制结算死亡。")]
+    [Min(0f)] public float abilityCostDeathHoldCap = 3f;
+
+    /// <summary>
+    /// 附身技能 HP 代价已把耐久扣到 0，死亡结算被推迟到该次技能判定完成之后。
+    /// 宽限期内 Body 仍可正常结算伤害（阵营/命中判定不变），但不得再触发新技能，
+    /// 且后续任何代价都不再扣血（耐久已为 0）。
+    /// </summary>
+    public bool IsAbilityCostDeathPending { get; private set; }
+    private Coroutine abilityCostDeathRoutine;
+    private EnemyAbility abilityCostDeathSource;
+    private bool payingAbilityCost;
+    private EnemyAbility abilityCostPaymentSource;
 
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
@@ -309,6 +338,16 @@ public class MonsterActor : Actor
     private float authoredPossessedMaxHealth;
     private Vector3 aiVelocity; // AI 态加速度平滑
     private float aiCurrentTurnSpeed; // AI 态角速度平滑
+    // 软分离降频采样缓存（P3）：O(n²) 遍历从每帧降为每 SeparationSampleInterval 秒一次，其余帧复用上次结果。
+    private const float SeparationSampleInterval = 0.1f;
+    private float separationNextSampleTime = -999f;
+    private Vector3 cachedSeparationVelocity = Vector3.zero;
+    // 软分离共享空间桶（P5）：采样时按分离半径分桶，每怪只查 9 邻桶内邻居，
+    // 把全量 O(n²) 降为 O(n×平均邻居数)（分散场景约 6 倍，100 怪场景 ~12 倍）。
+    // 桶表在同一 0.1s 窗口内全局共享（首只采样怪重建，其余复用），避免重复构建。
+    static float sharedBucketStamp = -999f;
+    static float sharedBucketSize = 0f;
+    static Dictionary<Vector2Int, List<Enemy>> sharedBuckets;
     [Header("Spawn Snapshot")]
     public SpawnOrigin spawnOrigin = SpawnOrigin.PeriodicPressure;
     public int spawnDifficultyTier;
@@ -586,11 +625,32 @@ public class MonsterActor : Actor
     }
 
     /// <summary>
+    /// 与 Update 的尸体门对齐：消散中的身体不得再消费移动指令。
+    /// 基类 FixedUpdate 按 !IsPlayerControlled 分派移动，而脱离附身会把 Controller 置为
+    /// NullController，若不在此拦住，尸体会继续走 AI 移动分支（详见 ExecuteMovement 的尸体门）。
+    /// </summary>
+    protected override void FixedUpdate()
+    {
+        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        base.FixedUpdate();
+    }
+
+    /// <summary>
     /// 移动段：AI 态（AIController）匀速移动、朝移动方向；玩家附身态（PlayerController）
     /// 加速度平滑 + 静止朝鼠标。两者共用SphereCast预检测和Transform位移。
     /// </summary>
     protected override void ExecuteMovement(in ControlCommand cmd)
     {
+        // 尸体/消散中的身体不移动：脱离附身后 Controller 变为 NullController，
+        // 基类会把移动分派到 AI 分支，这里兜住残留指令带来的滑行。
+        if (isDowned || Body == BodyState.Downed || Body == BodyState.Fading || Body == BodyState.Despawned)
+        {
+            possessVelocity = Vector3.zero;
+            aiVelocity = Vector3.zero;
+            aiCurrentTurnSpeed = 0f;
+            return;
+        }
+
         if (IsMovementBlocked || IsAbilityLocomotionLocked)
         {
             possessVelocity = Vector3.zero;
@@ -667,7 +727,115 @@ public class MonsterActor : Actor
 
         float velocityChange = targetVelocity.sqrMagnitude > aiVelocity.sqrMagnitude ? aiMoveAcceleration : aiMoveDeceleration;
         aiVelocity = Vector3.MoveTowards(aiVelocity, targetVelocity, velocityChange * Time.deltaTime);
-        MoveWithSpherecast(aiVelocity * Time.deltaTime);
+
+        // 怪物间软分离：叠加远离邻近活怪的排斥速度，防止多怪追击时重叠堆积。
+        // 与 aiVelocity 独立（停步/对峙时仍生效），不参与平滑，仅作最终位移修正。
+        Vector3 separation = ComputeSeparationVelocity();
+        // P1 防超速：分离速度直接叠加会让合成速度超过 moveSpeed（默认最高约 1.8×），
+        // 这里对「追击 + 分离」合成速度做 clamp，保证横散/贴脸分离时移动不超标。
+        Vector3 totalVelocity = aiVelocity + separation;
+        float maxSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+        if (totalVelocity.sqrMagnitude > maxSpeed * maxSpeed)
+            totalVelocity = totalVelocity.normalized * maxSpeed;
+        MoveWithSpherecast(totalVelocity * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// 计算怪物间软分离速度（防重叠堆积）：采样时经共享空间桶查询分离半径内邻居，
+    /// 按「远离方向 × 距离衰减权重」累加，输出量纲为速度。
+    /// 仅 AI 态调用（玩家附身的身体不参与），且跳过倒地/附身/消散中的邻居。
+    /// </summary>
+    Vector3 ComputeSeparationVelocity()
+    {
+        // P3 降频采样：分离速度随距离平滑变化，无需每帧重算。
+        // 间隔内复用上次结果；P5 空间桶把全量遍历降为 9 邻桶近邻查询。
+        float now = Time.time;
+        if (now < separationNextSampleTime) return cachedSeparationVelocity;
+
+        float radius = separationRadius;
+        float strength = separationStrength;
+        Vector3 result = Vector3.zero;
+        if (radius > 0f && strength > 0f && EnemyRegistry.All.Count > 1)
+        {
+            EnsureSharedSeparationBuckets(now, radius);
+
+            Vector3 self = transform.position;
+            Vector3 accumulated = Vector3.zero;
+            float sqrRadius = radius * radius;
+            int bRange = Mathf.Max(1, Mathf.CeilToInt(radius / sharedBucketSize));
+            int bx = Mathf.FloorToInt(self.x / sharedBucketSize);
+            int bz = Mathf.FloorToInt(self.z / sharedBucketSize);
+            for (int dx = -bRange; dx <= bRange; dx++)
+            for (int dz = -bRange; dz <= bRange; dz++)
+            {
+                if (!sharedBuckets.TryGetValue(new Vector2Int(bx + dx, bz + dz), out var list)) continue;
+                for (int j = 0; j < list.Count; j++)
+                {
+                    var other = list[j];
+                    if (other == null || ReferenceEquals(other, this)) continue;
+
+                    Vector3 delta = self - other.transform.position;
+                    delta.y = 0f;
+                    float sqrDist = delta.sqrMagnitude;
+                    if (sqrDist >= sqrRadius) continue;
+
+                    if (sqrDist < 0.0001f)
+                    {
+                        // P4 完全重叠兜底：同帧生成在同一格/极端堆叠时，按桶内序给确定性方向分离，避免永久卡死。
+                        accumulated += new Vector3((j & 1) == 0 ? 1f : -1f, 0f, (j & 2) == 0 ? 0f : 1f);
+                        continue;
+                    }
+
+                    float dist = Mathf.Sqrt(sqrDist);
+                    float weight = 1f - dist / radius; // 距离越近排斥越强，贴脸时权重最大
+                    accumulated += (delta / dist) * weight;
+                }
+            }
+
+            if (accumulated.sqrMagnitude >= 0.0001f)
+            {
+                float speed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+                result = accumulated.normalized * strength * speed;
+            }
+        }
+
+        cachedSeparationVelocity = result;
+        separationNextSampleTime = now + SeparationSampleInterval;
+        return result;
+    }
+
+    /// <summary>
+    /// 确保共享分离桶新鲜：同一 SeparationSampleInterval 窗口内全局复用一份桶表（首只采样怪重建）。
+    /// 桶边长取出现过的最大 separationRadius（所有怪同配置时等于 radius），
+    /// 查询侧按 bRange = ceil(radius / bucketSize) 扩邻，保证不同半径怪也能覆盖其分离半径内邻居。
+    /// </summary>
+    void EnsureSharedSeparationBuckets(float now, float radius)
+    {
+        if (radius > sharedBucketSize)
+        {
+            sharedBucketSize = radius;
+            sharedBucketStamp = -999f; // 桶尺寸变化需强制重建
+        }
+        if (sharedBuckets != null && now < sharedBucketStamp + SeparationSampleInterval) return;
+
+        sharedBucketStamp = now;
+        if (sharedBucketSize <= 0f) sharedBucketSize = 1f;
+        if (sharedBuckets == null) sharedBuckets = new Dictionary<Vector2Int, List<Enemy>>(64);
+        else sharedBuckets.Clear();
+
+        var enemies = EnemyRegistry.All;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var e = enemies[i];
+            if (e == null) continue;
+            if (e.isDowned || e.isPossessed
+                || e.Body == BodyState.Fading || e.Body == BodyState.Despawned) continue;
+            Vector3 p = e.transform.position;
+            var key = new Vector2Int(Mathf.FloorToInt(p.x / sharedBucketSize), Mathf.FloorToInt(p.z / sharedBucketSize));
+            if (!sharedBuckets.TryGetValue(key, out var list))
+                sharedBuckets[key] = list = new List<Enemy>(4);
+            list.Add(e);
+        }
     }
 
     /// <summary>碰撞移动（AI与玩家共用）：CollideAndSlide 滑动，撞墙沿墙切向滑行。</summary>
@@ -800,14 +968,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    float basicCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
-                    if (isPossessed && PossessionImprintManager.Instance != null)
-                        basicCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
-                    if (isPossessed && !suppressPossessionDrain && basicCost > 0f)
-                    {
-                        Debug.Log($"[HpCost] Basic {entry.ability.abilityName}: cost={basicCost}, hp before={currentHealth}");
-                        TakeDamage(basicCost, allowGreedGuardAbsorb: false);
-                    }
+                    SettleAbilityHpCost(entry.ability, entry.hpCost, "Basic");
                     any = true;
                 }
             }
@@ -819,14 +980,7 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    float skillCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
-                    if (isPossessed && PossessionImprintManager.Instance != null)
-                        skillCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
-                    if (isPossessed && !suppressPossessionDrain && skillCost > 0f)
-                    {
-                        Debug.Log($"[HpCost] Skill {entry.ability.abilityName}: cost={skillCost}, hp before={currentHealth}");
-                        TakeDamage(skillCost, allowGreedGuardAbsorb: false);
-                    }
+                    SettleAbilityHpCost(entry.ability, entry.hpCost, "Skill");
                     any = true;
                 }
             }
@@ -838,19 +992,54 @@ public class MonsterActor : Actor
                 if (entry != null && entry.ability != null && entry.ability.CanTrigger())
                 {
                     entry.ability.Trigger();
-                    float mobilityCost = entry.hpCost * entry.ability.GetHpCostMultiplier();
-                    if (isPossessed && PossessionImprintManager.Instance != null)
-                        mobilityCost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
-                    if (isPossessed && !suppressPossessionDrain && mobilityCost > 0f)
-                    {
-                        Debug.Log($"[HpCost] Mobility {entry.ability.abilityName}: cost={mobilityCost}, hp before={currentHealth}");
-                        TakeDamage(mobilityCost, allowGreedGuardAbsorb: false);
-                    }
+                    SettleAbilityHpCost(entry.ability, entry.hpCost, "Mobility");
                     any = true;
                 }
             }
         }
         return any;
+    }
+
+    /// <summary>
+    /// 结算一次附身技能的 HP 代价（三槽触发共用）。
+    /// 代价扣血在 payingAbilityCost 上下文里进行，TakeDamage 因此可以把"代价致死"
+    /// 与"敌人伤害致死"区分开：前者延迟死亡结算，保证该次技能判定跑完。
+    /// </summary>
+    private void SettleAbilityHpCost(EnemyAbility ability, float baseCost, string label)
+    {
+        if (ability == null) return;
+        float cost = baseCost * ability.GetHpCostMultiplier();
+        if (isPossessed && PossessionImprintManager.Instance != null)
+            cost *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(this);
+        if (!isPossessed || suppressPossessionDrain || cost <= 0f) return;
+
+        Debug.Log($"[HpCost] {label} {ability.abilityName}: cost={cost}, hp before={currentHealth}");
+        PayAbilityHpCostAmount(ability, cost);
+    }
+
+    /// <summary>
+    /// 实际扣除代价：进入 payingAbilityCost 上下文后走标准 TakeDamage，
+    /// 使代价致死能被识别并转为"延迟死亡"。
+    /// </summary>
+    private void PayAbilityHpCostAmount(EnemyAbility ability, float cost)
+    {
+        // 濒死宽限期内耐久已为 0：不再重复扣血、不再重置宽限窗口。
+        if (IsAbilityCostDeathPending) return;
+
+        bool previousPaying = payingAbilityCost;
+        EnemyAbility previousSource = abilityCostPaymentSource;
+        payingAbilityCost = true;
+        abilityCostPaymentSource = ability;
+        try
+        {
+            TakeDamage(cost, allowGreedGuardAbsorb: false);
+        }
+        finally
+        {
+            payingAbilityCost = previousPaying;
+            abilityCostPaymentSource = previousSource;
+        }
+        if (AbilityHpCostPaid != null) AbilityHpCostPaid(this, cost);
     }
 
     /// <summary>
@@ -912,8 +1101,82 @@ public class MonsterActor : Actor
         if (cost > 0f)
         {
             Debug.Log($"[HpCost] Continuous {a.abilityName}: cost={cost}, hp before={currentHealth}");
-            TakeDamage(cost, allowGreedGuardAbsorb: false);
+            PayAbilityHpCostAmount(a, cost);
         }
+    }
+
+    /// <summary>
+    /// 进入"代价致死待结算"状态：耐久已归零（血条显示 0），但 Body 保持可结算，
+    /// 让触发这次代价的技能把伤害判定跑完后再死亡。
+    /// </summary>
+    private void BeginAbilityCostDeath(EnemyAbility source)
+    {
+        if (IsAbilityCostDeathPending) return;
+        IsAbilityCostDeathPending = true;
+        abilityCostDeathSource = source;
+        Debug.Log($"[HpCost] Durability spent by '{(source != null ? source.abilityName : "ability")}'. Death deferred until its judgement finishes.");
+        if (abilityCostDeathRoutine != null) StopCoroutine(abilityCostDeathRoutine);
+        abilityCostDeathRoutine = StartCoroutine(AbilityCostDeathRoutine());
+    }
+
+    /// <summary>
+    /// 宽限窗口：先等固定宽限秒数覆盖一次性 / 延迟命中类技能（如砸地 firstHitDelay），
+    /// 再等充能 / 持续类技能（IsActivationInProgress）本次释放结束，最后结算死亡。
+    /// hold 上限防止一直按住不放无限续命。
+    /// </summary>
+    private System.Collections.IEnumerator AbilityCostDeathRoutine()
+    {
+        float grace = Mathf.Max(0f, abilityCostDeathGrace);
+        float elapsed = 0f;
+        while (elapsed < grace)
+        {
+            if (!isPossessed || Body == BodyState.Fading || Body == BodyState.Despawned) break;
+            elapsed += IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        float held = 0f;
+        float holdCap = Mathf.Max(0f, abilityCostDeathHoldCap);
+        while (isPossessed
+               && Body != BodyState.Fading
+               && Body != BodyState.Despawned
+               && abilityCostDeathSource != null
+               && abilityCostDeathSource.IsActivationInProgress
+               && held < holdCap)
+        {
+            held += IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        abilityCostDeathRoutine = null;
+        abilityCostDeathSource = null;
+        if (!isPossessed || Body == BodyState.Fading || Body == BodyState.Despawned)
+        {
+            IsAbilityCostDeathPending = false;
+            yield break;
+        }
+
+        currentHealth = 0f;
+        UpdateHealthUI();
+        // 先清标记再判死：NotifyBodyDied 可能同步回收 Body（协程随之中止），
+        // 标记必须在那之前落到 false，避免残留到下一次复用。
+        IsAbilityCostDeathPending = false;
+        PossessionManager pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody == this) pm.NotifyBodyDied();
+    }
+
+    /// <summary>清理代价致死待结算状态（脱离附身 / 池回收 / 复用时调用）。</summary>
+    private void ClearAbilityCostDeathState()
+    {
+        if (abilityCostDeathRoutine != null)
+        {
+            StopCoroutine(abilityCostDeathRoutine);
+            abilityCostDeathRoutine = null;
+        }
+        abilityCostDeathSource = null;
+        IsAbilityCostDeathPending = false;
+        payingAbilityCost = false;
+        abilityCostPaymentSource = null;
     }
 
     void LateUpdate(){
@@ -1002,6 +1265,12 @@ public class MonsterActor : Actor
             if (currentHealth <= 0)
             {
                 currentHealth = 0;
+                // 技能烧血把耐久扣到 0：先让该次技能完整释放并跑完伤害判定，再结算死亡。
+                if (payingAbilityCost)
+                {
+                    BeginAbilityCostDeath(abilityCostPaymentSource);
+                    return;
+                }
                 PossessionManager pm = PossessionManager.Instance;
                 if (pm != null && pm.CurrentBody == this) pm.NotifyBodyDied();
             }
@@ -1295,6 +1564,13 @@ public class MonsterActor : Actor
     public void OnUnpossessed(){
         isPossessed = false;
         gameObject.tag = "Enemy";
+        ClearAbilityCostDeathState();
+        // 清空 stale 指令与惯性：脱离后 IsPlayerControlled 变 false，基类 FixedUpdate 会开始
+        // 消费 pendingCmd 驱动 AI 移动分支；若不清理，玩家最后一帧的移动指令会让身体继续滑行。
+        pendingCmd = new ControlCommand();
+        possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         if (bodyAnimator != null) bodyAnimator.updateMode = originalAnimatorUpdateMode;
         if (visualFx != null) visualFx.SetPossessionHighlight(false);
         // Cheat immortality must not linger on bodies left as normal enemies.
@@ -1457,6 +1733,11 @@ public class MonsterActor : Actor
         isDowned = true;
         Body = BodyState.Fading;
         possessionWindowEndsAt = 0f;
+        // 停下所有残留惯性与指令，尸体在淡出期间必须原地不动。
+        pendingCmd = new ControlCommand();
+        possessVelocity = Vector3.zero;
+        aiVelocity = Vector3.zero;
+        aiCurrentTurnSpeed = 0f;
         SetController(NullController.Instance);
         foreach (Collider collider in GetComponentsInChildren<Collider>())
         {
@@ -1516,6 +1797,7 @@ public class MonsterActor : Actor
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
         bossDamageContext = false;
+        ClearAbilityCostDeathState();
         IsAbilityFacingLocked = false;
         IsAbilityLocomotionLocked = false;
         SetAbilityComponentsEnabled(true);
@@ -1566,6 +1848,7 @@ public class MonsterActor : Actor
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         bossDamageContext = false;
+        ClearAbilityCostDeathState();
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;

@@ -35,7 +35,7 @@ public class TutorialUI : MonoBehaviour
 
     /// <summary>
     /// 运行时自举布局（仅无场景引用时使用）：
-    /// 屏幕顶部横幅面板 + 标题 + 正文。优先用传入字体（须含中文），否则退回 TMP 默认字体。
+    /// 屏幕顶部横幅面板 + 标题 + 正文。字体统一由 FontRegistry.default 管理；fontOverride 仅保留旧调用兼容性。
     /// </summary>
     public void BuildRuntimeLayout(Transform canvasRoot, TMP_FontAsset fontOverride = null)
     {
@@ -91,7 +91,8 @@ public class TutorialUI : MonoBehaviour
         // 此处保护：异常时保持默认字体，不让字体问题中断调用方（教学系统启动）。
         try
         {
-            tmp.font = fontOverride != null ? fontOverride : TMP_Settings.defaultFontAsset;
+            // fontOverride 保留旧调用签名，但全局字体始终以 FontRegistry 为唯一来源。
+            UiFontAssets.ApplyTo(tmp);
         }
         catch (System.Exception e)
         {

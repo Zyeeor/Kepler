@@ -956,8 +956,18 @@ Shader "Hotwater/2024/UrpAll_GUI_1119"
 				float4 screenPos97 = IN.ase_texcoord4;
 				float4 ase_screenPosNorm97 = screenPos97 / screenPos97.w;
 				ase_screenPosNorm97.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm97.z : ase_screenPosNorm97.z * 0.5 + 0.5;
-				float screenDepth97 = LinearEyeDepth(SHADERGRAPH_SAMPLE_SCENE_DEPTH( ase_screenPosNorm97.xy ),_ZBufferParams);
-				float distanceDepth97 = saturate( abs( ( screenDepth97 - LinearEyeDepth( ase_screenPosNorm97.z,_ZBufferParams ) ) / ( _Float16 ) ) );
+				float ase_rawSceneDepth97 = SHADERGRAPH_SAMPLE_SCENE_DEPTH( ase_screenPosNorm97.xy );
+				float ase_rawSelfDepth97 = ase_screenPosNorm97.z;
+				#if UNITY_REVERSED_Z
+					float ase_orthoSceneDepth97 = lerp( _ProjectionParams.z, _ProjectionParams.y, ase_rawSceneDepth97 );
+					float ase_orthoSelfDepth97 = lerp( _ProjectionParams.z, _ProjectionParams.y, ase_rawSelfDepth97 );
+				#else
+					float ase_orthoSceneDepth97 = lerp( _ProjectionParams.y, _ProjectionParams.z, ase_rawSceneDepth97 );
+					float ase_orthoSelfDepth97 = lerp( _ProjectionParams.y, _ProjectionParams.z, ase_rawSelfDepth97 );
+				#endif
+				float screenDepth97 = lerp( LinearEyeDepth( ase_rawSceneDepth97, _ZBufferParams ), ase_orthoSceneDepth97, unity_OrthoParams.w );
+				float ase_selfEyeDepth97 = lerp( LinearEyeDepth( ase_rawSelfDepth97, _ZBufferParams ), ase_orthoSelfDepth97, unity_OrthoParams.w );
+				float distanceDepth97 = saturate( abs( ( screenDepth97 - ase_selfEyeDepth97 ) / ( _Float16 ) ) );
 				float depthfade_switch334 = _Float5;
 				float lerpResult336 = lerp( distanceDepth97 , ( 1.0 - distanceDepth97 ) , depthfade_switch334);
 				float depthfade126 = ( saturate( cameraDepthFade754 ) * lerpResult336 );
@@ -2542,8 +2552,18 @@ Shader "Hotwater/2024/UrpAll_GUI_1119"
 				float4 screenPos97 = IN.ase_texcoord9;
 				float4 ase_screenPosNorm97 = screenPos97 / screenPos97.w;
 				ase_screenPosNorm97.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm97.z : ase_screenPosNorm97.z * 0.5 + 0.5;
-				float screenDepth97 = LinearEyeDepth(SHADERGRAPH_SAMPLE_SCENE_DEPTH( ase_screenPosNorm97.xy ),_ZBufferParams);
-				float distanceDepth97 = saturate( abs( ( screenDepth97 - LinearEyeDepth( ase_screenPosNorm97.z,_ZBufferParams ) ) / ( _Float16 ) ) );
+				float ase_rawSceneDepth97 = SHADERGRAPH_SAMPLE_SCENE_DEPTH( ase_screenPosNorm97.xy );
+				float ase_rawSelfDepth97 = ase_screenPosNorm97.z;
+				#if UNITY_REVERSED_Z
+					float ase_orthoSceneDepth97 = lerp( _ProjectionParams.z, _ProjectionParams.y, ase_rawSceneDepth97 );
+					float ase_orthoSelfDepth97 = lerp( _ProjectionParams.z, _ProjectionParams.y, ase_rawSelfDepth97 );
+				#else
+					float ase_orthoSceneDepth97 = lerp( _ProjectionParams.y, _ProjectionParams.z, ase_rawSceneDepth97 );
+					float ase_orthoSelfDepth97 = lerp( _ProjectionParams.y, _ProjectionParams.z, ase_rawSelfDepth97 );
+				#endif
+				float screenDepth97 = lerp( LinearEyeDepth( ase_rawSceneDepth97, _ZBufferParams ), ase_orthoSceneDepth97, unity_OrthoParams.w );
+				float ase_selfEyeDepth97 = lerp( LinearEyeDepth( ase_rawSelfDepth97, _ZBufferParams ), ase_orthoSelfDepth97, unity_OrthoParams.w );
+				float distanceDepth97 = saturate( abs( ( screenDepth97 - ase_selfEyeDepth97 ) / ( _Float16 ) ) );
 				float depthfade_switch334 = _Float5;
 				float lerpResult336 = lerp( distanceDepth97 , ( 1.0 - distanceDepth97 ) , depthfade_switch334);
 				float depthfade126 = ( saturate( cameraDepthFade754 ) * lerpResult336 );

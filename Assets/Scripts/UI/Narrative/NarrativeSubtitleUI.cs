@@ -64,6 +64,7 @@ public class NarrativeSubtitleUI : MonoBehaviour
         _text.fontSize = 32f;
         _text.alignment = TextAlignmentOptions.Center;
         _text.color = Color.white;
+        UiFontAssets.ApplyTo(_text);
 
         _canvasGroup = gameObject.AddComponent<CanvasGroup>();
         _canvasGroup.alpha = 0f;

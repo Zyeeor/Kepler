@@ -59,6 +59,11 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
         return true;
     }
 
+    /// <summary>
+    /// 蓄力中或冲刺中视为释放未结束：附身代价致死时先把这一刀冲完（含落地判定），再结算死亡。
+    /// </summary>
+    public override bool IsActivationInProgress => isCharging || isDashing;
+
     protected override void OnTrigger()
     {
         // AI / non-possessed: immediate dash with no hold bonus.
@@ -82,6 +87,8 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
             if (!isCharging)
             {
                 if (currentCooldown > 0f || owner.isDowned) return;
+                // 附身代价致死宽限期：耐久已归零，不得再起新的一刀。
+                if (owner.IsAbilityCostDeathPending) return;
                 if (!TryBeginActivationEffect()) return;
                 isCharging = true;
                 chargeTimer = 0f;

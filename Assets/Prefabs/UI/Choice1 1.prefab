@@ -200,6 +200,9 @@ MonoBehaviour:
   middlegroundImage: {fileID: 9114436025755378517}
   backgroundImage: {fileID: 8811101112222333448}
   borderImage: {fileID: 2032533944205171193}
+  firstExtraParallaxMultiplier: 0.75
+  extraParallaxStep: 0.35
+  minimumExtraParallaxMultiplier: 0.25
 --- !u!114 &3332846391236430953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -366,8 +369,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Upgrade
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9b487fd2def73b74798ee1b94528d8c7, type: 2}
-  m_sharedMaterial: {fileID: 4847811088572626722, guid: 9b487fd2def73b74798ee1b94528d8c7,
+  m_fontAsset: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
+  m_sharedMaterial: {fileID: -8090061765088616794, guid: fdf59ff5f3097914e90045f2082d3d1d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -1122,8 +1125,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: decription
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9b487fd2def73b74798ee1b94528d8c7, type: 2}
-  m_sharedMaterial: {fileID: 4847811088572626722, guid: 9b487fd2def73b74798ee1b94528d8c7,
+  m_fontAsset: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
+  m_sharedMaterial: {fileID: -8090061765088616794, guid: fdf59ff5f3097914e90045f2082d3d1d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}

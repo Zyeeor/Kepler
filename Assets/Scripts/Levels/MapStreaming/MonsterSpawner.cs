@@ -31,6 +31,8 @@ public class MonsterSpawner : MonoBehaviour
     [Min(0f)] public float maxSpawnDistanceToPlayer = 50f;
     [Tooltip("刷怪统一高度（世界 y）：所有怪物生成在这个高度，按地面实际高度手动调整即可。")]
     public float spawnHeightY = 0f;
+    [Tooltip("群系中心之间的最小间距（米）：不同批次刷出的怪群出生即保持距离，避免源头重叠堆积。0 = 关闭。")]
+    [Min(0f)] public float minSpawnPointSeparation = 6f;
 
     [Header("击杀回声取点")]
     [Tooltip("新逻辑所有类型刷怪越过屏幕边界后的基础安全距离（米）。越小越贴近屏幕边缘。")]
@@ -107,6 +109,10 @@ public class MonsterSpawner : MonoBehaviour
     /// 未设置时（直接调用方）回退全局 Random 语义。
     /// </summary>
     public System.Random WaveRandom { get; set; }
+
+    /// <summary>最近刷出的群系中心（滑动窗口），用于源头间距去重。</summary>
+    readonly List<Vector3> recentSpawnCenters = new List<Vector3>();
+    const int MaxRecentSpawnCenters = 16;
 
     /// <summary>
     /// 收集当前在场可交互的活怪（未销毁、未附身、未倒地），供指引 UI 等外部系统使用。
@@ -349,6 +355,17 @@ public class MonsterSpawner : MonoBehaviour
     /// </summary>
     public bool TryGetWaveSpawnPosition(SinType sin, out Vector3 pos)
     {
+        if (TrySampleSpawnPosition(sin, minSpawnPointSeparation, out pos)) return true;
+        // P2 兜底：严格间距下采样被 recentSpawnCenters 全部拦截（窗口内的点尚未随怪移动释放），
+        // 放宽到一半间距再试一轮，避免本 tick 静默少刷；仍失败才放弃。
+        if (minSpawnPointSeparation > 0f && TrySampleSpawnPosition(sin, minSpawnPointSeparation * 0.5f, out pos))
+            return true;
+        return false;
+    }
+
+    /// <summary>在玩家周围环形带内采样一个合法刷怪点（与已刷点保持 separation 间距）。</summary>
+    bool TrySampleSpawnPosition(SinType sin, float separation, out Vector3 pos)
+    {
         pos = default;
         var system = MapStreamingSystem.Instance;
         if (system == null) return false;
@@ -375,8 +392,10 @@ public class MonsterSpawner : MonoBehaviour
                 continue; // 该点归属 Chunk 未加载：跳过（地图边界外同样落此分支）
             if (cam != null && IsOnScreen(cam, c)) continue;
             if (!IsWalkable(chunk, c)) continue;
+            if (TooCloseToRecentCenter(c, separation)) continue;
             pos = c;
             pos.y = spawnHeightY; // 统一生成高度（世界 y，手动调到地面高度）
+            RememberSpawnCenter(pos);
             return true;
         }
         return false;
@@ -506,11 +525,36 @@ public class MonsterSpawner : MonoBehaviour
                     continue;
             }
             if (!IsWalkable(chunk, c)) continue;
+            if (TooCloseToRecentCenter(c, minSpawnPointSeparation)) continue; // 与已刷点保持最小间距，避免源头重叠
             pos = c;
             pos.y = spawnHeightY;
+            RememberSpawnCenter(pos);
             return true;
         }
         return false;
+    }
+
+    /// <summary>与最近刷出的点是否过近（源头间距去重，仅水平距离）。separation 可传放大的间距用于二次尝试。</summary>
+    bool TooCloseToRecentCenter(Vector3 candidate, float separation)
+    {
+        if (separation <= 0f || recentSpawnCenters.Count == 0) return false;
+        float minSqr = separation * separation;
+        for (int i = 0; i < recentSpawnCenters.Count; i++)
+        {
+            Vector3 delta = candidate - recentSpawnCenters[i];
+            delta.y = 0f;
+            if (delta.sqrMagnitude < minSqr) return true;
+        }
+        return false;
+    }
+
+    /// <summary>记录一个成功取用的刷怪点（滑动窗口，超出上限移除最旧）。</summary>
+    void RememberSpawnCenter(Vector3 center)
+    {
+        if (minSpawnPointSeparation <= 0f) return;
+        recentSpawnCenters.Add(center);
+        if (recentSpawnCenters.Count > MaxRecentSpawnCenters)
+            recentSpawnCenters.RemoveAt(0);
     }
 
     /// <summary>

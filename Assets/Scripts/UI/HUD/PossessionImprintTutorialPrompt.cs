@@ -14,9 +14,9 @@ public sealed class PossessionImprintTutorialPrompt : MonoBehaviour
         int stacks = PossessionImprintManager.Instance != null
             ? PossessionImprintManager.Instance.GetStacks(sin)
             : 1;
-        if (titleText != null) titleText.text = PossessionImprintTooltip.GetTitle(sin) + "已获得";
+        if (titleText != null) titleText.text = TextCatalog.Get("imprint.acquired", PossessionImprintTooltip.GetTitle(sin));
         if (bodyText != null) bodyText.text = PossessionImprintTooltip.GetEffect(sin, stacks)
-            + "\n每次夺舍该类怪物都会增加一层。";
+            + "\n" + TextCatalog.Get("imprint.acquire_hint");
         hideAt = Time.unscaledTime + displaySeconds;
     }
     void Update()

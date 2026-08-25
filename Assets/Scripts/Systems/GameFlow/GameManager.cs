@@ -95,6 +95,7 @@ public class GameManager : MonoBehaviour
         // 对局状态归 RunSession 管（新局/继续/重开由会话决定初始值），
         // 本层只负责系统级常驻，不再无条件重置（否则"返回主菜单再进入"会清空进度）。
         Debug.Log($"GameManager: Scene loaded - {scene.name}");
+        // 字体由 FontApplier 独占处理 SceneManager.sceneLoaded，避免 GameManager 维护第二套扫描链路。
         // 敌方注册表兜底清理：正常路径旧场景怪随卸载触发 OnDisable 逐个注销；
         // 极端情况（卸载异常/DDOL 提升）残留 fake-null，此处清空（幂等，新场景怪 OnEnable 重新注册）。
         EnemyRegistry.Clear();

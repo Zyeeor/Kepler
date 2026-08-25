@@ -106,8 +106,56 @@ public class UIManager : SceneSingleton<UIManager>
         // Result → VICTORY；Failed → GAME OVER。终态阶段不可再转移，无重复触发。
         RunSession.EnsureInstance().OnPhaseChanged += OnRunPhaseChanged;
 
+        // UICanvas 下的全部场景文本由 FontRegistry 统一收敛；含 inactive 的暂停面板也会被处理。
+        if (FontRegistry.Instance != null)
+            FontRegistry.Instance.ApplyToTree(transform);
+        ResolveButtonTextReferences();
         UpdatePauseButtonText();
         UpdateHealthBarToggleText();
+        ApplyCatalogButtonTexts();
+    }
+
+    /// <summary>
+    /// 兼容旧场景中未序列化 TMP_Text 字段的按钮：从按钮子树自动解析文案组件。
+    /// 这样 TextCatalog 不依赖手工绑定，暂停面板也能统一接管。
+    /// </summary>
+    void ResolveButtonTextReferences()
+    {
+        if (restartButtonText == null) restartButtonText = FindButtonText(restartButton);
+        if (homeButtonText == null) homeButtonText = FindButtonText(homeButton);
+        if (pauseButtonText == null) pauseButtonText = FindButtonText(pauseButton);
+        if (resumeButtonText == null) resumeButtonText = FindButtonText(resumeButton);
+        if (settingsButtonOnPauseText == null) settingsButtonOnPauseText = FindButtonText(settingsButtonOnPause);
+        if (returnToMenuButtonText == null) returnToMenuButtonText = FindButtonText(returnToMenuButton);
+        if (settingsButtonOnGameOverText == null) settingsButtonOnGameOverText = FindButtonText(settingsButtonOnGameOver);
+        if (quitButtonOnGameOverText == null) quitButtonOnGameOverText = FindButtonText(quitButtonOnGameOver);
+        if (healthBarToggleText == null) healthBarToggleText = FindButtonText(healthBarToggleButton);
+    }
+
+    static TMP_Text FindButtonText(Button button)
+    {
+        return button != null ? button.GetComponentInChildren<TMP_Text>(true) : null;
+    }
+
+    /// <summary>按钮文案和字体统一走 TextCatalog + FontRegistry。</summary>
+    void ApplyCatalogButtonTexts()
+    {
+        ApplyCatalogText(restartButtonText, "ui.gameover.restart");
+        ApplyCatalogText(homeButtonText, "ui.gameover.home");
+        ApplyCatalogText(resumeButtonText, "ui.pause.resume");
+        ApplyCatalogText(settingsButtonOnPauseText, "ui.pause.settings");
+        ApplyCatalogText(returnToMenuButtonText, "ui.pause.return_menu");
+        ApplyCatalogText(settingsButtonOnGameOverText, "ui.gameover.settings");
+        ApplyCatalogText(quitButtonOnGameOverText, "ui.gameover.quit");
+    }
+
+    static void ApplyCatalogText(TMP_Text text, string key)
+    {
+        if (text == null) return;
+        text.text = TextCatalog.Get(key);
+        var registry = FontRegistry.Instance;
+        if (registry != null)
+            registry.ApplyFontToText(text, FontSlots.Default);
     }
 
     /// <summary>RunFlow 阶段事件响应：终态弹结算面板（复用 GameOver 面板与 Restart/Home 按钮）。</summary>
@@ -288,6 +336,12 @@ public class UIManager : SceneSingleton<UIManager>
 
     void ShowPauseMenu()
     {
+        // 暂停面板可能在首场景初始化时尚未经过全局扫描；打开前再次收敛引用、文案和字体。
+        ResolveButtonTextReferences();
+        ApplyCatalogButtonTexts();
+        if (pauseMenuPanel != null && FontRegistry.Instance != null)
+            FontRegistry.Instance.ApplyToTree(pauseMenuPanel.transform);
+
         TimeScaleManager.Push(TimeDomain.Pause, 0f);
         if (pauseMenuPanel != null)
             pauseMenuPanel.SetActive(true);

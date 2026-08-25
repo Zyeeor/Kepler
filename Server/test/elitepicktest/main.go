@@ -14,8 +14,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"demo/server/internal/server"
-	"demo/server/internal/service"
+	"demo/server/elite"
+	"demo/server/server"
 )
 
 // ============================================================================
@@ -102,7 +102,7 @@ func bd(bdCount int) json.RawMessage {
 var portSeq = 18099
 
 // startServer 在测试进程内启动一个独立服务器实例，返回 base URL。
-func startServer(elite service.EliteConfig) string {
+func startServer(cfg elite.EliteConfig) string {
 	port := portSeq
 	portSeq--
 
@@ -114,7 +114,7 @@ func startServer(elite service.EliteConfig) string {
 		HTTPAddr:  fmt.Sprintf("127.0.0.1:%d", port),
 		DBPath:    filepath.Join(dir, "test.db"),
 		UploadDir: filepath.Join(dir, "ugc"),
-		Elite:     elite,
+		Elite:     cfg,
 	})
 	if err != nil {
 		panic(err)
@@ -143,7 +143,7 @@ func main() {
 
 // testPickAndFallback 默认配置（percent 0.2）：筛选主路径 / 隔离 / 三级兜底 / upsert / 防御。
 func testPickAndFallback() {
-	base := startServer(service.DefaultEliteConfig())
+	base := startServer(elite.DefaultEliteConfig())
 	const playerA, playerB = "elite-test-A", "elite-test-B"
 
 	// 1. 空库：兜底 3（本波不投放）
@@ -219,7 +219,7 @@ func testPickAndFallback() {
 
 // testCapacity 容量治理：每玩家上限 + 全局 FIFO + upsert 不占新额度。
 func testCapacity() {
-	cfg := service.DefaultEliteConfig()
+	cfg := elite.DefaultEliteConfig()
 	cfg.MaxSnapshotsPerPlayer = 2
 	cfg.MaxSnapshots = 3
 	base := startServer(cfg)
@@ -260,7 +260,7 @@ func testCapacity() {
 
 // testTopKMode TOP_BAND topk 模式：band=前 K 条加权随机。
 func testTopKMode() {
-	cfg := service.DefaultEliteConfig()
+	cfg := elite.DefaultEliteConfig()
 	cfg.TopBandMode = "topk"
 	cfg.TopBandTopK = 2
 	base := startServer(cfg)

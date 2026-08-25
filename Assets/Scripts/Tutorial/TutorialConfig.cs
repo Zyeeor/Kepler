@@ -40,7 +40,7 @@ public class TutorialStepConfig
     public string ResolveTitle()
     {
         if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
-            return TextCatalog.Instance.Get(textKey + ".title");
+            return TextCatalog.Get(textKey + ".title");
         return title;
     }
 
@@ -48,7 +48,7 @@ public class TutorialStepConfig
     public string ResolveBody()
     {
         if (!string.IsNullOrEmpty(textKey) && TextCatalog.Instance != null)
-            return TextCatalog.Instance.Get(textKey + ".body");
+            return TextCatalog.Get(textKey + ".body");
         return text;
     }
 

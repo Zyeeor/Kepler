@@ -68,7 +68,7 @@ public class EliteBuildCarrier : MonoBehaviour
         {
             originalDisplayName = actor.displayName;
             if (!string.IsNullOrEmpty(displayName))
-                actor.displayName = "精英·" + displayName;
+                actor.displayName = TextCatalog.Get("elite.name_prefix") + displayName;
         }
 
         var abilities = GetComponentsInChildren<EnemyAbility>(true);

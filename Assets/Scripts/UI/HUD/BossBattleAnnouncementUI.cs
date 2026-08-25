@@ -5,7 +5,7 @@ using UnityEngine.UI;
 /// <summary>Runtime HUD banner shown when the Sevenfold Boss becomes actionable.</summary>
 public sealed class BossBattleAnnouncementUI : MonoBehaviour
 {
-    const string BossBattleText = "boss战开启 使用场上的七具不朽尸身与之作战";
+    const string BossBattleText = "boss战开启，使用场上的七具不朽尸身与之作战！";
     static readonly string[] ChineseSystemFonts = { "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", "Noto Sans CJK SC" };
     static TMP_FontAsset fallbackChineseFont;
 
@@ -86,6 +86,7 @@ public sealed class BossBattleAnnouncementUI : MonoBehaviour
     void ApplyChineseFont()
     {
         if (label == null) return;
+        if (UiFontAssets.ApplyTo(label, FontSlots.Default)) return;
         TMP_FontAsset font = UiFontAssets.Chinese;
         if (font == null) font = ResolveFallbackChineseFont();
         if (font == null) font = UiFontAssets.ChineseOrDefault;

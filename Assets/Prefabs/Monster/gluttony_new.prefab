@@ -1108,9 +1108,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 4
-  acceleration: 60
-  deceleration: 80
+  moveSpeed: 8
+  acceleration: 120
+  deceleration: 120
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -1161,6 +1161,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 7642836026146940059}
   healthCanvas: {fileID: 6889700109059526419}
   showHealthBar: 1
@@ -7022,7 +7024,7 @@ Transform:
   m_GameObject: {fileID: 8656110000394840429}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.394, z: -0.196}
+  m_LocalPosition: {x: 0, y: 0.15, z: -0.207}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7210,7 +7212,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: fa200b034f872944d8d81f250ed1c8e3, type: 2}
+      objectReference: {fileID: 2100000, guid: 39fbf4bc9217fc641a0a2eb2f5b64f30, type: 2}
     - target: {fileID: 2392720497620813029, guid: 764d33f2025c2fc4a956e0028aff5345,
         type: 3}
       propertyPath: m_Materials.Array.data[0]

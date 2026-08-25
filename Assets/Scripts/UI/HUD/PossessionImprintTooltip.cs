@@ -9,7 +9,7 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
     public void Show(SinType sin, int stacks)
     {
         if (panel != null) panel.SetActive(true);
-        if (titleText != null) titleText.text = GetTitle(sin) + " · " + stacks + "层";
+        if (titleText != null) titleText.text = TextCatalog.Get("imprint.stack_suffix", GetTitle(sin), stacks);
         if (effectText != null) effectText.text = GetEffect(sin, stacks);
     }
     public void Hide()
@@ -19,40 +19,48 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
 
     public static string GetTitle(SinType sin)
     {
+        // 统一文本目录：七罪罪印名（imprint.title.*），文本只动资产不动代码
         switch (sin)
         {
-            case SinType.Pride: return "傲慢罪印";
-            case SinType.Wrath: return "愤怒罪印";
-            case SinType.Gluttony: return "暴食罪印";
-            case SinType.Greed: return "贪婪罪印";
-            case SinType.Envy: return "嫉妒罪印";
-            case SinType.Lust: return "色欲罪印";
-            case SinType.Sloth: return "怠惰罪印";
-            default: return "罪印";
+            case SinType.Pride: return TextCatalog.Get("imprint.title.pride");
+            case SinType.Wrath: return TextCatalog.Get("imprint.title.wrath");
+            case SinType.Gluttony: return TextCatalog.Get("imprint.title.gluttony");
+            case SinType.Greed: return TextCatalog.Get("imprint.title.greed");
+            case SinType.Envy: return TextCatalog.Get("imprint.title.envy");
+            case SinType.Lust: return TextCatalog.Get("imprint.title.lust");
+            case SinType.Sloth: return TextCatalog.Get("imprint.title.sloth");
+            default: return TextCatalog.Get("imprint.title.default");
         }
     }
 
     public static string GetEffect(SinType sin, int stacks)
     {
+        // 统一文本目录：效果描述模板（imprint.effect.*，{0}/{1} 占位符），文本只动资产不动代码
         switch (sin)
         {
             case SinType.Pride:
-                return "技能冷却缩减 " + ((1f - PossessionImprintMath.PrideCooldownMultiplier(stacks)) * 100f).ToString("0.0") + "%";
+                return TextCatalog.Get("imprint.effect.pride",
+                    ((1f - PossessionImprintMath.PrideCooldownMultiplier(stacks)) * 100f).ToString("0.0"));
             case SinType.Wrath:
-                return "攻击伤害提升 " + ((PossessionImprintMath.WrathDamageMultiplier(stacks) - 1f) * 100f).ToString("0") + "%";
+                return TextCatalog.Get("imprint.effect.wrath",
+                    ((PossessionImprintMath.WrathDamageMultiplier(stacks) - 1f) * 100f).ToString("0"));
             case SinType.Gluttony:
-                return "附身体生命提升 " + ((PossessionImprintMath.GluttonyHealthMultiplier(stacks) - 1f) * 100f).ToString("0")
-                    + "%\n视觉体型提升 " + ((PossessionImprintMath.GluttonyScaleMultiplier(stacks) - 1f) * 100f).ToString("0")
-                    + "%\n投掷物与技能命中范围同步放大";
+                return TextCatalog.Get("imprint.effect.gluttony",
+                    ((PossessionImprintMath.GluttonyHealthMultiplier(stacks) - 1f) * 100f).ToString("0"),
+                    ((PossessionImprintMath.GluttonyScaleMultiplier(stacks) - 1f) * 100f).ToString("0"));
             case SinType.Greed:
                 float progress = PossessionImprintManager.Instance != null ? PossessionImprintManager.Instance.GreedBonusProgress : 0f;
-                return "每次夺舍额外叠层进度 " + Mathf.Min(stacks * 5, 100) + "%\n当前进度 " + (progress * 100f).ToString("0") + "%";
+                return TextCatalog.Get("imprint.effect.greed",
+                    Mathf.Min(stacks * 5, 100).ToString(), (progress * 100f).ToString("0"));
             case SinType.Envy:
-                return "子弹时间延长 " + PossessionImprintMath.EnvyBulletTimeBonus(stacks).ToString("0.00") + "秒";
+                return TextCatalog.Get("imprint.effect.envy",
+                    PossessionImprintMath.EnvyBulletTimeBonus(stacks).ToString("0.00"));
             case SinType.Lust:
-                return "攻击伤害转化吸血 " + (PossessionImprintMath.LustLifestealMultiplier(stacks) * 100f).ToString("0") + "%";
+                return TextCatalog.Get("imprint.effect.lust",
+                    (PossessionImprintMath.LustLifestealMultiplier(stacks) * 100f).ToString("0"));
             case SinType.Sloth:
-                return "附身与技能生命消耗降低 " + ((1f - PossessionImprintMath.SlothDrainMultiplier(stacks)) * 100f).ToString("0.0") + "%";
+                return TextCatalog.Get("imprint.effect.sloth",
+                    ((1f - PossessionImprintMath.SlothDrainMultiplier(stacks)) * 100f).ToString("0.0"));
             default:
                 return string.Empty;
         }

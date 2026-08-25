@@ -99,9 +99,9 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DarkRange: -1
-    - _Dark_intensity: 0
-    - _Darksoft: 0.434
+    - _DarkRange: -0.23
+    - _Dark_intensity: 0.389
+    - _Darksoft: 0.699
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -110,8 +110,8 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Highlight_range: -0.963
-    - _Highlight_soft: 0.056
+    - _Highlight_range: -0.98
+    - _Highlight_soft: 0.336
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _OutlineWidth: 0.001

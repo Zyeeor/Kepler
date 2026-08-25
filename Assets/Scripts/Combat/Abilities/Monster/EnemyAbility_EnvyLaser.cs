@@ -125,6 +125,9 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         return owner != null && (owner.isPossessed || owner.targetPlayer != null);
     }
 
+    /// <summary>持续开火中视为释放未结束：附身代价致死时等这束激光熄火后再死。</summary>
+    public override bool IsActivationInProgress => _isFiring;
+
     protected override void OnTrigger() { }
 
     public void ApplyMarkTo(Enemy target, bool dealDamage)

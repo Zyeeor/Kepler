@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"demo/server/internal/server"
-	"demo/server/internal/service"
+	"demo/server/elite"
+	"demo/server/server"
 )
 
 // ============================================================================
@@ -160,7 +160,7 @@ func startServer() string {
 		HTTPAddr:  fmt.Sprintf("127.0.0.1:%d", port),
 		DBPath:    filepath.Join(dir, "test.db"),
 		UploadDir: filepath.Join(dir, "ugc"),
-		Elite:     service.DefaultEliteConfig(),
+		Elite:     elite.DefaultEliteConfig(),
 	})
 	if err != nil {
 		panic(err)

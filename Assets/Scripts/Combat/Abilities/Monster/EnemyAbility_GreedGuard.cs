@@ -69,6 +69,8 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
     public override bool CanTrigger()
     {
+        // 附身代价致死宽限期：耐久已归零，不得再起新技能（含 GR-S04 的续护盾分支）。
+        if (owner != null && owner.IsAbilityCostDeathPending) return false;
         if (IsGuarding && IsUpgradeUnlocked("GR-S04"))
             return owner != null && !owner.isDowned;
         return base.CanTrigger();

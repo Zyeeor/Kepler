@@ -68,6 +68,16 @@ public class MainMenuController : MonoBehaviour
         if (quitGameButton != null)
             quitGameButton.onClick.AddListener(OnQuitGame);
 
+        // 按钮文案统一走 TextCatalog（场景 TMP 英文初值仅作兜底）
+        if (startGameButtonText != null) startGameButtonText.text = TextCatalog.Get("ui.mainmenu.start");
+        if (continueGameButton != null)
+        {
+            var t = continueGameButton.GetComponentInChildren<TMPro.TMP_Text>();
+            if (t != null) t.text = TextCatalog.Get("ui.mainmenu.continue");
+        }
+        if (settingsButtonText != null) settingsButtonText.text = TextCatalog.Get("ui.mainmenu.settings");
+        if (quitGameButtonText != null) quitGameButtonText.text = TextCatalog.Get("ui.mainmenu.quit");
+
         EnsureHallOfFameEntry();
 
         ShowCursor();
@@ -85,6 +95,8 @@ public class MainMenuController : MonoBehaviour
         var clone = Instantiate(settingsButton.gameObject, settingsButton.transform.parent);
         clone.name = "HallOfFameButton";
         clone.SetActive(true);
+        if (FontRegistry.Instance != null)
+            FontRegistry.Instance.ApplyToTree(clone.transform);
         hallOfFameButton = clone.GetComponent<Button>();
         if (hallOfFameButton != null)
         {
@@ -92,7 +104,7 @@ public class MainMenuController : MonoBehaviour
             hallOfFameButton.onClick.AddListener(OnHallOfFame);
         }
         var label = clone.GetComponentInChildren<TMPro.TMP_Text>();
-        if (label != null) label.text = "荣誉殿堂";
+        if (label != null) label.text = TextCatalog.Get("ui.mainmenu.hall_of_fame");
         clone.transform.SetSiblingIndex(settingsButton.transform.GetSiblingIndex() + 1);
     }
 
@@ -121,13 +133,13 @@ public class MainMenuController : MonoBehaviour
 
     public void OnStartGame()
     {
-        // 已有存档时先确认：开始新游戏会覆盖原存档
+        // 已有存档时先确认：开始新游戏会覆盖原存档（文本走 TextCatalog 统一管理）
         if (SaveCoordinator.HasSaveFile && confirmDialog != null)
         {
             Debug.Log("MainMenu: OnStartGame - save exists, showing confirm");
             if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
             subPanelOpened = true;
-            confirmDialog.Show("Start New Game", "Starting a new game will overwrite your saved progress. Continue?", OnStartNewGameConfirmed, OnDialogCancel);
+            confirmDialog.Show(TextCatalog.Get("ui.mainmenu.newgame_title"), TextCatalog.Get("ui.mainmenu.newgame_message"), OnStartNewGameConfirmed, OnDialogCancel);
         }
         else
         {
@@ -174,7 +186,7 @@ public class MainMenuController : MonoBehaviour
         {
             if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
             subPanelOpened = true;
-            confirmDialog.Show("Quit Game", "Are you sure you want to quit?", OnQuitConfirmed, OnDialogCancel);
+            confirmDialog.Show(TextCatalog.Get("ui.mainmenu.quit_title"), TextCatalog.Get("ui.mainmenu.quit_message"), OnQuitConfirmed, OnDialogCancel);
         }
         else
         {
