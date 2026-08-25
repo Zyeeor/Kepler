@@ -2673,6 +2673,21 @@ MonoBehaviour:
   choiceBuffer: 1
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
+  continuousSpawning: 1
+  normalSpawnInterval: 2
+  normalSpawnCountPerTick: 1
+  continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  spawnCycleSeconds: 60
+  tideStartSeconds: 30
+  tideDurationSeconds: 10
+  tideSpawnInterval: 2
+  tideSpawnCountPerSin: 1
+  eliteSpawnOffsetSeconds: 40
+  eliteCountPerCycle: 1
+  nonBossDurationSeconds: 420
+  difficultyGrowthIntervalSeconds: 30
+  killEchoMaxCountPerWindow: 2
+  killEchoWindowSeconds: 2
   waveMode: 0
   waves:
   - weightedTable:
@@ -7776,6 +7791,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bossPrefab: {fileID: 2722852593001312145, guid: 0363e4a5efcb2490b87dae77049a7bda,
     type: 3}
+  imprintHudPrefab: {fileID: 5948497034172307295, guid: 01e64a6ae89f3401ba4014f99d12c449,
+    type: 3}
 --- !u!4 &1312176470
 Transform:
   m_ObjectHideFlags: 0
@@ -9759,7 +9776,7 @@ MonoBehaviour:
   useFixedSeed: 1
   fixedSeed: 12345
   forceTutorial: 0
-  useFormalFlow: 0
+  useFormalFlow: 1
   bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
@@ -10321,7 +10338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d4836a1707c16b438ec1c27557fb8e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxCombatMonsters: 30
+  maxCombatMonsters: 60
   minSpawnDistanceToPlayer: 10
   maxSpawnDistanceToPlayer: 25
   spawnHeightY: 0
@@ -10687,6 +10704,21 @@ MonoBehaviour:
   choiceBuffer: 2
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
+  continuousSpawning: 1
+  normalSpawnInterval: 2
+  normalSpawnCountPerTick: 1
+  continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  spawnCycleSeconds: 60
+  tideStartSeconds: 30
+  tideDurationSeconds: 10
+  tideSpawnInterval: 2
+  tideSpawnCountPerSin: 1
+  eliteSpawnOffsetSeconds: 40
+  eliteCountPerCycle: 1
+  nonBossDurationSeconds: 420
+  difficultyGrowthIntervalSeconds: 30
+  killEchoMaxCountPerWindow: 2
+  killEchoWindowSeconds: 2
   waveMode: 0
   waves: []
   gracePeriod: 2
