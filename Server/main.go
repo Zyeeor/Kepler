@@ -33,7 +33,7 @@ func main() {
 	// 精英怪投放参数（策划案 §6 TUNABLE + §8.2/§8.4 容量，默认值为首版 Baseline）
 	eliteCfg := elite.DefaultEliteConfig()
 	flag.IntVar(&eliteCfg.MinBD, "minBd", eliteCfg.MinBD, "elite pick: minimum BD count threshold MIN_BD")
-	flag.IntVar(&eliteCfg.WaveGap, "waveGap", eliteCfg.WaveGap, "elite pick: server-side fallback wave gap (used when client omits waveGap; 0 = no extra gap)")
+	flag.IntVar(&eliteCfg.WaveGap, "waveGap", eliteCfg.WaveGap, "elite pick: server-side fallback spawn-index gap (wave = which elite injection, 1-based; used when client omits waveGap; 0 = no extra gap)")
 	flag.StringVar(&eliteCfg.TopBandMode, "topBandMode", eliteCfg.TopBandMode, `elite pick: TOP_BAND mode "percent" | "topk"`)
 	flag.Float64Var(&eliteCfg.TopBandPercent, "topBandPercent", eliteCfg.TopBandPercent, "percent mode: top band ratio (e.g. 0.2 = top 20%)")
 	flag.IntVar(&eliteCfg.TopBandTopK, "topBandTopK", eliteCfg.TopBandTopK, "topk mode: top band size")

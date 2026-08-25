@@ -71,8 +71,9 @@ func upload(base, player, run string, snaps ...snapIn) int {
 	return out.Accepted
 }
 
-// pick 模拟第 N 波精英怪请求（waveGap=1：越一级波次差——测试各步断言按 WAVE_GAP=1 语义编写；
-// 当前设计 waveGap 完全由客户端指定，服务端默认 0 不再叠加，故请求须显式携带）。
+// pick 模拟第 N 次投放精英怪请求（wave = 投放序号，即第几次投放精英怪；waveGap=1：越一级
+// 投放序号差——测试各步断言按 WAVE_GAP=1 语义编写；当前设计 waveGap 完全由客户端指定，
+// 服务端默认 0 不再叠加，故请求须显式携带）。
 func pick(base, player string, wave int) pickResp {
 	body, _ := json.Marshal(map[string]any{"playerId": player, "wave": wave, "waveGap": 1})
 	resp, err := http.Post(base+"/api/elite/pick", "application/json", bytes.NewReader(body))
@@ -178,7 +179,7 @@ func testPickAndFallback() {
 	if r.Snapshot.SourcePlayerID != playerA || r.Snapshot.SourceWave != 6 || r.Snapshot.BDCount != 2 {
 		panic(fmt.Sprintf("main path unexpected snapshot: %+v", r.Snapshot))
 	}
-	fmt.Println("✓ 主路径：B@W5 拿到 A 的 W6 快照（他人 + 波次差 + bdCount>=MIN_BD）")
+	fmt.Println("✓ 主路径：B@第5次投放 拿到 A 的第6次投放快照（他人 + 投放序号差 + bdCount>=MIN_BD）")
 
 	// 6. 兜底 1：B 第 6 波 → 主路径 sourceWave>=7 为空 → 放宽 WAVE_GAP=0 命中 wave6
 	if r := pick(base, playerB, 6); r.Snapshot == nil || !r.Relaxed {
@@ -186,7 +187,7 @@ func testPickAndFallback() {
 	}
 	fmt.Println("✓ 兜底1：WAVE_GAP 放宽到 0，relaxed=true")
 
-	// 7. 兜底 2：B 第 8 波 → 放宽后仍空（6<8）→ 全库最高波次档取 bdCount 最大
+	// 7. 兜底 2：B 第 8 次投放 → 放宽后仍空（6<8）→ 全库最高投放序号档取 bdCount 最大
 	if r := pick(base, playerB, 8); r.Snapshot == nil || !r.Relaxed || r.Snapshot.SourceWave != 6 {
 		panic(fmt.Sprintf("fallback 2 unexpected: %+v", r.Snapshot))
 	}

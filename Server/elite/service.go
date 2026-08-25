@@ -14,10 +14,21 @@
 //   - events.go：战果回传聚合 + 战绩查询
 package elite
 
+import (
+	"sync"
+	"time"
+)
+
 // EliteService 精英怪 BD 快照服务。
 type EliteService struct {
 	store EliteStore
 	cfg   EliteConfig
+
+	// 荣誉殿堂排行榜进程内缓存（leaderboard.go）：写路径失效 + TTL 兜底。
+	// 零外部依赖的轻量读优化——读多写少（异步战绩语义容忍秒级延迟）。
+	lbMu       sync.RWMutex
+	lbCache    []*LeaderboardEntry // 全库 Top LeaderboardMaxLimit 条（不足则全量）
+	lbExpireAt time.Time
 }
 
 // NewEliteService 创建服务（配置在构造时归一化）。

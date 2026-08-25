@@ -27,7 +27,7 @@ type EliteEventInput struct {
 	OwnerRunID    string `json:"ownerRunId"`    // 构筑主人 Run ID（聚合键）
 	Sin           string `json:"sin"`           // 七宗罪 wire 名（聚合键）
 	Type          string `json:"type"`          // spawned / fatal / possessed / bodyFatal / runFail
-	Wave          int    `json:"wave"`          // 事件发生波次（观测，透传）
+	Wave          int    `json:"wave"`          // 事件发生时的投放序号 = 第几次投放精英怪（观测，透传）
 	GameTime      int64  `json:"gameTime"`      // 事件发生游戏时间（观测，透传）
 }
 
@@ -78,6 +78,9 @@ func (s *EliteService) RecordEvents(req *RecordEventsRequest) (int, error) {
 	n, err := s.store.RecordEliteEvents(events)
 	if err != nil {
 		return 0, fmt.Errorf("record elite events: %w", err)
+	}
+	if n > 0 {
+		s.invalidateLeaderboard() // 战果聚合改变榜单 → 失效缓存
 	}
 	logx.Event("events · reporter=%s accepted=%d/%d", req.PlayerID, n, len(req.Events))
 	return n, nil
