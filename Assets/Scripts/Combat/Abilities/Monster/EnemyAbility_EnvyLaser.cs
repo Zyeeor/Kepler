@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Envy Attack: continuous laser that writes target Marks.
-/// Possessed aims by mouse; Enemy AI locks the current player (never highest-HP).
+/// Possessed auto-aims at the nearest legal enemy; Enemy AI locks the current player.
 /// Ported beam VFX/tick loop from legacy EnemyAbility_Laser; Mark/cashout rules are Canonical.
 /// </summary>
 public class EnemyAbility_EnvyLaser : EnemyAbility
@@ -343,15 +343,18 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private Vector3 GetAimPoint(Vector3 origin)
     {
         float range = GetEffectiveRange();
-        if (owner.isPossessed && PlayerController.Instance != null
-            && PlayerController.Instance.TryGetAimPoint(out Vector3 aim))
+        if (owner.isPossessed)
         {
-            Vector3 flat = aim;
-            flat.y = origin.y;
-            Vector3 delta = flat - origin;
-            if (delta.sqrMagnitude < 0.01f) delta = owner.transform.forward;
-            if (delta.magnitude > range) delta = delta.normalized * range;
-            return origin + delta;
+            Enemy nearest = FindNearestEnemy(origin, range);
+            if (nearest != null)
+            {
+                Vector3 target = nearest.transform.position + Vector3.up;
+                Vector3 delta = target - origin;
+                if (delta.magnitude > range) delta = delta.normalized * range;
+                return origin + delta;
+            }
+
+            return origin + owner.transform.forward * range;
         }
 
         if (owner.targetPlayer != null)
@@ -363,6 +366,28 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         }
 
         return origin + owner.transform.forward * range;
+    }
+
+    private Enemy FindNearestEnemy(Vector3 origin, float range)
+    {
+        Enemy nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+        float maxSqrDistance = range * range;
+
+        foreach (Enemy enemy in EnemyRegistry.All)
+        {
+            if (enemy == null || !owner.CanDamage(enemy)) continue;
+
+            Vector3 offset = enemy.transform.position - origin;
+            float sqrDistance = offset.sqrMagnitude;
+            if (sqrDistance <= maxSqrDistance && sqrDistance < nearestSqrDistance)
+            {
+                nearestSqrDistance = sqrDistance;
+                nearest = enemy;
+            }
+        }
+
+        return nearest;
     }
 
     private void SpawnBeamVfx(Vector3 origin, Vector3 targetPos)
