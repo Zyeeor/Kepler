@@ -1479,7 +1479,7 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 2
+  damage: 3
   drawHitboxes: 0
   cooldown: 0
   debugLogCooldown: 0
@@ -1513,7 +1513,7 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   maxRange: 15
-  damagePerSecond: 0.5
+  damagePerSecond: 3
   tickInterval: 0.01
   markStorageCap: 100
   markWriteRatio: 0.2
