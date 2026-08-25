@@ -34,6 +34,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Envy
     detectionRadius: 15
@@ -56,6 +58,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Pride
     detectionRadius: 15
@@ -78,28 +82,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
-    showDebugRanges: 0
-  - id: Pride_new
-    detectionRadius: 15
-    basicAttackRange: 5
-    skillAttackRange: 3
-    aiMinRange: 2
-    attackEagerness: 0.21
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.6
-    aiMobilityChance: 0.3
-    chaseDuration: 1
-    strafeChance: 0.221
-    strafeIntervalMin: 0.3
-    strafeIntervalMax: 0.9
-    strafeStrength: 0.45
-    moveSpeedJitterMin: 0.5
-    moveSpeedJitterMax: 0.9
-    moveAcceleration: 10
-    moveDeceleration: 12
-    turnSpeed: 540
-    turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Sloth
     detectionRadius: 15
@@ -122,6 +106,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Wrath
     detectionRadius: 15
@@ -144,6 +130,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: SwordShield
     detectionRadius: 15
@@ -166,6 +154,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Gluttony_new
     detectionRadius: 15
@@ -188,6 +178,32 @@ MonoBehaviour:
     moveDeceleration: 22
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
+    showDebugRanges: 0
+  - id: Pride_new
+    detectionRadius: 15
+    basicAttackRange: 5
+    skillAttackRange: 3
+    aiMinRange: 2
+    attackEagerness: 0.21
+    decisionIntervalMin: 0.12
+    decisionIntervalMax: 0.4
+    skillPriority: 0.6
+    aiMobilityChance: 0.3
+    chaseDuration: 1
+    strafeChance: 0.221
+    strafeIntervalMin: 0.3
+    strafeIntervalMax: 0.9
+    strafeStrength: 0.45
+    moveSpeedJitterMin: 0.5
+    moveSpeedJitterMax: 0.9
+    moveAcceleration: 10
+    moveDeceleration: 12
+    turnSpeed: 540
+    turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Lust_new
     detectionRadius: 15
@@ -210,6 +226,8 @@ MonoBehaviour:
     moveDeceleration: 22
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Envy_new
     detectionRadius: 15
@@ -232,6 +250,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Greed_new
     detectionRadius: 15
@@ -254,6 +274,8 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
   - id: Wrath_new
     detectionRadius: 15
@@ -276,4 +298,30 @@ MonoBehaviour:
     moveDeceleration: 28
     turnSpeed: 540
     turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
+    showDebugRanges: 0
+  - id: Sloth_new
+    detectionRadius: 15
+    basicAttackRange: 3
+    skillAttackRange: 6
+    aiMinRange: 2
+    attackEagerness: 0.6
+    decisionIntervalMin: 0.12
+    decisionIntervalMax: 0.4
+    skillPriority: 0.6
+    aiMobilityChance: 0.3
+    chaseDuration: 0
+    strafeChance: 0.4
+    strafeIntervalMin: 0.3
+    strafeIntervalMax: 0.9
+    strafeStrength: 0.45
+    moveSpeedJitterMin: 0.7
+    moveSpeedJitterMax: 1.3
+    moveAcceleration: 20
+    moveDeceleration: 28
+    turnSpeed: 540
+    turnAcceleration: 1440
+    separationRadius: 1.2
+    separationStrength: 0.8
     showDebugRanges: 0
