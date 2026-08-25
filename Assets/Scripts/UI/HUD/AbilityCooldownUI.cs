@@ -26,6 +26,10 @@ public class AbilityCooldownUI : MonoBehaviour
     public Image possessCooldownOverlay;
     public TMP_Text possessKeyHint;
 
+    [Header("Icon Configuration")]
+    [Tooltip("技能 HUD 图标配置；为空时自动加载 Resources/UI/MonsterSkillIconConfig。")]
+    public MonsterSkillIconConfig iconConfig;
+
     [Header("Style")]
     public Color readyColor = Color.white;
     public Color cooldownOverlayColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
@@ -41,15 +45,30 @@ public class AbilityCooldownUI : MonoBehaviour
     private EnemyAbility enemyBasicAbility;
     private EnemyAbility enemySkillAbility;
 
+    // 场景默认图标作为配置缺省值；在玩家/怪物状态切换时避免沿用上一个角色的覆盖图。
+    private Sprite defaultBasicIcon;
+    private Sprite defaultSkillIcon;
+    private Sprite defaultPossessIcon;
+
     void Awake()
     {
         playerCombat = FindObjectOfType<PlayerCombat>();
+        defaultBasicIcon = basicIconImage != null ? basicIconImage.sprite : null;
+        defaultSkillIcon = skillIconImage != null ? skillIconImage.sprite : null;
+        defaultPossessIcon = possessIconImage != null ? possessIconImage.sprite : null;
     }
 
     void Start()
     {
+        ResolveIconConfig();
         SetupIcons();
         RefreshIcons();
+    }
+
+    void ResolveIconConfig()
+    {
+        if (iconConfig == null)
+            iconConfig = Resources.Load<MonsterSkillIconConfig>("UI/MonsterSkillIconConfig");
     }
 
     void Update()
@@ -113,6 +132,7 @@ public class AbilityCooldownUI : MonoBehaviour
             if (playerCombat.basicAbilities.Count > 0)
             {
                 playerBasicAbility = playerCombat.basicAbilities[0];
+                ApplyPlayerIcon(MonsterSkillIconConfig.PlayerSlot.BasicAttack, basicIconImage);
                 if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(true);
             }
             else { if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false); }
@@ -124,6 +144,7 @@ public class AbilityCooldownUI : MonoBehaviour
             if (currentEnemy.basicAbilities.Count > 0)
             {
                 enemyBasicAbility = currentEnemy.basicAbilities[0].ability;
+                ApplyMonsterIcon(currentEnemy.sinType, MonsterSkillIconConfig.MonsterSlot.BasicAttack, basicIconImage);
                 if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(true);
             }
             else { if (basicIconRoot != null) basicIconRoot.gameObject.SetActive(false); }
@@ -131,6 +152,7 @@ public class AbilityCooldownUI : MonoBehaviour
             if (currentEnemy.skillAbilities.Count > 0)
             {
                 enemySkillAbility = currentEnemy.skillAbilities[0].ability;
+                ApplyMonsterIcon(currentEnemy.sinType, MonsterSkillIconConfig.MonsterSlot.Skill, skillIconImage);
                 if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
             }
             else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }
@@ -145,7 +167,41 @@ public class AbilityCooldownUI : MonoBehaviour
         var pm2 = PossessionManager.Instance;
         bool possessing2 = pm2 != null && pm2.State == PossessionManager.SwitchState.Possessing;
         bool showPossess = !trackingPlayer || !possessing2;
+        if (trackingPlayer)
+            ApplyPlayerIcon(MonsterSkillIconConfig.PlayerSlot.Possess, possessIconImage);
+        else if (currentEnemy != null)
+            ApplyMonsterIcon(currentEnemy.sinType, MonsterSkillIconConfig.MonsterSlot.Possess, possessIconImage);
         if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(showPossess);
+    }
+
+    void ApplyPlayerIcon(MonsterSkillIconConfig.PlayerSlot slot, Image target)
+    {
+        if (target == null) return;
+        Sprite fallback = GetDefaultIcon(target);
+        Sprite icon;
+        if (iconConfig != null && iconConfig.TryGetPlayerIcon(slot, out icon))
+            target.sprite = icon;
+        else
+            target.sprite = fallback;
+    }
+
+    void ApplyMonsterIcon(SinType sin, MonsterSkillIconConfig.MonsterSlot slot, Image target)
+    {
+        if (target == null) return;
+        Sprite fallback = GetDefaultIcon(target);
+        Sprite icon;
+        if (iconConfig != null && iconConfig.TryGetMonsterIcon(sin, slot, out icon))
+            target.sprite = icon;
+        else
+            target.sprite = fallback;
+    }
+
+    Sprite GetDefaultIcon(Image target)
+    {
+        if (target == basicIconImage) return defaultBasicIcon;
+        if (target == skillIconImage) return defaultSkillIcon;
+        if (target == possessIconImage) return defaultPossessIcon;
+        return null;
     }
 
     void UpdateCooldowns()
