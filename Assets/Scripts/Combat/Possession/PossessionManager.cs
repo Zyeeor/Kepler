@@ -116,7 +116,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (handlingGameOver && (GameManager.Instance == null || GameManager.Instance.currentState != GameManager.GameState.GameOver))
             handlingGameOver = false;
 
-        if (CooldownRemaining > 0f) CooldownRemaining -= Time.deltaTime;
+        if (CooldownRemaining > 0f) CooldownRemaining -= Time.unscaledDeltaTime;
 
         IsBodyDecaying = false;
         if (State != SwitchState.Possessing || CurrentBody == null) return;
@@ -131,7 +131,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         if (decayInterval <= 0f) return;
         IsBodyDecaying = true;
-        float decayAmount = CurrentBody.maxHealth * possessionDecayPercent / decayInterval * Time.deltaTime;
+        float decayAmount = CurrentBody.maxHealth * possessionDecayPercent / decayInterval * Time.unscaledDeltaTime;
         if (PossessionImprintManager.Instance != null)
             decayAmount *= PossessionImprintManager.Instance.GetPossessionDrainMultiplier(CurrentBody);
         CurrentBody.currentHealth -= decayAmount;
@@ -262,9 +262,9 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void RequestRelease(bool force)
     {
         if (State != SwitchState.Possessing) return;
-        if (!bossBattleSwitchMode && !force && Time.time - possessStartTime < minPossessTime)
+        if (!bossBattleSwitchMode && !force && Time.unscaledTime - possessStartTime < minPossessTime)
         {
-            Debug.Log("[Possession] Release rejected: min possession time remaining=" + (minPossessTime - (Time.time - possessStartTime)).ToString("F2"));
+            Debug.Log("[Possession] Release rejected: min possession time remaining=" + (minPossessTime - (Time.unscaledTime - possessStartTime)).ToString("F2"));
             return;
         }
 
@@ -414,7 +414,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         reservedBody = null;
         CurrentBody = target;
         State = SwitchState.Possessing;
-        possessStartTime = Time.time;
+        possessStartTime = Time.unscaledTime;
 
         if (soul != null)
         {
@@ -454,9 +454,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             if (oldBody.Combat != null) oldBody.Combat.RemoveLooseTags(this);
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            if (oldBody.IsElite)
-                oldBody.KeepAsPermanentEliteCorpse();
-            else if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
+            if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
                 oldBody.ReturnToBossBattleReserve();
             else
                 oldBody.BeginDisappearing();
@@ -490,9 +488,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         {
             oldBody.SetController(NullController.Instance);
             oldBody.OnUnpossessed();
-            if (oldBody.IsElite && reason != PossessionEndReason.BodyDied)
-                oldBody.KeepAsPermanentEliteCorpse();
-            else if (recycleBody)
+            if (recycleBody)
             {
                 if (oldBody.IsBossBattleReserveBody && oldBody.currentHealth > 0f)
                     oldBody.ReturnToBossBattleReserve();

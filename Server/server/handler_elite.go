@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"demo/server/elite"
 	"demo/server/tools/logx"
@@ -56,7 +57,7 @@ type eliteStatsJSON struct {
 	UpdatedAt     int64  `json:"updatedAt"`
 }
 
-// handleSnapshotUpload 每波选卡后批量滚动上传 BD 快照（策划案 §8.1）。
+// handleSnapshotUpload 每轮选卡后批量滚动上传 BD 快照（策划案 §8.1；sourceWave = 上传时第几次投放精英怪）。
 func (s *Server) handleSnapshotUpload(w http.ResponseWriter, r *http.Request) {
 	var req elite.UploadSnapshotsRequest
 	if err := decodeJSON(r, &req); err != nil {
@@ -100,14 +101,13 @@ func (s *Server) handleUserBDUpload(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleElitePick 第 N 波请求精英怪（策划案 §3/§5）。
-//
-// snapshot == null 表示本波不投放（兜底 3，正常业务分支，前台按不投放处理）。
+// handleElitePick 第 N 次投放请求精英怪（§3/§5；wave = 投放序号）。
+// snapshot == null = 本次不投放（兜底 3，正常业务分支）。
 func (s *Server) handleElitePick(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		PlayerID string `json:"playerId"`
-		Wave     int    `json:"wave"`    // 当前波次 N（sourceWave 语义/编码由前台决定，透传比较）
-		WaveGap  int    `json:"waveGap"` // 越级波次差（客户端难度设置，0=同波次，1=越一级）
+		Wave     int    `json:"wave"`    // 本次投放序号 N（第几次投放精英怪；sourceWave 语义/编码由前台决定，透传比较）
+		WaveGap  int    `json:"waveGap"` // 投放序号差（客户端难度设置，0=同投放序号，1=越一级投放）
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeErr(w, http.StatusBadRequest, "bad request")
@@ -118,7 +118,7 @@ func (s *Server) handleElitePick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Wave < 1 {
-		writeErr(w, http.StatusBadRequest, "wave must be >= 1")
+		writeErr(w, http.StatusBadRequest, "wave must be >= 1 (elite injection count, 1-based)")
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *Server) handleElitePick(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"snapshot": toSnapshotJSON(snap),
-		"relaxed":  relaxed, // 命中放宽波次的兜底路径（仅观测）
+		"relaxed":  relaxed, // 命中放宽投放序号的兜底路径（仅观测）
 	})
 }
 
@@ -152,6 +152,53 @@ func (s *Server) handleEliteEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "accepted": accepted})
+}
+
+// handleEliteLeaderboard 荣誉殿堂排行榜（策划案 §5.4/§5.8）：击杀玩家次数（bodyFatal）
+// 最多的 Top N 个 BD 怪物，按构筑维度（owner + run + sin）聚合展示。
+//
+// GET /api/elite/leaderboard?limit=20（limit 默认 20，范围 1–100；非法值 400）。
+// 被容量治理淘汰的悬空聚合行不上榜（怪物与构筑信息已不可考）；
+// bdData 原样透传（卡数组结构由前台定义）。
+func (s *Server) handleEliteLeaderboard(w http.ResponseWriter, r *http.Request) {
+	limit := elite.LeaderboardDefaultLimit
+	if v := r.URL.Query().Get("limit"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 {
+			writeErr(w, http.StatusBadRequest, "invalid limit (must be a positive integer)")
+			return
+		}
+		limit = n
+	}
+
+	entries, err := s.eliteSvc.Leaderboard(limit)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	out := make([]map[string]any, 0, len(entries))
+	for i, e := range entries {
+		out = append(out, map[string]any{
+			"rank":          i + 1,
+			"snapshotId":    e.SnapshotID,
+			"ownerPlayerId": e.OwnerPlayerID,
+			"ownerRunId":    e.OwnerRunID,
+			"sin":           e.Sin,
+			"monsterType":   e.MonsterType,
+			"bdCount":       e.BDCount,
+			"sourceWave":    e.SourceWave,
+			"bdData":        json.RawMessage(e.BDData), // 透传前台定义的卡数组
+			"stats": map[string]any{
+				"deployed":  e.Deployed,
+				"fatal":     e.Fatal,
+				"possessed": e.Possessed,
+				"bodyFatal": e.BodyFatal, // 排序主键：击杀玩家次数
+				"runFail":   e.RunFail,
+			},
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"entries": out})
 }
 
 // handleEliteStats 查询构筑主人的异步战绩聚合（荣誉殿堂数据出口，§5.4/§5.8）。

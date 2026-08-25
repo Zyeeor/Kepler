@@ -27,8 +27,9 @@ type EliteEventInput struct {
 	OwnerRunID    string `json:"ownerRunId"`    // 构筑主人 Run ID（聚合键）
 	Sin           string `json:"sin"`           // 七宗罪 wire 名（聚合键）
 	Type          string `json:"type"`          // spawned / fatal / possessed / bodyFatal / runFail
-	Wave          int    `json:"wave"`          // 事件发生波次（观测，透传）
+	Wave          int    `json:"wave"`          // 事件发生时的投放序号 = 第几次投放精英怪（观测，透传）
 	GameTime      int64  `json:"gameTime"`      // 事件发生游戏时间（观测，透传）
+	EventID       string `json:"eventId"`       // 客户端生成的唯一事件 ID（幂等去重键；空 = 旧客户端，跳过去重）
 }
 
 // RecordEventsRequest 战果回传请求体（批量）。
@@ -51,6 +52,12 @@ func (s *EliteService) RecordEvents(req *RecordEventsRequest) (int, error) {
 
 	events := make([]*EliteEvent, 0, len(req.Events))
 	for i, in := range req.Events {
+		// 幂等去重（P1）：eventId 在窗口内重复（客户端重试/重放）→ 跳过。
+		// eventId 为空 = 旧客户端未升级，跳过去重（行为与改造前一致）。
+		if in.EventID != "" && s.dedup.Seen(req.PlayerID+"|"+in.EventID) {
+			logx.Detail("skip event[%d] · eventId=%s (duplicate within window)", i, in.EventID)
+			continue
+		}
 		if in.OwnerPlayerID == "" || in.OwnerPlayerID == localPresetOwner {
 			logx.Detail("skip event[%d] · type=%s owner=%q (no real owner)", i, in.Type, in.OwnerPlayerID)
 			continue
@@ -78,6 +85,9 @@ func (s *EliteService) RecordEvents(req *RecordEventsRequest) (int, error) {
 	n, err := s.store.RecordEliteEvents(events)
 	if err != nil {
 		return 0, fmt.Errorf("record elite events: %w", err)
+	}
+	if n > 0 {
+		s.invalidateLeaderboard() // 战果聚合改变榜单 → 失效缓存
 	}
 	logx.Event("events · reporter=%s accepted=%d/%d", req.PlayerID, n, len(req.Events))
 	return n, nil

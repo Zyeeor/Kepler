@@ -43,6 +43,11 @@ var eliteMigrateStmts = []string{
 		UNIQUE(owner_player_id, owner_run_id, sin)
 	)`,
 	`CREATE INDEX IF NOT EXISTS idx_elite_stats_owner ON elite_build_stats(owner_player_id)`,
+	// 排行榜查询（§5.4/§5.8）：部分索引完全覆盖 WHERE body_fatal > 0 + ORDER BY 四键，
+	// Top-N 免排序扫描（驱动表按索引取前 N 行再按唯一键 JOIN 快照表）。
+	`CREATE INDEX IF NOT EXISTS idx_elite_stats_lb
+		ON elite_build_stats(body_fatal DESC, run_fail DESC, deployed DESC, updated_at DESC)
+		WHERE body_fatal > 0`,
 }
 
 // snapshotColumns 快照查询列。
@@ -143,7 +148,7 @@ func (s *SQLiteStore) PickCandidates(minBD, minWave int, excludePlayerID string)
 	return scanSnapshots(rows)
 }
 
-// TopWaveCandidates 兜底候选（§5）：sourceWave 最高档中 bdCount 降序。
+// TopWaveCandidates 兜底候选（§5）：sourceWave（投放序号）最高档中 bdCount 降序。
 func (s *SQLiteStore) TopWaveCandidates(minBD int, excludePlayerID string) ([]*elite.BuildSnapshot, error) {
 	rows, err := s.db.Query(`
 		SELECT `+snapshotColumns+` FROM monster_build_snapshots
@@ -170,7 +175,7 @@ func (s *SQLiteStore) ListAllSnapshots() ([]*elite.BuildSnapshot, error) {
 
 // scanSnapshots 扫描快照查询结果。
 func scanSnapshots(rows *sql.Rows) ([]*elite.BuildSnapshot, error) {
-	var out []*elite.BuildSnapshot
+	out := make([]*elite.BuildSnapshot, 0, 64)
 	for rows.Next() {
 		var snap elite.BuildSnapshot
 		if err := rows.Scan(
@@ -266,6 +271,40 @@ func (s *SQLiteStore) GetEliteBuildStats(ownerPlayerID string) ([]*elite.EliteBu
 			return nil, err
 		}
 		out = append(out, &st)
+	}
+	return out, rows.Err()
+}
+
+// Leaderboard 荣誉殿堂排行榜（§5.4/§5.8 Top N 视图）：elite_build_stats 按
+// (owner, run, sin) 业务键 JOIN monster_build_snapshots，按击杀玩家次数
+// （body_fatal）降序取 Top limit。INNER JOIN——被容量治理淘汰的悬空聚合行不上榜
+// （怪物与构筑信息已不可考）。tie-break：run_fail → deployed → updated_at。
+func (s *SQLiteStore) Leaderboard(limit int) ([]*elite.LeaderboardEntry, error) {
+	rows, err := s.db.Query(`
+		SELECT s.id, s.player_id, s.run_id, s.sin, s.monster_type, s.bd_data, s.bd_count, s.source_wave,
+		       e.deployed, e.fatal, e.possessed, e.body_fatal, e.run_fail, e.updated_at
+		FROM elite_build_stats e
+		JOIN monster_build_snapshots s
+		  ON s.player_id = e.owner_player_id AND s.run_id = e.owner_run_id AND s.sin = e.sin
+		WHERE e.body_fatal > 0
+		ORDER BY e.body_fatal DESC, e.run_fail DESC, e.deployed DESC, e.updated_at DESC
+		LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]*elite.LeaderboardEntry, 0, 32)
+	for rows.Next() {
+		var e elite.LeaderboardEntry
+		if err := rows.Scan(
+			&e.SnapshotID, &e.OwnerPlayerID, &e.OwnerRunID, &e.Sin, &e.MonsterType,
+			&e.BDData, &e.BDCount, &e.SourceWave,
+			&e.Deployed, &e.Fatal, &e.Possessed, &e.BodyFatal, &e.RunFail, &e.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, &e)
 	}
 	return out, rows.Err()
 }

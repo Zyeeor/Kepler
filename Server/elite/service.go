@@ -14,15 +14,39 @@
 //   - events.go：战果回传聚合 + 战绩查询
 package elite
 
+import (
+	"sync"
+	"time"
+)
+
 // EliteService 精英怪 BD 快照服务。
 type EliteService struct {
 	store EliteStore
 	cfg   EliteConfig
+
+	// 荣誉殿堂排行榜进程内缓存（leaderboard.go）：写路径失效 + TTL 兜底。
+	// 零外部依赖的轻量读优化——读多写少（异步战绩语义容忍秒级延迟）。
+	lbMu       sync.RWMutex
+	lbCache    []*LeaderboardEntry // 全库 Top LeaderboardMaxLimit 条（不足则全量）
+	lbExpireAt time.Time
+
+	// 战果事件幂等去重（dedup.go）：eventId 窗口内重复上报跳过，防重试重放刷计数。
+	dedup *eventDedup
+
+	// BD 内容指纹缓存：首次使用全库加载，常驻内存，入库成功后增量维护——
+	// userBD 在线上传的重复检测从 O(全库扫描) 降为 O(1)（userbd.go）。
+	fpMu    sync.Mutex
+	fpSeen  map[string]struct{}
+	fpReady bool
 }
 
 // NewEliteService 创建服务（配置在构造时归一化）。
 func NewEliteService(st EliteStore, cfg EliteConfig) *EliteService {
-	return &EliteService{store: st, cfg: cfg.normalize()}
+	return &EliteService{
+		store: st,
+		cfg:   cfg.normalize(),
+		dedup: newEventDedup(10000, 10*time.Minute),
+	}
 }
 
 // validSins 合法七宗罪 wire 名（客户端 EliteMonsterCatalog.WireName 同源）。

@@ -83,9 +83,26 @@ public class BgmController : AudioChannelController
             _pendingFadeOverride = 0f; // 早退防御：不残留覆盖值（Reconcile 每次重设，此处双保险）
             return;
         }
-        // 正在播放/淡入同一曲：不打断（场景加载重复触发、同曲重请求均安全）
-        if (_bgmFading) return;
-        if (_activeBgm != null && _activeBgm.isPlaying && _activeBgm.clip == clip)
+        // 同一曲请求不重启；不同曲请求可以接管当前淡入淡出。
+        // 新的场景/阶段 BGM 请求必须接管当前淡入淡出，不能直接丢弃。
+        // 否则用户在主菜单曲淡入期间进入战斗场景时，战斗曲请求会永久失效。
+        bool sameActiveClip = _activeBgm != null && _activeBgm.isPlaying && _activeBgm.clip == clip;
+        if (_bgmFading && !sameActiveClip)
+        {
+            if (_bgmFadeRoutine != null) StopCoroutine(_bgmFadeRoutine);
+            _bgmFadeRoutine = null;
+            _bgmFading = false;
+
+            // 清理被中断的另一条音源，避免旧的目标曲残留叠放。
+            var interruptedTarget = _activeBgm == bgmSource ? bgmSource2 : bgmSource;
+            if (interruptedTarget != null && interruptedTarget.isPlaying)
+            {
+                interruptedTarget.Stop();
+                interruptedTarget.clip = null;
+                interruptedTarget.volume = 0f;
+            }
+        }
+        if (sameActiveClip)
         {
             _pendingFadeOverride = 0f; // 同曲不重启：消费掉本次覆盖，防残留被下一次切换误用
             return;

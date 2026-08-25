@@ -43,6 +43,17 @@ public class CombatAbilityComponent : MonoBehaviour
     private readonly List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
     private readonly List<ActiveEffect> activeEffects = new List<ActiveEffect>();
     private readonly List<SpeedMultiplier> externalSpeedMultipliers = new List<SpeedMultiplier>();
+    private Actor actor;
+
+    private float EffectTime
+    {
+        get { return actor != null && actor.IsPlayerControlled ? Time.unscaledTime : Time.time; }
+    }
+
+    private void Awake()
+    {
+        actor = GetComponent<Actor>();
+    }
 
     private struct SpeedMultiplier
     {
@@ -363,10 +374,12 @@ public class CombatAbilityComponent : MonoBehaviour
 
     private void Update()
     {
+        if (actor == null) actor = GetComponent<Actor>();
+        float now = EffectTime;
         for (int i = activeEffects.Count - 1; i >= 0; i--)
         {
             ActiveEffect effect = activeEffects[i];
-            if (effect.expiresAt < 0f || Time.time < effect.expiresAt) continue;
+            if (effect.expiresAt < 0f || now < effect.expiresAt) continue;
 
             if (effect.ownerAbility != null) EndAbility(effect.ownerAbility);
             else RemoveEffectInstance(effect);
@@ -377,8 +390,8 @@ public class CombatAbilityComponent : MonoBehaviour
             float interval = effect.periodicIntervalOverride > 0f
                 ? effect.periodicIntervalOverride
                 : (effect.definition != null ? effect.definition.periodicInterval : 0f);
-            if (effect.definition == null || interval <= 0f || Time.time < effect.nextPeriodicAt) continue;
-            effect.nextPeriodicAt = Time.time + interval;
+            if (effect.definition == null || interval <= 0f || now < effect.nextPeriodicAt) continue;
+            effect.nextPeriodicAt = now + interval;
             OnEffectPeriodic?.Invoke(effect.definition, effect.stacks);
             ApplyPeriodicDamage(effect);
         }
@@ -409,7 +422,7 @@ public class CombatAbilityComponent : MonoBehaviour
         // Terrain/hazard overrides request an immediate first tick; normal effects wait one interval.
         float firstPeriodicAt = -1f;
         if (interval > 0f)
-            firstPeriodicAt = periodicIntervalOverride > 0f ? Time.time : Time.time + interval;
+            firstPeriodicAt = periodicIntervalOverride > 0f ? EffectTime : EffectTime + interval;
         var effect = new ActiveEffect
         {
             definition = definition,
@@ -488,6 +501,6 @@ public class CombatAbilityComponent : MonoBehaviour
     private float GetExpiry(GameplayEffectDefinition definition, float durationOverride = -1f)
     {
         float duration = durationOverride > 0f ? durationOverride : definition.duration;
-        return duration > 0f ? Time.time + duration : -1f;
+        return duration > 0f ? EffectTime + duration : -1f;
     }
 }

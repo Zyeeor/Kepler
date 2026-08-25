@@ -8,11 +8,10 @@ import (
 	"demo/server/tools/logx"
 )
 
-// Pick 第 N 波请求精英怪：返回一条「确为他人在更高波次 BD 过」的快照。
-//
-// 返回值：snap == nil 表示本波不投放（兜底 3，正常业务分支）；
-// relaxed 表示命中了放宽波次条件的兜底路径（仅观测用，前台无需处理）。
-// waveGap 由客户端传入（难度设置），<0 时回退到服务端配置默认值。
+// Pick 第 N 次投放请求精英怪（N = 投放序号 = 前台 cycleIndex+1）：返回一条
+// 「他人在更高投放序号时点 BD 过」的快照。snap == nil = 本次不投放（兜底 3，正常
+// 业务分支）；relaxed = 命中放宽投放序号的兜底路径（仅观测）。waveGap 为投放序号差
+//（客户端难度设置），<0 时回退服务端默认值。
 func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *BuildSnapshot, relaxed bool, err error) {
 	if waveGap < 0 {
 		waveGap = s.cfg.WaveGap
@@ -35,7 +34,7 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *Build
 		return snap, false, nil
 	}
 
-	// 兜底 1：放宽 WAVE_GAP 到 0（允许同波次的 BD 怪）。Step 1/Step 3 保持。
+	// 兜底 1：放宽 WAVE_GAP 到 0（允许同投放序号的 BD 怪）。Step 1/Step 3 保持。
 	logx.Detail("fallback1 · main path empty, relax waveGap → sourceWave>=%d (was >=%d)", wave, minWave)
 	cands, err = s.store.PickCandidates(s.cfg.MinBD, wave, playerID)
 	if err != nil {
@@ -64,7 +63,7 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *Build
 		return snap, true, nil
 	}
 
-	// 兜底 3：本波不投放精英怪。
+	// 兜底 3：本次不投放精英怪。
 	logx.Event("pick result wave=%d player=%s → none (all paths exhausted, pool empty)", wave, playerID)
 	return nil, false, nil
 }

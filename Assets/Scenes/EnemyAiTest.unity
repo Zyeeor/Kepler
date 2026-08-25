@@ -1147,17 +1147,18 @@ MonoBehaviour:
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
   continuousSpawnGrowthPeriodSeconds: 60
-  continuousSpawnMaxCountPerMinute: 20
+  continuousSpawnMaxCountsByMinute: 070000000e00000015000000
   spawnCycleSeconds: 60
   tideStartSeconds: 30
   tideDurationSeconds: 9
   tideSpawnInterval: 3
   tideSpawnCountPerSin: 1
-  eliteSpawnOffsetSeconds: 40
+  eliteSpawnOffsetSeconds: 30
   eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
   difficultyGrowthIntervalSeconds: 30
   killEchoMaxCountPerWindow: 2
+  tideKillEchoMaxCountPerWindow: 7
   killEchoWindowSeconds: 2
   waveMode: 1
   waves:
@@ -8474,7 +8475,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfb6e7daf61d3db4fb5196b0d8e82733, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bgmClip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
+  bgmClip: {fileID: 8300000, guid: dd9a1e9b611615a44af24b82b1bcd5c3, type: 3}
 --- !u!4 &1638854451
 Transform:
   m_ObjectHideFlags: 0
@@ -10225,8 +10226,8 @@ MonoBehaviour:
   spawnHeightY: 0
   minSpawnPointSeparation: 6
   killEchoScreenPadding: 0.75
-  screenEdgeSpawnOffset: 2
   spawnSectorOrder: 01000000020000000300000004000000050000000600000007000000
+  screenEdgeSpawnOffset: 2
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1
@@ -10340,6 +10341,27 @@ MonoBehaviour:
   choiceBuffer: 2
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
+  continuousSpawning: 1
+  normalSpawnInterval: 3
+  normalSpawnCountPerTick: 1
+  continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  directionalReplacementEnabled: 1
+  sectorReplacementDistance: 0
+  sectorReplacementCountPerTrigger: 1
+  continuousSpawnGrowthPeriodSeconds: 60
+  continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
+  spawnCycleSeconds: 60
+  tideStartSeconds: 30
+  tideDurationSeconds: 9
+  tideSpawnInterval: 3
+  tideSpawnCountPerSin: 1
+  eliteSpawnOffsetSeconds: 40
+  eliteCountPerCycle: 1
+  nonBossDurationSeconds: 420
+  difficultyGrowthIntervalSeconds: 30
+  killEchoMaxCountPerWindow: 2
+  tideKillEchoMaxCountPerWindow: 7
+  killEchoWindowSeconds: 2
   waveMode: 0
   waves: []
   gracePeriod: 2

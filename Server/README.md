@@ -3,7 +3,8 @@
 《Possession》是**单机游戏**，本服务只承担两项在线职责：
 
 1. **UGC 内容平台**：地图 / 怪物模版的上传、下载、列表、搜索、订阅、评分；
-2. **精英怪 BD 快照投放**：拉取**其他玩家 BD（构筑）过的怪物**作为精英怪投放候选，靠波次差保证越级难度；配套**战果回传聚合**（荣誉殿堂「异步战绩」数据源）（设计依据：《精英怪筛选 — 他人 BD 怪物投放 · 策划案》、Meta_Progression §6）。
+2. **精英怪 BD 快照投放**：拉取**其他玩家 BD（构筑）过的怪物**作为精英怪投放候选，靠投放序号差保证越级难度；配套**战果回传聚合**（荣誉殿堂「异步战绩」数据源）（设计依据：《精英怪筛选 — 他人 BD 怪物投放 · 策划案》、Meta_Progression §6）。
+   > 投放模型（前台现状）：精英投放为定时模型——每 60s 周期第 40s 投 1 只，Boss 前共约 7 次投放。接口与数据中的「波次」（`wave` / `sourceWave`）字段语义统一为**第几次投放精英怪**（投放序号，1-based）。
 
 > 战斗、存档等其余玩法不依赖本服务；原联机对局功能已按 Canonical（`PC 单机`）移除。
 
@@ -11,11 +12,13 @@
 
 - **纯 HTTP JSON API**：无 WS / KCP / Protobuf，Unity 用 `UnityWebRequest` 即可对接；内置 CORS 支持（MonsterBuildEditor 为浏览器页面，直连本服务需跨源许可）
 - **无账号体系**：客户端本地持久化匿名 ID（UGC 侧 GUID；精英怪侧设备特征码）
-- **精英怪四步筛选**：BD 数量门槛 → 波次差（越级难度，由客户端指定）→ 玩家隔离 → TOP_BAND 高档内加权随机；候选为空时三级兜底（放宽波次差 → 最高波次档最大 BD → 本波不投放）
+- **精英怪四步筛选**：BD 数量门槛 → 投放序号差（越级难度，由客户端指定；序号 = 第几次投放精英怪）→ 玩家隔离 → TOP_BAND 高档内加权随机；候选为空时三级兜底（放宽投放序号差 → 最高投放序号档最大 BD → 本次不投放）
 - **种子数据**：首次启动空库时自动注入预设快照（7 Sin × 2 虚拟玩家），保障首位玩家也能遇到精英怪；真实数据积累后自然 FIFO 淘汰（见下方「种子文件说明」）
 - **战果回传**：精英在他人游戏中的五类战果事件（`spawned` / `fatal` / `possessed` / `bodyFatal` / `runFail`，设计依据：Meta_Progression §6.5）批量上报 `POST /api/elite/events`，按构筑主人 `(ownerPlayerId, ownerRunId, sin)` 聚合计数；`GET /api/elite/stats?playerId=` 查询聚合（荣誉殿堂「异步战绩」数据出口）；无主事件（本地 Preset）与非法 sin/type 逐条跳过，不整批失败
 - **MonsterBuildEditor 构筑导入**：工具在线上传走 `POST /api/user-bd`（严格校验通过后保存到 `repo/{playerId}/bd-{runId}.json` 并实时入池）；`repo/`（`-userBDDir`）内的构筑 JSON 每次启动自动导入（内容指纹幂等去重，重复不占额度）
-- **透传存储原则**：`bdData` 结构、`sourceWave` 语义由前台定义，后台只存不解析
+- **透传存储原则**：`bdData` 结构、`sourceWave` 语义由前台定义，后台只存不解析（当前语义 = 上传时第几次投放精英怪）
+- **服务防护（P1）**：HTTP 全链路超时（Read 30s / Write 60s / Idle 120s）+ SIGINT/SIGTERM 优雅停机（10s 排空）；全局请求体上限 16MB（UGC 上传文件 ≤12MB、缩略图 ≤2MB）；战果事件按 `(playerId, eventId)` 内存去重（10 分钟窗口，旧客户端空 eventId 跳过）
+- **存储防护（P2）**：SQLite WAL + busy_timeout 5s（外部工具并发访问不再 `database is locked`）；列表/搜索分页 pageSize 上限 100；搜索关键词 LIKE 通配符按字面匹配（`%`/`_` 转义）；userBD 文件原子写（tmp + rename，崩溃不留半写 JSON）
 - **容量治理**：多局独立保留；全局 FIFO 上限 + 每玩家上限（参数可配）
 - **健康检查**：`GET /api/health` 供客户端启动探活，不可达时 UI 提示"精英服务器离线"
 - **可扩展**：存储接口化（SQLite → MySQL 零改动业务），文件存储可换 OSS
@@ -31,9 +34,10 @@
 | POST | `/api/creations/{id}/subscribe` | 订阅 / 取消订阅 |
 | POST | `/api/creations/{id}/rate` | 评分（自动算均值） |
 | POST | `/api/bd-snapshots` | 精英 BD 快照批量滚动上传（upsert） |
-| POST | `/api/elite/pick` | 第 N 波精英投放请求（四步筛选 + 三级兜底；`snapshot=null` 为正常"不投放"分支） |
-| POST | `/api/elite/events` | 战果回传批量上报（按构筑主人聚合） |
+| POST | `/api/elite/pick` | 第 N 次投放精英怪请求（N = 投放序号；四步筛选 + 三级兜底；`snapshot=null` 为正常"不投放"分支） |
+| POST | `/api/elite/events` | 战果回传批量上报（按构筑主人聚合；`eventId` 幂等去重——重试重放的同一事件窗口内只计一次） |
 | GET | `/api/elite/stats?playerId=` | 异步战绩聚合查询（playerId = 构筑主人） |
+| GET | `/api/elite/leaderboard?limit=` | 荣誉殿堂排行榜：击杀玩家（bodyFatal）最多的 Top N BD 怪物（默认 20，上限 100；按 owner+run+sin 关联快照，悬空聚合行不上榜） |
 | POST | `/api/user-bd` | MonsterBuildEditor 工具在线上传构筑（严格校验，实时入池） |
 | GET | `/api/health` | 健康检查（客户端启动探活） |
 
@@ -77,10 +81,11 @@ go build -o server.exe .
 | `-db` | `data/game.db` | SQLite 数据库路径 |
 | `-upload` | `repo/ugc` | UGC 文件存储目录 |
 | `-log` | `log` | 日志目录（控制台+文件双写，按天 `YYYY-MM-DD.log`，追加；传空 `""` 禁用文件日志） |
+| `-detail` | `true` | Detail 级日志开关（stored/skip/cand/容量检查等明细行；长跑减噪可 `-detail=false`，Event 级始终输出） |
 | `-seedFile` | `config/seed_snapshots.json` | 种子快照文件路径（空 `""` = 不 seed；库非空或文件不存在时自动跳过） |
 | `-userBDDir` | `repo` | 用户 BD 构筑导入目录（MonsterBuildEditor 工具导出 JSON；每次启动导入，重复导入自动去重） |
 | `-minBd` | `1` | 精英怪筛选：最低 BD 数量门槛（MIN_BD） |
-| `-waveGap` | `0` | 精英怪筛选：服务端兜底波次差（正常由客户端 pick 请求指定 waveGap） |
+| `-waveGap` | `0` | 精英怪筛选：服务端兜底投放序号差（正常由客户端 pick 请求指定 waveGap；序号 = 第几次投放精英怪） |
 | `-topBandMode` | `percent` | TOP_BAND 模式：`percent`（前 X%）/ `topk`（前 K 条） |
 | `-topBandPercent` | `0.2` | percent 模式高分档比例 |
 | `-topBandTopK` | `5` | topk 模式高分档条数 |
@@ -128,7 +133,7 @@ go build -o server.exe .
 2026/08/24 15:13:40 pick result wave=8 player=device-xxx → ... (path=relaxed:wave-gap=0, 1 candidates)
 ```
 
-观测要点：`pick result` 的 `path=` 分布（main / relaxed:wave-gap=0 / relaxed:top-wave / none）反映候选库健康度——`relaxed` 占比高说明库的波次覆盖不足，`none` 说明库空。
+观测要点：`pick result` 的 `path=` 分布（main / relaxed:wave-gap=0 / relaxed:top-wave / none）反映候选库健康度——`relaxed` 占比高说明库的投放序号覆盖不足，`none` 说明库空。（日志中的 `wave=` / `sourceWave=` 为字段名，与前台 wire 字段一致，语义 = 投放序号。）
 
 ### 战果回传日志
 
@@ -143,17 +148,13 @@ go build -o server.exe .
 ## 验证与测试
 
 ```bash
-# 终端 1：启动服务器
-go run .
+# 一键全量回归（三套端到端测试均为标准 go test，自包含：独立端口 + 临时数据库 + Cleanup 清理）
+go test ./...
 
-# 终端 2：UGC 端到端测试（上传→列表→搜索→下载→订阅→评分；需预启动服务器）
-go run ./test/ugctest
-
-# 精英怪投放端到端测试（自包含，无需预启动服务器）
-go run ./test/elitepicktest
-
-# 战果回传端到端测试（事件上报 → 校验跳过 → 按构筑主人聚合 → 战绩查询；自包含）
-go run ./test/eliteeventtest
+# 按域单跑 / 显示断言明细
+go test ./test/ugctest -v          # UGC：上传→列表→搜索→下载→订阅→评分
+go test ./test/elitepicktest -v    # 精英投放：筛选→兜底→隔离→TOP_BAND→容量治理
+go test ./test/eliteeventtest -v   # 战果回传：聚合→防污染→排行榜→幂等去重
 
 # 验证种子数据：删库重启（需 config/seed_snapshots.json 存在，见「种子文件说明」）
 rm data/game.db && go run .

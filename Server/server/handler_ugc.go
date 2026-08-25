@@ -16,6 +16,12 @@ var creationTypes = map[string]bool{
 	"template": true,
 }
 
+// 上传内容大小上限（业务层显式校验，给出明确错误信息；全局 body 上限见 middleware maxRequestBodyBytes）。
+const (
+	maxUploadFileBytes      = 12 << 20 // 12MB（base64 前的业务数据）
+	maxUploadThumbnailBytes = 2 << 20  // 2MB（PNG 缩略图）
+)
+
 // creationJSON 对外（HTTP）的创作元数据结构，camelCase。
 type creationJSON struct {
 	CreationID   string   `json:"creationId"`
@@ -77,6 +83,14 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	if !creationTypes[req.Type] {
 		writeErr(w, http.StatusBadRequest, "type must be map, monster or template")
+		return
+	}
+	if len(req.FileData) > maxUploadFileBytes {
+		writeErr(w, http.StatusBadRequest, "fileData too large (max 12MB)")
+		return
+	}
+	if len(req.Thumbnail) > maxUploadThumbnailBytes {
+		writeErr(w, http.StatusBadRequest, "thumbnail too large (max 2MB)")
 		return
 	}
 	if req.CreatorName == "" {

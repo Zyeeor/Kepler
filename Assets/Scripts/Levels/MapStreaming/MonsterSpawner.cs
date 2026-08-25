@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// 怪物生命周期基础设施（波次玩法驱动）：
 ///   - 波次怪刷出 / 取点 / 回收（API 由 WaveManager 调用）
-///   - 全场配额（maxCombatMonsters）：波次怪与未来其他来源的怪共享
+///   - 全场配额（maxCombatMonsters）：普通战斗来源共享，精英怪独立
 ///   - 追踪与修剪（trackedByChunk / trackInfoByMonster），供指引 UI 数据源与调试
 ///
 /// 职责边界：本类管"怎么刷出并管理怪"（生成基础设施），
@@ -19,10 +19,10 @@ public class MonsterSpawner : MonoBehaviour
     public static MonsterSpawner Instance { get; private set; }
 
     [Header("全场配额")]
-    [Tooltip("全局安全上限（所有来源共享）。连续自动刷怪另受 continuousSpawnMaxCount 限制，击杀回响不占该独立上限。")]
+    [Tooltip("全局安全上限（普通怪、怪潮、击杀回响等战斗来源共享）。精英怪不占用该上限。")]
     [Min(1)] public int maxCombatMonsters = 30;
-    [Tooltip("连续自动生成怪物的同时存在上限。常规刷怪、怪潮和新逻辑精英合计；达到上限后只有这些怪被击杀/离场才会继续生成。WaveManager 连续逻辑会按时间成长档位更新此值。")]
-    [Min(1)] public int continuousSpawnMaxCount = 20;
+    [Tooltip("连续自动生成普通怪的同时存在上限。常规刷怪与怪潮合计；精英怪不占用。达到上限后只有这些怪被击杀/离场才会继续生成。WaveManager 连续逻辑会按时间成长档位更新此值。")]
+    [Min(1)] public int continuousSpawnMaxCount = 10;
 
     [Header("波次取点")]
     [Tooltip("波次刷怪点到玩家的最小距离（米）——别在玩家面前刷。")]
@@ -33,6 +33,12 @@ public class MonsterSpawner : MonoBehaviour
     public float spawnHeightY = 0f;
     [Tooltip("群系中心之间的最小间距（米）：不同批次刷出的怪群出生即保持距离，避免源头重叠堆积。0 = 关闭。")]
     [Min(0f)] public float minSpawnPointSeparation = 6f;
+
+    [Header("出生点合法性")]
+    [Tooltip("初始出生点落入岩浆、地刺或可阻挡碰撞体时，在此半径内寻找可走且合法的位置；0 表示不重定位。")]
+    [Min(0f)] public float invalidSpawnRelocationRadius = 6f;
+    [Tooltip("非法出生点的周边采样次数。采样失败时取消本次生成，避免怪物出现在禁行区域。")]
+    [Range(8, 64)] public int invalidSpawnRelocationSamples = 32;
 
     [Header("击杀回声取点")]
     [Tooltip("新逻辑所有类型刷怪越过屏幕边界后的基础安全距离（米）。越小越贴近屏幕边缘。")]
@@ -65,7 +71,7 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("屏幕右上角显示在场怪计数面板。")]
     public bool showDebugHud = true;
 
-    /// <summary>当前在场怪物总数（含未回收的倒地尸体）。</summary>
+    /// <summary>当前计入全局战斗配额的在场怪物数（含未回收的倒地尸体；精英不计入）。</summary>
     public int TrackedMonsterCount { get; private set; }
 
     /// <summary>
@@ -144,6 +150,8 @@ public class MonsterSpawner : MonoBehaviour
         public bool isWaveMonster;
         /// <summary>新逻辑连续自动生成来源：受 continuousSpawnMaxCount 限制。</summary>
         public bool isContinuousAutomatic;
+        /// <summary>是否占用 maxCombatMonsters 全局战斗配额。</summary>
+        public bool countsTowardCombatLimit;
     }
     readonly Dictionary<MonsterActor, TrackedInfo> trackInfoByMonster = new Dictionary<MonsterActor, TrackedInfo>();
 
@@ -212,24 +220,29 @@ public class MonsterSpawner : MonoBehaviour
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: false);
 
     /// <summary>
-    /// 新逻辑连续自动刷怪：受 continuousSpawnMaxCount 独立限制，供常规刷怪、怪潮与定时精英使用。
+    /// 新逻辑连续自动刷怪：受 continuousSpawnMaxCount 独立限制，供常规刷怪与怪潮使用。
     /// </summary>
     public MonsterActor SpawnContinuousMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: true);
+
+    /// <summary>
+    /// 精英怪刷出：保留生命周期追踪和波次清点，但不占全局战斗配额或连续自动怪上限。
+    /// </summary>
+    public MonsterActor SpawnEliteMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
+        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure,
+            countAsContinuousAutomatic: false, countsTowardCombatLimit: false);
 
     /// <summary>击杀回响刷怪：不占连续自动刷怪上限。</summary>
     public MonsterActor SpawnKillEchoMonster(GameObject prefab, Vector3 pos, bool immediateChase = true)
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.KillEcho, countAsContinuousAutomatic: false);
 
     MonsterActor SpawnMonster(GameObject prefab, Vector3 pos, bool immediateChase,
-        SpawnOrigin origin, bool countAsContinuousAutomatic)
+        SpawnOrigin origin, bool countAsContinuousAutomatic, bool countsTowardCombatLimit = true)
     {
-        if (prefab == null || TrackedMonsterCount >= maxCombatMonsters) return null;
+        if (prefab == null) return null;
+        if (countsTowardCombatLimit && TrackedMonsterCount >= maxCombatMonsters) return null;
         if (countAsContinuousAutomatic && ActiveContinuousMonsterCount >= Mathf.Max(1, continuousSpawnMaxCount))
             return null;
-        var system = MapStreamingSystem.Instance;
-        ChunkCoord home = system != null ? system.WorldToChunk(pos) : default;
-
         GameObject go = MonsterPool.Instance.Spawn(prefab, pos, Quaternion.identity);
         if (go == null) return null;
         var monster = go.GetComponentInChildren<MonsterActor>(true);
@@ -239,18 +252,70 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(go);
             return null;
         }
+        if (!TryResolveSpawnPosition(monster, pos, out Vector3 resolvedPosition))
+        {
+            Debug.LogWarning($"[MonsterSpawner] 波次刷怪 '{prefab.name}' 未能在 {invalidSpawnRelocationRadius:0.##}m 内找到合法出生点，已取消。", go);
+            MonsterPool.Instance.Return(monster);
+            return null;
+        }
+        if ((resolvedPosition - pos).sqrMagnitude > 0.0001f)
+        {
+            go.transform.position = resolvedPosition;
+            MonsterPool.SnapCapsuleBottomToGround(go);
+            pos = go.transform.position;
+        }
+
+        var system = MapStreamingSystem.Instance;
+        ChunkCoord home = system != null ? system.WorldToChunk(pos) : default;
         monster.ResolveSinIdentityFromHint(prefab.name + " " + monster.displayName);
         monster.aiActiveOverride = true; // 波次怪直接激活索敌
         // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
         monster.InitAiRng(spawnSequence++);
         RunSpawnDirector director = RunSpawnDirector.Instance;
         monster.ApplySpawnDifficultySnapshot(origin, director != null ? director.CurrentTier : 0);
-        Track(home, monster, prefab, isWaveMonster: true, isContinuousAutomatic: countAsContinuousAutomatic);
+        Track(home, monster, prefab, isWaveMonster: true,
+            isContinuousAutomatic: countAsContinuousAutomatic,
+            countsTowardCombatLimit: countsTowardCombatLimit);
         if (immediateChase)
             monster.BeginImmediateChase();
         if (logSpawns)
-            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（在场 {TrackedMonsterCount}/{maxCombatMonsters}，连续自动 {ActiveContinuousMonsterCount}/{continuousSpawnMaxCount}）。");
+            Debug.Log($"[MonsterSpawner] 波次刷怪 '{prefab.name}' @ {home}（配额内 {TrackedMonsterCount}/{maxCombatMonsters}，连续自动 {ActiveContinuousMonsterCount}/{continuousSpawnMaxCount}）。");
         return monster;
+    }
+
+    bool TryResolveSpawnPosition(MonsterActor monster, Vector3 requestedPosition, out Vector3 resolvedPosition)
+    {
+        resolvedPosition = requestedPosition;
+        Transform spawnRoot = monster.transform.root;
+        if (!MonsterPathfinder.IsSpawnPositionBlocked(monster, spawnRoot, requestedPosition, forceHazardRefresh: true)) return true;
+
+        float searchRadius = Mathf.Max(0f, invalidSpawnRelocationRadius);
+        if (searchRadius <= 0f) return false;
+
+        int samples = Mathf.Max(8, invalidSpawnRelocationSamples);
+        float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
+        const float goldenAngle = 2.39996323f;
+        for (int i = 0; i < samples; i++)
+        {
+            float distance = searchRadius * Mathf.Sqrt((i + 0.5f) / samples);
+            float angle = startAngle + goldenAngle * i;
+            Vector3 candidate = requestedPosition + new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+            if (!IsRelocationTileWalkable(candidate)) continue;
+            if (MonsterPathfinder.IsSpawnPositionBlocked(monster, spawnRoot, candidate)) continue;
+
+            resolvedPosition = candidate;
+            return true;
+        }
+        return false;
+    }
+
+    bool IsRelocationTileWalkable(Vector3 worldPosition)
+    {
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return true;
+        if (!system.Registry.TryGetValue(system.WorldToChunk(worldPosition), out var chunk) || chunk == null || chunk.Tiles == null)
+            return false;
+        return IsWalkable(chunk, worldPosition);
     }
 
     /// <summary>
@@ -564,13 +629,6 @@ public class MonsterSpawner : MonoBehaviour
     public void RecycleWaveMonster(MonsterActor monster)
     {
         if (monster == null) return;
-        if (monster.IsElite && monster.isDowned)
-        {
-            // Elite bodies are permanent scene corpses. Release the combat quota, but never
-            // return the instance to the pool while its EliteBuildCarrier is still alive.
-            ReleaseTracking(monster);
-            return;
-        }
         if (monster is BossSevenfoldActor)
         {
             // Boss owns its own death/fade/pool lifecycle. Wave cleanup must never
@@ -658,7 +716,7 @@ public class MonsterSpawner : MonoBehaviour
         => Track(coord, monster, prefab, isWaveMonster: false, isContinuousAutomatic: false);
 
     void Track(ChunkCoord coord, MonsterActor monster, GameObject prefab, bool isWaveMonster,
-        bool isContinuousAutomatic = false)
+        bool isContinuousAutomatic = false, bool countsTowardCombatLimit = true)
     {
         if (!trackedByChunk.TryGetValue(coord, out var list))
         {
@@ -672,15 +730,21 @@ public class MonsterSpawner : MonoBehaviour
             prefab = prefab,
             isWaveMonster = isWaveMonster,
             isContinuousAutomatic = isContinuousAutomatic,
+            countsTowardCombatLimit = countsTowardCombatLimit,
         };
-        TrackedMonsterCount++;
+        if (countsTowardCombatLimit)
+            TrackedMonsterCount++;
     }
 
     /// <summary>摘除单个追踪项（配额计数 + trackInfo 清理）。trackedByChunk 列表项由调用方移除。</summary>
     void Untrack(MonsterActor monster)
     {
+        bool countsTowardCombatLimit = true;
+        if (trackInfoByMonster.TryGetValue(monster, out var info))
+            countsTowardCombatLimit = info.countsTowardCombatLimit;
         trackInfoByMonster.Remove(monster);
-        TrackedMonsterCount = Mathf.Max(0, TrackedMonsterCount - 1);
+        if (countsTowardCombatLimit)
+            TrackedMonsterCount = Mathf.Max(0, TrackedMonsterCount - 1);
     }
 
     /// <summary>摘除失效追踪项：怪物可能经尸体 fade 自行回池（FadeAndReturnRoutine → MonsterPool.Return）。</summary>
@@ -695,8 +759,7 @@ public class MonsterSpawner : MonoBehaviour
                 if (m == null || !m.gameObject.activeInHierarchy || m.Body == MonsterActor.BodyState.Despawned)
                 {
                     list.RemoveAt(i);
-                    if (m != null) Untrack(m);
-                    else TrackedMonsterCount--; // 已销毁（Unity 假空）：trackInfo 查询无意义，仅减计数
+                    Untrack(m);
                 }
             }
             if (list.Count == 0) chunkPruneBuffer.Add(kv.Key);
