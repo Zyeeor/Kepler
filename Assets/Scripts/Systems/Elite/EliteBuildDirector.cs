@@ -15,14 +15,17 @@ using UnityEngine;
 ///     不借用虚构 Wave 编号（§6.7；服务器 schema 支持前透传忽略）；
 ///   - 上传失败静默跳过（不影响对局；崩溃/Fail 无需补传，上一波上传已在库）。
 ///
-/// 投放（Encounter §7 节奏 + Meta §6.3 来源优先级）：
-///   - 节奏：W1–W2 不注入（eliteStartWave=3）；W3 起按 eliteStartWave/eliteEveryNWaves 节奏投放
-///     （默认 3/2 → W3/W5/W7 推荐节奏点，非硬保证）；最后一波按 finalWaveEliteChance 高概率请求；
-///   - 来源：在线真实快照优先；无网（探活/请求失败）或服务器空候选库时使用本地 Preset 兜底
-///     （Catalog.presetSnapshots，OD-CAN-001 内容 OPEN；兜底不改变 Run 流程、不产生 Gameplay buff）；
+/// 投放（前台定时投放模型 + Meta §6.3 来源优先级）：
+///   - 节奏：新连续刷怪逻辑下由 WaveManager.SpawnContinuousElites 定时投放——每 60s 周期第 40s
+///     投 1 只（eliteCountPerCycle），Boss 前 nonBossDurationSeconds 为止；「波次」字段语义统一为
+///     第几次投放精英怪（投放序号，1-based = cycleIndex + 1，与后台 Server/ 语义一致）；
+///     旧波表回调路径（HandleWaveStarted，W3 起每 2 波）保留但连续逻辑下不触发；
+///   - 来源：在线真实快照优先（RequestScheduledElite → POST /api/elite/pick，wave = 投放序号）；
+///     无网（探活/请求失败）或服务器空候选库时本地兜底：Preset（Catalog.presetSnapshots，
+///     OD-CAN-001 内容 OPEN）→ 空快照注入（TryInjectScheduledElite，保证定时节奏必出精英）；
 ///   - 命中快照 → 按 sin 从 Catalog 解析 prefab → 刷出 → 挂 EliteBuildCarrier 还原历史 BD
 ///     → 计入本波清点（精英未死亡/未被附身前，本波不算清场）；
-///   - 响应到达时波次已推进（异步往返期间清场）→ 丢弃本次投放。
+///   - 响应到达时周期已推进（异步往返期间跨周期）→ 丢弃本次投放。
 ///
 /// 战果回传（Meta §6.5）：精英生成 / Fatal / 被 Possess / 造成 Body Fatal / 直接导致 Run Fail
 /// 五类事件入队批量上报（POST /api/elite/events，按构筑主人聚合）——荣誉殿堂「异步战绩」的数据源。
@@ -62,7 +65,7 @@ public class EliteBuildDirector : MonoBehaviour
     [Range(0f, 1f)] public float finalWaveEliteChance = 0.8f;
 
     [Header("投放难度")]
-    [Tooltip("越级波次差：请求第 N 波精英时，筛选 sourceWave >= N + waveGap 的快照。1=别人多打一波的怪，0=同波次，2=越两级。")]
+    [Tooltip("投放序号差：请求第 N 次投放的精英时，筛选 sourceWave >= N + waveGap 的快照（sourceWave = 上传者第几次投放精英怪）。1=别人多投一次时点的构筑，0=同投放序号，2=越两级。")]
     [Min(0)] public int waveGap = 1;
 
     [Header("精英强化参数")]
@@ -347,8 +350,96 @@ public class EliteBuildDirector : MonoBehaviour
     }
 
     /// <summary>
-    /// New continuous schedule entry point: injects the requested Sin as an Elite at a
-    /// deterministic cycle slot, without depending on the network or old wave callbacks.
+    /// 定时投放的联网入口（新连续刷怪逻辑）：WaveManager.SpawnContinuousElites 每周期投放点调用。
+    /// 优先向服务器请求其他玩家的构筑快照（POST /api/elite/pick，wave = 投放序号 = cycleIndex + 1，
+    /// 即第几次投放精英怪，与后台语义一致）。来源优先级：在线真实快照 → 离线/失败/空候选时
+    /// 本地 Preset → 空快照注入（保证定时节奏必出精英）。异步响应晚到（跨周期）时丢弃本次投放。
+    /// </summary>
+    /// <returns>同步兜底路径返回是否已注入；在线路径返回请求是否已受理（注入结果异步完成）。</returns>
+    public bool RequestScheduledElite(SinType sin, int cycleIndex)
+    {
+        if (!eliteEnabled) return false;
+        if (catalog == null)
+            catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
+        if (catalog == null || catalog.Find(sin) == null || catalog.Find(sin).prefab == null)
+        {
+            Debug.LogWarning($"[EliteBuildDirector] 定时投放缺少 Catalog 条目：{sin}。");
+            return false;
+        }
+
+        WaveManager wm = boundWaveManager != null ? boundWaveManager : FindObjectOfType<WaveManager>();
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        if (wm == null || spawner == null || spawner.TrackedMonsterCount >= spawner.maxCombatMonsters)
+            return false;
+
+        if (offlineDetected)
+        {
+            // Meta §6.3：无网 → 不发注定失败的请求，直接本地兜底（Preset → 空快照）
+            return InjectScheduledFallback(sin, cycleIndex, "离线");
+        }
+
+        RequestScheduledEliteAsync(sin, cycleIndex);
+        return true; // 请求已受理；注入在异步回调完成后（WaveManager 日志计数按受理口径）
+    }
+
+    async void RequestScheduledEliteAsync(SinType sin, int cycleIndex)
+    {
+        ElitePickResp resp;
+        try
+        {
+            resp = await Client().Pick(DeviceIdentity.Id, cycleIndex + 1, waveGap);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放请求失败（{e.Message}），改用本地兜底。");
+            OnNetworkFailure();
+            InjectScheduledFallback(sin, cycleIndex, "网络失败");
+            return;
+        }
+        OnNetworkSuccess();
+
+        if (resp == null || !resp.HasSnapshot)
+        {
+            // Meta §6.3：服务器候选库为空 → 本地兜底
+            Debug.Log($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放：服务器无精英候选（snapshot=null），改用本地兜底。");
+            InjectScheduledFallback(sin, cycleIndex, "空候选库");
+            return;
+        }
+
+        // 异步往返期间周期可能已推进（连续逻辑 CurrentWaveIndex 与 cycleIndex 同为 60s 周期序号），过期投放丢弃
+        if (!IsWaveStillCurrent(cycleIndex))
+        {
+            Debug.Log($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放响应到达时周期已推进，丢弃本次投放。");
+            return;
+        }
+
+        InjectElite(boundWaveManager, resp.snapshot, cycleIndex + 1, resp.relaxed, useScreenEdgePosition: true);
+    }
+
+    /// <summary>
+    /// 定时投放兜底链：本地 Preset（Catalog.presetSnapshots，OD-CAN-001 内容 OPEN）→
+    /// 空快照注入（TryInjectScheduledElite，保持定时节奏必出精英）。
+    /// </summary>
+    bool InjectScheduledFallback(SinType sin, int cycleIndex, string reason)
+    {
+        if (!IsWaveStillCurrent(cycleIndex))
+        {
+            Debug.Log($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放{reason}，兜底注入时周期已推进，丢弃。");
+            return false;
+        }
+        var snapshot = catalog != null ? catalog.PickPresetSnapshot() : null;
+        if (snapshot != null)
+        {
+            InjectElite(boundWaveManager, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
+            return true;
+        }
+        // Preset 池空（内容待策划配置：OD-CAN-001）：空快照注入保底——定时节奏必出精英（无他人构筑、仅数值强化）
+        return TryInjectScheduledElite(sin, cycleIndex);
+    }
+
+    /// <summary>
+    /// 定时投放的本地空快照注入（无网络依赖，联网路径 RequestScheduledElite 的最终兜底）：
+    /// 按请求 Sin 构造空 BD 快照（bdCount=0，来源 "scheduled"）直接注入精英。
     /// The catalog still owns the actual Elite prefab mapping and runtime modifiers.
     /// </summary>
     public bool TryInjectScheduledElite(SinType sin, int cycleIndex)
