@@ -121,6 +121,7 @@ func (s *EliteService) UploadUserBD(dir string, req *UploadSnapshotsRequest) (st
 		}
 		stored = len(snaps)
 		s.enforceCapacity(req.PlayerID)
+		s.invalidateLeaderboard() // 快照入库 / 淘汰改变榜单 JOIN 内容 → 失效缓存
 		for _, snap := range snaps {
 			logx.Detail("stored upload · sin=%s monsterType=%s bdCount=%d sourceWave=%d cards=[%s] (player=%s run=%s)",
 				snap.Sin, snap.MonsterType, snap.BDCount, snap.SourceWave, cardIDList(json.RawMessage(snap.BDData)), snap.PlayerID, snap.RunID)

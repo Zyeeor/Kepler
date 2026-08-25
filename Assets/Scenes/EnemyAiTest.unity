@@ -1140,19 +1140,25 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 2
+  normalSpawnInterval: 3
   normalSpawnCountPerTick: 1
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  directionalReplacementEnabled: 1
+  sectorReplacementDistance: 0
+  sectorReplacementCountPerTrigger: 1
+  continuousSpawnGrowthPeriodSeconds: 60
+  continuousSpawnMaxCountsByMinute: 070000000e00000015000000
   spawnCycleSeconds: 60
   tideStartSeconds: 30
   tideDurationSeconds: 9
   tideSpawnInterval: 3
   tideSpawnCountPerSin: 1
-  eliteSpawnOffsetSeconds: 40
+  eliteSpawnOffsetSeconds: 30
   eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
   difficultyGrowthIntervalSeconds: 30
   killEchoMaxCountPerWindow: 2
+  tideKillEchoMaxCountPerWindow: 7
   killEchoWindowSeconds: 2
   waveMode: 1
   waves:
@@ -10214,13 +10220,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 60
+  continuousSpawnMaxCount: 20
   minSpawnDistanceToPlayer: 10
   maxSpawnDistanceToPlayer: 25
   spawnHeightY: 0
   minSpawnPointSeparation: 6
   killEchoScreenPadding: 0.75
-  screenEdgeSpawnOffset: 2
   spawnSectorOrder: 01000000020000000300000004000000050000000600000007000000
+  screenEdgeSpawnOffset: 2
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1
@@ -10334,6 +10341,27 @@ MonoBehaviour:
   choiceBuffer: 2
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
+  continuousSpawning: 1
+  normalSpawnInterval: 3
+  normalSpawnCountPerTick: 1
+  continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  directionalReplacementEnabled: 1
+  sectorReplacementDistance: 0
+  sectorReplacementCountPerTrigger: 1
+  continuousSpawnGrowthPeriodSeconds: 60
+  continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
+  spawnCycleSeconds: 60
+  tideStartSeconds: 30
+  tideDurationSeconds: 9
+  tideSpawnInterval: 3
+  tideSpawnCountPerSin: 1
+  eliteSpawnOffsetSeconds: 40
+  eliteCountPerCycle: 1
+  nonBossDurationSeconds: 420
+  difficultyGrowthIntervalSeconds: 30
+  killEchoMaxCountPerWindow: 2
+  tideKillEchoMaxCountPerWindow: 7
+  killEchoWindowSeconds: 2
   waveMode: 0
   waves: []
   gracePeriod: 2
@@ -16568,7 +16596,7 @@ PrefabInstance:
         type: 3}
       propertyPath: healthSlider
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 657345308}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: currentHealth
@@ -16583,7 +16611,7 @@ PrefabInstance:
         type: 3}
       propertyPath: sliderFillImage
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 450816212}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: healthDecayPercent

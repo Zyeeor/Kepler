@@ -1,4 +1,4 @@
-// 快照滚动上传（§8.1：每波选卡后）与容量治理（§8.2/§8.4）。
+// 快照滚动上传（§8.1：每轮选卡后；sourceWave 语义 = 上传时第几次投放精英怪）与容量治理（§8.2/§8.4）。
 package elite
 
 import (
@@ -14,7 +14,7 @@ type SnapshotInput struct {
 	MonsterType string          `json:"monsterType"`
 	BDCount     int             `json:"bdCount"`
 	BDData      json.RawMessage `json:"bdData"`
-	SourceWave  int             `json:"sourceWave"`
+	SourceWave  int             `json:"sourceWave"` // 上传时投放序号（第几次投放精英怪）
 	GameTime    int64           `json:"gameTime"`
 	Stats       json.RawMessage `json:"stats,omitempty"`
 }
@@ -28,7 +28,7 @@ type UploadSnapshotsRequest struct {
 
 // Upload 批量 upsert 快照，返回实际入库条数（无效条目静默跳过）。
 //
-// 同 (playerId, runId, sin) 后波覆盖前波——库中始终保留该局该 Sin 的最深版本；
+// 同 (playerId, runId, sin) 后传覆盖前传（投放序号更高的版本覆盖更低的）——库中始终保留该局该 Sin 的最深版本；
 // 上传后执行容量治理：每玩家上限 + 全局 FIFO（§8.2/§8.4）。
 func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 	if req.PlayerID == "" || req.RunID == "" {
@@ -87,6 +87,7 @@ func (s *EliteService) Upload(req *UploadSnapshotsRequest) (int, error) {
 
 	// 容量治理：每玩家上限 → 全局 FIFO（覆盖更新不占新额度）。
 	s.enforceCapacity(req.PlayerID)
+	s.invalidateLeaderboard() // 快照 upsert / 淘汰改变榜单 JOIN 内容 → 失效缓存
 
 	return len(snaps), nil
 }

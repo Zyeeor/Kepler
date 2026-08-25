@@ -4,7 +4,7 @@ package elite
 // EliteConfig 精英怪投放可调参数（策划案 §6 TUNABLE + §8.2/§8.4 容量治理）。
 type EliteConfig struct {
 	MinBD                 int     // MIN_BD：最低 BD 数量门槛（Step 1）
-	WaveGap               int     // WAVE_GAP：波次差（Step 2）
+	WaveGap               int     // WAVE_GAP：投放序号差（Step 2；「波次」字段语义 = 第几次投放精英怪）
 	TopBandMode           string  // TOP_BAND 模式："percent"（前 X%）| "topk"（前 K 条），双模式可切换（§8.4）
 	TopBandPercent        float64 // percent 模式：高分档比例（如 0.2 = 前 20%）
 	TopBandTopK           int     // topk 模式：高分档条数

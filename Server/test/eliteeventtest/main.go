@@ -138,6 +138,44 @@ func fetchStats(base, owner string) []statsEntry {
 	return out.Stats
 }
 
+type leaderboardEntry struct {
+	Rank          int             `json:"rank"`
+	SnapshotID    int64           `json:"snapshotId"`
+	OwnerPlayerID string          `json:"ownerPlayerId"`
+	OwnerRunID    string          `json:"ownerRunId"`
+	Sin           string          `json:"sin"`
+	MonsterType   string          `json:"monsterType"`
+	BDCount       int             `json:"bdCount"`
+	BDData        json.RawMessage `json:"bdData"`
+	Stats         struct {
+		Deployed  int `json:"deployed"`
+		BodyFatal int `json:"bodyFatal"`
+	} `json:"stats"`
+}
+
+// fetchLeaderboard 查询荣誉殿堂排行榜（limit<=0 表示省略参数，走服务端默认）。
+func fetchLeaderboard(base string, limit int) []leaderboardEntry {
+	url := base + "/api/elite/leaderboard"
+	if limit > 0 {
+		url += fmt.Sprintf("?limit=%d", limit)
+	}
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		panic(fmt.Sprintf("leaderboard unexpected status: %s", resp.Status))
+	}
+	var out struct {
+		Entries []leaderboardEntry `json:"entries"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		panic(err)
+	}
+	return out.Entries
+}
+
 func bd(bdCount int) json.RawMessage {
 	return json.RawMessage(fmt.Sprintf(`[{"cardId":"TEST-%03d","stack":1}]`, bdCount))
 }
@@ -244,6 +282,36 @@ func main() {
 		panic(fmt.Sprintf("owner should have 2 stat entries, got %d: %+v", len(stats), stats))
 	}
 	fmt.Println("✓ 同主人不同 (runId, sin) 独立聚合（荣誉殿堂按构筑维度展示）")
+
+	// 6. 荣誉殿堂排行榜：击杀玩家次数（bodyFatal）最多的 Top N BD 怪物
+	// 6.1 无击杀的条目不上榜：当前只有 run-A1/lust 有 bodyFatal=1
+	lb := fetchLeaderboard(base, 0) // limit 省略 → 服务端默认 20
+	if len(lb) != 1 || lb[0].Sin != "lust" || lb[0].Stats.BodyFatal != 1 {
+		panic(fmt.Sprintf("leaderboard should only list lust (bodyFatal=1): %+v", lb))
+	}
+	fmt.Println("✓ 排行榜只上有击杀的条目（bodyFatal>0）")
+
+	// 6.2 wrath 追加 3 次击杀 → 反超 lust 登顶（按 bodyFatal 降序，条目含怪物与 BD 数据）
+	reportEvents(base, playerB,
+		eventIn{OwnerPlayerID: playerA, OwnerRunID: "run-A2", Sin: "wrath", Type: "bodyFatal", Wave: 6},
+		eventIn{OwnerPlayerID: playerA, OwnerRunID: "run-A2", Sin: "wrath", Type: "bodyFatal", Wave: 6},
+		eventIn{OwnerPlayerID: playerA, OwnerRunID: "run-A2", Sin: "wrath", Type: "bodyFatal", Wave: 7},
+	)
+	lb = fetchLeaderboard(base, 20)
+	if len(lb) != 2 || lb[0].Sin != "wrath" || lb[0].Stats.BodyFatal != 3 || lb[1].Sin != "lust" {
+		panic(fmt.Sprintf("leaderboard order wrong (want wrath=3 > lust=1): %+v", lb))
+	}
+	if lb[0].Rank != 1 || lb[0].MonsterType != "链狱冥兽" || lb[0].BDCount != 3 || len(lb[0].BDData) == 0 {
+		panic(fmt.Sprintf("leaderboard entry missing BD info: %+v", lb[0]))
+	}
+	fmt.Println("✓ 排行榜按击杀玩家次数降序，条目含怪物与 BD 数据")
+
+	// 6.3 limit 截断：limit=1 只取榜首
+	lb = fetchLeaderboard(base, 1)
+	if len(lb) != 1 || lb[0].Sin != "wrath" {
+		panic(fmt.Sprintf("leaderboard limit=1 should return only wrath: %+v", lb))
+	}
+	fmt.Println("✓ 排行榜 limit 参数生效")
 
 	fmt.Println("\n✅ All elite event tests passed!")
 }

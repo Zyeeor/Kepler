@@ -99,7 +99,7 @@ public abstract class PlayerAbility : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (currentCooldown > 0f) currentCooldown -= Time.deltaTime;
+        if (currentCooldown > 0f) currentCooldown -= Time.unscaledDeltaTime;
     }
 
     protected virtual void OnDisable()
@@ -229,7 +229,7 @@ public abstract class PlayerAbility : MonoBehaviour
     /// <summary>Apply burn from soul form (no possessed enemy to route through).</summary>
     void ApplySoulBurn(Enemy target, float amount)
     {
-        target.TakeDamage(amount);
+        target.TakePlayerDamage(amount);
         if (PlayerPassiveManager.Instance != null)
         {
             float burnPct = PlayerPassiveManager.Instance.GetBurnPercent();

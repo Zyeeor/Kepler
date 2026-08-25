@@ -94,6 +94,8 @@ func (s *Server) Handler() http.Handler {
 	// 战果回传（策划案 §6.5：精英在他人游戏中的战果 → 按构筑主人聚合）
 	mux.Handle("POST /api/elite/events", named("handleEliteEvents", s.handleEliteEvents))
 	mux.Handle("GET /api/elite/stats", named("handleEliteStats", s.handleEliteStats))
+	// 荣誉殿堂排行榜（§5.4/§5.8）：击杀玩家次数最多的 Top N BD 怪物
+	mux.Handle("GET /api/elite/leaderboard", named("handleEliteLeaderboard", s.handleEliteLeaderboard))
 	mux.Handle("GET /api/health", named("handleHealth", s.handleHealth))
 	return logRequests(mux)
 }

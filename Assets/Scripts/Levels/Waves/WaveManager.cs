@@ -64,9 +64,9 @@ public class WaveManager : SceneSingleton<WaveManager>
     public bool continuousSpawning = true;
 
     [Header("新逻辑：常规刷怪")]
-    [Tooltip("常规刷怪间隔（秒）。每次默认生成 1 只，并按 continuousSpawnOrder 轮换罪印类型。")]
-    [Min(0.1f)] public float normalSpawnInterval = 2f;
-    [Tooltip("每次常规刷怪生成数量。默认 1。")]
+    [Tooltip("常规刷怪间隔（秒）。默认每 3 秒注入一次；每次生成数量会按时间成长档位乘算。")]
+    [Min(0.1f)] public float normalSpawnInterval = 3f;
+    [Tooltip("第一成长档位每次常规刷怪的基础数量。第 n 个成长档位实际生成数量 = 此值 × n。")]
     [Min(0)] public int normalSpawnCountPerTick = 1;
     [Tooltip("常规刷怪与怪潮使用的罪印轮换顺序。默认七种怪各出现一次后循环。")]
     public List<SinType> continuousSpawnOrder = new List<SinType>
@@ -80,6 +80,20 @@ public class WaveManager : SceneSingleton<WaveManager>
         SinType.Lust,
     };
 
+    [Header("新逻辑：移动定向替换")]
+    [Tooltip("开启后，玩家每累计移动一段距离，就尝试把场外不可见的其他罪印普通怪一换一替换为移动方向对应的罪印。")]
+    public bool directionalReplacementEnabled = true;
+    [Tooltip("定向替换触发距离（米）。填 0 时使用当前镜头水平屏幕直径。")]
+    [Min(0f)] public float sectorReplacementDistance = 0f;
+    [Tooltip("每次达到定向替换距离时最多替换的怪物数量。")]
+    [Min(1)] public int sectorReplacementCountPerTrigger = 1;
+
+    [Header("新逻辑：时间成长")]
+    [Tooltip("连续刷怪数量与上限的成长周期（秒）。默认 60 秒，即按分钟切换一次成长档位。")]
+    [Min(0.1f)] public float continuousSpawnGrowthPeriodSeconds = 60f;
+    [Tooltip("连续自动怪同时存在上限按分钟配置：列表第 1 项对应第 1 分钟，第 2 项对应第 2 分钟；超过列表长度后沿用最后一项。")]
+    public List<int> continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30 };
+
     [Header("新逻辑：每分钟怪潮")]
     [Tooltip("怪潮周期（秒）。")]
     [Min(0.1f)] public float spawnCycleSeconds = 60f;
@@ -89,7 +103,7 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Min(0f)] public float tideDurationSeconds = 9f;
     [Tooltip("怪潮注入间隔（秒）。默认每 3 秒注入一次。")]
     [Min(0.1f)] public float tideSpawnInterval = 3f;
-    [Tooltip("怪潮每次为每种罪印生成的数量。默认每种 1 只，即每次 7 只。")]
+    [Tooltip("第一成长档位怪潮每次为每种罪印生成的基础数量。第 n 个成长档位实际数量 = 此值 × n。")]
     [Min(0)] public int tideSpawnCountPerSin = 1;
 
     [Header("新逻辑：精英与成长")]
@@ -148,8 +162,10 @@ public class WaveManager : SceneSingleton<WaveManager>
         if (fieldsWereAbsentFromScene)
         {
             continuousSpawning = true;
-            normalSpawnInterval = 2f;
+            normalSpawnInterval = 3f;
             normalSpawnCountPerTick = 1;
+            continuousSpawnGrowthPeriodSeconds = 60f;
+            continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30 };
             spawnCycleSeconds = 60f;
             tideStartSeconds = 30f;
             tideDurationSeconds = 9f;
@@ -200,7 +216,9 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 自举装配刷怪基础设施：只挂本组件（未挂 MonsterSpawner）也能刷出怪。
         // 放在 Start 而非 Awake：此时场景所有 Awake 已执行完（已有实例已注册），
         // 确保不会因创建时机抢跑而覆盖场景中已配置的 MonsterSpawner。幂等。
-        MonsterSpawner.EnsureInstance();
+        MonsterSpawner spawner = MonsterSpawner.EnsureInstance();
+        if (gameObject.scene.name == "EnemyAiTest" && spawner != null)
+            spawner.maxCombatMonsters = 40;
         RunSpawnDirector director = RunSpawnDirector.EnsureInstance();
         var directorPrefabs = new List<GameObject>();
         for (int wi = 0; wi < ActiveWaves.Count; wi++)
@@ -320,6 +338,16 @@ public class WaveManager : SceneSingleton<WaveManager>
     {
         if (monster == null || !IsWaveActive) return;
         waveAlive.Add(monster);
+        EnemiesAlive = waveAlive.Count;
+    }
+
+    /// <summary>更新连续逻辑的一换一结果，避免旧怪仍留在本波清点中。</summary>
+    public void ReplaceContinuousWaveMonster(MonsterActor oldMonster, MonsterActor newMonster)
+    {
+        if (newMonster == null || !IsWaveActive) return;
+        int index = oldMonster != null ? waveAlive.IndexOf(oldMonster) : -1;
+        if (index >= 0) waveAlive[index] = newMonster;
+        else waveAlive.Add(newMonster);
         EnemiesAlive = waveAlive.Count;
     }
 
@@ -620,32 +648,82 @@ public class WaveManager : SceneSingleton<WaveManager>
         float nextTideTickTime = NextTideTickTimeAfter(combatTime);
         float nextEliteTime = NextCycleEventTimeAfter(combatTime, eliteSpawnOffsetSeconds);
         int normalOrderIndex = 0;
+        MonsterSpawner movementSpawner = MonsterSpawner.Instance;
+        Vector3 previousPlayerPosition = movementSpawner != null ? movementSpawner.CurrentPlayerPosition : Vector3.zero;
+        float movementDistanceSinceReplacement = 0f;
+        Vector3 lastMovementDirection = Vector3.zero;
 
         while (isRunning)
         {
             combatTime = director.ActiveCombatSeconds;
+            int growthStep = ContinuousSpawnGrowthStep(combatTime);
+            if (movementSpawner != null)
+            {
+                int continuousMaxCount = GetContinuousSpawnMaxCount(growthStep);
+                movementSpawner.ConfigureContinuousSpawnMaxCount(continuousMaxCount);
+            }
             CurrentWaveIndex = Mathf.Max(0, Mathf.FloorToInt(combatTime / Mathf.Max(0.1f, spawnCycleSeconds)));
             TimeWaveRemaining = Mathf.Max(0f, nonBossDurationSeconds - combatTime);
             PruneWaveAlive();
             ApplyKillEchoCapForTime(director, combatTime);
 
+            if (directionalReplacementEnabled && movementSpawner != null)
+            {
+                Vector3 playerPosition = movementSpawner.CurrentPlayerPosition;
+                Vector3 movement = playerPosition - previousPlayerPosition;
+                movement.y = 0f;
+                previousPlayerPosition = playerPosition;
+                bool playerHasMoveInput = PlayerController.CurrentMoveDirection.sqrMagnitude > 0.0001f;
+                if (playerHasMoveInput && movement.sqrMagnitude > 0.0001f)
+                {
+                    movementDistanceSinceReplacement += movement.magnitude;
+                    lastMovementDirection = movement.normalized;
+                }
+                else if (!playerHasMoveInput)
+                {
+                    // Scene startup settling, camera/anchor correction, knockback and
+                    // floating-point drift must not count as a player travel segment.
+                    // Directional replacement is a deliberate movement mechanic only.
+                    movementDistanceSinceReplacement = 0f;
+                    lastMovementDirection = Vector3.zero;
+                }
+
+                float replacementDistance = sectorReplacementDistance > 0f
+                    ? sectorReplacementDistance
+                    : movementSpawner.GetScreenDiameterWorldDistance();
+                replacementDistance = Mathf.Max(0.1f, replacementDistance);
+                while (movementDistanceSinceReplacement >= replacementDistance)
+                {
+                    movementDistanceSinceReplacement -= replacementDistance;
+                    if (!movementSpawner.TryGetSinForWorldDirection(lastMovementDirection, out SinType targetSin))
+                        continue;
+                    int replacementCount = Mathf.Max(1, sectorReplacementCountPerTrigger);
+                    for (int i = 0; i < replacementCount; i++)
+                        director.TryReplaceInvisibleContinuousMonster(targetSin);
+                }
+            }
+
             while (combatTime >= nextNormalTime && nextNormalTime < nonBossDurationSeconds)
             {
                 ApplyKillEchoCapForTime(director, nextNormalTime);
                 int spawned = 0;
-                int spawnCount = Mathf.Max(0, normalSpawnCountPerTick);
+                int normalGrowthStep = ContinuousSpawnGrowthStep(nextNormalTime);
+                int spawnCount = Mathf.Max(0, normalSpawnCountPerTick) * normalGrowthStep;
                 for (int i = 0; i < spawnCount; i++)
                 {
                     SinType sin = continuousSpawnOrder[normalOrderIndex % continuousSpawnOrder.Count];
-                    normalOrderIndex++;
                     MonsterActor monster = director.SpawnScheduledMonster(sin);
                     if (monster != null)
                     {
+                        // Advance the rotation only after a real spawn. A failed legal
+                        // position or a full cap must not skip that sin and create
+                        // duplicate sin types later in the same minute.
+                        normalOrderIndex++;
                         waveAlive.Add(monster);
                         spawned++;
                     }
                 }
-                Debug.Log($"[WaveManager] 新逻辑常规刷怪：t={nextNormalTime:F1}s，生成 {spawned}/{spawnCount}，在场 {waveAlive.Count}。");
+                Debug.Log($"[WaveManager] 新逻辑常规刷怪：t={nextNormalTime:F1}s，成长档位 {normalGrowthStep}，生成 {spawned}/{spawnCount}，在场 {waveAlive.Count}。");
                 nextNormalTime += Mathf.Max(0.1f, normalSpawnInterval);
             }
 
@@ -653,8 +731,10 @@ public class WaveManager : SceneSingleton<WaveManager>
             {
                 ApplyKillEchoCapForTime(director, nextTideTickTime);
                 int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(nextTideTickTime / Mathf.Max(0.1f, spawnCycleSeconds)));
-                int spawned = SpawnContinuousTide(director, cycleIndex);
-                Debug.Log($"[WaveManager] 新逻辑怪潮：周期 {cycleIndex + 1}，t={nextTideTickTime:F1}s，生成 {spawned} 只（目标 {continuousSpawnOrder.Count * Mathf.Max(0, tideSpawnCountPerSin)}）。");
+                int tideGrowthStep = ContinuousSpawnGrowthStep(nextTideTickTime);
+                int perSin = Mathf.Max(0, tideSpawnCountPerSin) * tideGrowthStep;
+                int spawned = SpawnContinuousTide(director, perSin);
+                Debug.Log($"[WaveManager] 新逻辑怪潮：周期 {cycleIndex + 1}，t={nextTideTickTime:F1}s，成长档位 {tideGrowthStep}，生成 {spawned} 只（目标 {continuousSpawnOrder.Count * perSin}）。");
                 nextTideTickTime = NextTideTickTimeAfter(nextTideTickTime);
             }
 
@@ -697,6 +777,23 @@ public class WaveManager : SceneSingleton<WaveManager>
         return phase >= start && phase < start + duration;
     }
 
+    int ContinuousSpawnGrowthStep(float time)
+    {
+        float period = Mathf.Max(0.1f, continuousSpawnGrowthPeriodSeconds);
+        return Mathf.Max(1, Mathf.FloorToInt(Mathf.Max(0f, time) / period) + 1);
+    }
+
+    int GetContinuousSpawnMaxCount(int growthStep)
+    {
+        if (continuousSpawnMaxCountsByMinute == null || continuousSpawnMaxCountsByMinute.Count == 0)
+        {
+            continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30 };
+        }
+
+        int index = Mathf.Clamp(Mathf.Max(1, growthStep) - 1, 0, continuousSpawnMaxCountsByMinute.Count - 1);
+        return Mathf.Max(1, continuousSpawnMaxCountsByMinute[index]);
+    }
+
     float NextIntervalTime(float current, float interval)
     {
         float safeInterval = Mathf.Max(0.1f, interval);
@@ -736,10 +833,10 @@ public class WaveManager : SceneSingleton<WaveManager>
         return candidate;
     }
 
-    int SpawnContinuousTide(RunSpawnDirector director, int cycleIndex)
+    int SpawnContinuousTide(RunSpawnDirector director, int perSin)
     {
         int spawned = 0;
-        int perSin = Mathf.Max(0, tideSpawnCountPerSin);
+        perSin = Mathf.Max(0, perSin);
         for (int sinIndex = 0; sinIndex < continuousSpawnOrder.Count; sinIndex++)
         {
             SinType sin = continuousSpawnOrder[sinIndex];
@@ -763,12 +860,14 @@ public class WaveManager : SceneSingleton<WaveManager>
             : EliteBuildDirector.EnsureInstance();
         if (eliteDirector == null) return 0;
 
+        // 联网投放：优先向服务器请求他人构筑快照（wave = 投放序号 = cycleIndex + 1），
+        // 离线/失败/空候选走本地兜底（Preset → 空快照，定时节奏必出精英）。
         int spawned = 0;
         int eliteCount = Mathf.Max(0, eliteCountPerCycle);
         for (int i = 0; i < eliteCount; i++)
         {
             SinType sin = continuousSpawnOrder[(cycleIndex + i) % continuousSpawnOrder.Count];
-            if (eliteDirector.TryInjectScheduledElite(sin, cycleIndex))
+            if (eliteDirector.RequestScheduledElite(sin, cycleIndex))
                 spawned++;
         }
         return spawned;
