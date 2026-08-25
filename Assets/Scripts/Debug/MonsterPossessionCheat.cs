@@ -277,7 +277,7 @@ public class MonsterPossessionCheat : MonoBehaviour
         }
 
         MonsterSpawner spawner = MonsterSpawner.EnsureInstance();
-        MonsterActor monster = spawner.SpawnWaveMonster(entry.prefab, ResolveSpawnPosition());
+        MonsterActor monster = spawner.SpawnEliteMonster(entry.prefab, ResolveSpawnPosition());
         if (monster == null)
         {
             SetStatus($"Elite spawn failed for '{entry.prefab.name}'.");

@@ -96,6 +96,7 @@ public class EliteBuildDirector : MonoBehaviour
     float lastEliteDamageTime = float.NegativeInfinity;
 
     const int EliteKillCardRewardLimit = 6;
+    const string DebugEliteRewardRunId = "__debug_elite_run__";
     string eliteRewardRunId;
     int eliteKillRewardCount;
     int pendingEliteCardRewards;
@@ -364,7 +365,7 @@ public class EliteBuildDirector : MonoBehaviour
 
         WaveManager wm = boundWaveManager != null ? boundWaveManager : FindObjectOfType<WaveManager>();
         MonsterSpawner spawner = MonsterSpawner.Instance;
-        if (wm == null || spawner == null || spawner.TrackedMonsterCount >= spawner.maxCombatMonsters)
+        if (wm == null || spawner == null)
             return false;
 
         EliteMonsterCatalog.Entry entry = catalog.Find(sin);
@@ -381,30 +382,28 @@ public class EliteBuildDirector : MonoBehaviour
             gameTime = (long)(RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : 0f),
         };
 
-        int before = spawner.TrackedMonsterCount;
-        InjectElite(wm, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
-        return spawner.TrackedMonsterCount > before;
+        return InjectElite(wm, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
     }
 
     /// <summary>F9 注入：解析快照 → 刷出 → 挂载体还原历史 BD → 计入本波清点。</summary>
-    void InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed, bool useScreenEdgePosition = false)
+    bool InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed, bool useScreenEdgePosition = false)
     {
         if (catalog == null)
         {
             Debug.LogWarning("[EliteBuildDirector] 未配置 EliteMonsterCatalog，无法注入精英（Resources/EliteMonsterCatalog.asset 或场景挂载指定）。");
-            return;
+            return false;
         }
         var entry = catalog.FindByWireName(snapshot.sin);
         if (entry == null || entry.prefab == null)
         {
             Debug.LogWarning($"[EliteBuildDirector] Catalog 未配置 sin='{snapshot.sin}' 的 prefab，本波不投放。");
-            return;
+            return false;
         }
         var spawner = MonsterSpawner.Instance;
         if (spawner == null)
         {
             Debug.LogWarning("[EliteBuildDirector] 场景中无 MonsterSpawner，本波不投放。");
-            return;
+            return false;
         }
         Vector3 pos;
         bool hasPosition = useScreenEdgePosition
@@ -413,16 +412,14 @@ public class EliteBuildDirector : MonoBehaviour
         if (!hasPosition)
         {
             Debug.LogWarning("[EliteBuildDirector] 无合法精英刷怪点，本波不投放。");
-            return;
+            return false;
         }
 
-        var monster = useScreenEdgePosition
-            ? spawner.SpawnContinuousMonster(entry.prefab, pos)
-            : spawner.SpawnWaveMonster(entry.prefab, pos);
+        var monster = spawner.SpawnEliteMonster(entry.prefab, pos);
         if (monster == null)
         {
-            Debug.Log("[EliteBuildDirector] 全场配额已满，精英未刷出。");
-            return;
+            Debug.Log("[EliteBuildDirector] 精英 prefab 生成失败（对象池或资源无效）。");
+            return false;
         }
 
         var carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
@@ -435,6 +432,7 @@ public class EliteBuildDirector : MonoBehaviour
         OnEliteSpawned?.Invoke(monster); // 广播投放成功（音频等外部系统订阅，本系统不感知具体订阅方）
 
         Debug.Log($"[EliteBuildDirector] W{waveNumber} 投放精英 '{monster.displayName}'（sin={snapshot.sin}, bdCount={snapshot.bdCount}, sourceWave={snapshot.sourceWave}, from={snapshot.sourcePlayerId}, relaxed={relaxed}）。");
+        return true;
     }
 
     /// <summary>
@@ -600,7 +598,11 @@ public class EliteBuildDirector : MonoBehaviour
 
     void EnsureEliteRewardRun()
     {
-        string currentRunId = RunSession.Instance != null ? RunSession.Instance.RunId : null;
+        string currentRunId = RunSession.Instance != null && RunSession.Instance.HasActiveRun
+            ? RunSession.Instance.RunId
+            : DebugEliteRewardRunId;
+        if (string.IsNullOrEmpty(currentRunId))
+            currentRunId = DebugEliteRewardRunId;
         if (eliteRewardRunId == currentRunId) return;
 
         eliteRewardRunId = currentRunId;
