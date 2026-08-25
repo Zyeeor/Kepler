@@ -9252,6 +9252,8 @@ MonoBehaviour:
   spawnHeightY: 0
   minSpawnPointSeparation: 6
   killEchoScreenPadding: 0.75
+  spawnSectorOrder: 01000000020000000300000004000000050000000600000007000000
+  screenEdgeSpawnOffset: 2
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1
@@ -10065,12 +10067,14 @@ MonoBehaviour:
   particleTexture: {fileID: 2800000, guid: d7904d65d920fde46a4c227ab2c5cf86, type: 3}
   healthBar: {fileID: 498141308}
   limitToFilledPart: 1
-  verticalSpread: 0.8
-  burstParticles: 90
+  verticalSpread: 0.45
+  overlap: 0.72
+  horizontalJitter: 0.6
   costForFullStrength: 0.05
   minStrength: 0.4
+  minSizeScale: 0.55
   minInterval: 0.08
-  maxBakedParticles: 512
+  maxBakedParticles: 900
 --- !u!222 &918784153
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -12511,8 +12515,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.34
-      minScalar: 0.16
+      scalar: 0.45
+      minScalar: 0.22
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -12564,8 +12568,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 50.082058
-      minScalar: 18.780771
+      scalar: 22.954275
+      minScalar: 7.303633
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -12682,8 +12686,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 28
-      minScalar: 18
+      scalar: 35.47479
+      minScalar: 23.997652
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -12999,7 +13003,7 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 0
-    maxNumParticles: 600
+    maxNumParticles: 900
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
@@ -13382,27 +13386,27 @@ ParticleSystem:
         m_Curve:
         - serializedVersion: 3
           time: 0
-          value: 0.5
-          inSlope: 2.5
-          outSlope: 2.5
+          value: 0.85
+          inSlope: 0.5999999
+          outSlope: 0.5999999
           tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
           outWeight: 0.33333334
         - serializedVersion: 3
-          time: 0.2
+          time: 0.25
           value: 1
-          inSlope: 0.625
-          outSlope: 0.625
+          inSlope: -0.2666667
+          outSlope: -0.2666667
           tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
           outWeight: 0.33333334
         - serializedVersion: 3
           time: 1
-          value: 0
-          inSlope: -1.25
-          outSlope: -1.25
+          value: 0.15
+          inSlope: -1.1333333
+          outSlope: -1.1333333
           tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
@@ -15093,7 +15097,7 @@ ParticleSystem:
     strength:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 10.433762
+      scalar: 4.590855
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -15250,7 +15254,7 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     separateAxes: 0
-    frequency: 1.6
+    frequency: 2.2
     damping: 0
     octaves: 1
     octaveMultiplier: 0.5
@@ -17370,6 +17374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bossPrefab: {fileID: 2722852593001312145, guid: 0363e4a5efcb2490b87dae77049a7bda,
     type: 3}
+  imprintHudPrefab: {fileID: 0}
 --- !u!4 &1301235325
 Transform:
   m_ObjectHideFlags: 0
