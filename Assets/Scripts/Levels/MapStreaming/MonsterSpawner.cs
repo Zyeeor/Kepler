@@ -107,6 +107,18 @@ public class MonsterSpawner : MonoBehaviour
     public static MonsterSpawner EnsureInstance()
     {
         if (Instance != null) return Instance;
+
+        // Scene installers can call this from Awake before the scene component's own
+        // Awake has registered Instance. Reuse the configured scene component first;
+        // otherwise a default-30 runtime object would win the race and destroy the
+        // scene-configured spawner before WaveManager starts.
+        MonsterSpawner sceneSpawner = FindObjectOfType<MonsterSpawner>(true);
+        if (sceneSpawner != null)
+        {
+            Instance = sceneSpawner;
+            return sceneSpawner;
+        }
+
         var go = new GameObject("MonsterSpawner");
         return go.AddComponent<MonsterSpawner>();
     }
@@ -257,7 +269,7 @@ public class MonsterSpawner : MonoBehaviour
     /// <summary>
     /// 波次刷怪点查找：玩家周围 [minSpawnDistanceToPlayer, maxSpawnDistanceToPlayer] 环形带内
     /// 随机采样，要求落在已加载 Chunk（Registry 有条目、Tiles 就绪）的可走 Tile 上，
-    /// 且不在玩家前方 60° 扇形内（侧面/后方允许，防止贴脸）。
+    /// 并且在摄像机屏幕之外，保证怪物从玩家视野边缘外进入。
     /// </summary>
     public bool TryGetWaveSpawnPosition(out Vector3 pos)
     {
@@ -267,6 +279,46 @@ public class MonsterSpawner : MonoBehaviour
         Vector3 player = GetPlayerPosition();
         var cam = GetMainCamera();
         var rng = WaveRandom; // 种子随机流（WaveManager 注入）；null 时回退全局 Random
+        float configuredMin = Mathf.Max(0f, minSpawnDistanceToPlayer);
+        float configuredMax = Mathf.Max(configuredMin, maxSpawnDistanceToPlayer);
+        for (int i = 0; i < 32; i++)
+        {
+            float angle = (rng != null ? rng.Next(0, 360) : UnityEngine.Random.Range(0, 360)) * Mathf.Deg2Rad;
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            float edgeDistance = 0f;
+            if (cam != null && TryGetScreenExitDistance(cam, player, direction, out float screenExitDistance))
+                edgeDistance = screenExitDistance + Mathf.Max(0.5f, killEchoScreenPadding);
+
+            // 先满足屏幕外，再尽量落在配置的环形带内；若镜头比配置环更大，则自动把外环推到屏幕边缘之外。
+            float minDistance = Mathf.Max(configuredMin, edgeDistance);
+            float maxDistance = Mathf.Max(configuredMax, minDistance + 2f);
+            float r = rng != null
+                ? minDistance + (float)rng.NextDouble() * (maxDistance - minDistance)
+                : UnityEngine.Random.Range(minDistance, maxDistance);
+            Vector3 c = player + direction * r;
+            if (!system.Registry.TryGetValue(system.WorldToChunk(c), out var chunk) || chunk == null || chunk.Tiles == null)
+                continue; // 该点归属 Chunk 未加载：跳过（地图边界外同样落此分支）
+            if (cam != null && IsOnScreen(cam, c)) continue;
+            if (!IsWalkable(chunk, c)) continue;
+            pos = c;
+            pos.y = spawnHeightY; // 统一生成高度（世界 y，手动调到地面高度）
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 旧波次取点：保留原有环形带 + 前方扇形排除规则，不使用新逻辑的屏幕外边缘约束。
+    /// CountKill / Timed 关闭新开关时走此入口，保证旧流程的生成手感不变。
+    /// </summary>
+    public bool TryGetLegacyWaveSpawnPosition(out Vector3 pos)
+    {
+        pos = default;
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return false;
+        Vector3 player = GetPlayerPosition();
+        var cam = GetMainCamera();
+        var rng = WaveRandom;
         for (int i = 0; i < 16; i++)
         {
             float angle = (rng != null ? rng.Next(0, 360) : UnityEngine.Random.Range(0, 360)) * Mathf.Deg2Rad;
@@ -275,21 +327,20 @@ public class MonsterSpawner : MonoBehaviour
                 : UnityEngine.Random.Range(minSpawnDistanceToPlayer, maxSpawnDistanceToPlayer);
             Vector3 c = player + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
             if (!system.Registry.TryGetValue(system.WorldToChunk(c), out var chunk) || chunk == null || chunk.Tiles == null)
-                continue; // 该点归属 Chunk 未加载：跳过（地图边界外同样落此分支）
+                continue;
             if (cam != null)
             {
-                // 只排除玩家前方 60° 扇形（别在正前方贴脸刷），侧面/后方允许——
-                // 不能用整个视锥排除：小刷怪距离（如 5-15m）时采样点几乎全在屏幕内会被全部跳过。
                 Vector3 toPoint = c - player;
                 Vector3 fwd = cam.transform.forward;
-                toPoint.y = 0f; fwd.y = 0f;
+                toPoint.y = 0f;
+                fwd.y = 0f;
                 if (fwd.sqrMagnitude > 0.0001f && toPoint.sqrMagnitude > 0.0001f
                     && Vector3.Angle(fwd, toPoint) < 60f)
                     continue;
             }
             if (!IsWalkable(chunk, c)) continue;
             pos = c;
-            pos.y = spawnHeightY; // 统一生成高度（世界 y，手动调到地面高度）
+            pos.y = spawnHeightY;
             return true;
         }
         return false;
