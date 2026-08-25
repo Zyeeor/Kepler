@@ -645,7 +645,7 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 21300000, guid: ff4c688f529afe24d93d06a185033cdf, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: 392a48aab03e72745ac669106acb6afc, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
@@ -693,7 +693,7 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 21300000, guid: 0af74499f034d434489fc03841460be0, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: d0035853375c23f40a35f56fa2aa11dd, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
@@ -717,7 +717,7 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 21300000, guid: 4901bbc61a6327b449823dda88e7417e, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: 2c0f4537f19795742acaf536349935ae, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
@@ -741,7 +741,7 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 21300000, guid: b80fffcb4c78a564d9ae1cf6fe7688ed, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: 2717b31932597534fb633d350ced4ced, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
@@ -765,7 +765,7 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 21300000, guid: ee4762d9696aaaa4487e1dd418aba93c, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: 84bade838dd8bdf4a87ae06adb44bb54, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
@@ -789,7 +789,7 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 6
-    foregroundSprite: {fileID: 21300000, guid: 81d6038e9d3ea42419c34f69b5017e01, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: ea9a0ef6bf052a24d935e15024899cf4, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites: []
     middlegroundSprite: {fileID: 0}
@@ -978,7 +978,7 @@ MonoBehaviour:
     hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}
-    hideBorderLayer: 1
+    hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u730E\u6B65\u5723\u9910"
     textKey: 
