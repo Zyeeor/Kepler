@@ -67,7 +67,7 @@ public class Projectile : MonoBehaviour
     void CheckHit()
     {
         MonsterActor ownerMonster = ownerEnemy as MonsterActor;
-        float checkRadius = 0.8f * (ownerMonster != null ? ownerMonster.PossessionCombatScaleMultiplier : 1f);
+        float checkRadius = 0.8f * (ownerMonster != null ? ownerMonster.CombatScaleMultiplier : 1f);
         CombatHitboxDebug.DrawSphere(true, transform.position, checkRadius, 0f);
         var hits = Physics.OverlapSphere(transform.position, checkRadius);
         foreach (var hit in hits)

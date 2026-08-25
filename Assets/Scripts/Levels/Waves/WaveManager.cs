@@ -4,11 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// 管理房间内所有波次的生命周期。
+/// 管理正式连续战场中的所有波次生命周期。
 ///
 /// 波次玩法（2026-08-17 重构）：接入当前地图怪物生成框架（MonsterSpawner / MonsterPool /
 /// MonsterWaveDef 权重表），替代旧"直接 MonsterPool.Spawn + Enemy 轮询"逻辑。
-/// 波次模式为整体配置（WaveManager.waveMode / RoomTemplate.waveMode，全局统一）：
+/// 波次模式为 WaveManager 的整体配置（全局统一）：
 ///   CountKill 数量波：按权重表持续补刷，累计刷满 totalCount 只后不再补；
 ///                     玩家清完场上本波怪 → 触发选卡 → 下一波。
 ///   Timed 时间波：持续补刷 duration 秒，时间到即结算（可选回收剩余在场怪）→ 选卡 → 下一波。
@@ -19,9 +19,8 @@ using System.Collections.Generic;
 ///   - 场上所有怪物由本系统驱动（地图静态怪模式已于 2026-08-18 移除）；
 ///   - 时间波结算回收剩余怪（不写快照，永久退场）。
 ///
-/// 选卡衔接：波次完成 → choiceBuffer 缓冲（看清战果）→ 触发 OnWaveCompleted
-/// （RoomFlowController 或 autoShowChoiceUI 打开 CoreChoiceUI，timeScale=0）→
-/// IsDrafting 轮询等待选卡会话结束 → 下一波自动开始（选卡暂停期间不会刷怪）。
+/// 选卡衔接：波次完成 → choiceBuffer 缓冲（看清战果）→ 自动打开 CoreChoiceUI
+/// （timeScale=0）→ IsDrafting 轮询等待选卡会话结束 → 下一波自动开始。
 /// </summary>
 public class WaveManager : SceneSingleton<WaveManager>
 {
@@ -55,13 +54,13 @@ public class WaveManager : SceneSingleton<WaveManager>
     float nextPruneTime;
     [Tooltip("波次完成 → 下一波/选卡前的缓冲（秒），用于看清战果。选卡期间 timeScale=0 会冻结此等待。")]
     [Min(0f)] public float choiceBuffer = 2f;
-    [Tooltip("波次完成时自动打开选卡弹窗（无 RoomFlowController 场景的兜底；有 RoomFlow 时其也会触发，CoreChoiceUI 有防重入）。")]
+    [Tooltip("波次完成时自动打开选卡弹窗（CoreChoiceUI 有防重入）。")]
     public bool autoShowChoiceUI = true;
     [Tooltip("时间波结算时回收本波剩余在场怪（不写快照，永久退场）。")]
     public bool recycleRemainingOnTimeUp = true;
 
     [Header("新刷怪逻辑开关")]
-    [Tooltip("开启：使用新的连续刷怪 / 周期怪潮 / 定时精英逻辑；关闭：完全使用原有 CountKill / Timed 波次逻辑。房间模板流程始终保留原有逻辑。")]
+    [Tooltip("开启：使用新的连续刷怪 / 周期怪潮 / 定时精英逻辑；关闭：完全使用原有 CountKill / Timed 波次逻辑。")]
     public bool continuousSpawning = true;
 
     [Header("新逻辑：常规刷怪")]
@@ -86,10 +85,10 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Min(0.1f)] public float spawnCycleSeconds = 60f;
     [Tooltip("每个周期开始后多少秒进入怪潮。默认第 30 秒。")]
     [Min(0f)] public float tideStartSeconds = 30f;
-    [Tooltip("怪潮持续时间（秒）。")]
-    [Min(0f)] public float tideDurationSeconds = 10f;
-    [Tooltip("怪潮注入间隔（秒）。")]
-    [Min(0.1f)] public float tideSpawnInterval = 2f;
+    [Tooltip("怪潮持续时间（秒）。默认 9 秒。")]
+    [Min(0f)] public float tideDurationSeconds = 9f;
+    [Tooltip("怪潮注入间隔（秒）。默认每 3 秒注入一次。")]
+    [Min(0.1f)] public float tideSpawnInterval = 3f;
     [Tooltip("怪潮每次为每种罪印生成的数量。默认每种 1 只，即每次 7 只。")]
     [Min(0)] public int tideSpawnCountPerSin = 1;
 
@@ -111,20 +110,18 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Tooltip("击杀回响数量上限的刷新窗口（秒）。")]
     [Min(0.1f)] public float killEchoWindowSeconds = 2f;
 
-    [Header("独立波次配置（无房间模式）")]
-    [Tooltip("无房间模式波次模式（整体）：CountKill=全部波为数量波；Timed=全部波为时间波。有 RoomTemplate 时用模板的 waveMode。")]
+    [Header("波次配置")]
+    [Tooltip("整体波次模式：CountKill=全部波为数量波；Timed=全部波为时间波。")]
     public WaveMode waveMode = WaveMode.CountKill;
-    [Tooltip("无房间模式波次列表：场景没有 RoomTemplate/RoomFlowController（纯流送大地图）时，波次管理器直接使用本配置。有 RoomTemplate 时忽略。")]
+    [Tooltip("本场连续战斗的波次列表，由 WaveManager 直接持有和执行。")]
     public List<WaveConfig> waves = new List<WaveConfig>();
-    [Tooltip("无房间模式：首波开始前的准备时间（秒）。")]
+    [Tooltip("首波开始前的准备时间（秒）。")]
     [Min(0f)] public float gracePeriod = 2f;
-    [Tooltip("无房间模式：场景加载后自动启动波次（等待地图流送就绪后开刷）。有 RoomTemplate（房间流程接管）时无效。")]
+    [Tooltip("场景加载后自动启动波次（等待地图流送就绪后开刷）。")]
     public bool autoStart = true;
     [Tooltip("自动启动前等待地图流送就绪的最长时间（秒），超时仍强开（刷怪点会自动重试）。")]
     [Min(1f)] public float autoStartTimeout = 30f;
 
-    private RoomTemplate currentTemplate;
-    private RoomInstance currentRoom;
     private Coroutine waveRoutine;
     private readonly List<MonsterActor> waveAlive = new List<MonsterActor>();
     private bool isRunning;
@@ -155,8 +152,8 @@ public class WaveManager : SceneSingleton<WaveManager>
             normalSpawnCountPerTick = 1;
             spawnCycleSeconds = 60f;
             tideStartSeconds = 30f;
-            tideDurationSeconds = 10f;
-            tideSpawnInterval = 2f;
+            tideDurationSeconds = 9f;
+            tideSpawnInterval = 3f;
             tideSpawnCountPerSin = 1;
             eliteSpawnOffsetSeconds = 40f;
             eliteCountPerCycle = 1;
@@ -225,7 +222,7 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
         EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
 
-        // 无房间模式：未被 RoomFlowController 初始化时，等待地图就绪后自动启动
+        // 等待地图就绪后自动启动正式波次
         if (!autoStart) return;
         StartCoroutine(AutoStartRoutine());
     }
@@ -254,14 +251,11 @@ public class WaveManager : SceneSingleton<WaveManager>
         float waited = 0f;
         while (waited < autoStartTimeout)
         {
-            if (initialized && currentTemplate != null) yield break; // 已被房间流程接管
             var system = MapStreamingSystem.Instance;
             if (system != null && system.Registry != null && system.Registry.Count > 0) break;
             waited += Time.unscaledDeltaTime;
             yield return null;
         }
-        if (waited >= autoStartTimeout && initialized)
-            yield break;
         if (!initialized) Initialize();
 
         // 读档恢复：从会话（RunSession，主菜单[继续]时已填充）的已完成波次之后继续（跳过 grace）
@@ -293,46 +287,27 @@ public class WaveManager : SceneSingleton<WaveManager>
             }
         }
 
-        Debug.Log($"[WaveManager] 无房间模式自动启动：地图已就绪（等待 {waited:F1}s），波次 {ActiveWaves.Count} 个。");
+        Debug.Log($"[WaveManager] 连续战场自动启动：地图已就绪（等待 {waited:F1}s），波次 {ActiveWaves.Count} 个。");
         StartWaves();
     }
 
-    /// <summary>房间模式初始化：由 RoomFlowController 调用。</summary>
-    public void Initialize(RoomTemplate template, RoomInstance room)
-    {
-        initialized = true;
-        currentTemplate = template;
-        currentRoom = room;
-        CurrentWaveIndex = -1;
-        EnemiesAlive = 0;
-        AllWavesComplete = false;
-        isRunning = true;
-        waveAlive.Clear();
-        ConfigureSpawnDirector(RunSpawnDirector.Instance);
-        Debug.Log($"[WaveManager] Initialize: room='{template.roomName}', waves={ActiveWaves.Count}");
-        if (MonsterSpawner.Instance == null)
-            Debug.LogWarning("[WaveManager] 场景中无 MonsterSpawner，波次无法刷怪（怪物生成框架未接入）。");
-    }
-
-    /// <summary>无房间模式初始化：使用自身 waves 配置。</summary>
+    /// <summary>初始化正式连续战场的波次运行状态。</summary>
     public void Initialize()
     {
         initialized = true;
-        currentTemplate = null;
-        currentRoom = null;
         CurrentWaveIndex = -1;
         EnemiesAlive = 0;
         AllWavesComplete = false;
         isRunning = true;
         waveAlive.Clear();
         ConfigureSpawnDirector(RunSpawnDirector.Instance);
-        Debug.Log($"[WaveManager] Initialize(无房间): waves={ActiveWaves.Count}");
+        Debug.Log($"[WaveManager] Initialize: waves={waves.Count}");
         if (MonsterSpawner.Instance == null)
             Debug.LogWarning("[WaveManager] 场景中无 MonsterSpawner，波次无法刷怪（怪物生成框架未接入）。");
     }
 
-    /// <summary>当前生效的波次配置（房间模板优先，无房间用自身配置）。</summary>
-    List<WaveConfig> ActiveWaves => currentTemplate != null ? currentTemplate.waves : waves;
+    /// <summary>正式流程直接使用 WaveManager 自身的波次配置。</summary>
+    List<WaveConfig> ActiveWaves => waves;
 
     /// <summary>当前生效波次总数（精英投放节奏判断用，1-based 波次的边界）。</summary>
     public int TotalWaveCount => ActiveWaves != null ? ActiveWaves.Count : 0;
@@ -348,8 +323,8 @@ public class WaveManager : SceneSingleton<WaveManager>
         EnemiesAlive = waveAlive.Count;
     }
 
-    /// <summary>当前生效的首波前准备时间（房间模板优先，无房间用自身配置）。</summary>
-    float ActiveGracePeriod => currentTemplate != null ? currentTemplate.gracePeriod : gracePeriod;
+    /// <summary>当前首波前准备时间。</summary>
+    float ActiveGracePeriod => gracePeriod;
 
     /// <summary>查询指定波清场后选卡是否双选（越界返回 false=单选）。</summary>
     public bool GetWaveDoublePick(int waveIndex)
@@ -359,10 +334,10 @@ public class WaveManager : SceneSingleton<WaveManager>
         return ActiveWaves[waveIndex].doublePick;
     }
 
-    /// <summary>当前生效的整体波次模式（房间模板优先，无房间用自身配置）。</summary>
-    WaveMode ActiveWaveMode => currentTemplate != null ? currentTemplate.waveMode : waveMode;
+    /// <summary>当前整体波次模式。</summary>
+    WaveMode ActiveWaveMode => waveMode;
 
-    bool UsesContinuousSpawning => currentTemplate == null && continuousSpawning;
+    bool UsesContinuousSpawning => continuousSpawning;
     public bool IsUsingNewSpawnLogic => UsesContinuousSpawning;
 
     void ConfigureSpawnDirector(RunSpawnDirector director)
@@ -404,7 +379,7 @@ public class WaveManager : SceneSingleton<WaveManager>
             Debug.LogWarning($"[WaveManager] StartWaves SKIPPED: isRunning={isRunning}, waves={ActiveWaves?.Count}");
             return;
         }
-        Debug.Log($"[WaveManager] StartWaves: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}");
+        Debug.Log($"[WaveManager] StartWaves: waves={ActiveWaves.Count}");
         waveRoutine = StartCoroutine(WaveRoutine());
     }
 
@@ -449,7 +424,7 @@ public class WaveManager : SceneSingleton<WaveManager>
 
     IEnumerator WaveRoutine()
     {
-        Debug.Log($"[WaveManager] WaveRoutine START: room='{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}', waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
+        Debug.Log($"[WaveManager] WaveRoutine START: waves={ActiveWaves.Count}, grace={ActiveGracePeriod}");
 
         // 教学/开场降落双门：首波开始前等待教学系统与开场演出（OpeningLandingSequence 降落完成）都开门。
         // 未配置/关闭时恒开（无感知）；读档恢复不走开场演出，LandingComplete 默认 true → 无感。
@@ -480,13 +455,13 @@ public class WaveManager : SceneSingleton<WaveManager>
 
         if (UsesContinuousSpawning)
         {
-            RunSession session = RunSession.Instance;
-            if (session != null)
+            var runSession = RunSession.Instance;
+            if (runSession != null)
             {
-                if (session.CurrentPhase == RunPhase.Opening)
-                    session.TransitionTo(RunPhase.Tutorial);
-                if (session.CurrentPhase == RunPhase.Tutorial)
-                    session.TransitionTo(RunPhase.Waves);
+                if (runSession.CurrentPhase == RunPhase.Opening)
+                    runSession.TransitionTo(RunPhase.Tutorial);
+                if (runSession.CurrentPhase == RunPhase.Tutorial)
+                    runSession.TransitionTo(RunPhase.Waves);
             }
             yield return RunContinuousWaves();
             yield break;
@@ -498,8 +473,6 @@ public class WaveManager : SceneSingleton<WaveManager>
 
             var wave = ActiveWaves[i];
             CurrentWaveIndex = i;
-            if (currentRoom != null && currentRoom.context != null)
-                currentRoom.context.CurrentWaveIndex = i;
 
             IsWaveActive = true;
             waveAlive.Clear();
@@ -526,8 +499,6 @@ public class WaveManager : SceneSingleton<WaveManager>
         }
 
         AllWavesComplete = true;
-        if (currentRoom != null && currentRoom.context != null)
-            currentRoom.context.State = RoomState.Cleared;
 
     /// <summary>
     /// 弹卡阶段（波清场后执行）：
@@ -545,8 +516,7 @@ public class WaveManager : SceneSingleton<WaveManager>
         if (choiceBuffer > 0f)
             yield return new WaitForSecondsRealtime(choiceBuffer);
 
-        // 弹选卡：房间模式由 RoomFlowController（订阅 OnWaveCompleted）触发；
-        // 无房间模式 autoShowChoiceUI 兜底自己弹（CoreChoiceUI 有防重入）。
+        // 弹卡：先广播波次完成，再由 autoShowChoiceUI 打开 CoreChoiceUI；CoreChoiceUI 负责防重入。
         // 读档补弹（fireCompletionEvent=false）时 keepPicks=true：保留已恢复的候选（与退出时一致）。
         if (fireCompletionEvent) OnWaveCompleted?.Invoke(waveIndex);
         if (autoShowChoiceUI && CoreChoiceUI.Instance != null)
@@ -582,25 +552,21 @@ public class WaveManager : SceneSingleton<WaveManager>
             RunSession.Instance.TransitionTo(RunPhase.Waves); // RunFlow：选卡完成 → 回波次阶段
         }
     }
-        Debug.Log($"[WaveManager] ALL WAVES COMPLETE for '{(currentTemplate != null ? currentTemplate.roomName : "(无房间)")}'");
+        Debug.Log("[WaveManager] ALL WAVES COMPLETE");
         OnAllWavesComplete?.Invoke();
 
         // 整局流程走 Run 级状态链（RunFlow）：
-        //   Waves → Final（三阶段压力战未实现，先用一波普通怪占位：清完这波才 → Result）。
-        // 房间模式由 RoomFlowController 的 OnAllWavesCompleteHandler 处理（Cleared/出口/Core），不在此推进阶段。
-        if (currentTemplate == null)
-        {
-            var session = RunSession.EnsureInstance();
-            session.TransitionTo(RunPhase.Final);
+        // Waves → Final（三阶段压力战未实现，先用一波普通怪占位：清完这波才 → Result）。
+        var session = RunSession.EnsureInstance();
+        session.TransitionTo(RunPhase.Final);
 
-            // Contract ENG-POSS-001: Final remains active until the configured non-Boss combat time
-            // Sevenfold boss is defeated; no early victory after the ordinary waves.
-            RunSpawnDirector finalDirector = RunSpawnDirector.EnsureInstance();
-            while (finalDirector != null && !finalDirector.BossDefeated)
-                yield return null;
-            if (finalDirector != null && finalDirector.BossDefeated)
-                session.TransitionTo(RunPhase.Result);
-        }
+        // Contract ENG-POSS-001: Final remains active until the configured non-Boss combat time
+        // Sevenfold boss is defeated; no early victory after the ordinary waves.
+        RunSpawnDirector finalDirector = RunSpawnDirector.EnsureInstance();
+        while (finalDirector != null && !finalDirector.BossDefeated)
+            yield return null;
+        if (finalDirector != null && finalDirector.BossDefeated)
+            session.TransitionTo(RunPhase.Result);
     }
 
     /// <summary>

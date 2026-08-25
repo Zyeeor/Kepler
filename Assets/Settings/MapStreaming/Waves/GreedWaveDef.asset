@@ -15,7 +15,7 @@ MonoBehaviour:
   id: wave_greed
   spawnWeight: 1
   monsters:
-  - prefab: {fileID: 3744361111654940414, guid: cae47f41d68c4e74781786e6cd22b1e9,
+  - prefab: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40,
       type: 3}
     count: 1
   statMult:

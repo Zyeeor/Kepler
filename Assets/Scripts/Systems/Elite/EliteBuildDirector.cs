@@ -395,7 +395,7 @@ public class EliteBuildDirector : MonoBehaviour
         }
         Vector3 pos;
         bool hasPosition = useScreenEdgePosition
-            ? spawner.TryGetWaveSpawnPosition(out pos)
+            ? spawner.TryGetWaveSpawnPosition(entry.sin, out pos)
             : spawner.TryGetLegacyWaveSpawnPosition(out pos);
         if (!hasPosition)
         {
@@ -413,6 +413,7 @@ public class EliteBuildDirector : MonoBehaviour
         var carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
         carrier.Init(snapshot, entry.displayName);
         ApplyEliteRuntimeSettings(monster);
+        AnnounceEliteSpawn(monster, entry.displayName);
         wm.RegisterExternalWaveMonster(monster);
         EnqueueEliteEvent("spawned", carrier, waveNumber); // 战果回传：精英成功生成（Meta §6.5）
 
@@ -432,6 +433,18 @@ public class EliteBuildDirector : MonoBehaviour
             eliteHealthMultiplier,
             eliteAttackDamageMultiplier,
             eliteVisualScaleMultiplier);
+    }
+
+    /// <summary>Shows the Catalog-designed monster name when an Elite appears.</summary>
+    public void AnnounceEliteSpawn(MonsterActor monster, string designedName = null)
+    {
+        string name = !string.IsNullOrWhiteSpace(designedName)
+            ? designedName.Trim()
+            : (monster != null ? monster.displayName : string.Empty);
+        const string elitePrefix = "精英·";
+        if (name.StartsWith(elitePrefix, StringComparison.Ordinal))
+            name = name.Substring(elitePrefix.Length);
+        EliteAnnouncementUI.ShowElite(name);
     }
 
     // ── 上传（Meta §6.1/§6.7）──
