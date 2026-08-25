@@ -30,6 +30,7 @@ public class AIController : MonoBehaviour, IController
     private BTNode root;
     private BTAction_MoveToPlayer moveAction;
     private BTAction_Standoff standoffAction;
+    private MonsterPathfinder pathfinder;
     private float nextDecisionTime;
     private float nextTargetRetryTime;
     private float dormantTickAccum; // 休眠节拍累计（unscaled 时间）
@@ -45,6 +46,7 @@ public class AIController : MonoBehaviour, IController
     {
         host = owner as MonsterActor;
         if (host == null) return;
+        pathfinder = host.GetComponent<MonsterPathfinder>();
         // 每次挂载（spawn/复用）重建行为树：让运行中调整的配置（skillPriority 等）即时生效
         BuildTree();
         ResetDecisionState();
@@ -52,6 +54,7 @@ public class AIController : MonoBehaviour, IController
 
     public void OnDetached(){
         host = null;
+        pathfinder = null;
         immediateChase = false;
     }
 
@@ -185,7 +188,12 @@ public class AIController : MonoBehaviour, IController
             if (bb.StandoffMove) standoffAction.TickStandoff(bb, ctx.DeltaTime);
             else moveAction.TickStrafe(bb, ctx.DeltaTime);
             cmd.HasMove = true;
-            cmd.MoveDirection = bb.MoveDir;
+            if (pathfinder == null) pathfinder = host.GetComponent<MonsterPathfinder>();
+            if (pathfinder != null && pathfinder.TryGetMoveDirection(host.targetPlayer.position, bb.MoveDir,
+                host.aiMinRange, bb.DistToPlayer, out Vector3 pathDirection))
+                cmd.MoveDirection = pathDirection * Mathf.Clamp01(bb.MoveDir.magnitude);
+            else
+                cmd.MoveDirection = bb.MoveDir;
         }
 
         // 攻击脉冲：写回后清空（避免下一帧重复触发）
