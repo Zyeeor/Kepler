@@ -559,13 +559,15 @@ MonoBehaviour:
   chainDelay: 0.08
   followUpDelay: 1
   followUpDamageMult: 1
-  boltVfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
+  boltVfxPrefab: {fileID: 2325348157613586188, guid: 20b6ef1eaf21dfb4cb81e606575c3850,
     type: 3}
   boltVfxPositionOffset: {x: 0, y: 0, z: 0}
   boltVfxRotationOffset: {x: 0, y: 0, z: 0}
-  hitEffectPrefab: {fileID: 1600531901824256160, guid: f4a4b36476c3e424a9c1ddd5405afd74,
+  boltVfxScale: {x: 1, y: 1, z: 1}
+  boltVfxDuration: 1
+  hitEffectPrefab: {fileID: 6853901823333428390, guid: 4b412f68c3cf62c4b91c137a3bd3aad5,
     type: 3}
-  hitEffectDuration: 0.5
+  hitEffectDuration: 1
   telegraphPrefab: {fileID: 0}
 --- !u!1 &2411187435238189201
 GameObject:
@@ -1715,6 +1717,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}
   healthCanvas: {fileID: 0}
   showHealthBar: 1

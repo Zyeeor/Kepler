@@ -25,7 +25,10 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
     public GameObject boltVfxPrefab;
     public Vector3 boltVfxPositionOffset = Vector3.zero;
     public Vector3 boltVfxRotationOffset = new Vector3(0f, -90f, 90f);
+    public Vector3 boltVfxScale = Vector3.one;
+    public float boltVfxDuration = 0.45f;
     public GameObject hitEffectPrefab;
+
     public float hitEffectDuration = 0.5f;
     public GameObject telegraphPrefab;
 
@@ -75,10 +78,10 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
             yield return AbilityWait(telegraphDuration);
         }
 
-        Vector3 origin = owner != null ? owner.transform.position + Vector3.up : Vector3.zero;
         for (int i = 0; i < strikes.Count; i++)
         {
-            SettleStrike(origin, strikes[i], isFollowUp: false);
+            SettleStrike(strikes[i], isFollowUp: false);
+
             if (i + 1 < strikes.Count)
                 yield return AbilityWait(chainDelay);
         }
@@ -102,13 +105,13 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
                 SpawnTelegraph(original[i].position);
             yield return AbilityWait(telegraphDuration);
 
-            Vector3 origin = owner.transform.position + Vector3.up;
             for (int i = 0; i < original.Count; i++)
             {
                 MarkedStrike follow = original[i];
                 follow.storedDamage = 0f; // follow-ups do not re-consume Mark
                 follow.baseDamage = baseThunderDamage * followUpDamageMult;
-                SettleStrike(origin, follow, isFollowUp: true);
+                SettleStrike(follow, isFollowUp: true);
+
                 if (i + 1 < original.Count)
                     yield return AbilityWait(chainDelay);
             }
@@ -142,11 +145,12 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
         return list;
     }
 
-    private void SettleStrike(Vector3 origin, MarkedStrike strike, bool isFollowUp)
+    private void SettleStrike(MarkedStrike strike, bool isFollowUp)
     {
         float damage = strike.baseDamage + (isFollowUp ? 0f : strike.storedDamage);
-        SpawnTrajectory(origin, strike.position);
+        SpawnBolt(strike.target, strike.position);
         SpawnHitEffect(strike.position);
+
 
         if (strike.target != null && owner != null && owner.CanDamage(strike.target))
             DealDamageTo(strike.target, damage);
@@ -207,19 +211,20 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
         SpawnVfxTracked(hitEffectPrefab, pos, Quaternion.identity, hitEffectDuration);
     }
 
-    private void SpawnTrajectory(Vector3 from, Vector3 to)
+    private void SpawnBolt(Enemy target, Vector3 fallbackPosition)
     {
         if (boltVfxPrefab == null) return;
-        Vector3 dir = to - from;
-        Quaternion rot = (dir.sqrMagnitude > 0.01f
-            ? Quaternion.LookRotation(dir.normalized, Vector3.up)
-            : Quaternion.identity) * Quaternion.Euler(boltVfxRotationOffset);
-        GameObject vfx = SpawnVfxTracked(boltVfxPrefab, from + boltVfxPositionOffset, rot, 0.35f);
-        if (vfx == null) return;
-        Vector3 scale = vfx.transform.localScale;
-        scale.z *= Mathf.Max(0.1f, dir.magnitude);
-        vfx.transform.localScale = scale;
+        Vector3 position = target != null ? target.transform.position : fallbackPosition;
+        GameObject bolt = SpawnVfxTracked(
+            boltVfxPrefab,
+            position + boltVfxPositionOffset,
+            Quaternion.Euler(boltVfxRotationOffset),
+            Mathf.Max(0.05f, boltVfxDuration));
+        if (bolt != null)
+            bolt.transform.localScale = Vector3.Scale(bolt.transform.localScale, boltVfxScale);
+
     }
+
 
     private struct MarkedStrike
     {
