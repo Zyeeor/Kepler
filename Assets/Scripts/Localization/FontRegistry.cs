@@ -23,7 +23,7 @@ public class FontRegistry : ScriptableObject
 
     static FontRegistry _loaded;
 
-    /// <summary>运行时实例（外部注入或 Resources 加载）。</summary>
+    /// <summary>运行时实例（统一从 Resources/Text/FontRegistry 加载；外部可注入测试实例）。</summary>
     public static FontRegistry Instance
     {
         get
@@ -84,14 +84,38 @@ public class FontRegistry : ScriptableObject
         foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
         {
             string slot = MatchSlotForFont(tmp.font);
-            var target = slot != null ? GetFont(slot) : DefaultFont;
-            if (target != null && tmp.font != target)
-            {
-                tmp.font = target;
+            if (ApplyFontToText(tmp, slot))
                 count++;
-            }
         }
         return count;
+    }
+
+    /// <summary>
+    /// 将注册表中的字体和其匹配材质一起应用到单个 TMP 文本。
+    /// TMP_Text.font 不会自动替换已有的共享材质，必须同步设置 fontSharedMaterial，
+    /// 否则文本可能继续使用旧字体图集而显示方框或不渲染。
+    /// </summary>
+    public bool ApplyFontToText(TMP_Text text, string slot = null)
+    {
+        if (text == null) return false;
+        var target = GetFont(slot);
+        if (target == null) return false;
+
+        bool changed = false;
+        if (text.font != target)
+        {
+            text.font = target;
+            changed = true;
+        }
+
+        var material = target.material;
+        if (material != null && text.fontSharedMaterial != material)
+        {
+            text.fontSharedMaterial = material;
+            changed = true;
+        }
+
+        return changed;
     }
 
     /// <summary>按字体匹配所在槽（用于场景既有字体 → 槽映射；找不到返回 null）。</summary>
@@ -114,16 +138,11 @@ public class FontRegistry : ScriptableObject
     public int ApplyFontToTree(Transform root, string slot)
     {
         if (root == null) return 0;
-        var font = GetFont(slot);
-        if (font == null) return 0;
         int count = 0;
         foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
         {
-            if (tmp.font != font)
-            {
-                tmp.font = font;
+            if (ApplyFontToText(tmp, slot))
                 count++;
-            }
         }
         return count;
     }

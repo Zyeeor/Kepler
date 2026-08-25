@@ -55,7 +55,7 @@ public class EliteNetworkStatusUI : MonoBehaviour
         // 中文提示需中文字形：TMP 默认字体缺 CJK 会显示方框；set_font 加保护防字体资产异常中断调用方
         try
         {
-            label.font = UiFontAssets.ChineseOrDefault;
+            UiFontAssets.ApplyTo(label);
         }
         catch (System.Exception e)
         {

@@ -32,7 +32,7 @@ public class TutorialController : SceneSingleton<TutorialController>
     [Header("UI")]
     [Tooltip("教学 Banner UI（场景引用；留空则运行时自举创建最小 Banner）")]
     public TutorialUI ui;
-    [Tooltip("教学 Banner 字体（自举 Banner 用；必须含中文，项目默认字体缺中文字形会显示方框）")]
+    [Tooltip("旧版教学 Banner 字体字段（兼容已有场景引用）；运行时实际统一使用 FontRegistry.default")]
     public TMPro.TMP_FontAsset bannerFont;
 
     TutorialProbes probes;
@@ -104,9 +104,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         TutorialFactBus.ClearSubscribers();
         TutorialFactBus.OnFactReported += OnFactReported;
 
-        // 尽早注入中文字体（Awake 阶段）：EliteBuildDirector.Awake（经 WaveManager.Start 触发）
-        // 会先于本组件 Start 创建 EliteNetworkStatusUI 动态文本，晚注入则其回退默认字体显示方框。
-        if (bannerFont != null) UiFontAssets.Chinese = bannerFont;
+        // 动态文本统一由 FontRegistry 管理；不再从教学字段向全局静态字体入口注入覆盖。
     }
 
     void Start()
@@ -557,7 +555,7 @@ public class TutorialController : SceneSingleton<TutorialController>
             .Replace("{BULLET}", GameInputBindings.GlyphOf(CommandButtons.Skill3));
     }
 
-    /// <summary>运行时自举最小 Banner（TMP；优先用 bannerFont，否则退回 TMP 默认字体）。</summary>
+    /// <summary>运行时自举最小 Banner；字体统一从 FontRegistry 读取。</summary>
     TutorialUI EnsureMinimalUI()
     {
         var go = new GameObject("TutorialBanner_Auto");
@@ -567,7 +565,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         go.AddComponent<UnityEngine.UI.CanvasScaler>();
         go.AddComponent<UnityEngine.UI.GraphicRaycaster>();
         var ui = go.AddComponent<TutorialUI>();
-        ui.BuildRuntimeLayout(go.transform, bannerFont);
+        ui.BuildRuntimeLayout(go.transform);
         return ui;
     }
 

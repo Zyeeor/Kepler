@@ -28,7 +28,9 @@ public class HallOfFamePanel : MonoBehaviour
     public int timeoutSeconds = 5;
 
     enum SortKey { SavedTime, Kills, RunFail, BdCount }
-    static readonly string[] SortLabels = { "排序：保存时间", "排序：本局击杀", "排序：Run Fail", "排序：BD 卡数" };
+    // 统一文本目录：排序标签（TextCatalog，运行时取文本；策划改文案不动代码）
+    static readonly string[] SortLabelKeys = { "ui.hof.sort.saved_time", "ui.hof.sort.kills", "ui.hof.sort.run_fail", "ui.hof.sort.bd_count" };
+    static string SortLabel(int i) => TextCatalog.Get(SortLabelKeys[i]);
     SortKey sortKey = SortKey.SavedTime; // §5.6 默认按保存时间倒序
 
     GameObject panelRoot;
@@ -127,7 +129,7 @@ public class HallOfFamePanel : MonoBehaviour
         }
 
         if (statusLabel != null && !refreshing)
-            statusLabel.text = $"共 {entries.Count} 条记录";
+            statusLabel.text = TextCatalog.Get("ui.hof.status.count", entries.Count);
         if (scrollRect != null) scrollRect.verticalNormalizedPosition = 1f;
     }
 
@@ -147,7 +149,7 @@ public class HallOfFamePanel : MonoBehaviour
     {
         if (refreshing) return;
         refreshing = true;
-        SetStatus("战绩刷新中…");
+        SetStatus(TextCatalog.Get("ui.hof.status.refreshing"));
         refreshButton.interactable = false;
         try
         {
@@ -160,12 +162,12 @@ public class HallOfFamePanel : MonoBehaviour
             var resp = await client.FetchStats(DeviceIdentity.Id);
             int applied = resp != null && resp.stats != null
                 ? HallOfFameStore.ApplyStats(resp.stats) : 0;
-            SetStatus($"已刷新 {NowClock()}（更新 {applied} 条战绩）");
+            SetStatus(TextCatalog.Get("ui.hof.status.refreshed", NowClock(), applied));
         }
         catch (Exception e)
         {
             // §5.7/§5.10：断网仍可查看本地荣誉记录——刷新失败静默保持缓存
-            SetStatus("刷新失败——显示本地缓存（离线可查看）");
+            SetStatus(TextCatalog.Get("ui.hof.status.offline"));
             Debug.Log($"[HallOfFame] 战绩刷新失败（保持本地缓存）：{e.Message}");
         }
         finally
@@ -183,8 +185,8 @@ public class HallOfFamePanel : MonoBehaviour
 
     void CycleSort()
     {
-        sortKey = (SortKey)(((int)sortKey + 1) % SortLabels.Length);
-        if (sortButton != null) sortButton.GetComponentInChildren<TMP_Text>().text = SortLabels[(int)sortKey];
+        sortKey = (SortKey)(((int)sortKey + 1) % SortLabelKeys.Length);
+        if (sortButton != null) sortButton.GetComponentInChildren<TMP_Text>().text = SortLabel((int)sortKey);
         RenderLocal();
     }
 
@@ -192,19 +194,20 @@ public class HallOfFamePanel : MonoBehaviour
 
     string FormatEntry(HallOfFameEntry e)
     {
+        // 统一文本目录：条目模板（ui.hof.entry.*，{0} 占位符）；颜色标记保留在代码（富文本标记非文案）
         string sinName = SinDisplay(e.sin);
         string phase = PhaseText(e);
-        string cards = e.cardIds != null && e.cardIds.Count > 0 ? string.Join("、", e.cardIds) : "（无清单）";
-        string staleMark = HasStaleCards(e) ? "（部分卡牌已失效 / 历史版本）" : ""; // §5.9
+        string cards = e.cardIds != null && e.cardIds.Count > 0 ? string.Join("、", e.cardIds) : TextCatalog.Get("ui.hof.entry.no_cards");
+        string staleMark = HasStaleCards(e) ? TextCatalog.Get("ui.hof.entry.stale_cards") : ""; // §5.9
         string statsTime = e.statsUpdatedAtUnix > 0
-            ? $"（{FormatClock(e.statsUpdatedAtUnix)} 更新）" : "（未同步）";
+            ? TextCatalog.Get("ui.hof.entry.synced_at", FormatClock(e.statsUpdatedAtUnix)) : TextCatalog.Get("ui.hof.entry.not_synced");
 
-        return $"<b>◆ {sinName}（{e.sin}）  {FormatClock(e.savedAtUnix)}  {phase}</b>\n" +
-               $"<color=#9fd4ff>── 原始 Run 表现 ──</color>\n" +
-               $"BD 深度 {e.bdCount}｜控制 {e.controlSeconds:F0} 秒｜本局击杀 {e.kills}\n" +
-               $"{cards}{staleMark}\n" +
-               $"<color=#ffd79f>── 异步战绩{statsTime}──</color>\n" +
-               $"被投放 {e.deployed}｜被击杀 {e.fatal}｜被附身 {e.possessed}｜致 Body Fatal {e.bodyFatal}｜致 Run Fail {e.runFail}";
+        return TextCatalog.Get("ui.hof.entry.header", sinName, e.sin, FormatClock(e.savedAtUnix), phase) + "\n" +
+               "<color=#9fd4ff>" + TextCatalog.Get("ui.hof.entry.raw_section") + "</color>\n" +
+               TextCatalog.Get("ui.hof.entry.raw_line", e.bdCount, e.controlSeconds.ToString("F0"), e.kills) + "\n" +
+               cards + staleMark + "\n" +
+               "<color=#ffd79f>" + TextCatalog.Get("ui.hof.entry.stats_section", statsTime) + "</color>\n" +
+               TextCatalog.Get("ui.hof.entry.stats_line", e.deployed, e.fatal, e.possessed, e.bodyFatal, e.runFail);
     }
 
     static string SinDisplay(string wire)
@@ -218,16 +221,17 @@ public class HallOfFamePanel : MonoBehaviour
 
     static string PhaseText(HallOfFameEntry e)
     {
+        // 统一文本目录：阶段文案（ui.hof.phase.*）
         if (!string.IsNullOrEmpty(e.endPhase))
         {
-            string result = e.endPhase == "Result" ? "胜利"
-                : e.endPhase == "Failed" ? "失败"
-                : e.endPhase == "Aborted" ? "中途退出"
-                : e.endPhase == "NewRunInterrupt" ? "开新局打断" : e.endPhase;
-            return e.reachedWave > 0 ? $"{result} · 到达第 {e.reachedWave} 波" : result;
+            string result = e.endPhase == "Result" ? TextCatalog.Get("ui.hof.phase.victory")
+                : e.endPhase == "Failed" ? TextCatalog.Get("ui.hof.phase.failed")
+                : e.endPhase == "Aborted" ? TextCatalog.Get("ui.hof.phase.aborted")
+                : e.endPhase == "NewRunInterrupt" ? TextCatalog.Get("ui.hof.phase.newrun") : e.endPhase;
+            return e.reachedWave > 0 ? TextCatalog.Get("ui.hof.phase.reached_wave", result, e.reachedWave) : result;
         }
-        if (e.stage == "final") return "记录于 Final（对局中）";
-        return e.reachedWave > 0 ? $"记录于第 {e.reachedWave} 波（对局中）" : "对局中";
+        if (e.stage == "final") return TextCatalog.Get("ui.hof.phase.in_final");
+        return e.reachedWave > 0 ? TextCatalog.Get("ui.hof.phase.in_wave", e.reachedWave) : TextCatalog.Get("ui.hof.phase.in_run");
     }
 
     /// <summary>历史卡牌失效标记（§5.9）：清单中存在当前牌池不认识的 ID。CardManager 不在（主菜单）时跳过校验。</summary>
@@ -290,8 +294,8 @@ public class HallOfFamePanel : MonoBehaviour
         bgRect.anchoredPosition = Vector2.zero;
         panelBg.GetComponent<Image>().color = new Color(0.07f, 0.08f, 0.12f, 0.97f);
 
-        // 标题
-        var title = MakeText(panelBg.transform, "荣誉殿堂", 34, new Color(0.95f, 0.85f, 0.55f));
+        // 标题（TextCatalog 统一管理）
+        var title = MakeText(panelBg.transform, TextCatalog.Get("ui.hof.title"), 34, new Color(0.95f, 0.85f, 0.55f));
         Place(title.rectTransform, new Vector2(0f, -34f), new Vector2(600f, 44f), TextAlignmentOptions.Center);
         title.fontStyle = FontStyles.Bold;
 
@@ -300,12 +304,12 @@ public class HallOfFamePanel : MonoBehaviour
         Place(close.GetComponent<RectTransform>(), new Vector2(500f, -34f), new Vector2(46f, 46f));
         close.onClick.AddListener(Hide);
 
-        // 工具行：刷新 / 排序 / 状态
-        refreshButton = MakeButton(panelBg.transform, "刷新战绩", 150f, 42f);
+        // 工具行：刷新 / 排序 / 状态（TextCatalog 统一管理）
+        refreshButton = MakeButton(panelBg.transform, TextCatalog.Get("ui.hof.refresh"), 150f, 42f);
         Place(refreshButton.GetComponent<RectTransform>(), new Vector2(-440f, -86f), new Vector2(150f, 42f));
         refreshButton.onClick.AddListener(() => _ = RefreshFromServer());
 
-        sortButton = MakeButton(panelBg.transform, SortLabels[(int)sortKey], 210f, 42f);
+        sortButton = MakeButton(panelBg.transform, SortLabel((int)sortKey), 210f, 42f);
         Place(sortButton.GetComponent<RectTransform>(), new Vector2(-255f, -86f), new Vector2(210f, 42f));
         sortButton.onClick.AddListener(CycleSort);
 
@@ -355,9 +359,9 @@ public class HallOfFamePanel : MonoBehaviour
         scrollRect.content = contentRect;
         contentRoot = content.transform;
 
-        // 空状态（§5.9）
+        // 空状态（§5.9；TextCatalog 统一管理）
         emptyLabel = MakeText(panelBg.transform,
-            "暂无荣誉记录\n\n完成一局携带卡牌的战斗后，你的构筑将载入殿堂；\n被其他玩家遇到的精英也会在此积累战绩。", 24,
+            TextCatalog.Get("ui.hof.empty"), 24,
             new Color(0.7f, 0.72f, 0.8f));
         Place(emptyLabel.rectTransform, Vector2.zero, new Vector2(700f, 200f), TextAlignmentOptions.Center);
         emptyLabel.gameObject.SetActive(false);
@@ -389,7 +393,7 @@ public class HallOfFamePanel : MonoBehaviour
         tmp.fontSize = size;
         tmp.color = color;
         tmp.raycastTarget = false;
-        try { tmp.font = UiFontAssets.ChineseOrDefault; } catch { /* 字体资产异常时用 TMP 默认 */ }
+        try { UiFontAssets.ApplyTo(tmp); } catch { /* 字体资产异常时用 TMP 默认 */ }
         return tmp;
     }
 

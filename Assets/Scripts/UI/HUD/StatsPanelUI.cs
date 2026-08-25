@@ -75,16 +75,17 @@ public class StatsPanelUI : MonoBehaviour
         int prideCount = passives != null ? Mathf.RoundToInt(speedBonus / 0.05f) : 0;  // each pride = +5%
         int wrathCount = passives != null ? Mathf.RoundToInt(lifesteal / 0.01f) : 0;   // each wrath = +1%
 
+        // 统一文本目录（TextCatalog）：标题/属性名/被动增益标签汉化，格式模板走 key
         statsText.text =
-            "<b><size=22>Player Stats</size></b>\n\n" +
-            "<b>Health</b>          " + Mathf.RoundToInt(hp) + " / " + Mathf.RoundToInt(maxHp) + "\n" +
-            "<b>Movement Speed</b>  " + currentSpeed.ToString("F1") +
+            "<b><size=22>" + TextCatalog.Get("ui.stats.title") + "</size></b>\n\n" +
+            "<b>" + TextCatalog.Get("ui.stats.health") + "</b>          " + Mathf.RoundToInt(hp) + " / " + Mathf.RoundToInt(maxHp) + "\n" +
+            "<b>" + TextCatalog.Get("ui.stats.move_speed") + "</b>  " + currentSpeed.ToString("F1") +
             (speedBonus > 0f ? "  <color=#00FF00>(+" + (speedBonus * 100f).ToString("F0") + "%</color>)" : "") + "\n" +
-            "<b>Attack Speed</b>    " + attackSpeed.ToString("F1") + "\n" +
-            "<b>Life Steal</b>      " + (lifesteal * 100f).ToString("F1") + "%\n\n" +
+            "<b>" + TextCatalog.Get("ui.stats.attack_speed") + "</b>    " + attackSpeed.ToString("F1") + "\n" +
+            "<b>" + TextCatalog.Get("ui.stats.life_steal") + "</b>      " + (lifesteal * 100f).ToString("F1") + "%\n\n" +
 
-            "<b><size=18>Passive Buffs (Possessed)</size></b>\n" +
-            "<color=#FFD700>Pride</color> × " + prideCount + "  +" + (prideCount * 5) + "% Move Speed\n" +
-            "<color=#FF4444>Wrath</color> × " + wrathCount + "  +" + (wrathCount * 1) + "% Life Steal";
+            "<b><size=18>" + TextCatalog.Get("ui.stats.passive_buffs") + "</size></b>\n" +
+            "<color=#FFD700>Pride</color> × " + prideCount + "  +" + (prideCount * 5) + "% " + TextCatalog.Get("ui.stats.move_speed_short") + "\n" +
+            "<color=#FF4444>Wrath</color> × " + wrathCount + "  +" + (wrathCount * 1) + "% " + TextCatalog.Get("ui.stats.life_steal_short");
     }
 }
