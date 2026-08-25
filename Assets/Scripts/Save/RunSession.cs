@@ -204,6 +204,8 @@ public class RunSession : MonoBehaviour
         SoulTime = 0f;
         PossessedBody = null;
         Corpses.Clear();
+        // DDOL 灵魂跨局复用：上局 0 HP 死亡残留会让新局开局即死，新局必须回满（读档路径由 RestorePlayerRuntime 恢复，不经此）。
+        if (PlayerHealth.Instance != null) PlayerHealth.Instance.ResetHealth();
         PossessionImprintManager.EnsureInstance().BeginNewRun();
         RunSpawnDirector.EnsureInstance().RestoreRuntime(0f, false, false);
         ActiveCombatSeconds = 0f;

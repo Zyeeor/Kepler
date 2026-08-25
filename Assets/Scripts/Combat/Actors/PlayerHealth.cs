@@ -31,6 +31,7 @@ public class PlayerHealth : MonoBehaviour
 
     public float maxHealth; // 灵魂当前上限（附身切换时由 PossessionManager 同步）
     private float decayTimer;
+    private bool isDead; // 死亡幂等：0 HP 后重复伤害不再触发 Die（防主菜单衰减重复 GameOver 污染下一局）
     private PlayerCombat combat;
     private MonoBehaviour[] soulComponents;
     private Renderer[] soulRenderers;
@@ -72,6 +73,11 @@ public class PlayerHealth : MonoBehaviour
         // 避免附身中灵魂被误判死亡）。
         var pm = PossessionManager.Instance;
         if (pm != null && pm.State != PossessionManager.SwitchState.Idle) return;
+        // 灵魂衰减是对局内机制：主菜单/展示态（无进行中对局）或已死亡时不衰减——
+        // DDOL 灵魂在主菜单持续掉血至 0 会重复触发 Die→GameOver，污染下一局（开场载体附身被拒）。
+        // 注意：编辑器直接 Play 的兜底路径（InitWorldSeed）不置 HasActiveRun，该调试路径下灵魂不再衰减。
+        var session = RunSession.Instance;
+        if (session == null || !session.HasActiveRun || isDead) return;
         decayTimer += Time.deltaTime;
         if (decayTimer >= decayInterval)
         {
@@ -158,8 +164,19 @@ public class PlayerHealth : MonoBehaviour
 
     void Die()
     {
+        if (isDead) return; // 幂等：重复死亡不重复触发 GameOver（防 TimeScaleManager 重复 Push 冻结时间）
+        isDead = true;
         Debug.Log("Player died!");
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.GameOver);
+    }
+
+    /// <summary>新局重置：回满 HP 并清死亡标记。DDOL 灵魂跨场景/跨局复用，Start 不会重跑，必须显式复位。</summary>
+    public void ResetHealth()
+    {
+        isDead = false;
+        currentHealth = soulMaxHealth;
+        maxHealth = soulMaxHealth;
+        UpdateHealthUI();
     }
 
     /// <summary>刷新玩家血条/危险UI（PossessionManager 附身切换时也调用）。</summary>
