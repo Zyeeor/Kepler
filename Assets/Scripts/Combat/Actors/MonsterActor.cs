@@ -187,6 +187,10 @@ public class MonsterActor : Actor
     public float aiTurnSpeed => AiConfig.turnSpeed;
     /// <summary>AI 转向加速度（AI 配置）。</summary>
     public float aiTurnAcceleration => AiConfig.turnAcceleration;
+    /// <summary>怪物间软分离半径（AI 配置，米）。</summary>
+    public float separationRadius => AiConfig.separationRadius;
+    /// <summary>怪物间软分离强度（AI 配置，0~2）。</summary>
+    public float separationStrength => AiConfig.separationStrength;
     /// <summary>调试圆环开关（AI 配置，是否可视化索敌/普攻/技能范围）。</summary>
     public bool showDebugRanges => forceDebugRanges || AiConfig.showDebugRanges;
 
@@ -302,6 +306,16 @@ public class MonsterActor : Actor
     private float authoredPossessedMaxHealth;
     private Vector3 aiVelocity; // AI 态加速度平滑
     private float aiCurrentTurnSpeed; // AI 态角速度平滑
+    // 软分离降频采样缓存（P3）：O(n²) 遍历从每帧降为每 SeparationSampleInterval 秒一次，其余帧复用上次结果。
+    private const float SeparationSampleInterval = 0.1f;
+    private float separationNextSampleTime = -999f;
+    private Vector3 cachedSeparationVelocity = Vector3.zero;
+    // 软分离共享空间桶（P5）：采样时按分离半径分桶，每怪只查 9 邻桶内邻居，
+    // 把全量 O(n²) 降为 O(n×平均邻居数)（分散场景约 6 倍，100 怪场景 ~12 倍）。
+    // 桶表在同一 0.1s 窗口内全局共享（首只采样怪重建，其余复用），避免重复构建。
+    static float sharedBucketStamp = -999f;
+    static float sharedBucketSize = 0f;
+    static Dictionary<Vector2Int, List<Enemy>> sharedBuckets;
     [Header("Spawn Snapshot")]
     public SpawnOrigin spawnOrigin = SpawnOrigin.PeriodicPressure;
     public int spawnDifficultyTier;
@@ -647,7 +661,115 @@ public class MonsterActor : Actor
 
         float velocityChange = targetVelocity.sqrMagnitude > aiVelocity.sqrMagnitude ? aiMoveAcceleration : aiMoveDeceleration;
         aiVelocity = Vector3.MoveTowards(aiVelocity, targetVelocity, velocityChange * Time.deltaTime);
-        MoveWithSpherecast(aiVelocity * Time.deltaTime);
+
+        // 怪物间软分离：叠加远离邻近活怪的排斥速度，防止多怪追击时重叠堆积。
+        // 与 aiVelocity 独立（停步/对峙时仍生效），不参与平滑，仅作最终位移修正。
+        Vector3 separation = ComputeSeparationVelocity();
+        // P1 防超速：分离速度直接叠加会让合成速度超过 moveSpeed（默认最高约 1.8×），
+        // 这里对「追击 + 分离」合成速度做 clamp，保证横散/贴脸分离时移动不超标。
+        Vector3 totalVelocity = aiVelocity + separation;
+        float maxSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+        if (totalVelocity.sqrMagnitude > maxSpeed * maxSpeed)
+            totalVelocity = totalVelocity.normalized * maxSpeed;
+        MoveWithSpherecast(totalVelocity * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// 计算怪物间软分离速度（防重叠堆积）：采样时经共享空间桶查询分离半径内邻居，
+    /// 按「远离方向 × 距离衰减权重」累加，输出量纲为速度。
+    /// 仅 AI 态调用（玩家附身的身体不参与），且跳过倒地/附身/消散中的邻居。
+    /// </summary>
+    Vector3 ComputeSeparationVelocity()
+    {
+        // P3 降频采样：分离速度随距离平滑变化，无需每帧重算。
+        // 间隔内复用上次结果；P5 空间桶把全量遍历降为 9 邻桶近邻查询。
+        float now = Time.time;
+        if (now < separationNextSampleTime) return cachedSeparationVelocity;
+
+        float radius = separationRadius;
+        float strength = separationStrength;
+        Vector3 result = Vector3.zero;
+        if (radius > 0f && strength > 0f && EnemyRegistry.All.Count > 1)
+        {
+            EnsureSharedSeparationBuckets(now, radius);
+
+            Vector3 self = transform.position;
+            Vector3 accumulated = Vector3.zero;
+            float sqrRadius = radius * radius;
+            int bRange = Mathf.Max(1, Mathf.CeilToInt(radius / sharedBucketSize));
+            int bx = Mathf.FloorToInt(self.x / sharedBucketSize);
+            int bz = Mathf.FloorToInt(self.z / sharedBucketSize);
+            for (int dx = -bRange; dx <= bRange; dx++)
+            for (int dz = -bRange; dz <= bRange; dz++)
+            {
+                if (!sharedBuckets.TryGetValue(new Vector2Int(bx + dx, bz + dz), out var list)) continue;
+                for (int j = 0; j < list.Count; j++)
+                {
+                    var other = list[j];
+                    if (other == null || ReferenceEquals(other, this)) continue;
+
+                    Vector3 delta = self - other.transform.position;
+                    delta.y = 0f;
+                    float sqrDist = delta.sqrMagnitude;
+                    if (sqrDist >= sqrRadius) continue;
+
+                    if (sqrDist < 0.0001f)
+                    {
+                        // P4 完全重叠兜底：同帧生成在同一格/极端堆叠时，按桶内序给确定性方向分离，避免永久卡死。
+                        accumulated += new Vector3((j & 1) == 0 ? 1f : -1f, 0f, (j & 2) == 0 ? 0f : 1f);
+                        continue;
+                    }
+
+                    float dist = Mathf.Sqrt(sqrDist);
+                    float weight = 1f - dist / radius; // 距离越近排斥越强，贴脸时权重最大
+                    accumulated += (delta / dist) * weight;
+                }
+            }
+
+            if (accumulated.sqrMagnitude >= 0.0001f)
+            {
+                float speed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+                result = accumulated.normalized * strength * speed;
+            }
+        }
+
+        cachedSeparationVelocity = result;
+        separationNextSampleTime = now + SeparationSampleInterval;
+        return result;
+    }
+
+    /// <summary>
+    /// 确保共享分离桶新鲜：同一 SeparationSampleInterval 窗口内全局复用一份桶表（首只采样怪重建）。
+    /// 桶边长取出现过的最大 separationRadius（所有怪同配置时等于 radius），
+    /// 查询侧按 bRange = ceil(radius / bucketSize) 扩邻，保证不同半径怪也能覆盖其分离半径内邻居。
+    /// </summary>
+    void EnsureSharedSeparationBuckets(float now, float radius)
+    {
+        if (radius > sharedBucketSize)
+        {
+            sharedBucketSize = radius;
+            sharedBucketStamp = -999f; // 桶尺寸变化需强制重建
+        }
+        if (sharedBuckets != null && now < sharedBucketStamp + SeparationSampleInterval) return;
+
+        sharedBucketStamp = now;
+        if (sharedBucketSize <= 0f) sharedBucketSize = 1f;
+        if (sharedBuckets == null) sharedBuckets = new Dictionary<Vector2Int, List<Enemy>>(64);
+        else sharedBuckets.Clear();
+
+        var enemies = EnemyRegistry.All;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var e = enemies[i];
+            if (e == null) continue;
+            if (e.isDowned || e.isPossessed
+                || e.Body == BodyState.Fading || e.Body == BodyState.Despawned) continue;
+            Vector3 p = e.transform.position;
+            var key = new Vector2Int(Mathf.FloorToInt(p.x / sharedBucketSize), Mathf.FloorToInt(p.z / sharedBucketSize));
+            if (!sharedBuckets.TryGetValue(key, out var list))
+                sharedBuckets[key] = list = new List<Enemy>(4);
+            list.Add(e);
+        }
     }
 
     /// <summary>碰撞移动（AI与玩家共用）：CollideAndSlide 滑动，撞墙沿墙切向滑行。</summary>
