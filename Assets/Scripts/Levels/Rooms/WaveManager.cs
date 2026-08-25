@@ -86,10 +86,10 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Min(0.1f)] public float spawnCycleSeconds = 60f;
     [Tooltip("每个周期开始后多少秒进入怪潮。默认第 30 秒。")]
     [Min(0f)] public float tideStartSeconds = 30f;
-    [Tooltip("怪潮持续时间（秒）。")]
-    [Min(0f)] public float tideDurationSeconds = 10f;
-    [Tooltip("怪潮注入间隔（秒）。")]
-    [Min(0.1f)] public float tideSpawnInterval = 2f;
+    [Tooltip("怪潮持续时间（秒）。默认 9 秒。")]
+    [Min(0f)] public float tideDurationSeconds = 9f;
+    [Tooltip("怪潮注入间隔（秒）。默认每 3 秒注入一次。")]
+    [Min(0.1f)] public float tideSpawnInterval = 3f;
     [Tooltip("怪潮每次为每种罪印生成的数量。默认每种 1 只，即每次 7 只。")]
     [Min(0)] public int tideSpawnCountPerSin = 1;
 
@@ -155,8 +155,8 @@ public class WaveManager : SceneSingleton<WaveManager>
             normalSpawnCountPerTick = 1;
             spawnCycleSeconds = 60f;
             tideStartSeconds = 30f;
-            tideDurationSeconds = 10f;
-            tideSpawnInterval = 2f;
+            tideDurationSeconds = 9f;
+            tideSpawnInterval = 3f;
             tideSpawnCountPerSin = 1;
             eliteSpawnOffsetSeconds = 40f;
             eliteCountPerCycle = 1;
