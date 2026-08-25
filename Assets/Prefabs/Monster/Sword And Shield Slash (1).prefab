@@ -393,15 +393,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cd4801b3b92d70469cbf983bc9314eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  acceleration: 0
-  deceleration: 0
+  moveSpeed: 8
+  acceleration: 120
+  deceleration: 120
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
   maxHealth: 50
   currentHealth: 20
   displayName: Sloth
+  sinType: 0
+  isPossessable: 1
   enemyStats:
     maxHealth: 50
     moveSpeed: 5
@@ -428,6 +430,7 @@ MonoBehaviour:
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
   rangeCircleSegments: 64
+  visualScaleRoot: {fileID: 0}
   bodyColor: {r: 0.43081754, g: 1, b: 0.49079517, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.0034412616, g: 0.36477977, b: 0.10066073, a: 1}
@@ -443,6 +446,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}
   healthCanvas: {fileID: 0}
   showHealthBar: 1
@@ -462,6 +467,11 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  spawnOrigin: 0
+  spawnDifficultyTier: 0
+  baseSpawnMaxHealth: 0
+  spawnHealthMultiplier: 1
+  spawnDamageMultiplier: 1
   soulAnchorPoint: {fileID: 0}
 --- !u!136 &2478857331383844277
 CapsuleCollider:
@@ -500,13 +510,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 2.4
+  eliteRimColor: {r: 0.65, g: 0.15, b: 0.9, a: 1}
+  eliteRimIntensity: 0.8
+  elitePulseSpeed: 1.8
+  elitePulseAmount: 0.25
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 3
+  eliteMetallic: 0.2
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 1.4, g: 0.35, b: 2.2, a: 1.0}
+  dissolveEdgeColor: {r: 1.4, g: 0.35, b: 2.2, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
 --- !u!4 &4411847898468923522 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7280f001c5bd96f49b2f9cb7d2ef841c,
