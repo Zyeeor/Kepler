@@ -24,7 +24,8 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
     {
         MonsterSkillIconConfig.MonsterSlot.BasicAttack,
         MonsterSkillIconConfig.MonsterSlot.Skill,
-        MonsterSkillIconConfig.MonsterSlot.Possess,
+        MonsterSkillIconConfig.MonsterSlot.Mobility,
+
     };
 
     static readonly MonsterSkillIconConfig.PlayerSlot[] PlayerSlotOrder =
@@ -49,7 +50,8 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
         {
             { MonsterSkillIconConfig.MonsterSlot.BasicAttack, "普攻" },
             { MonsterSkillIconConfig.MonsterSlot.Skill, "技能" },
-            { MonsterSkillIconConfig.MonsterSlot.Possess, "换身" },
+            { MonsterSkillIconConfig.MonsterSlot.Mobility, "位移" },
+
         };
 
     static readonly Dictionary<MonsterSkillIconConfig.PlayerSlot, string> PlayerSlotNames =
@@ -71,8 +73,10 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
         var usedPlayer = new HashSet<int>();
 
         EditorGUILayout.HelpBox(
-            "Ability HUD 图标配置。怪物附身态显示三槽：普攻 / 技能 / 换身；灵魂态显示两槽：灵魂普攻 / 附身。\n" +
+            "Ability HUD 图标配置。怪物附身态显示三槽：普攻（左键）/ 技能（右键）/ 位移（空格）；每个槽位可独立配置 Sprite 与颜色。\n" +
+
             "留空会保留场景中当前默认图片；配置 Sprite 后运行时按当前怪物罪类型自动替换。",
+
             MessageType.Info);
 
         EditorGUILayout.Space(4);
@@ -95,7 +99,9 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField(MonsterSlotNames[slot], GUILayout.Width(52));
                     EditorGUILayout.PropertyField(entry.FindPropertyRelative("icon"), GUIContent.none);
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
                     EditorGUILayout.EndHorizontal();
+
                 }
                 else
                 {
@@ -190,9 +196,11 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("sin"), GUIContent.none, GUILayout.Width(110));
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("slot"), GUIContent.none, GUILayout.Width(110));
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("icon"), GUIContent.none);
+            EditorGUILayout.PropertyField(entry.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
             if (GUILayout.Button("✕", GUILayout.Width(22))) removeIndex = index;
             EditorGUILayout.EndHorizontal();
         }
+
         if (removeIndex >= 0) entries.DeleteArrayElementAtIndex(removeIndex);
     }
 

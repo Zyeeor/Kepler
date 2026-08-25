@@ -9,7 +9,8 @@ using UnityEngine;
 /// - Number key 0: spawn a random catalog monster as a normal enemy (no possess).
 /// - While possessed, hold a skill key + number: unlock the Nth CardLibrary build entry
 ///   that targets that skill's abilities (1-based index in filtered CardLibrary order).
-/// Skill keys: LMB = BasicAttack, Q = Skill, Space = Mobility.
+/// Skill keys: LMB = BasicAttack, RMB = Skill, Space = Mobility.
+
 /// Cheat-possessed bodies receive permanent Effect.Defense.DamageImmune.
 /// </summary>
 public class MonsterPossessionCheat : MonoBehaviour
@@ -94,7 +95,8 @@ public class MonsterPossessionCheat : MonoBehaviour
         List<string> buildLines = BuildHintLines(out string skillLabel);
         float height = 70f + (catalog != null && catalog.monsters != null ? Mathf.Min(catalog.monsters.Count, 9) * 16f : 0f) + buildLines.Count * 16f + 28f;
         GUI.Box(new Rect(10f, 10f, width, height), "Monster Possession Cheat");
-        GUI.Label(new Rect(18f, 32f, width - 24f, 20f), "0 random enemy | 1-7 spawn+possess | 8 summon Boss | 9 random Elite | hold LMB/Q/Space + 1-9 unlock");
+        GUI.Label(new Rect(18f, 32f, width - 24f, 20f), "0 random enemy | 1-7 spawn+possess | 8 summon Boss | 9 random Elite | hold LMB/RMB/Space + 1-9 unlock");
+
         float y = 52f;
         if (catalog != null && catalog.monsters != null)
         {
@@ -469,8 +471,9 @@ public class MonsterPossessionCheat : MonoBehaviour
 
     private static bool TryGetHeldSkillType(out EnemyAbility.AbilityType skillType)
     {
-        // Prefer Q / Space over LMB so accidental mouse hold does not steal build hotkeys.
-        if (Input.GetKey(KeyCode.Q) || Input.GetKeyDown(KeyCode.Q))
+        // Prefer RMB / Space over LMB so accidental left mouse hold does not steal build hotkeys.
+        if (Input.GetMouseButton(1) || Input.GetMouseButtonDown(1))
+
         {
             skillType = EnemyAbility.AbilityType.Skill;
             return true;

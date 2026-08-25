@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 技能 HUD 图标配置：按怪物罪类型配置三张战斗槽图标，按玩家配置两张玩家槽图标。
+/// 技能 HUD 图标配置：按怪物罪类型配置普攻、技能、位移三张战斗槽图标，按玩家配置两张玩家槽图标。
+
 /// 资产放在 Resources/UI/MonsterSkillIconConfig.asset，AbilityCooldownUI 会自动加载；
 /// 也可以在 AbilityCooldownUI 的 Icon Config 字段显式覆盖。
 /// </summary>
@@ -15,8 +16,9 @@ public class MonsterSkillIconConfig : ScriptableObject
     {
         BasicAttack,
         Skill,
-        Possess,
+        Mobility,
     }
+
 
     /// <summary>灵魂态玩家当前 Ability HUD 的两个可见槽位。</summary>
     public enum PlayerSlot
@@ -34,6 +36,9 @@ public class MonsterSkillIconConfig : ScriptableObject
         public MonsterSlot slot = MonsterSlot.BasicAttack;
         [Tooltip("该怪物该槽位的 HUD 图片；留空则保留场景中的默认图片。")]
         public Sprite icon;
+        [Tooltip("该怪物该槽位图标的显示颜色。")]
+        public Color iconColor = Color.white;
+
     }
 
     [Serializable]
@@ -45,23 +50,31 @@ public class MonsterSkillIconConfig : ScriptableObject
         public Sprite icon;
     }
 
-    [Tooltip("怪物条目：每种罪类型配置 BasicAttack / Skill / Possess 三行。")]
+    [Tooltip("怪物条目：每种罪类型配置 BasicAttack / Skill / Mobility 三行，每行可独立设置图片和颜色。")]
+
+
     public List<MonsterEntry> monsterEntries = new List<MonsterEntry>();
 
     [Tooltip("玩家条目：配置 BasicAttack / Possess 两行。")]
     public List<PlayerEntry> playerEntries = new List<PlayerEntry>();
 
-    Dictionary<(SinType, MonsterSlot), Sprite> monsterCache;
+    Dictionary<(SinType, MonsterSlot), MonsterEntry> monsterCache;
     Dictionary<PlayerSlot, Sprite> playerCache;
 
+
     /// <summary>查询怪物附身态指定槽位的图标。</summary>
-    public bool TryGetMonsterIcon(SinType sin, MonsterSlot slot, out Sprite icon)
+    public bool TryGetMonsterIcon(SinType sin, MonsterSlot slot, out Sprite icon, out Color color)
     {
         icon = null;
+        color = Color.white;
         if (sin == SinType.None) return false;
         BuildCache();
-        return monsterCache.TryGetValue((sin, slot), out icon) && icon != null;
+        if (!monsterCache.TryGetValue((sin, slot), out MonsterEntry entry)) return false;
+        icon = entry.icon;
+        color = entry.iconColor;
+        return icon != null;
     }
+
 
     /// <summary>查询灵魂态玩家指定槽位的图标。</summary>
     public bool TryGetPlayerIcon(PlayerSlot slot, out Sprite icon)
@@ -75,16 +88,18 @@ public class MonsterSkillIconConfig : ScriptableObject
     {
         if (monsterCache != null && playerCache != null) return;
 
-        monsterCache = new Dictionary<(SinType, MonsterSlot), Sprite>();
+        monsterCache = new Dictionary<(SinType, MonsterSlot), MonsterEntry>();
         playerCache = new Dictionary<PlayerSlot, Sprite>();
+
 
         if (monsterEntries != null)
         {
             foreach (var entry in monsterEntries)
             {
-                if (entry == null || entry.sin == SinType.None || entry.icon == null) continue;
+                if (entry == null || entry.sin == SinType.None) continue;
                 var key = (entry.sin, entry.slot);
-                if (!monsterCache.ContainsKey(key)) monsterCache[key] = entry.icon;
+                if (!monsterCache.ContainsKey(key)) monsterCache[key] = entry;
+
             }
         }
 

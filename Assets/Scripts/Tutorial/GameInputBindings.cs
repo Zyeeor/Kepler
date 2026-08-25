@@ -10,12 +10,13 @@ public static class GameInputBindings
 {
     // 键盘位
     public static readonly KeyCode Mobility = KeyCode.Space;   // 位移（灵魂闪避 / 怪位移）
-    public static readonly KeyCode Skill2 = KeyCode.Q;         // 附身怪技能
     public static readonly KeyCode Skill3 = KeyCode.E;         // 子弹时间
     public static readonly KeyCode Release = KeyCode.F;        // 脱离附身
     // 鼠标位
     public const int MouseBasic = 0;    // 左键：普攻
-    public const int MouseSkill1 = 1;   // 右键：附身发起 / 换身
+    public const int MouseSkill2 = 1;   // 右键：附身怪技能
+    public const int MouseSkill1 = 2;   // 中键：附身发起 / 换身
+
 
     /// <summary>按 CommandButtons 位返回中文键位显示名（UI 动态显示用）。</summary>
     public static string GlyphOf(CommandButtons button)
@@ -23,8 +24,8 @@ public static class GameInputBindings
         switch (button)
         {
             case CommandButtons.Basic: return "左键";
-            case CommandButtons.Skill1: return "右键";
-            case CommandButtons.Skill2: return Skill2.ToString();
+            case CommandButtons.Skill1: return "中键";
+            case CommandButtons.Skill2: return "右键";
             case CommandButtons.Mobility: return "空格";
             case CommandButtons.Skill3: return Skill3.ToString();
             case CommandButtons.Release: return Release.ToString();
@@ -39,11 +40,12 @@ public static class GameInputBindings
         {
             case CommandButtons.Basic: return Input.GetMouseButtonDown(MouseBasic);
             case CommandButtons.Skill1: return Input.GetMouseButtonDown(MouseSkill1);
-            case CommandButtons.Skill2: return Input.GetKeyDown(Skill2);
+            case CommandButtons.Skill2: return Input.GetMouseButtonDown(MouseSkill2);
             case CommandButtons.Mobility: return Input.GetKeyDown(Mobility);
             case CommandButtons.Skill3: return Input.GetKeyDown(Skill3);
             case CommandButtons.Release: return Input.GetKeyDown(Release);
             default: return false;
         }
     }
+
 }

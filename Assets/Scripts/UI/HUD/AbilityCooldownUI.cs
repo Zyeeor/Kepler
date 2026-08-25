@@ -3,8 +3,9 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Displays cooldown icons: basic attack (left-click), possessed skill (Q), and possession (right-click).
-/// Each icon shows a grey overlay whose fill amount represents the remaining cooldown.
+/// Displays cooldown icons: basic attack (left-click), possessed skill (right-click),
+/// and possession (middle-click) or monster mobility (space). Each icon shows a grey overlay.
+
 /// </summary>
 public class AbilityCooldownUI : MonoBehaviour
 {
@@ -20,8 +21,9 @@ public class AbilityCooldownUI : MonoBehaviour
     public Image skillCooldownOverlay;
     public TMP_Text skillKeyHint;
 
-    [Header("Possess Icon")]
+    [Header("Mobility / Possess Icon")]
     public RectTransform possessIconRoot;
+
     public Image possessIconImage;
     public Image possessCooldownOverlay;
     public TMP_Text possessKeyHint;
@@ -44,6 +46,8 @@ public class AbilityCooldownUI : MonoBehaviour
     private PlayerAbility playerSkillAbility;
     private EnemyAbility enemyBasicAbility;
     private EnemyAbility enemySkillAbility;
+    private EnemyAbility enemyMobilityAbility;
+
 
     // 场景默认图标作为配置缺省值；在玩家/怪物状态切换时避免沿用上一个角色的覆盖图。
     private Sprite defaultBasicIcon;
@@ -101,11 +105,12 @@ public class AbilityCooldownUI : MonoBehaviour
 
     void SetupIcons()
     {
-        if (basicKeyHint != null) basicKeyHint.text = TextCatalog.Get("ui.hud.key_left");
-        if (skillKeyHint != null) skillKeyHint.text = TextCatalog.Get("ui.hud.key_q");
-        if (possessKeyHint != null) possessKeyHint.text = TextCatalog.Get("ui.hud.key_right");
+        if (basicKeyHint != null) basicKeyHint.text = GameInputBindings.GlyphOf(CommandButtons.Basic);
+        if (skillKeyHint != null) skillKeyHint.text = GameInputBindings.GlyphOf(CommandButtons.Skill2);
+        if (possessKeyHint != null) possessKeyHint.text = GameInputBindings.GlyphOf(CommandButtons.Skill1);
 
         // Set overlay colors
+
         SetupOverlay(basicCooldownOverlay);
         SetupOverlay(skillCooldownOverlay);
         SetupOverlay(possessCooldownOverlay);
@@ -128,6 +133,8 @@ public class AbilityCooldownUI : MonoBehaviour
         playerSkillAbility = null;
         enemyBasicAbility = null;
         enemySkillAbility = null;
+        enemyMobilityAbility = null;
+
 
         if (trackingPlayer && playerCombat != null)
         {
@@ -158,6 +165,16 @@ public class AbilityCooldownUI : MonoBehaviour
                 if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
             }
             else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }
+
+            if (currentEnemy.mobilityAbilities.Count > 0)
+            {
+                enemyMobilityAbility = currentEnemy.mobilityAbilities[0].ability;
+                ApplyMonsterIcon(currentEnemy.sinType, MonsterSkillIconConfig.MonsterSlot.Mobility, possessIconImage);
+                if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(true);
+                if (possessKeyHint != null) possessKeyHint.text = GameInputBindings.GlyphOf(CommandButtons.Mobility);
+            }
+            else { if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(false); }
+
         }
         else
         {
@@ -165,15 +182,14 @@ public class AbilityCooldownUI : MonoBehaviour
             if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
         }
 
-        // Possess icon: always show in soul state, hide while possessing
-        var pm2 = PossessionManager.Instance;
-        bool possessing2 = pm2 != null && pm2.State == PossessionManager.SwitchState.Possessing;
-        bool showPossess = !trackingPlayer || !possessing2;
+        // Soul state keeps the possession icon; possessed state already assigns the same slot to mobility.
         if (trackingPlayer)
+        {
             ApplyPlayerIcon(MonsterSkillIconConfig.PlayerSlot.Possess, possessIconImage);
-        else if (currentEnemy != null)
-            ApplyMonsterIcon(currentEnemy.sinType, MonsterSkillIconConfig.MonsterSlot.Possess, possessIconImage);
-        if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(showPossess);
+            if (possessKeyHint != null) possessKeyHint.text = GameInputBindings.GlyphOf(CommandButtons.Skill1);
+            if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(true);
+        }
+
     }
 
     void ApplyPlayerIcon(MonsterSkillIconConfig.PlayerSlot slot, Image target)
@@ -185,6 +201,8 @@ public class AbilityCooldownUI : MonoBehaviour
             target.sprite = icon;
         else
             target.sprite = fallback;
+        target.color = readyColor;
+
     }
 
     void ApplyMonsterIcon(SinType sin, MonsterSkillIconConfig.MonsterSlot slot, Image target)
@@ -192,11 +210,19 @@ public class AbilityCooldownUI : MonoBehaviour
         if (target == null) return;
         Sprite fallback = GetDefaultIcon(target);
         Sprite icon;
-        if (iconConfig != null && iconConfig.TryGetMonsterIcon(sin, slot, out icon))
+        Color color;
+        if (iconConfig != null && iconConfig.TryGetMonsterIcon(sin, slot, out icon, out color))
+        {
             target.sprite = icon;
+            target.color = color;
+        }
         else
+        {
             target.sprite = fallback;
+            target.color = readyColor;
+        }
     }
+
 
     Sprite GetDefaultIcon(Image target)
     {
@@ -226,13 +252,24 @@ public class AbilityCooldownUI : MonoBehaviour
             skillCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
         }
 
-        // Possess cooldown（读 PM 的 CooldownRemaining）
+        // Soul state reads possession cooldown; possessed state reads mobility cooldown.
         if (possessCooldownOverlay != null && possessIconRoot != null && possessIconRoot.gameObject.activeSelf)
         {
-            var pm3 = PossessionManager.Instance;
-            float total = pm3 != null ? pm3.possessCooldown : 3f;
-            float remaining = pm3 != null ? pm3.CooldownRemaining : 0f;
+            float total = 0f;
+            float remaining = 0f;
+            if (trackingPlayer)
+            {
+                var pm3 = PossessionManager.Instance;
+                total = pm3 != null ? pm3.possessCooldown : 3f;
+                remaining = pm3 != null ? pm3.CooldownRemaining : 0f;
+            }
+            else if (enemyMobilityAbility != null)
+            {
+                total = enemyMobilityAbility.EffectiveCooldown;
+                remaining = enemyMobilityAbility.CurrentCooldown;
+            }
             possessCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
         }
+
     }
 }

@@ -2,15 +2,18 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Resolves right-click possession targets and delegates the state transition to PossessionManager.
+/// Resolves middle-click possession targets and delegates the state transition to PossessionManager.
+
 /// This keeps input diagnostics and raycast policy separate from possession state changes.
 /// </summary>
 public class PossessionBehavior : MonoBehaviour
 {
     [Header("Targeting")]
-    [Tooltip("Maximum right-click possession targeting distance.")]
+    [Tooltip("Maximum middle-click possession targeting distance.")]
+
     public float maxTargetDistance = 100f;
-    [Tooltip("Log every right-click target resolution attempt for possession debugging.")]
+    [Tooltip("Log every middle-click target resolution attempt for possession debugging.")]
+
     public bool enableDebugLogs = true;
 
     private PossessionManager manager;

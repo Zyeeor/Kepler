@@ -5,7 +5,8 @@ using TMPro;
 
 /// <summary>
 /// 附身 HUD（屏内面板）。
-/// 仅负责：显示附身怪名称 + 能力槽提示 (Q/W/R/E 文字)。
+/// 仅负责：显示附身怪名称 + 普攻、技能、位移的键位提示文字。
+
 /// HP 槽已统一到 PlayerHealth.healthSlider（灵魂态显示 Soul 池、附身态显示 Body 池，
 /// 由 PlayerHealth.BindActor / UnbindActor 在 PossessionManager 钩子里切换数据源）。
 /// 怪物头顶 World Space HP 条由 MonsterActor.LateUpdate 用 !isPossessed 自动屏蔽。
@@ -38,9 +39,11 @@ public class PossessionHUD : MonoBehaviour
         actor.FillAbilitySlots(abilitySlots);
         string basicName = abilitySlots.Count > 0 ? abilitySlots[0].Name : TextCatalog.Get("ui.hud.basic_default");
         string skillName = abilitySlots.Count > 1 ? abilitySlots[1].Name : TextCatalog.Get("ui.hud.skill_default");
-        if (abilityQText != null) abilityQText.text = string.Format(TextCatalog.Get("ui.hud.attack"), basicName);
-        if (abilityWText != null) abilityWText.text = string.Format(TextCatalog.Get("ui.hud.skill"), skillName);
-        if (abilityRText != null) abilityRText.text = TextCatalog.Get("ui.hud.possess");
+        string mobilityName = abilitySlots.Count > 2 ? abilitySlots[2].Name : "位移";
+        if (abilityQText != null) abilityQText.text = GameInputBindings.GlyphOf(CommandButtons.Basic) + " - " + basicName;
+        if (abilityWText != null) abilityWText.text = GameInputBindings.GlyphOf(CommandButtons.Skill2) + " - " + skillName;
+        if (abilityRText != null) abilityRText.text = GameInputBindings.GlyphOf(CommandButtons.Mobility) + " - " + mobilityName;
+
         // 委托 PlayerHealth 切换 HP 数据源（灵魂态由它显示 Soul 池；附身态切换到 Body 池）
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.BindActor(actor);
     }

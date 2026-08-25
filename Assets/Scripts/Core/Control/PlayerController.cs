@@ -166,11 +166,12 @@ public class PlayerController : MonoBehaviour, IController
         }
 
         // 按钮位
-        if (Input.GetMouseButtonDown(0)) cmd.Pressed |= CommandButtons.Basic;
-        if (Input.GetMouseButtonDown(1)) cmd.Pressed |= CommandButtons.Skill1; // right-click possession / body switch
-        if (Input.GetKeyDown(KeyCode.Q)) cmd.Pressed |= CommandButtons.Skill2;  // possessed-monster skill
-        if (Input.GetKeyDown(KeyCode.Space)) cmd.Pressed |= CommandButtons.Mobility;
-        if (Input.GetKeyDown(KeyCode.F)) cmd.Pressed |= CommandButtons.Release; // F=脱离
+        if (GameInputBindings.GetDown(CommandButtons.Basic)) cmd.Pressed |= CommandButtons.Basic;
+        if (GameInputBindings.GetDown(CommandButtons.Skill2)) cmd.Pressed |= CommandButtons.Skill2;
+        if (GameInputBindings.GetDown(CommandButtons.Skill1)) cmd.Pressed |= CommandButtons.Skill1;
+        if (GameInputBindings.GetDown(CommandButtons.Mobility)) cmd.Pressed |= CommandButtons.Mobility;
+        if (GameInputBindings.GetDown(CommandButtons.Release)) cmd.Pressed |= CommandButtons.Release;
+
         // 命令产出广播（教学输入事实转译；仅按钮按下帧触发，struct 按值传递零 GC）
         if (cmd.Pressed != CommandButtons.None)
             OnCommandProduced?.Invoke(cmd);

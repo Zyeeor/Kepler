@@ -3,7 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// Scene-level possession orchestrator. Possession switches the shared PlayerController
-/// from SoulActor to MonsterActor, while PossessionBehavior resolves right-click targets.
+/// from SoulActor to MonsterActor, while PossessionBehavior resolves middle-click targets.
+
 /// </summary>
 public class PossessionManager : SceneSingleton<PossessionManager>
 {
@@ -145,7 +146,8 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     {
         if (lastPossessionInputFrame == Time.frameCount) return false;
         lastPossessionInputFrame = Time.frameCount;
-        Debug.Log("[PossessionInput] Right-click received by " + source + ".");
+        Debug.Log("[PossessionInput] Middle-click received by " + source + ".");
+
         return TryRequestPossess(aimRay);
     }
 

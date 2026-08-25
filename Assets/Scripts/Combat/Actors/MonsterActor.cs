@@ -307,7 +307,8 @@ public class MonsterActor : Actor
     [Header("Abilities (auto-discovered from children)")]
     [Tooltip("Basic abilities = left-click when possessing this enemy")]
     public List<BasicAbilityEntry> basicAbilities = new List<BasicAbilityEntry>();
-    [Tooltip("Skill abilities = Q when possessing this enemy")]
+    [Tooltip("Skill abilities = right-click when possessing this enemy")]
+
     public List<SkillAbilityEntry> skillAbilities = new List<SkillAbilityEntry>();
     [Tooltip("Mobility abilities = Space when possessing this enemy")]
     public List<MobilityAbilityEntry> mobilityAbilities = new List<MobilityAbilityEntry>();
@@ -2396,9 +2397,10 @@ public class MonsterActor : Actor
     public override string DisplayName => displayName;
 
     /// <summary>
-    /// AI keeps Basic/Skill1 semantics. A possessed monster uses left-click Basic, Q Skill,
-    /// Space mobility, right-click corpse switching, and F release. Bullet Time starts automatically after possession.
+    /// AI keeps Basic/Skill1 semantics. A possessed monster uses left-click Basic, right-click Skill,
+    /// Space mobility, middle-click corpse switching, and F release. Bullet Time starts automatically after possession.
     /// </summary>
+
     protected override void ExecuteButtons(in ControlCommand cmd)
     {
         if ((cmd.Pressed & CommandButtons.Basic) != 0) PlayerTriggerBasicAttack();
@@ -2423,9 +2425,11 @@ public class MonsterActor : Actor
         if ((cmd.Pressed & CommandButtons.Skill1) != 0)
         {
             if (manager == null)
-                Debug.LogWarning("[PossessionInput] Ignored body-switch right-click: PossessionManager is missing.");
+                Debug.LogWarning("[PossessionInput] Ignored body-switch middle-click: PossessionManager is missing.");
+
             else if (PlayerController.Instance == null)
-                Debug.LogWarning("[PossessionInput] Ignored body-switch right-click: PlayerController is missing.");
+                Debug.LogWarning("[PossessionInput] Ignored body-switch middle-click: PlayerController is missing.");
+
             else
             {
                 manager.TryRequestPossessFromInput(PlayerController.Instance.GetMouseRay(), "MonsterActor");
