@@ -8647,7 +8647,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 300, y: 20.000002}
+  m_AnchoredPosition: {x: 300, y: 19.999945}
   m_SizeDelta: {x: 160, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &678916214
@@ -9247,6 +9247,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 30
+  continuousSpawnMaxCount: 10
   minSpawnDistanceToPlayer: 20
   maxSpawnDistanceToPlayer: 50
   spawnHeightY: 0
@@ -19576,7 +19577,7 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
-  useFormalFlow: 0
+  useFormalFlow: 1
   bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
