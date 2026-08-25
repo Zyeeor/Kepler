@@ -282,9 +282,16 @@ MonoBehaviour:
   heavyPullRatio: 0.25
   aimTurnSpeed: 720
   stormSpeedEffect: {fileID: 11400000, guid: 5fcd4b49b1b04320bd7031fd0fdadd22, type: 2}
-  stormVfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
+  stormVfxPrefab: {fileID: 7850363426660616641, guid: 1e07b28c9c87e7c40992d5cadc5d3029,
     type: 3}
   stormVfxLifetimePadding: 0.25
+  modelToDisable: {fileID: 0}
+  stormModelPrefab: {fileID: 711029697525845725, guid: 53c05fe0ca1c4aa4ea2648e2e342e7bc,
+    type: 3}
+  stormModelSpawnPoint: {fileID: 0}
+  stormModelTransformOffset: {x: 0, y: 0, z: 0}
+  stormModelScale: {x: 1, y: 1, z: 1}
+  stormModelClockwiseSpinSpeed: 360
 --- !u!1 &1378740239629381371
 GameObject:
   m_ObjectHideFlags: 0
@@ -380,10 +387,19 @@ MonoBehaviour:
   absorbPerHand: 100
   absorbPerHandWithCard: 60
   guardEffect: {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
-  guardHandVfxPrefab: {fileID: 0}
+  leftGuardHandVfxPrefab: {fileID: 0}
+  rightGuardHandVfxPrefab: {fileID: 0}
   absorbVfxPrefab: {fileID: 0}
   convertVfxPrefab: {fileID: 0}
   convertVfxDuration: 0.8
+  guardHandCenter: {fileID: 0}
+  guardHandSideOffset: 0.55
+  guardHandForwardOffset: 0.6
+  guardHandHeightOffset: 0.8
+  guardHandOrbitSweepAngle: 180
+  guardHandOrbitDuration: 0.75
+  guardHandScaleUpDuration: 0.25
+  guardHandInitialScale: 0.2
 --- !u!1 &1717812195661719768
 GameObject:
   m_ObjectHideFlags: 0
@@ -480,6 +496,8 @@ MonoBehaviour:
   projectileHeight: 2
   projectileSpeed: 20
   maxRange: 15
+  bossProjectileScaleMultiplier: 1.5
+  bossPatternCooldown: 6
   impactVfxPrefab: {fileID: 246936507347790118, guid: 6d995a367a9261d47917272ca396605a,
     type: 3}
   impactVfxDuration: 1
@@ -920,6 +938,8 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 1.5
   hitStateDuration: 0.12
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}
   healthCanvas: {fileID: 0}
   showHealthBar: 1
@@ -969,6 +989,14 @@ MonoBehaviour:
   normalDamageMultiplier: 1.65
   minimumEscortCount: 3
   escortRefreshSeconds: 18
+  bossCombatScaleMultiplier: 2
+  teleportFarTriggerDistance: 16
+  teleportEmergencyDistance: 24
+  teleportFarTargetDelay: 1.2
+  voidWalkInterval: 5
+  voidWalkMinPlayerDistance: 5
+  voidWalkPreferredPlayerDistance: 5
+  voidWalkMaxPlayerDistance: 6
 --- !u!114 &1052871747340138986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1009,6 +1037,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minPlayerDistance: 5
   preferredDistance: 10
+  maxPlayerDistance: 6
   candidateCount: 10
   clearanceRadius: 1.2
   clearanceHeight: 3.5
@@ -1027,6 +1056,10 @@ MonoBehaviour:
   idleAmplitude: 0.18
   idleFrequency: 1.1
   distortionStrength: 0.25
+  teleportOutDuration: 0.75
+  teleportInDuration: 0.85
+  hitboxRestoreDelay: 0.6
+  departureRiftLifetime: 8
 --- !u!1 &3050673629828137979
 GameObject:
   m_ObjectHideFlags: 0
@@ -1127,6 +1160,8 @@ MonoBehaviour:
   passThroughDuration: 0.08
   untargetableEffect: {fileID: 11400000, guid: dadbe03fe78cb48c2a2456a24b287475, type: 2}
   hideOwnerMeshes: 1
+  bossStrikeRadius: 1.25
+  bossBlinkInterval: 0.55
   activationDisplayA: {fileID: 8680161257192645168, guid: 7576bcb0b248840af8e004111454a76e,
     type: 3}
   activationDisplayB: {fileID: 5117285898771160820, guid: 7576bcb0b248840af8e004111454a76e,
@@ -1746,11 +1781,13 @@ MonoBehaviour:
   chainDelay: 0.08
   followUpDelay: 1
   followUpDamageMult: 1
-  boltVfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
+  boltVfxPrefab: {fileID: 2325348157613586188, guid: 20b6ef1eaf21dfb4cb81e606575c3850,
     type: 3}
   boltVfxPositionOffset: {x: 0, y: 0, z: 0}
   boltVfxRotationOffset: {x: 0, y: -90, z: 90}
-  hitEffectPrefab: {fileID: 1600531901824256160, guid: f4a4b36476c3e424a9c1ddd5405afd74,
+  boltVfxScale: {x: 1, y: 1, z: 1}
+  boltVfxDuration: 0.45
+  hitEffectPrefab: {fileID: 6853901823333428390, guid: 4b412f68c3cf62c4b91c137a3bd3aad5,
     type: 3}
   hitEffectDuration: 0.5
   telegraphPrefab: {fileID: 0}
