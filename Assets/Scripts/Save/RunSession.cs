@@ -55,7 +55,7 @@ public class RunSession : MonoBehaviour
 
     /// <summary>
     /// 阶段转移（集中校验合法边 + 日志 + 广播）。非法转移仅警告不执行。
-    /// 合法边：Opening→Tutorial→Waves↔Choice→Final→Result；Waves/Choice/Final→Failed（打断边）。
+    /// 合法边：Opening→Tutorial→Waves↔Choice→Final→Result；Tutorial→Choice（教学横跨首波，清场后正常进选卡）；Waves/Choice/Final→Failed（打断边）。
     /// </summary>
     public void TransitionTo(RunPhase next)
     {
@@ -77,7 +77,9 @@ public class RunSession : MonoBehaviour
         // Failed 为全局打断边：任意非终态（含直接 Play 场景时的 Opening）均可失败——
         // 玩家可能在开局/教学/波次任意时刻死亡，阶段不可阻塞失败结算。
         { RunPhase.Opening,  new[] { RunPhase.Tutorial, RunPhase.Failed } },
-        { RunPhase.Tutorial, new[] { RunPhase.Waves, RunPhase.Failed } },
+        // 教学横跨 Wave 0：清场选卡需 Tutorial→Choice（缺此边则首波选卡走出 Tutorial→Waves，
+        // 无 Choice→Waves 边，精英 BD 快照上传触发器永不命中首波）。
+        { RunPhase.Tutorial, new[] { RunPhase.Choice, RunPhase.Waves, RunPhase.Failed } },
         { RunPhase.Waves,    new[] { RunPhase.Choice, RunPhase.Final, RunPhase.Failed } },
         { RunPhase.Choice,   new[] { RunPhase.Waves, RunPhase.Failed } },
         { RunPhase.Final,    new[] { RunPhase.Result, RunPhase.Failed } },
