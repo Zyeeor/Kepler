@@ -1223,35 +1223,13 @@ public class MonsterActor : Actor
 
     public virtual void TakeDamage(float amount, bool allowGreedGuardAbsorb)
     {
-        bool tracingBoss = this is BossSevenfoldActor;
-        float incomingAmount = amount;
-        if (tracingBoss)
-            Debug.Log($"[BossDamage] Base settlement received: incoming={incomingAmount:F2}, hp={currentHealth:F1}/{maxHealth:F1}, downed={isDowned}, body={Body}, possessed={isPossessed}, reserve={IsBossBattleReserveBody}, immune={IsDamageImmune(this)}, untargetable={IsUntargetable(this)}", this);
-
-        if (IsBossBattleReserveBody && !bossDamageContext)
-        {
-            if (tracingBoss) Debug.LogWarning("[BossDamage] Blocked in base settlement: reason=BossReserveBodyOutsideBossContext", this);
-            return;
-        }
-        if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned)
-        {
-            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=InvalidBodyState, downed={isDowned}, body={Body}", this);
-            return;
-        }
-        if (IsUntargetable(this) || IsDamageImmune(this))
-        {
-            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=DefenseState, immune={IsDamageImmune(this)}, untargetable={IsUntargetable(this)}", this);
-            return;
-        }
+        if (IsBossBattleReserveBody && !bossDamageContext) return;
+        if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        if (IsUntargetable(this) || IsDamageImmune(this)) return;
         if (Combat != null) amount = Combat.ModifyIncomingDamage(amount);
-        if (amount <= 0f)
-        {
-            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=NonPositiveAfterIncomingModifier, incoming={incomingAmount:F2}, modified={amount:F2}", this);
-            return;
-        }
+        if (amount <= 0f) return;
         if (allowGreedGuardAbsorb && TryGreedGuardAbsorb(amount, environmental: false))
         {
-            if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=GreedGuard, incoming={incomingAmount:F2}, modified={amount:F2}", this);
             FlashDamage();
             return;
         }
@@ -1281,8 +1259,6 @@ public class MonsterActor : Actor
         currentTenacity -= amount;
         FlashDamage();
         UpdateHealthUI();
-        if (tracingBoss)
-            Debug.Log($"[BossDamage] Applied: incoming={incomingAmount:F2}, modified={amount:F2}, hp={currentHealth:F1}/{maxHealth:F1}, tenacity={currentTenacity:F1}/{maxTenacity:F1}", this);
         EnvyMarkTarget.NotifyDamageTaken(this as Enemy, amount);
         if (currentTenacity <= 0)
         {
@@ -1408,28 +1384,14 @@ public class MonsterActor : Actor
 
     public void ApplyOffensiveDamage(MonsterActor target, float amount)
     {
-        bool targetsBoss = target is BossSevenfoldActor;
-        float authoredAmount = amount;
-        if (!CanDamage(target) || amount <= 0f)
-        {
-            if (targetsBoss)
-                Debug.LogWarning($"[BossDamage] Attack rejected before settlement: source={name}({GetType().Name}), authored={authoredAmount:F2}, canDamage={CanDamage(target)}, sourcePossessed={isPossessed}, targetDowned={target.isDowned}, targetBody={target.Body}, targetUntargetable={IsUntargetable(target)}", this);
-            return;
-        }
+        if (!CanDamage(target) || amount <= 0f) return;
         // Lust LU-S06: pulled sources cannot damage the player's Possessed Body during pull + grace.
-        if (LustPullDamageGate.ShouldBlock(this, target))
-        {
-            if (targetsBoss) Debug.LogWarning($"[BossDamage] Attack rejected before settlement: reason=LustPullDamageGate, source={name}, authored={authoredAmount:F2}", this);
-            return;
-        }
+        if (LustPullDamageGate.ShouldBlock(this, target)) return;
         if (Combat != null) amount = Combat.ModifyOutgoingDamage(amount);
-        float afterOutgoingModifier = amount;
         if (isPossessed && PossessionImprintManager.Instance != null)
             amount *= PossessionImprintManager.Instance.GetOutgoingDamageMultiplier(this);
         else if (!isPossessed)
             amount *= Mathf.Max(0f, spawnDamageMultiplier);
-        if (targetsBoss)
-            Debug.Log($"[BossDamage] Attack accepted: source={name}({GetType().Name}), authored={authoredAmount:F2}, afterOutgoing={afterOutgoingModifier:F2}, final={amount:F2}, sourcePossessed={isPossessed}, targetHp={target.currentHealth:F1}/{target.maxHealth:F1}", this);
         target.lastDamageSource = this;
         float healthBefore = target.currentHealth;
         if (target.IsBossBattleReserveBody && target.isPossessed)
@@ -1442,8 +1404,6 @@ public class MonsterActor : Actor
             target.TakeDamage(amount);
         }
         float actualDamage = Mathf.Clamp(healthBefore - target.currentHealth, 0f, amount);
-        if (targetsBoss)
-            Debug.Log($"[BossDamage] Attack result: source={name}, target={target.name}, final={amount:F2}, actual={actualDamage:F2}, hp={healthBefore:F1}->{target.currentHealth:F1}/{target.maxHealth:F1}", this);
         OnDealtDamage(actualDamage);
 
         float totalBurnPercent = 0f;

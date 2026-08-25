@@ -6,13 +6,12 @@ using UnityEngine;
 public sealed class BossSevenfoldActor : Enemy
 {
     public const int AbilityCount = 14;
-    const float DefaultBossMaxHealth = 7777f;
     public bool IsDefeated { get; private set; }
     public bool CanAct { get; private set; }
     public BossCombatBrain CombatBrain { get; private set; }
     public BossAffixAssimilator AffixAssimilator { get; private set; }
     public Transform teleportAnchor;
-    public float baseBossMaxHealth = DefaultBossMaxHealth;
+    public float baseBossMaxHealth = 8000f;
     public float normalDamageMultiplier = 1.65f;
     public int minimumEscortCount = 3;
     public float escortRefreshSeconds = 18f;
@@ -67,7 +66,6 @@ public sealed class BossSevenfoldActor : Enemy
         sinType = SinType.Gluttony;
         isPossessable = false;
         bodyType = BodyType.Boss;
-        baseBossMaxHealth = DefaultBossMaxHealth;
         bossAbilitiesRoot = transform.Find("Abilities");
         base.Awake();
         ApplyPossessionVisualScale(BossCombatScaleMultiplier);
@@ -145,8 +143,6 @@ public sealed class BossSevenfoldActor : Enemy
             if (fx != null) fx.enabled = false;
         foreach (EnemyAbility ability in visualRoot.GetComponentsInChildren<EnemyAbility>(true))
             if (ability != null) ability.enabled = false;
-        foreach (Collider collider in visualRoot.GetComponentsInChildren<Collider>(true))
-            if (collider != null) collider.enabled = false;
     }
 
     public bool HasAllFourteenAbilities
@@ -159,8 +155,8 @@ public sealed class BossSevenfoldActor : Enemy
         isPossessable = false;
         CanAct = false;
         DisableVisualPartBehaviours();
-        currentHealth = baseBossMaxHealth;
-        maxHealth = baseBossMaxHealth;
+        currentHealth = Mathf.Max(baseBossMaxHealth, currentHealth);
+        maxHealth = currentHealth;
         ApplyPossessionVisualScale(BossCombatScaleMultiplier);
         spawnDamageMultiplier *= normalDamageMultiplier;
         DisableMovementAbilities();
@@ -214,7 +210,6 @@ public sealed class BossSevenfoldActor : Enemy
         nextTeleportTime = Time.unscaledTime + voidWalkInterval;
         CanAct = true;
         BossHealthBarUI.ShowFor(this);
-        Debug.Log($"[BossDamage] Combat enabled: hp={currentHealth:F1}/{maxHealth:F1}, phase={CombatPhase}, rootCollidersEnabled={AreRootCollidersEnabled()}", this);
         BossBattleAnnouncementUI.ShowBossBattleStart();
         TrySummonInitialDrone();
     }
@@ -379,18 +374,13 @@ public sealed class BossSevenfoldActor : Enemy
 
     public override void TakeDamage(float amount)
     {
-        TakeDamage(amount, allowGreedGuardAbsorb: true);
+        if (IsTeleporting) return;
+        base.TakeDamage(amount);
     }
 
     public override void TakeDamage(float amount, bool allowGreedGuardAbsorb)
     {
-        if (IsTeleporting)
-        {
-            Debug.LogWarning($"[BossDamage] Blocked before base settlement: reason=Teleporting, incoming={amount:F2}, hp={currentHealth:F1}/{maxHealth:F1}, phase={CombatPhase}, source={DescribeLastDamageSource()}", this);
-            return;
-        }
-
-        Debug.Log($"[BossDamage] Enter settlement: incoming={amount:F2}, hp={currentHealth:F1}/{maxHealth:F1}, phase={CombatPhase}, allowGuard={allowGreedGuardAbsorb}, source={DescribeLastDamageSource()}, canAct={CanAct}, rootCollidersEnabled={AreRootCollidersEnabled()}", this);
+        if (IsTeleporting) return;
         base.TakeDamage(amount, allowGreedGuardAbsorb);
     }
 
@@ -432,22 +422,6 @@ public sealed class BossSevenfoldActor : Enemy
         if (rootColliders == null) rootColliders = GetComponents<Collider>();
         for (int i = 0; i < rootColliders.Length; i++)
             if (rootColliders[i] != null) rootColliders[i].enabled = enabled;
-        Debug.Log($"[BossDamage] Root colliders set enabled={enabled}, active={AreRootCollidersEnabled()}, teleporting={IsTeleporting}", this);
-    }
-
-    bool AreRootCollidersEnabled()
-    {
-        if (rootColliders == null) rootColliders = GetComponents<Collider>();
-        for (int i = 0; i < rootColliders.Length; i++)
-            if (rootColliders[i] != null && rootColliders[i].enabled) return true;
-        return false;
-    }
-
-    string DescribeLastDamageSource()
-    {
-        return lastDamageSource != null
-            ? $"{lastDamageSource.name}({lastDamageSource.GetType().Name})"
-            : "<none>";
     }
 
     protected override void Die()

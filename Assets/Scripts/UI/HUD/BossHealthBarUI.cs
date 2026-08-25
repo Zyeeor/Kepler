@@ -11,7 +11,6 @@ public sealed class BossHealthBarUI : MonoBehaviour
     BossSevenfoldActor boss;
     GameObject panel;
     Image fill;
-    float lastLoggedHealth = float.NaN;
 
     public static void ShowFor(BossSevenfoldActor target)
     {
@@ -40,16 +39,13 @@ public sealed class BossHealthBarUI : MonoBehaviour
     void Bind(BossSevenfoldActor target)
     {
         boss = target;
-        lastLoggedHealth = float.NaN;
         if (panel != null) panel.SetActive(true);
-        Debug.Log($"[BossHealth] Bound UI to {boss.name}, hp={boss.currentHealth:F1}/{boss.maxHealth:F1}", this);
         Refresh();
     }
 
     void Hide()
     {
         boss = null;
-        lastLoggedHealth = float.NaN;
         if (panel != null) panel.SetActive(false);
     }
 
@@ -66,15 +62,7 @@ public sealed class BossHealthBarUI : MonoBehaviour
     void Refresh()
     {
         if (boss == null || fill == null) return;
-        float healthFraction = boss.maxHealth > 0f ? Mathf.Clamp01(boss.currentHealth / boss.maxHealth) : 0f;
-        fill.fillAmount = healthFraction;
-        fill.rectTransform.anchorMax = new Vector2(healthFraction, 1f);
-        fill.enabled = healthFraction > 0f;
-        if (float.IsNaN(lastLoggedHealth) || !Mathf.Approximately(lastLoggedHealth, boss.currentHealth))
-        {
-            Debug.Log($"[BossHealth] UI refreshed: hp={boss.currentHealth:F1}/{boss.maxHealth:F1}, fill={healthFraction:F4}, panelActive={panel != null && panel.activeSelf}, fillWidth={fill.rectTransform.rect.width:F1}", this);
-            lastLoggedHealth = boss.currentHealth;
-        }
+        fill.fillAmount = boss.maxHealth > 0f ? Mathf.Clamp01(boss.currentHealth / boss.maxHealth) : 0f;
     }
 
     void CreateBar()
@@ -97,24 +85,10 @@ public sealed class BossHealthBarUI : MonoBehaviour
         backgroundRect.offsetMin = new Vector2(106f, -barHeight * 0.5f);
         backgroundRect.offsetMax = new Vector2(-6f, barHeight * 0.5f);
 
-        Image bottomBorder = CreateImage(background.transform, "BottomBorder", new Color(0.25f, 0.008f, 0.025f, 1f));
-        RectTransform borderRect = bottomBorder.rectTransform;
-        borderRect.anchorMin = new Vector2(0f, 0f);
-        borderRect.anchorMax = new Vector2(1f, 0f);
-        borderRect.pivot = new Vector2(0.5f, 1f);
-        borderRect.anchoredPosition = new Vector2(0f, -2f);
-        borderRect.sizeDelta = new Vector2(0f, 6f);
-
-        Image borderHighlight = CreateImage(bottomBorder.transform, "WhiteHighlight", new Color(1f, 0.9f, 0.9f, 0.9f));
-        RectTransform highlightRect = borderHighlight.rectTransform;
-        highlightRect.anchorMin = new Vector2(0f, 1f);
-        highlightRect.anchorMax = new Vector2(1f, 1f);
-        highlightRect.pivot = new Vector2(0.5f, 1f);
-        highlightRect.anchoredPosition = Vector2.zero;
-        highlightRect.sizeDelta = new Vector2(0f, 1f);
-
         fill = CreateImage(background.transform, "Fill", new Color(0.85f, 0.025f, 0.08f, 1f));
-        fill.type = Image.Type.Simple;
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        fill.fillOrigin = 0;
         fill.rectTransform.anchorMin = Vector2.zero;
         fill.rectTransform.anchorMax = Vector2.one;
         fill.rectTransform.offsetMin = new Vector2(4f, 4f);
