@@ -321,6 +321,8 @@ public class MonsterActor : Actor
     private bool eliteRuntimeApplied;
     private Vector3 healthBarBaseWorldPosition;
     private Vector3 healthBarBaseWorldScale = Vector3.one;
+    private Vector3 healthBarBaseLocalPosition;
+    private Vector3 healthBarBaseLocalScale = Vector3.one;
     private Vector3 healthBarBaseCenterOffset;
     private float healthBarBaseHeightOffset;
     private bool healthBarLayoutCaptured;
@@ -1664,6 +1666,8 @@ public class MonsterActor : Actor
 
         healthBarBaseWorldPosition = healthCanvas.transform.position;
         healthBarBaseWorldScale = healthCanvas.transform.lossyScale;
+        healthBarBaseLocalPosition = healthCanvas.transform.localPosition;
+        healthBarBaseLocalScale = healthCanvas.transform.localScale;
         if (TryGetBodyVisualBounds(out Bounds bounds))
         {
             healthBarBaseCenterOffset = healthBarBaseWorldPosition - bounds.center;
@@ -1688,8 +1692,11 @@ public class MonsterActor : Actor
 
         if (scale <= 1.0001f)
         {
-            healthCanvas.transform.position = healthBarBaseWorldPosition;
-            SetHealthBarWorldScale(healthBarBaseWorldScale);
+            // Pool reset moves the actor root after this method runs. Restore the
+            // authored local layout so ordinary health bars continue following the
+            // newly spawned actor instead of being pinned to the old world position.
+            healthCanvas.transform.localPosition = healthBarBaseLocalPosition;
+            healthCanvas.transform.localScale = healthBarBaseLocalScale;
             lastHealthBarLayoutScale = scale;
             return;
         }
@@ -1707,7 +1714,10 @@ public class MonsterActor : Actor
         }
         else
         {
-            healthCanvas.transform.position = healthBarBaseWorldPosition + Vector3.up * Mathf.Max(0.2f, scale - 1f);
+            Vector3 authoredPosition = healthCanvas.transform.parent != null
+                ? healthCanvas.transform.parent.TransformPoint(healthBarBaseLocalPosition)
+                : healthBarBaseWorldPosition;
+            healthCanvas.transform.position = authoredPosition + Vector3.up * Mathf.Max(0.2f, scale - 1f);
         }
 
         SetHealthBarWorldScale(healthBarBaseWorldScale * scale);
