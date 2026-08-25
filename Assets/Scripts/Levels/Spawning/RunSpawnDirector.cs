@@ -128,7 +128,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         GameObject prefab = FindNormalPrefabForSin(sin);
         MonsterSpawner spawner = MonsterSpawner.Instance;
         if (prefab == null || spawner == null) return null;
-        if (!spawner.TryGetWaveSpawnPosition(out Vector3 position)) return null;
+        if (!spawner.TryGetWaveSpawnPosition(sin, out Vector3 position)) return null;
 
         MonsterActor monster = spawner.SpawnWaveMonster(prefab, position);
         if (monster == null) return null;
@@ -295,7 +295,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (prefab == null) return false;
         successfulEchoTimes.Add(Time.unscaledTime);
         float delay = Mathf.Lerp(echoMinDelay, echoMaxDelay, fatal.killer.AiRandomValue());
-        SpawnRequest request = new SpawnRequest(SpawnOrigin.KillEcho, CurrentTier, fatal.actor.transform.position, 0f,
+        SpawnRequest request = new SpawnRequest(SpawnOrigin.KillEcho, CurrentTier, fatal.actor.sinType,
+            fatal.actor.transform.position, 0f,
             Time.unscaledTime + echoExpirySeconds);
         PendingEcho pending = new PendingEcho { prefab = prefab, request = request, readyAt = Time.unscaledTime + delay };
         int insertAt = pendingEchoes.Count;
@@ -317,7 +318,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         Vector3 position = explicitPosition;
         if (request.origin == SpawnOrigin.KillEcho)
         {
-            if (!spawner.TryGetKillEchoSpawnPosition(request.avoidPosition, out position)) return false;
+            if (!spawner.TryGetKillEchoSpawnPosition(request.sin, request.avoidPosition, out position)) return false;
         }
         else if (position == default(Vector3) && !spawner.TryGetLegacyWaveSpawnPosition(out position)) return false;
         if (request.minDistanceFromAvoid > 0f && (position - request.avoidPosition).sqrMagnitude < request.minDistanceFromAvoid * request.minDistanceFromAvoid)

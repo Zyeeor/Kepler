@@ -22,15 +22,23 @@ public readonly struct SpawnRequest
 {
     public readonly SpawnOrigin origin;
     public readonly int difficultyTier;
+    public readonly SinType sin;
     public readonly Vector3 avoidPosition;
     public readonly float minDistanceFromAvoid;
     public readonly float expiryTime;
 
     public SpawnRequest(SpawnOrigin origin, int difficultyTier, Vector3 avoidPosition,
         float minDistanceFromAvoid, float expiryTime)
+        : this(origin, difficultyTier, SinType.None, avoidPosition, minDistanceFromAvoid, expiryTime)
+    {
+    }
+
+    public SpawnRequest(SpawnOrigin origin, int difficultyTier, SinType sin, Vector3 avoidPosition,
+        float minDistanceFromAvoid, float expiryTime)
     {
         this.origin = origin;
         this.difficultyTier = difficultyTier;
+        this.sin = sin;
         this.avoidPosition = avoidPosition;
         this.minDistanceFromAvoid = minDistanceFromAvoid;
         this.expiryTime = expiryTime;

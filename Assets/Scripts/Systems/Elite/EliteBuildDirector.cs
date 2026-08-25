@@ -395,7 +395,7 @@ public class EliteBuildDirector : MonoBehaviour
         }
         Vector3 pos;
         bool hasPosition = useScreenEdgePosition
-            ? spawner.TryGetWaveSpawnPosition(out pos)
+            ? spawner.TryGetWaveSpawnPosition(entry.sin, out pos)
             : spawner.TryGetLegacyWaveSpawnPosition(out pos);
         if (!hasPosition)
         {

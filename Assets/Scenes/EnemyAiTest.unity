@@ -2679,8 +2679,8 @@ MonoBehaviour:
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   spawnCycleSeconds: 60
   tideStartSeconds: 30
-  tideDurationSeconds: 10
-  tideSpawnInterval: 2
+  tideDurationSeconds: 9
+  tideSpawnInterval: 3
   tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 40
   eliteCountPerCycle: 1
@@ -10344,6 +10344,8 @@ MonoBehaviour:
   spawnHeightY: 0
   minSpawnPointSeparation: 6
   killEchoScreenPadding: 0.75
+  screenEdgeSpawnOffset: 2
+  spawnSectorOrder: 01000000020000000300000004000000050000000600000007000000
   upkeepInterval: 0.25
   showGizmos: 1
   logSpawns: 1
@@ -10710,8 +10712,8 @@ MonoBehaviour:
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   spawnCycleSeconds: 60
   tideStartSeconds: 30
-  tideDurationSeconds: 10
-  tideSpawnInterval: 2
+  tideDurationSeconds: 9
+  tideSpawnInterval: 3
   tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 40
   eliteCountPerCycle: 1
