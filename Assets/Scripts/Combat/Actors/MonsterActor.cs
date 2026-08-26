@@ -97,7 +97,7 @@ public class MonsterActor : Actor
     public void InitAiRng(int salt)
     {
         AiRng = SeedSystem.CreateFlow(SeedSystem.DomainAI, salt);
-        var ai = GetComponent<AIController>();
+        AIController ai = GetCachedAiController();
         if (ai != null) ai.ResetDecisionPhase();
     }
 
@@ -298,8 +298,14 @@ public class MonsterActor : Actor
     private const float CorpseGroundAlignmentDuration = 0.5f;
     private Vector3 initialLocalPosition;
     private Quaternion initialLocalRotation;
+    private AIController aiController;
+    private GluttonyBodyState gluttonyBodyState;
+    private BossReserveCorpseVisualFx reserveCorpseVisual;
     private Animator bodyAnimator;
     private AnimatorUpdateMode originalAnimatorUpdateMode;
+    private Animator[] cachedAnimators;
+    private bool animatorCacheInitialized;
+    private Camera billboardCamera;
     private readonly Dictionary<Animator, AnimatorUpdateMode> possessedAnimatorUpdateModes = new Dictionary<Animator, AnimatorUpdateMode>();
     private LineRenderer detectRangeRing;
     private LineRenderer basicRangeRing;
@@ -410,6 +416,10 @@ public class MonsterActor : Actor
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
+        aiController = GetComponent<AIController>();
+        if (sinType == SinType.Gluttony)
+            gluttonyBodyState = GetComponent<GluttonyBodyState>();
+        reserveCorpseVisual = GetComponent<BossReserveCorpseVisualFx>();
         meshRenderer = GetComponent<Renderer>();
         if (visualScaleRoot != null)
         {
@@ -422,6 +432,7 @@ public class MonsterActor : Actor
         }
         bodyAnimator = GetComponent<Animator>();
         if (bodyAnimator != null) originalAnimatorUpdateMode = bodyAnimator.updateMode;
+        CacheAnimators();
         initialLocalPosition = transform.localPosition;
         initialLocalRotation = transform.localRotation;
         corpseFadeBlock = new MaterialPropertyBlock();
@@ -602,8 +613,29 @@ public class MonsterActor : Actor
     public void BeginImmediateChase()
     {
         RefreshPlayerTarget();
-        AIController ai = GetComponent<AIController>();
+        AIController ai = GetCachedAiController();
         if (ai != null) ai.BeginImmediateChase();
+    }
+
+    private AIController GetCachedAiController()
+    {
+        if (aiController == null) aiController = GetComponent<AIController>();
+        return aiController;
+    }
+
+    private BossReserveCorpseVisualFx GetCachedReserveCorpseVisual()
+    {
+        if (reserveCorpseVisual == null) reserveCorpseVisual = GetComponent<BossReserveCorpseVisualFx>();
+        return reserveCorpseVisual;
+    }
+
+    private GluttonyBodyState GetCachedGluttonyBodyState()
+    {
+        // Gluttony abilities can add this component lazily from their first activation. Keep
+        // the legacy per-frame lookup until it appears, then retain the component permanently.
+        if (gluttonyBodyState == null && sinType == SinType.Gluttony)
+            gluttonyBodyState = GetComponent<GluttonyBodyState>();
+        return gluttonyBodyState;
     }
 
     bool BasicListContains(EnemyAbility a)
@@ -692,7 +724,7 @@ public class MonsterActor : Actor
                 {
                     Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
                     float turnRate = 12f;
-                    GluttonyBodyState gluttonyState = GetComponent<GluttonyBodyState>();
+                    GluttonyBodyState gluttonyState = GetCachedGluttonyBodyState();
                     if (gluttonyState != null && gluttonyState.SmallCatTurnMult > 0.01f)
                         turnRate *= gluttonyState.SmallCatTurnMult;
                     transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, movementDeltaTime * turnRate);
@@ -972,8 +1004,52 @@ public class MonsterActor : Actor
     /// </summary>
     public Animator GetActiveAnimator()
     {
-        if (bodyAnimator != null) return bodyAnimator;
-        return GetComponentInChildren<Animator>(false);
+        // Preserve the legacy root Animator contract: callers may drive it even when the
+        // component/object is disabled. Child-model swaps use the active hierarchy fallback.
+        if (bodyAnimator != null)
+            return bodyAnimator;
+
+        Animator[] animators = GetCachedAnimators();
+        for (int i = 0; i < animators.Length; i++)
+        {
+            Animator animator = animators[i];
+            if (animator != null && animator.gameObject.activeInHierarchy)
+                return animator;
+        }
+        return null;
+    }
+
+    private void CacheAnimators()
+    {
+        cachedAnimators = GetComponentsInChildren<Animator>(true);
+        animatorCacheInitialized = true;
+    }
+
+    private Animator[] GetCachedAnimators()
+    {
+        if (!animatorCacheInitialized || cachedAnimators == null)
+        {
+            CacheAnimators();
+            return cachedAnimators;
+        }
+
+        for (int i = 0; i < cachedAnimators.Length; i++)
+        {
+            if (cachedAnimators[i] == null)
+            {
+                CacheAnimators();
+                break;
+            }
+        }
+        return cachedAnimators;
+    }
+
+    private Camera GetBillboardCamera()
+    {
+        if (billboardCamera == null || !billboardCamera.isActiveAndEnabled
+            || !billboardCamera.CompareTag("MainCamera"))
+            billboardCamera = Camera.main;
+        return billboardCamera;
     }
 
     bool TryTriggerAbilitiesOfType(EnemyAbility.AbilityType t)
@@ -1209,8 +1285,12 @@ public class MonsterActor : Actor
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
 
             // Always face the camera (billboard)
-            if (healthCanvas.gameObject.activeSelf && Camera.main != null)
-                healthCanvas.transform.LookAt(healthCanvas.transform.position + Camera.main.transform.forward, Camera.main.transform.up);
+            if (healthCanvas.gameObject.activeSelf)
+            {
+                Camera camera = GetBillboardCamera();
+                if (camera != null)
+                    healthCanvas.transform.LookAt(healthCanvas.transform.position + camera.transform.forward, camera.transform.up);
+            }
         }
     }
 
@@ -1621,7 +1701,7 @@ public class MonsterActor : Actor
         if (possessed)
         {
             possessedAnimatorUpdateModes.Clear();
-            Animator[] animators = GetComponentsInChildren<Animator>(true);
+            Animator[] animators = GetCachedAnimators();
             for (int i = 0; i < animators.Length; i++)
             {
                 Animator animator = animators[i];
@@ -1776,7 +1856,7 @@ public class MonsterActor : Actor
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
 
-        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         isPossessed = false;
@@ -1905,7 +1985,7 @@ public class MonsterActor : Actor
         isDowned = false;
         isPossessed = false;
         ResetEliteRuntimeState();
-        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         isPossessable = true;
@@ -1962,7 +2042,7 @@ public class MonsterActor : Actor
         if (animator != null) animator.SetBool("IsDowned", false);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
         RefreshPlayerTarget();
-        SetController(GetComponent<AIController>());
+        SetController(GetCachedAiController());
         UpdateHealthUI();
         OnResetForSpawn();
     }
@@ -1975,7 +2055,7 @@ public class MonsterActor : Actor
         StopCorpseGroundAlignment();
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
-        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         bossDamageContext = false;
