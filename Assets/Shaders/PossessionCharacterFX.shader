@@ -25,6 +25,11 @@ Shader "Possession/CharacterFX"
         _SurfaceGlowPulseSpeed ("Surface Glow Pulse Speed", Float) = 0
         _SurfaceGlowPulseAmount ("Surface Glow Pulse Amount", Range(0, 1)) = 0
 
+        [Header(Corpse Outline)]
+        [HDR] _OutlineColor ("Outline Color", Color) = (0, 0, 0, 1)
+        _OutlineIntensity ("Outline Intensity", Range(0, 8)) = 0
+        _OutlineWidth ("Outline Width", Range(0, 0.08)) = 0
+
         [Header(Hit Flash)]
         _HitFlashColor ("Hit Flash Color", Color) = (1, 0.9, 0.9, 1)
         _HitFlashAmount ("Hit Flash Amount", Range(0, 1)) = 0
@@ -42,6 +47,91 @@ Shader "Possession/CharacterFX"
             "Queue" = "AlphaTest"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
+        }
+
+        // The unlit inverted hull is intentionally the first pass so the later lit pass
+        // writes the body's depth over the expanded shell. With intensity 0 this pass
+        // clips immediately and remains inert for every non-corpse use of this shader.
+        Pass
+        {
+            Name "CorpseOutline"
+
+            Blend One One
+            ZWrite Off
+            ZTest LEqual
+            Cull Front
+
+            HLSLPROGRAM
+            #pragma vertex outlineVert
+            #pragma fragment outlineFrag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                half4 _BaseColor;
+                half _BumpScale;
+                half _CorpseFade;
+                half _DissolveAmount;
+                half _DissolveNoiseScale;
+                half _DissolveEdgeWidth;
+                half4 _DissolveEdgeColor;
+                half _DissolveEdgeIntensity;
+                half _DissolveEdgeSpark;
+                half4 _RimColor;
+                half _RimIntensity;
+                half _RimPower;
+                half4 _SurfaceGlowColor;
+                half _SurfaceGlowIntensity;
+                half _SurfaceGlowPulseSpeed;
+                half _SurfaceGlowPulseAmount;
+                half4 _OutlineColor;
+                half _OutlineIntensity;
+                half _OutlineWidth;
+                half4 _HitFlashColor;
+                half _HitFlashAmount;
+                half _Smoothness;
+                half _Metallic;
+            CBUFFER_END
+
+            struct OutlineAttributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct OutlineVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float fogFactor : TEXCOORD1;
+            };
+
+            OutlineVaryings outlineVert(OutlineAttributes input)
+            {
+                OutlineVaryings output;
+                float3 expandedPositionOS = input.positionOS.xyz + normalize(input.normalOS) * _OutlineWidth;
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(expandedPositionOS);
+                output.positionCS = positionInputs.positionCS;
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
+                return output;
+            }
+
+            half4 outlineFrag(OutlineVaryings input) : SV_Target
+            {
+                clip(_OutlineIntensity - 0.001h);
+                half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a * _BaseColor.a;
+                clip(alpha - 0.05h);
+
+                half3 color = _OutlineColor.rgb * _OutlineIntensity;
+                color = MixFog(color, input.fogFactor);
+                return half4(color, 1.0h);
+            }
+            ENDHLSL
         }
 
         Pass
@@ -83,6 +173,9 @@ Shader "Possession/CharacterFX"
                 half _SurfaceGlowIntensity;
                 half _SurfaceGlowPulseSpeed;
                 half _SurfaceGlowPulseAmount;
+                half4 _OutlineColor;
+                half _OutlineIntensity;
+                half _OutlineWidth;
                 half4 _HitFlashColor;
                 half _HitFlashAmount;
                 half _Smoothness;
