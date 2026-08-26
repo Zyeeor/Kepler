@@ -506,7 +506,7 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
-  corpsePossessionWindow: 5
+  corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
   corpseGroundYOffset: 0
@@ -550,21 +550,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 0.9
-  corpseRimColor: {r: 0.12, g: 0.55, b: 1, a: 1}
+  possessionRimColor: {r: 1, g: 1, b: 1, a: 1}
+  possessionRimIntensity: 2.14
+  corpseRimColor: {r: 1, g: 0.87454, b: 0.40566027, a: 1}
   corpseRimIntensity: 1.35
   corpseRimPower: 2
   corpseSurfaceGlowIntensity: 0.1
   corpsePulseSpeed: 1.1
   corpsePulseAmount: 0.12
   corpseMaterialTemplate: {fileID: 0}
-  corpseOutlineColor: {r: 0.15, g: 0.8, b: 1.6, a: 1}
+  corpseOutlineColor: {r: 1.6, g: 0.8008518, b: 0.15078534, a: 1}
   corpseOutlineIntensity: 2.4
-  corpseOutlineWidth: 0.018
+  corpseOutlineWidth: 0.001
   corpseOutlinePulseSpeed: 1.2
   corpseOutlinePulseAmount: 0.18
-  eliteRimColor: {r: 0.55, g: 0.7, b: 0.06, a: 1}
+  eliteRimColor: {r: 0.8805031, g: 0.6097799, b: 0.15228812, a: 1}
   eliteRimIntensity: 0.65
   elitePulseSpeed: 1.7
   elitePulseAmount: 0.18
@@ -574,7 +574,7 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.25
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.2, g: 1.55, b: 0.25, a: 1}
+  dissolveEdgeColor: {r: 1.4980391, g: 1.0554366, b: 0.17023171, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!1 &4160834089309182554
