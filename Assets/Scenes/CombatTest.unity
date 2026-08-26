@@ -1677,7 +1677,6 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.05
   decayInterval: 1
-  bulletTimeDuration: 2
 --- !u!4 &216610167
 Transform:
   m_ObjectHideFlags: 0
@@ -9286,7 +9285,8 @@ MonoBehaviour:
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   shrinePrefab: {fileID: 5758130742685393213, guid: 29441edd9c539b943a3ddeeae892dfac,
     type: 3}
-  firstShrinePrefab: {fileID: 5758130742685393213, guid: 6ec6b0224fd7ff74fb633bc9ab8b4873, type: 3}
+  firstShrinePrefab: {fileID: 5758130742685393213, guid: 6ec6b0224fd7ff74fb633bc9ab8b4873,
+    type: 3}
   shrineCount: 3
   regionTable: []
   fixedAnchors: []
@@ -11629,6 +11629,7 @@ MonoBehaviour:
   healthBarToggleButton: {fileID: 0}
   healthBarToggleText: {fileID: 0}
   buildView: {fileID: 0}
+  buildViewConfig: {fileID: 0}
   bringSoulToMainMenu: 1
   settingsPanel: {fileID: 1731005095}
   confirmDialog: {fileID: 153670386}
@@ -19572,7 +19573,6 @@ MonoBehaviour:
   forceTutorial: 0
   bootToMainMenu: 1
   useFormalFlow: 0
-  bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
