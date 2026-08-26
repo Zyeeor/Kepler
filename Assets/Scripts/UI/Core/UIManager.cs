@@ -117,26 +117,17 @@ public class UIManager : SceneSingleton<UIManager>
         UpdateHealthBarToggleText();
         ApplyCatalogButtonTexts();
 
-        // 构筑界面：场景未配引用时运行期自举挂载，避免改场景
+        // 构筑界面：BuildView 作为可挂载组件由设计者在场景中放置（挂在 UICanvas 下），
+        // 其显示配置直接在该组件的 Inspector 上编辑；组件自身在 Start 中自初始化。
         EnsureBuildView();
     }
 
     void EnsureBuildView()
     {
         if (buildView == null)
-        {
-            // 场景未放置 BuildView 时，自动创建一个（面板由代码生成）。
-            // 构筑按钮为场景静态对象：设计者在 UICanvas 下摆放 BuildButton，BuildView 会按名自发现它。
-            var go = new GameObject("BuildView", typeof(RectTransform));
-            var brt = go.GetComponent<RectTransform>();
-            brt.SetParent(transform, false);
-            brt.anchorMin = Vector2.zero;
-            brt.anchorMax = Vector2.one;
-            brt.offsetMin = Vector2.zero;
-            brt.offsetMax = Vector2.zero;
-            buildView = go.AddComponent<BuildView>();
-        }
-        if (buildView != null) buildView.Initialize();
+            buildView = FindObjectOfType<BuildView>();
+        if (buildView == null)
+            Debug.LogWarning("[UIManager] 场景中未找到 BuildView 组件：请在 UICanvas 下挂载 BuildView 组件以启用构筑界面。");
     }
 
     /// <summary>

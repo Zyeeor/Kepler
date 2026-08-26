@@ -5,62 +5,119 @@ using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
-/// 构筑界面（Build View）：游戏内暂停后查看卡组的统一面板。
-/// 根据当前附身状态三态切换显示内容：
-///   A. 灵魂态（未附身）→ 玩家本局全部已解锁卡（完整构筑）
-///   B. 附身精英怪      → 精英怪自身的构筑（历史 BD 快照）
-///   C. 附身普通怪      → 玩家已解锁、针对该怪物类型的卡
-/// 卡片复用 CoreChoiceCard 预制体渲染为只读模式，经 CardArcLayout 弧形排布。
+/// 显示构筑信息组件（Build View）。
+/// 这是一个自包含组件：把它挂到任意 UI GameObject（如 UICanvas）上，该物体即拥有“显示构筑”的能力；
+/// 所有显示配置（扇形参数、左上角迷你卡条参数、卡牌预制体等）直接在本组件的 Inspector 上编辑。
 ///
-/// 构筑按钮为场景内静态对象：设计者在编辑器里把任意 Button（可带自定义图标/样式）摆到 UICanvas 上，并在本组件的 buildButton 字段指给它即可。面板本身仍由代码生成。
+/// 交互：点按“构筑”按钮循环三态：
+///   0 左上角一排（迷你图标，常驻 HUD，不暂停）
+///   1 半屏扇形放大（CardArcLayout 弧形排布，暂停查看）
+///   2 收回不显示
+/// 卡片复用 CoreChoiceCard 预制体渲染为只读模式（隐藏文本/按钮）。
+///
+/// 构筑按钮为场景内静态对象：设计者在 UICanvas 下摆放一个命名为 BuildButton 的 Button（或把引用拖到 buildButton 字段），
+/// 本组件按名自发现；点击即循环切换显示模式。
 /// </summary>
 public class BuildView : MonoBehaviour
 {
-    [Header("Card Source（缺省回退到 CoreChoiceUI.cardPrefab）")]
+    [Header("卡牌来源（缺省回退到 CoreChoiceUI.cardPrefab）")]
+    [Tooltip("用于渲染每张卡的预制体（只读模式会隐藏其文本/按钮）。留空则自动使用 CoreChoiceUI.cardPrefab。一般不需要改。")]
     [SerializeField] GameObject cardPrefab;
 
     [Header("Build Button（场景中静态摆放，由设计者调整样式/图标）")]
-    [Tooltip("场景中已摆放好的构筑按钮（例如放在暂停键附近、带自定义图标）。点击即打开构筑界面。留空则 UIManager 回退为运行期自动创建一个纯文本按钮。")]
+    [Tooltip("场景中已摆放好的构筑按钮（命名为 BuildButton）。点击循环切换显示模式。也可直接把 Button 拖到这里。")]
     public Button buildButton;
 
-    [Header("Arc Layout（透传给 CardArcLayout）")]
-    public float radius = 1000f;
-    public float maxSpreadDeg = 100f;
-    public float perCardDeg = 16f;
-    public float baseYOffset = 360f;
+    [Header("扇形布局（模式 1：半屏扇形放大，按构筑第二次进入）")]
+    [Tooltip("控制点击构筑后第二次进入的“半屏扇形放大”面板。")]
+    public float radius = 1000f;           // 弧线半径：越大卡片离屏幕中心越远、排得越开
+    public float maxSpreadDeg = 100f;      // 全部卡片的最大总张角（度），限制扇形展开的最大宽度
+    public float perCardDeg = 16f;         // 相邻两张卡之间的夹角（度），即扇形上卡片的“间隔”
+    public float baseYOffset = 360f;       // 扇形整体相对屏幕中心的竖直上移量（像素），调整扇形高低
+    public float scaleMultiplier = 1.6f;   // 扇形模式卡片相对原始卡面的放大倍率
 
-    // 运行期构建的 UI（面板本身由代码生成，仅按钮改为场景静态对象）
-    GameObject panelRoot;
+    [Header("迷你卡条（模式 0：左上角一排，默认常驻 HUD）")]
+    [Tooltip("控制默认左上角常驻的迷你卡条。")]
+    public float miniScale = 0.8f;        // 迷你卡相对原始卡面的缩放（原始卡面约 100×100）；调大卡更大更宽
+    float miniCardW = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
+    float miniCardH = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
+    public float miniSpacing = 10f;        // ★ 迷你卡之间的间隔（像素）。想让模式0卡片排得更松/更紧，调这个值
+    public Vector2 miniAnchor = new Vector2(24f, -24f); // 迷你卡条距屏幕左上角的偏移（X 右移，Y 上移）
+
+    [Header("Debug Toggles（调试开关）")]
+    [Tooltip("没有卡的时候是否显示提示文本（如“尚未获得任何卡片”）。关闭则无卡时什么都不显示。")]
+    public bool showEmptyHint = true;
+    [Tooltip("灵魂态（未附身、CurrentBody 为 null）时是否显示构筑。关闭则灵魂态下不展示任何构筑信息。")]
+    public bool showInSoulState = true;
+
+    // 运行期 UI
+    GameObject panelRoot;                 // 模式 1 的整屏扇形面板
     RectTransform cardParent;
     TMP_Text titleText;
     TMP_Text emptyHint;
     Button closeButton;
     CardArcLayout layout;
 
+    GameObject miniBar;                   // 模式 0 的左上角迷你卡条容器
+    RectTransform miniCardParent;
+    TMP_Text miniEmptyHint;
+
     readonly List<GameObject> cardInstances = new List<GameObject>();
-    bool isOpen = false;
+    int mode = 0;                         // 0=迷你一排 1=扇形放大 2=收回
+    bool paused = false;
+    bool initialized = false;
+
+    const int ModeMini = 0;
+    const int ModeFan = 1;
+    const int ModeHidden = 2;
+
+    void Start()
+    {
+        if (!initialized) Initialize();
+    }
 
     public void Initialize()
     {
+        if (initialized) return;
+        initialized = true;
+
         BuildPanel();
+        BuildMiniBar();
+
         if (buildButton == null)
         {
-            // 场景静态按钮：从 Canvas 根递归按名查找设计者摆放的 BuildButton
-            // （BuildView 挂在 UIManager 下，而 BuildButton 在 UICanvas 下，故需向上找到 Canvas 再搜索）。
+            // BuildView 挂在 UIManager/UICanvas 下，而 BuildButton 在 UICanvas 下，故向上找到 Canvas 再搜索
             var root = GetComponentInParent<Canvas>()?.transform ?? transform.root;
             var btnGO = root != null ? FindDescendant(root, "BuildButton") : null;
             if (btnGO != null) buildButton = btnGO.GetComponent<Button>();
         }
         if (buildButton != null)
         {
-            // 避免重复绑定（Initialize 可能被多次调用）
-            buildButton.onClick.RemoveListener(Show);
-            buildButton.onClick.AddListener(Show);
+            // 按钮在所有模式下都要可点（用于循环切换），故置到 Canvas 最后渲染于最上层
+            buildButton.transform.SetAsLastSibling();
+            buildButton.onClick.RemoveListener(CycleMode);
+            buildButton.onClick.AddListener(CycleMode);
         }
         else
         {
-            Debug.LogWarning("[BuildView] buildButton 未找到：请在 UICanvas 下放置名为 BuildButton 的按钮（可带自定义图标）。");
+            Debug.LogWarning("[BuildView] buildButton 未找到：请在 UICanvas 下放置名为 BuildButton 的按钮（可带自定义图标），或把 Button 拖到本组件的 buildButton 字段。");
         }
+
+        // 卡池变化时，若当前停留在迷你条则实时刷新
+        CardManager.OnEffectUnlocked -= OnCardsChanged;
+        CardManager.OnEffectUnlocked += OnCardsChanged;
+
+        SetMode(ModeMini); // 默认：左上角迷你卡条常驻
+    }
+
+    void OnDestroy()
+    {
+        CardManager.OnEffectUnlocked -= OnCardsChanged;
+    }
+
+    void OnCardsChanged(CardData card)
+    {
+        if (mode == ModeMini) RefreshMini();
     }
 
     /// <summary>在 root 子树中按名递归查找（含自身）。</summary>
@@ -75,6 +132,7 @@ public class BuildView : MonoBehaviour
         return null;
     }
 
+    // ───────────────────────── 模式 1：扇形放大面板 ─────────────────────────
     void BuildPanel()
     {
         panelRoot = new GameObject("BuildPanel", typeof(RectTransform), typeof(Image));
@@ -84,7 +142,7 @@ public class BuildView : MonoBehaviour
         prt.offsetMin = prt.offsetMax = Vector2.zero;
         var bg = panelRoot.GetComponent<Image>();
         bg.color = new Color(0f, 0f, 0f, 0.65f);
-        bg.raycastTarget = true; // 拦截点击，避免穿透到世界
+        bg.raycastTarget = true;
         panelRoot.SetActive(false);
 
         // 标题
@@ -115,7 +173,7 @@ public class BuildView : MonoBehaviour
         if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(emptyHint, FontSlots.Default);
         emptyHint.gameObject.SetActive(false);
 
-        // 卡片容器（屏幕底部居中）
+        // 卡片容器（屏幕底部居中，经 CardArcLayout 弧形排布）
         var cp = new GameObject("CardContainer", typeof(RectTransform)).GetComponent<RectTransform>();
         cp.SetParent(prt, false);
         cp.anchorMin = cp.anchorMax = new Vector2(0.5f, 0f);
@@ -129,9 +187,9 @@ public class BuildView : MonoBehaviour
         layout.perCardDeg = perCardDeg;
         layout.baseYOffset = baseYOffset;
         layout.safeMargin = 40f;
-        layout.scaleMultiplier = 1.5f; // 卡片整体放大到原始基准的 1.5 倍
+        layout.scaleMultiplier = scaleMultiplier; // 扇形放大模式：卡片放大倍率（来自本组件配置）
 
-        // 关闭按钮（返回）
+        // 返回按钮：从扇形模式回到左上角迷你条
         closeButton = new GameObject("CloseButton", typeof(RectTransform), typeof(Button), typeof(Image)).GetComponent<Button>();
         var cb = closeButton.GetComponent<RectTransform>();
         cb.SetParent(prt, false);
@@ -147,45 +205,207 @@ public class BuildView : MonoBehaviour
         clr.offsetMin = clr.offsetMax = Vector2.zero;
         cl.text = "返回"; cl.alignment = TextAlignmentOptions.Center; cl.fontSize = 26; cl.color = Color.white;
         if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(cl, FontSlots.Default);
-        closeButton.onClick.AddListener(Hide);
+        closeButton.onClick.AddListener(() => SetMode(ModeMini));
     }
 
-    public void Show()
+    // ───────────────────────── 模式 0：左上角迷你卡条 ─────────────────────────
+    void BuildMiniBar()
     {
-        if (isOpen) return;
-        isOpen = true;
-        if (buildButton != null) buildButton.gameObject.SetActive(false);
+        miniBar = new GameObject("MiniBar", typeof(RectTransform));
+        miniBar.transform.SetParent(transform, false);
+        var mb = miniBar.GetComponent<RectTransform>();
+        mb.anchorMin = new Vector2(0f, 1f);
+        mb.anchorMax = new Vector2(0f, 1f);
+        mb.pivot = new Vector2(0f, 1f);
+        mb.anchoredPosition = miniAnchor;
+        ComputeCardSize();
+        mb.sizeDelta = new Vector2(0f, miniCardH + 8f);
 
-        // 必须先激活面板再布局：卡片 RectTransform 在 inactive 状态下 rect 不更新，
-        // 会导致 CardArcLayout 实测不到真实尺寸、收缩失效（两侧卡溢出屏外）。
-        panelRoot.SetActive(true);
-        Populate();
+        miniCardParent = mb;
 
+        miniEmptyHint = new GameObject("MiniEmpty", typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+        var me = miniEmptyHint.rectTransform;
+        me.SetParent(mb, false);
+        me.sizeDelta = new Vector2(200f, 40f);
+        miniEmptyHint.alignment = TextAlignmentOptions.Left;
+        miniEmptyHint.fontSize = 22;
+        miniEmptyHint.color = new Color(1f, 1f, 1f, 0.7f);
+        miniEmptyHint.text = "尚未获得卡片";
+        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(miniEmptyHint, FontSlots.Default);
+
+        miniBar.SetActive(false);
+    }
+
+    // ───────────────────────── 模式切换 ─────────────────────────
+    /// <summary>点按构筑按钮：循环切换三态（迷你一排 → 扇形放大 → 收回）。</summary>
+    public void CycleMode()
+    {
+        SetMode((mode + 1) % 3);
+    }
+
+    void SetMode(int m)
+    {
+        mode = m;
+        ApplyMode();
+    }
+
+    void ApplyMode()
+    {
+        switch (mode)
+        {
+            case ModeMini: ShowMiniRow(); break;
+            case ModeFan: ShowFan(); break;
+            default: Retract(); break;
+        }
+    }
+
+    void ShowMiniRow()
+    {
+        PopPause();
+        if (panelRoot != null) panelRoot.SetActive(false);
+        if (miniBar != null) miniBar.SetActive(true);
+        RefreshMini();
+    }
+
+    void ShowFan()
+    {
+        if (miniBar != null) miniBar.SetActive(false);
+        // 必须先激活面板再布局：卡片 RectTransform 在 inactive 状态下 rect 不更新
+        if (panelRoot != null) panelRoot.SetActive(true);
+        PopulateFan();
+        PushPause();
+    }
+
+    void Retract()
+    {
+        PopPause();
+        if (panelRoot != null) panelRoot.SetActive(false);
+        if (miniBar != null) miniBar.SetActive(false);
+        ClearCards();
+    }
+
+    void PushPause()
+    {
+        if (paused) return;
+        paused = true;
         TimeScaleManager.Push(TimeDomain.Pause, 0f);
         PlayerController.SetGameplayInputBlocked(true, "BuildView");
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
 
-    public void Hide()
+    void PopPause()
     {
-        if (!isOpen) return;
-        isOpen = false;
-        panelRoot.SetActive(false);
-        ClearCards();
-        if (buildButton != null) buildButton.gameObject.SetActive(true);
-
+        if (!paused) return;
+        paused = false;
         TimeScaleManager.Pop(TimeDomain.Pause);
         PlayerController.SetGameplayInputBlocked(false, "BuildView");
     }
 
-    void ClearCards()
+    // ───────────────────────── 迷你条渲染 ─────────────────────────
+    // 根据 cardPrefab 根尺寸 × miniScale 推导每张迷你卡的实际像素尺寸
+    void ComputeCardSize()
     {
-        foreach (var go in cardInstances) Destroy(go);
-        cardInstances.Clear();
+        float bw = 100f, bh = 100f;
+        var prefab = ResolvePrefab();
+        if (prefab != null)
+        {
+            var prt = prefab.GetComponent<RectTransform>();
+            if (prt != null) { bw = prt.sizeDelta.x; bh = prt.sizeDelta.y; }
+        }
+        miniCardW = bw * miniScale;
+        miniCardH = bh * miniScale;
     }
 
-    void Populate()
+    // 手动排布迷你卡槽：左对齐、卡间仅保留 miniSpacing 间隙，不依赖布局组重建时序
+    void ApplyMiniLayout()
+    {
+        if (miniCardParent == null) return;
+        if (miniBar != null)
+        {
+            var mb = miniBar.GetComponent<RectTransform>();
+            if (mb != null) mb.sizeDelta = new Vector2(mb.sizeDelta.x, miniCardH + 8f);
+        }
+        int idx = 0;
+        foreach (Transform child in miniCardParent)
+        {
+            if (miniEmptyHint != null && child == miniEmptyHint.transform) continue;
+            var rt = child as RectTransform;
+            if (rt == null) continue;
+            rt.sizeDelta = new Vector2(miniCardW, miniCardH);
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0.5f);
+            rt.pivot = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = new Vector2(idx * (miniCardW + miniSpacing), 0f);
+            idx++;
+        }
+    }
+
+    // 运行时在 Inspector 改动参数（如 miniSpacing / miniScale）即时重建布局，方便调试
+    void OnValidate()
+    {
+        if (!Application.isPlaying) return;
+        ComputeCardSize();
+        ApplyMiniLayout();
+    }
+
+    void RefreshMini()
+    {
+        ClearCards();
+        ComputeCardSize();
+        ApplyMiniLayout();
+        var result = Gather();
+        bool has = result.cards.Count > 0;
+        if (miniEmptyHint != null) miniEmptyHint.gameObject.SetActive(!has && showEmptyHint);
+        if (!has) return;
+
+        var prefab = ResolvePrefab();
+        if (prefab == null)
+        {
+            if (miniEmptyHint != null) { miniEmptyHint.text = "卡片预制体缺失"; miniEmptyHint.gameObject.SetActive(true); }
+            return;
+        }
+
+        for (int i = 0; i < result.cards.Count; i++)
+        {
+            var slot = new GameObject("MiniSlot", typeof(RectTransform));
+            slot.transform.SetParent(miniCardParent, false);
+            var srt = slot.GetComponent<RectTransform>();
+            srt.sizeDelta = new Vector2(miniCardW, miniCardH);
+            srt.anchorMin = srt.anchorMax = new Vector2(0f, 0.5f);
+            srt.pivot = new Vector2(0f, 0.5f);
+            srt.anchoredPosition = new Vector2(i * (miniCardW + miniSpacing), 0f);
+
+            var data = result.cards[i];
+            var go = Instantiate(prefab, slot.transform);
+            var crt = go.GetComponent<RectTransform>();
+            if (crt != null)
+            {
+                crt.anchorMin = new Vector2(0.5f, 0.5f);
+                crt.anchorMax = new Vector2(0.5f, 0.5f);
+                crt.pivot = new Vector2(0.5f, 0.5f);
+                crt.anchoredPosition = Vector2.zero;
+                crt.localScale = Vector3.one * miniScale;
+            }
+            if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(go.transform, FontSlots.Card);
+            var card = go.GetComponent<CoreChoiceCard>();
+            if (card == null) card = go.AddComponent<CoreChoiceCard>();
+            card.Init(i, data.ResolveCardName(), data.image, data.ResolveDescription() ?? "", null, null, data);
+            if (card.confirmButton != null) card.confirmButton.gameObject.SetActive(false);
+            if (card.rerollButton != null) card.rerollButton.gameObject.SetActive(false);
+            if (card.cardText != null) card.cardText.gameObject.SetActive(false);
+            if (card.descriptionText != null) card.descriptionText.gameObject.SetActive(false);
+            var choiceCard = go.GetComponent<ChoiceCard>();
+            if (choiceCard != null) Destroy(choiceCard);
+            // 迷你图标纯展示，关闭射线拦截避免遮挡世界点击
+            var imgs = go.GetComponentsInChildren<Image>(true);
+            foreach (var img in imgs) img.raycastTarget = false;
+
+            cardInstances.Add(slot);
+        }
+    }
+
+    // ───────────────────────── 扇形模式渲染 ─────────────────────────
+    void PopulateFan()
     {
         ClearCards();
         var result = Gather();
@@ -193,7 +413,7 @@ public class BuildView : MonoBehaviour
         emptyHint.text = result.hint;
 
         bool has = result.cards.Count > 0;
-        emptyHint.gameObject.SetActive(!has);
+        emptyHint.gameObject.SetActive(!has && showEmptyHint);
         cardParent.gameObject.SetActive(has);
         if (!has) return;
 
@@ -211,7 +431,6 @@ public class BuildView : MonoBehaviour
         {
             var data = result.cards[i];
             var go = Instantiate(prefab, cardParent);
-            // 卡面定位点必须居中（0.5,0.5），否则 localPosition 不是卡中心，弧形排布/安全边距会偏移
             var cardRect = go.GetComponent<RectTransform>();
             if (cardRect != null)
             {
@@ -224,15 +443,10 @@ public class BuildView : MonoBehaviour
             var card = go.GetComponent<CoreChoiceCard>();
             if (card == null) card = go.AddComponent<CoreChoiceCard>();
             card.Init(i, data.ResolveCardName(), data.image, data.ResolveDescription() ?? "", null, null, data);
-            // 只读模式：隐藏确认/重抽按钮（回调已传 null，点击安全）
             if (card.confirmButton != null) card.confirmButton.gameObject.SetActive(false);
             if (card.rerollButton != null) card.rerollButton.gameObject.SetActive(false);
-            // 仅显示卡片本身（卡面立绘）：隐藏选卡界面带的名称与描述文本
             if (card.cardText != null) card.cardText.gameObject.SetActive(false);
             if (card.descriptionText != null) card.descriptionText.gameObject.SetActive(false);
-            // 移除选卡界面的 ChoiceCard：它的 LateUpdate 每帧把 localScale lerp 回 1.0，
-            // 会覆盖 CardArcLayout 布局设置的收缩 scale，导致卡片以全尺寸（立绘 500×800）摆放而溢出屏幕。
-            // 构筑界面为只读展示，悬停置顶/放大由下方 AddHoverToFront 负责。
             var choiceCard = go.GetComponent<ChoiceCard>();
             if (choiceCard != null) Destroy(choiceCard);
             AddHoverToFront(go);
@@ -241,13 +455,10 @@ public class BuildView : MonoBehaviour
         layout.Rebuild(cardInstances);
     }
 
-    /// <summary>鼠标悬停某卡时把它置顶（移到兄弟最后，渲染在最前）并轻微放大，避免被堆叠的其它卡遮挡。</summary>
+    /// <summary>鼠标悬停某卡时把它置顶并轻微放大，避免被堆叠的其它卡遮挡。</summary>
     void AddHoverToFront(GameObject go)
     {
-        // 关闭卡面自身的点击交互，避免与置顶逻辑冲突（只读展示用）
         var ct = go.AddComponent<EventTrigger>();
-        // 基准 scale 取布局后的值（CardArcLayout 设置的收缩比例），悬停放大/移出精确恢复，
-        // 避免旧实现的"乘/除 1.12"浮点漂移破坏弧形布局。
         float baseScale = 0f;
         var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
         enter.callback.AddListener((_) =>
@@ -271,6 +482,12 @@ public class BuildView : MonoBehaviour
         ct.triggers.Add(exit);
     }
 
+    void ClearCards()
+    {
+        foreach (var go in cardInstances) Destroy(go);
+        cardInstances.Clear();
+    }
+
     GameObject ResolvePrefab()
     {
         if (cardPrefab != null) return cardPrefab;
@@ -278,6 +495,7 @@ public class BuildView : MonoBehaviour
         return null;
     }
 
+    // ───────────────────────── 数据收集 ─────────────────────────
     struct GatherResult { public List<CardData> cards; public string title; public string hint; }
 
     GatherResult Gather()
@@ -289,6 +507,9 @@ public class BuildView : MonoBehaviour
         var body = (PossessionManager.Instance != null) ? PossessionManager.Instance.CurrentBody : null;
         if (body == null)
         {
+            // 灵魂态（未附身）：是否显示构筑由调试开关控制
+            if (!showInSoulState)
+                return new GatherResult { cards = list, title = "", hint = "" };
             title = "当前构筑";
             hint = "尚未获得任何卡片";
             CollectUnlocked(list);
@@ -344,4 +565,8 @@ public class BuildView : MonoBehaviour
             }
         }
     }
+
+    // ───────────────────────── 兼容旧调用（若有） ─────────────────────────
+    public void Show() => SetMode(ModeFan);
+    public void Hide() => SetMode(ModeHidden);
 }
