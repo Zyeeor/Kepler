@@ -155,23 +155,30 @@ public class ChunkVisualizer : MonoBehaviour
         for (int x = 0; x < nx; x++)
         {
             var t = tiles[x, y];
-            var prefab = t.prefab;
-            if (prefab == null)
+
+            // 底层：恒非装饰地砖（Normal/Trigger）。保留原始尺寸仅对手摆整格 Decoration（程序生成底层不会是 Decoration）
+            if (t.prefab != null)
             {
-                // Normal：无 prefab 即无视觉（生成器应保证 Normal 池非空，此处兜底跳过）；
-                // 非 Normal 且无 prefab：生成器已回退 Normal，理论不可达（双保险告警）
-                if (t.kind != TerrainKind.Normal)
-                    WarnOnce($"tile-null-{t.kind}", $"[ChunkVisualizer] {t.kind} Tile 无 prefab 且未回退 Normal（配置异常），跳过视觉。");
-                continue;
+                Vector3 target = origin + new Vector3((x + 0.5f) * ts, 0f, (y + 0.5f) * ts);
+                bool baseKeepOriginal = (t.kind == TerrainKind.Decoration);
+                PlaceBlock(t.prefab, root, target, ts, ts, baseKeepOriginal, $"Base_{t.kind}_{x}_{y}");
+                instanceCount++;
+                coveredTiles++;
+            }
+            else if (t.kind != TerrainKind.Normal)
+            {
+                // 底层无 prefab：生成器应保证底层非空，理论不可达（双保险告警）
+                WarnOnce($"tile-null-{t.kind}", $"[ChunkVisualizer] {t.kind} 底层 Tile 无 prefab 且未回退 Normal（配置异常），跳过视觉。");
             }
 
-            Vector3 target = origin + new Vector3((x + 0.5f) * ts, 0f, (y + 0.5f) * ts);
-            string blockName = $"Tile_{t.kind}_{x}_{y}";
-            // 装饰地块：保持原始尺寸（不缩放到 1×1，允许模型自然超出边界）；其余内切一格
-            bool decoration = t.kind == TerrainKind.Decoration;
-            PlaceBlock(prefab, root, target, ts, ts, decoration, blockName);
-            instanceCount++;
-            coveredTiles++;
+            // 叠加层：StructureLayer（装饰物/神龛），保留原始尺寸（可超出单格边界），立在底层之上
+            if (t.overlayPrefab != null)
+            {
+                Vector3 target = origin + new Vector3((x + 0.5f) * ts, 0f, (y + 0.5f) * ts);
+                PlaceBlock(t.overlayPrefab, root, target, ts, ts, true, $"Overlay_{t.overlayKind}_{x}_{y}");
+                instanceCount++;
+                // 覆盖格数不重复计（叠加物与底层同格）
+            }
         }
     }
 
@@ -324,19 +331,23 @@ public class ChunkVisualizer : MonoBehaviour
             for (int y = 0; y < ny; y++)
             {
                 var t = chunk.Tiles[x, y];
-                switch (t.kind)
+
+                // 底层 Trigger（橙）
+                if (t.kind == TerrainKind.Trigger)
                 {
-                    case TerrainKind.Trigger:
-                        Gizmos.color = new Color(1f, 0.4f, 0.1f, 0.85f);
-                        break;
-                    case TerrainKind.Decoration:
-                        Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.85f);
-                        break;
-                    default:
-                        continue;
+                    Gizmos.color = new Color(1f, 0.4f, 0.1f, 0.85f);
+                    var c1 = origin + new Vector3((x + 0.5f) * ts, 0.5f, (y + 0.5f) * ts);
+                    Gizmos.DrawWireCube(c1, new Vector3(ts, 1f, ts));
                 }
-                var center = origin + new Vector3((x + 0.5f) * ts, 0.5f, (y + 0.5f) * ts);
-                Gizmos.DrawWireCube(center, new Vector3(ts, 1f, ts));
+                // 叠加层 / 手摆整格 Decoration（红）
+                bool drawDeco = (t.overlayPrefab != null && t.overlayKind == TerrainKind.Decoration)
+                                || (t.overlayPrefab == null && t.kind == TerrainKind.Decoration);
+                if (drawDeco)
+                {
+                    Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.85f);
+                    var c2 = origin + new Vector3((x + 0.5f) * ts, 0.5f, (y + 0.5f) * ts);
+                    Gizmos.DrawWireCube(c2, new Vector3(ts, 1f, ts));
+                }
             }
         }
         Gizmos.matrix = Matrix4x4.identity;

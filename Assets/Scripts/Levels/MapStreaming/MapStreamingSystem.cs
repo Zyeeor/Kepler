@@ -82,7 +82,7 @@ public class MapStreamingSystem : MonoBehaviour
     [Header("神龛（出生点附身载体，作为 Chunk Tile 生成）")]
     [Tooltip("普通神龛 prefab（挂 PossessionBodyProvider 组件，如 RageStatue）。为空 = 不生成神龛。")]
     public GameObject shrinePrefab;
-    [Tooltip("第一局出生点神龛专用 prefab（如 ShrinePride = 固定 Pride 躯体）。为空 = 出生点也使用普通 shrinePrefab。仅出生点所在 Chunk 使用，其余 Chunk 一律用普通 shrinePrefab。")]
+    [Tooltip("出生点神龛专用 prefab（如 ShrinePride = 固定 Pride 躯体），仅在新手教程局（GameManager.ForceTutorial=true，对应 TutorialController.TutorialAllowedThisRun）使用。非教程局或该字段为空时，出生点神龛也使用普通 shrinePrefab（随机躯体）。仅出生点所在 Chunk 使用，其余 Chunk 一律用普通 shrinePrefab。")]
     public GameObject firstShrinePrefab;
     [Tooltip("开局神龛数量。第一个必定落在玩家出生点所在 Chunk 且 tile 贴近出生点（3×3 邻域）；其余按出生点最近 Chunk 依次分配。")]
     [Min(1)] public int shrineCount = 1;
@@ -284,8 +284,10 @@ public class MapStreamingSystem : MonoBehaviour
 
     /// <summary>
     /// 开局神龛规划（Awake，边界初始化后）：
-    /// 第 1 个神龛必定落在玩家出生点所在 Chunk（tile 贴出生点 3×3 邻域，见 PlaceShrine）；
-    /// shrineCount > 1 时按出生点最近 Chunk 依次补足（四邻接 → 逐圈外扩）。
+    /// 第 1 个神龛必定落在玩家出生点所在 Chunk（tile 贴出生点 3×3 邻域，见 PlaceShrine）——
+    /// 即游戏一开始玩家出生点附近已有一个神龛。
+    /// 第 2 个起按到出生点 Chunk 的距离（ring）外扩选取，且**任意两个神龛 Chunk 切比雪夫距离 ≥ 2**
+    /// （不四邻接、也不对角相邻）——相邻 Chunk 不会都出现神龛，出生点附近（相邻 Chunk）不再额外生成。
     /// 神龛仍作为该 Chunk 的普通 Decoration Tile 生成，走 Tile 可视化与碰撞链路。
     /// </summary>
     void PlanShrines()
@@ -298,32 +300,30 @@ public class MapStreamingSystem : MonoBehaviour
             ? new ChunkCoord((boundaryMin.x + boundaryMax.x) / 2, (boundaryMin.y + boundaryMax.y) / 2)
             : ChunkFromLocal(GetPlayerPosition());
 
-        shrineChunks.Add(spawnChunk);
+        shrineChunks.Add(spawnChunk); // 第 1 个神龛 = 出生点 Chunk（开局出生点附近已有一个神龛）
         shrineSpawnChunk = spawnChunk;
-        if (shrineCount > 1)
+
+        ChunkCoord min = boundaryEnabled ? boundaryMin : new ChunkCoord(spawnChunk.x - 64, spawnChunk.y - 64);
+        ChunkCoord max = boundaryEnabled ? boundaryMax : new ChunkCoord(spawnChunk.x + 64, spawnChunk.y + 64);
+
+        // 第 2 个起：按 ring 外扩；候选须与所有已选神龛 Chunk 切比雪夫距离 ≥ 2（不相邻，含对角相邻）。
+        // ring 上限 64 防止边界内放不下时无限循环；单次 ring 全被跳过（如 ring1 全与出生点相邻）不得 break，
+        // 否则会永远卡在 ring1 而放不满 shrineCount。
+        for (int ring = 1; ring <= 64 && shrineChunks.Count < shrineCount; ring++)
         {
-            ChunkCoord min = boundaryEnabled ? boundaryMin : new ChunkCoord(spawnChunk.x - 64, spawnChunk.y - 64);
-            ChunkCoord max = boundaryEnabled ? boundaryMax : new ChunkCoord(spawnChunk.x + 64, spawnChunk.y + 64);
-            foreach (var dir in ChunkCoord.AllDirections)
+            for (int dx = -ring; dx <= ring && shrineChunks.Count < shrineCount; dx++)
+            for (int dy = -ring; dy <= ring && shrineChunks.Count < shrineCount; dy++)
             {
-                if (shrineChunks.Count >= shrineCount) break;
-                var c = spawnChunk.Neighbor(dir);
+                if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != ring) continue; // 仅当前 ring 外壳
+                var c = new ChunkCoord(spawnChunk.x + dx, spawnChunk.y + dy);
                 if (c.x < min.x || c.x > max.x || c.y < min.y || c.y > max.y) continue;
-                shrineChunks.Add(c);
-            }
-            for (int ring = 2; shrineChunks.Count < shrineCount; ring++)
-            {
-                bool any = false;
-                for (int dx = -ring; dx <= ring && shrineChunks.Count < shrineCount; dx++)
-                for (int dy = -ring; dy <= ring && shrineChunks.Count < shrineCount; dy++)
+                bool adjacent = false;
+                foreach (var s in shrineChunks)
                 {
-                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != ring) continue;
-                    var c = new ChunkCoord(spawnChunk.x + dx, spawnChunk.y + dy);
-                    if (c.x < min.x || c.x > max.x || c.y < min.y || c.y > max.y) continue;
-                    shrineChunks.Add(c);
-                    any = true;
+                    if (Mathf.Max(Mathf.Abs(c.x - s.x), Mathf.Abs(c.y - s.y)) < 2) { adjacent = true; break; }
                 }
-                if (!any) break;
+                if (adjacent) continue;
+                shrineChunks.Add(c);
             }
         }
 
@@ -332,7 +332,7 @@ public class MapStreamingSystem : MonoBehaviour
         if (WorldToTileLocal(GetPlayerWorldPosition(), spawnChunk, out tx, out ty))
             shrinePreferredTile = new Vector2Int(tx, ty);
 
-        Debug.Log($"[MapStreamingSystem] 开局神龛规划：共 {shrineChunks.Count} 个，出生点 chunk {spawnChunk}，优先 tile {shrinePreferredTile}");
+        Debug.Log($"[MapStreamingSystem] 开局神龛规划：共 {shrineChunks.Count}/{shrineCount} 个，出生点 chunk {spawnChunk}，优先 tile {shrinePreferredTile}（相邻 Chunk 间隔约束已启用）");
     }
 
     /// <summary>该 Chunk 是否被规划为神龛所在地（Tile 生成层查询）。</summary>
@@ -807,10 +807,12 @@ public class MapStreamingSystem : MonoBehaviour
         }
 
         // 神龛放置：作为普通 Decoration Tile 生成。
-        // 出生点 Chunk 用 firstShrinePrefab（固定 Pride 躯体），其余 Chunk 用普通 shrinePrefab（随机躯体）。
+        // 出生点 Chunk 仅在新手教程局（GameManager.ForceTutorial=true）用 firstShrinePrefab（固定 Pride 躯体，作为 TUT-01 初始载体）；
+        // 非教程局或该字段为空时，出生点也用普通 shrinePrefab（随机躯体）。其余 Chunk 一律用普通 shrinePrefab。
+        bool tutorialActive = GameManager.ForceTutorial;
         if (shrineChunks.Contains(chunk.Coord))
         {
-            var prefab = chunk.Coord == shrineSpawnChunk && firstShrinePrefab != null
+            var prefab = chunk.Coord == shrineSpawnChunk && firstShrinePrefab != null && tutorialActive
                 ? firstShrinePrefab
                 : shrinePrefab;
             if (prefab != null)

@@ -9296,7 +9296,7 @@ MonoBehaviour:
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   shrinePrefab: {fileID: 5758130742685393213, guid: 29441edd9c539b943a3ddeeae892dfac,
     type: 3}
-  firstShrinePrefab: {fileID: 0}
+  firstShrinePrefab: {fileID: 5758130742685393213, guid: 6ec6b0224fd7ff74fb633bc9ab8b4873, type: 3}
   shrineCount: 3
   regionTable: []
   fixedAnchors: []
