@@ -104,6 +104,7 @@ public class PlayerAbility_Slash : PlayerAbility
             if (slashEffectPrefab != null)
             {
                 GameObject obj = VfxPool.Instance.Spawn(slashEffectPrefab, arcParent.transform.position, arcParent.transform.rotation, arcParent.transform);
+                BulletTimeController.MarkVfxOrigin(obj, true);
                 obj.transform.localPosition = localPos;
                 obj.transform.localRotation = Quaternion.Euler(0, angle, 90);
                 obj.transform.localScale = Vector3.one;

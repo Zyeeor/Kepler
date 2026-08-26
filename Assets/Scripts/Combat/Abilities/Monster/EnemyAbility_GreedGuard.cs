@@ -131,6 +131,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
                     guardCenter.position,
                     guardCenter.rotation,
                     guardCenter);
+                BulletTimeController.MarkVfxOrigin(guardHand, IsOwnedByPlayer);
                 _guardHandEndOffsets[i] = new Vector3(
                     side * guardHandSideOffset,
                     guardHandHeightOffset,
@@ -194,6 +195,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         if (absorbVfxPrefab != null && owner != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(absorbVfxPrefab, owner.transform.position + Vector3.up, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(vfx, IsOwnedByPlayer);
             ScaleAbilityObject(vfx);
             PlayVfx(vfx);
             ReleaseVfx(vfx, 0.6f);
@@ -221,6 +223,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         if (convertVfxPrefab != null && owner != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(convertVfxPrefab, owner.transform.position + Vector3.up * 1.2f, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(vfx, IsOwnedByPlayer);
             ScaleAbilityObject(vfx);
             PlayVfx(vfx);
             ReleaseVfx(vfx, Mathf.Max(0.05f, convertVfxDuration));

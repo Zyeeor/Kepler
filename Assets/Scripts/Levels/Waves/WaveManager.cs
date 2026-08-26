@@ -860,14 +860,12 @@ public class WaveManager : SceneSingleton<WaveManager>
             : EliteBuildDirector.EnsureInstance();
         if (eliteDirector == null) return 0;
 
-        // 联网投放：优先向服务器请求他人构筑快照（wave = 投放序号 = cycleIndex + 1），
-        // 离线/失败/空候选走本地兜底（Preset → 空快照，定时节奏必出精英）。
         int spawned = 0;
         int eliteCount = Mathf.Max(0, eliteCountPerCycle);
         for (int i = 0; i < eliteCount; i++)
         {
             SinType sin = continuousSpawnOrder[(cycleIndex + i) % continuousSpawnOrder.Count];
-            if (eliteDirector.RequestScheduledElite(sin, cycleIndex))
+            if (eliteDirector.TryInjectScheduledElite(sin, cycleIndex))
                 spawned++;
         }
         return spawned;

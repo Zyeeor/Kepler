@@ -31,6 +31,12 @@ public class ActorVisualFx : MonoBehaviour
     [Tooltip("0 = identical to unpossessed look. Higher = brighter possession emission glow.")]
     [Range(0f, 8f)] public float possessionRimIntensity = 1.8f;
 
+    [Header("Possessable Corpse Highlight")]
+    [Tooltip("Emission tint for a corpse that is currently legal to possess. This uses a runtime material instance and never changes shared art materials.")]
+    [ColorUsage(true, true)] public Color corpseRimColor = new Color(0.2f, 0.95f, 1.25f, 1f);
+    [Tooltip("A restrained rim intensity so available corpses stay readable without competing with possessed bodies or Elites.")]
+    [Range(0f, 8f)] public float corpseRimIntensity = 0.75f;
+
     [Header("Elite Highlight")]
     [Tooltip("HDR rim/emission tint for Elite bodies. Original renderer materials are cloned at runtime; shared assets stay unchanged.")]
     [ColorUsage(true, true)] public Color eliteRimColor = new Color(0.65f, 0.15f, 0.9f, 1f);
@@ -72,6 +78,7 @@ public class ActorVisualFx : MonoBehaviour
     private Coroutine _flashRoutine;
     private float _dissolve = 1f;
     private bool _possessionEnabled;
+    private bool _corpseEnabled;
     private bool _eliteEnabled;
     private float _hitFlash;
 
@@ -87,7 +94,7 @@ public class ActorVisualFx : MonoBehaviour
     {
         // Live-apply Inspector tweaks while possessed or while an Elite highlight is active.
         if (!Application.isPlaying || _block == null) return;
-        if (!_possessionEnabled && !_eliteEnabled && !_usingHighlightInstances) return;
+        if (!_possessionEnabled && !_corpseEnabled && !_eliteEnabled && !_usingHighlightInstances) return;
         ApplyFx();
     }
 #endif
@@ -122,7 +129,15 @@ public class ActorVisualFx : MonoBehaviour
     public void SetPossessionHighlight(bool enabled)
     {
         _possessionEnabled = enabled;
-        if (!enabled && !_eliteEnabled)
+        if (!enabled && !_corpseEnabled && !_eliteEnabled)
+            RestoreHighlightMaterialInstances();
+        ApplyFx();
+    }
+
+    public void SetCorpseHighlight(bool enabled)
+    {
+        _corpseEnabled = enabled;
+        if (!enabled && !_possessionEnabled && !_eliteEnabled)
             RestoreHighlightMaterialInstances();
         ApplyFx();
     }
@@ -132,7 +147,7 @@ public class ActorVisualFx : MonoBehaviour
         if (enabled && !_eliteEnabled && _usingHighlightInstances)
             RestoreHighlightMaterialInstances();
         _eliteEnabled = enabled;
-        if (!enabled && !_possessionEnabled)
+        if (!enabled && !_possessionEnabled && !_corpseEnabled)
             RestoreHighlightMaterialInstances();
         ApplyFx();
     }
@@ -209,17 +224,22 @@ public class ActorVisualFx : MonoBehaviour
     private float GetPossessionRimIntensity()
     {
         float possessionIntensity = _possessionEnabled ? Mathf.Max(0f, possessionRimIntensity) : 0f;
-        if (!_eliteEnabled) return possessionIntensity;
+        if (_eliteEnabled)
+        {
+            float pulse = 1f + Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * Mathf.Max(0f, elitePulseSpeed))
+                * Mathf.Clamp01(elitePulseAmount);
+            float eliteIntensity = Mathf.Max(0f, eliteRimIntensity) * Mathf.Max(0f, pulse);
+            return Mathf.Max(possessionIntensity, eliteIntensity);
+        }
 
-        float pulse = 1f + Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * Mathf.Max(0f, elitePulseSpeed))
-            * Mathf.Clamp01(elitePulseAmount);
-        float eliteIntensity = Mathf.Max(0f, eliteRimIntensity) * Mathf.Max(0f, pulse);
-        return Mathf.Max(possessionIntensity, eliteIntensity);
+        return Mathf.Max(possessionIntensity, _corpseEnabled ? Mathf.Max(0f, corpseRimIntensity) : 0f);
     }
 
     private Color GetRimColor()
     {
         if (_eliteEnabled) return eliteRimColor;
+        if (_possessionEnabled) return possessionRimColor;
+        if (_corpseEnabled) return corpseRimColor;
         return possessionRimColor;
     }
 

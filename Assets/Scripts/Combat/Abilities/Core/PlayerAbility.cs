@@ -159,6 +159,7 @@ public abstract class PlayerAbility : MonoBehaviour
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
         activeVfx = VfxPool.Instance.Spawn(vfxPrefab, pos, rot);
+        BulletTimeController.MarkVfxOrigin(activeVfx, true);
         PlayVfx(activeVfx);
         float duration = 1f;
         foreach (var ps in activeVfx.GetComponentsInChildren<ParticleSystem>(true))

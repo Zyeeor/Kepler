@@ -42,6 +42,9 @@ public class GreedHandProjectile : MonoBehaviour
 
     private bool _retargetUsed;
     private bool _settled;
+    private bool _playerOrigin;
+
+    private float SimulationTime => _playerOrigin ? Time.unscaledTime : Time.time;
 
 
     public void Launch(
@@ -77,11 +80,12 @@ public class GreedHandProjectile : MonoBehaviour
         _homingTurnRate = Mathf.Max(0f, homingTurnRate);
         _homingCurveStrength = Mathf.Clamp01(homingCurveStrength);
         _settled = false;
+        _playerOrigin = firedBy != null && firedBy.IsPlayerControlled;
 
         _retargetUsed = false;
-        _expiresAt = Time.time + lifetime;
-        _canHitAt = Time.time + MinimumFlightDuration;
-        _curveBiasEndsAt = Time.time + (flankArc ? Mathf.Max(0f, flankArcDuration) : 0f);
+        _expiresAt = SimulationTime + lifetime;
+        _canHitAt = SimulationTime + MinimumFlightDuration;
+        _curveBiasEndsAt = SimulationTime + (flankArc ? Mathf.Max(0f, flankArcDuration) : 0f);
 
 
         Vector3 toTarget = target != null
@@ -105,13 +109,13 @@ public class GreedHandProjectile : MonoBehaviour
     private void Update()
     {
         if (_settled) return;
-        if (Time.time >= _expiresAt || target == null || !IsLegalTarget(target))
+        if (SimulationTime >= _expiresAt || target == null || !IsLegalTarget(target))
         {
             VfxPool.ReleaseOrDestroy(gameObject);
             return;
         }
 
-        float deltaTime = ownerAtFire != null && ownerAtFire.IsPlayerControlled
+        float deltaTime = _playerOrigin
             ? Time.unscaledDeltaTime
             : Time.deltaTime;
         Vector3 goal = target.position + Vector3.up * 0.6f;
@@ -119,7 +123,7 @@ public class GreedHandProjectile : MonoBehaviour
         Vector3 toGoal = goal - transform.position;
         if (toGoal.sqrMagnitude > 0.001f)
         {
-            float turnSpeed = flankArc && Time.time < _curveBiasEndsAt
+            float turnSpeed = flankArc && SimulationTime < _curveBiasEndsAt
                 ? FlankTurnSpeed
                 : _homingTurnRate;
             Vector3 desiredDirection = Vector3.Slerp(
@@ -144,7 +148,7 @@ public class GreedHandProjectile : MonoBehaviour
         float effectiveHitRadius = hitRadius;
         if (sourceAbility != null && sourceAbility.OwnerMonster != null)
             effectiveHitRadius *= sourceAbility.OwnerMonster.CombatScaleMultiplier;
-        if (Time.time >= _canHitAt
+        if (SimulationTime >= _canHitAt
             && Vector3.Distance(transform.position, target.position) <= effectiveHitRadius)
 
         {
@@ -195,6 +199,7 @@ public class GreedHandProjectile : MonoBehaviour
         if (hitVfxPrefab != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(hitVfxPrefab, hitPos, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(vfx, _playerOrigin);
             if (sourceAbility != null && sourceAbility.OwnerMonster != null)
                 vfx.transform.localScale *= sourceAbility.OwnerMonster.CombatScaleMultiplier;
             foreach (var ps in vfx.GetComponentsInChildren<ParticleSystem>())

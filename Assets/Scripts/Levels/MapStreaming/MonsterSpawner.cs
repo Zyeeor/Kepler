@@ -272,7 +272,11 @@ public class MonsterSpawner : MonoBehaviour
         // AI 种子流：按全局递增刷怪序号分配（刷怪顺序由 DomainWave 种子流决定，序号随顺序可复现）
         monster.InitAiRng(spawnSequence++);
         RunSpawnDirector director = RunSpawnDirector.Instance;
-        monster.ApplySpawnDifficultySnapshot(origin, director != null ? director.CurrentTier : 0);
+        monster.ApplySpawnDifficultySnapshot(
+            origin,
+            director != null ? director.CurrentTier : 0,
+            director != null ? director.CurrentHealthMultiplier : 1f,
+            director != null ? director.CurrentAttackMultiplier : 1f);
         Track(home, monster, prefab, isWaveMonster: true,
             isContinuousAutomatic: countAsContinuousAutomatic,
             countsTowardCombatLimit: countsTowardCombatLimit);

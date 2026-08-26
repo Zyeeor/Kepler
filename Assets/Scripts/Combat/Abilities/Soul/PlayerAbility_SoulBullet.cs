@@ -33,6 +33,7 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         if (projectilePrefab != null)
         {
             bullet = VfxPool.Instance.Spawn(projectilePrefab, spawnPos, aimRot);
+            BulletTimeController.MarkVfxOrigin(bullet, true);
             Debug.Log("[SoulBullet] Instantiated prefab: " + projectilePrefab.name);
             PlayVfx(bullet);
         }
