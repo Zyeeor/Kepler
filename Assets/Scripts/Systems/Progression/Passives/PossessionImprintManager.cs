@@ -83,6 +83,17 @@ public sealed class PossessionImprintManager : MonoBehaviour
         restoredRun = false;
     }
 
+    /// <summary>Boss 模式开局：七种罪印统一获得可配置层数。</summary>
+    public void BeginBossModeRun(int initialStacks)
+    {
+        BeginNewRun();
+        int value = Mathf.Clamp(initialStacks, 0, Mathf.Max(1, PossessionImprintMath.MaxStacks));
+        for (int i = 1; i < stacks.Length; i++)
+            stacks[i] = value;
+        hasRun = true;
+        restoredRun = false;
+    }
+
     public void EndRun()
     {
         BeginNewRun();

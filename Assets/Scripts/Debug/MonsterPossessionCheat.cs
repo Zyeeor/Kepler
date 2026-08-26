@@ -279,7 +279,12 @@ public class MonsterPossessionCheat : MonoBehaviour
         }
 
         MonsterSpawner spawner = MonsterSpawner.EnsureInstance();
-        MonsterActor monster = spawner.SpawnEliteMonster(entry.prefab, ResolveSpawnPosition());
+        if (!spawner.TryGetEliteSpawnPosition(out Vector3 eliteSpawnPosition))
+        {
+            SetStatus("No legal on-screen Elite spawn position.");
+            return;
+        }
+        MonsterActor monster = spawner.SpawnEliteMonster(entry.prefab, eliteSpawnPosition);
         if (monster == null)
         {
             SetStatus($"Elite spawn failed for '{entry.prefab.name}'.");

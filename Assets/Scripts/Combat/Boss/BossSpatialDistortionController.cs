@@ -11,6 +11,15 @@ public sealed class BossSpatialDistortionController : MonoBehaviour
     static readonly int DissolveAmount = Shader.PropertyToID("_DissolveAmount");
     static readonly int ChromaticSplit = Shader.PropertyToID("_ChromaticSplit");
     static readonly int PortalPulse = Shader.PropertyToID("_PortalPulse");
+
+    // Shared by arrival-only consumers so the Elite presentation uses the exact same
+    // material contract as Boss Void Walk without duplicating shader property definitions.
+    public static readonly int DistortionStrengthId = DistortionStrength;
+    public static readonly int VertexWarpId = VertexWarp;
+    public static readonly int RimPulseId = RimPulse;
+    public static readonly int DissolveAmountId = DissolveAmount;
+    public static readonly int ChromaticSplitId = ChromaticSplit;
+    public static readonly int PortalPulseId = PortalPulse;
     public float idleAmplitude = 0.18f;
     public float idleFrequency = 1.1f;
     public float distortionStrength = 0.25f;

@@ -17,6 +17,13 @@ public enum RunPhase
     Failed,    // 失败打断（终态，GAME OVER）
 }
 
+/// <summary>当前对局模式。Boss 模式不复用普通模式的波次与存档流程。</summary>
+public enum RunMode
+{
+    Normal,
+    Boss,
+}
+
 /// <summary>
 /// 对局会话（Run）：一局完整对局的生命周期状态，常驻（DontDestroyOnLoad）。
 ///
@@ -40,6 +47,9 @@ public class RunSession : MonoBehaviour
 
     /// <summary>是否有进行中的对局（BeginNewRun/LoadFromSave 后 true，EndRun 后 false）。</summary>
     public bool HasActiveRun { get; private set; }
+    public RunMode Mode { get; private set; } = RunMode.Normal;
+    public bool IsBossMode => Mode == RunMode.Boss;
+    public int BossModeInitialImprintStacks { get; private set; }
 
     /// <summary>
     /// 本局是否由主菜单"新游戏"开始（仅 BeginNewRun 置 true）。
@@ -180,6 +190,8 @@ public class RunSession : MonoBehaviour
         WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
                                                     : (uint)UnityEngine.Random.Range(1, int.MaxValue);
         if (string.IsNullOrEmpty(RunId)) RunId = NewRunId(); // 直接 Play 路径也保证有 runId
+        Mode = RunMode.Normal;
+        BossModeInitialImprintStacks = 0;
         StartedFromMainMenu = false; // 直接 Play/重开路径：不触发新人引导
         // Run Analytics：直接 Play 也启动采集（幂等；主菜单新局路径由 BeginNewRun 负责）
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
@@ -194,6 +206,8 @@ public class RunSession : MonoBehaviour
         var gm = GameManager.Instance;
         WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
                                                     : (uint)UnityEngine.Random.Range(1, int.MaxValue);
+        Mode = RunMode.Normal;
+        BossModeInitialImprintStacks = 0;
         CompletedWaveIndex = -1;
         PendingChoice = false;
         ChoicePicks.Clear();
@@ -222,6 +236,41 @@ public class RunSession : MonoBehaviour
     }
 
     /// <summary>
+    /// 开始 Boss 模式：进入 Final 阶段，跳过 Opening/Tutorial/Waves/Choice，
+    /// 不删除普通模式存档，以便 Boss 模式作为独立挑战入口使用。
+    /// </summary>
+    public void BeginBossRun(int initialImprintStacks)
+    {
+        var gm = GameManager.Instance;
+        WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
+                                                    : (uint)UnityEngine.Random.Range(1, int.MaxValue);
+        Mode = RunMode.Boss;
+        BossModeInitialImprintStacks = Mathf.Clamp(initialImprintStacks, 0, Mathf.Max(1, PossessionImprintMath.MaxStacks));
+        CompletedWaveIndex = -1;
+        PendingChoice = false;
+        ChoicePicks.Clear();
+        UnlockedEffects.Clear();
+        GlobalMissStreak = 0;
+        SoulPosition = Vector3.zero;
+        SoulHealth = 0f;
+        SoulTime = 0f;
+        PossessedBody = null;
+        Corpses.Clear();
+        if (PlayerHealth.Instance != null) PlayerHealth.Instance.ResetHealth();
+        PossessionImprintManager.EnsureInstance().BeginBossModeRun(BossModeInitialImprintStacks);
+        RunSpawnDirector.EnsureInstance().RestoreRuntime(0f, false, false);
+        ActiveCombatSeconds = 0f;
+        BossSpawned = false;
+        BossDefeated = false;
+        HasActiveRun = true;
+        RunId = NewRunId();
+        StartedFromMainMenu = true;
+        RunStatsCollector.EnsureInstance().StartNewRun(RunId);
+        CurrentPhase = RunPhase.Final;
+        Debug.Log($"[RunSession] Boss 对局开始：scene=EnemyAiTest，罪印层数={BossModeInitialImprintStacks}");
+    }
+
+    /// <summary>
     /// 从存档恢复对局（主菜单"继续"）。成功返回 true；无有效存档返回 false（不开启会话）。
     /// </summary>
     public bool LoadFromSave()
@@ -235,6 +284,8 @@ public class RunSession : MonoBehaviour
             return false;
         }
         WorldSeed = data.worldSeed;
+        Mode = RunMode.Normal;
+        BossModeInitialImprintStacks = 0;
         CompletedWaveIndex = data.completedWaveIndex;
         PendingChoice = data.pendingChoice;
         ChoicePicks.Clear();
@@ -273,6 +324,11 @@ public class RunSession : MonoBehaviour
     /// <param name="pendingChoice">选卡是否未完成（true = 选卡界面退出，恢复时需补弹选卡）。</param>
     public void SaveProgress(int completedWaveIndex, bool pendingChoice = false)
     {
+        if (IsBossMode)
+        {
+            Debug.Log("[RunSession] Boss 模式不写入普通模式存档。");
+            return;
+        }
         // 采样场景运行时状态（波间时刻：SoulActor/PlayerHealth/GameManager 均在场景中）
         var soul = FindObjectOfType<SoulActor>();
         SoulPosition = soul != null ? soul.transform.position : Vector3.zero;
@@ -347,11 +403,14 @@ public class RunSession : MonoBehaviour
     /// </summary>
     public void EndRun()
     {
+        bool preserveNormalSave = IsBossMode;
         // Run Analytics：中途结束（返回主菜单/重开/直接 Play 退出）时兜底结算未终结的对局
         if (RunStatsCollector.Instance != null)
             RunStatsCollector.Instance.EndRunEarly();
         HasActiveRun = false;
         StartedFromMainMenu = false;
+        Mode = RunMode.Normal;
+        BossModeInitialImprintStacks = 0;
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
         CompletedWaveIndex = -1;
         UnlockedEffects.Clear();
@@ -361,7 +420,10 @@ public class RunSession : MonoBehaviour
         ActiveCombatSeconds = 0f;
         BossSpawned = false;
         BossDefeated = false;
-        SaveCoordinator.DeleteSave();
-        Debug.Log("[RunSession] 对局结束，进度已清除。");
+        if (!preserveNormalSave)
+            SaveCoordinator.DeleteSave();
+        Debug.Log(preserveNormalSave
+            ? "[RunSession] Boss 对局结束，普通模式存档已保留。"
+            : "[RunSession] 对局结束，进度已清除。");
     }
 }
