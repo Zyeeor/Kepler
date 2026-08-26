@@ -99,8 +99,10 @@ MonoBehaviour:
   enemySlowMultiplier: 0.5
   segmentSpacing: 1.1
   oilZonePrefab: {fileID: 0}
-  oilTrailVfxPrefab: {fileID: 0}
-  burningOilVfxPrefab: {fileID: 0}
+  oilTrailVfxPrefab: {fileID: 6942737686762418349, guid: ad84c96b8c743f24e808dec2e4cb4761,
+    type: 3}
+  burningOilVfxPrefab: {fileID: 1458042168649295215, guid: 93bc75bb0af5cd440a7452b74156d6eb,
+    type: 3}
 --- !u!1 &1171335042777129862
 GameObject:
   m_ObjectHideFlags: 0
@@ -507,6 +509,7 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  corpseGroundYOffset: 0
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 5513348161308998187}
@@ -549,6 +552,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 0.9
+  corpseRimColor: {r: 0.12, g: 0.55, b: 1, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 0.15, g: 0.8, b: 1.6, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.018
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
   eliteRimColor: {r: 0.55, g: 0.7, b: 0.06, a: 1}
   eliteRimIntensity: 0.65
   elitePulseSpeed: 1.7
