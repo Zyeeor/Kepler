@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Run-level orchestration above MonsterSpawner. It owns the active-combat clock and Boss
@@ -217,6 +218,23 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     void Update()
     {
+        RunSession run = RunSession.Instance;
+        if (run != null && run.IsBossMode)
+        {
+            if (SceneManager.GetActiveScene().name == "MainMenu") return;
+            // Boss 模式不等待 420 秒：场景基础设施就绪后立即重试生成 Boss，
+            // 地图刷怪点尚未准备好时保持战斗时钟为 0。
+            if (!BossSpawned)
+            {
+                if (bossPrefab != null && MonsterSpawner.Instance != null)
+                    DebugSpawnBossNow();
+                if (!BossSpawned) return;
+            }
+            if (!IsActiveCombat()) return;
+            ActiveCombatSeconds += Time.unscaledDeltaTime;
+            return;
+        }
+
         if (!IsActiveCombat()) return;
         ActiveCombatSeconds += Time.unscaledDeltaTime;
         if (!bossTimeReached && ActiveCombatSeconds >= bossCombatTime)
@@ -229,6 +247,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     bool IsActiveCombat()
     {
+        if (SceneManager.GetActiveScene().name == "MainMenu") return false;
+        if (MonsterSpawner.Instance == null) return false;
         RunSession run = RunSession.Instance;
         if (run != null && run.CurrentPhase != RunPhase.Waves && run.CurrentPhase != RunPhase.Final) return false;
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver) return false;

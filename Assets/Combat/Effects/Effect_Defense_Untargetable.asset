@@ -17,22 +17,12 @@ MonoBehaviour:
   duration: 0
   maxStacks: 1
   stackPolicy: 0
-  requiredTargetTags: []
-  blockedTargetTags: []
-  requiredSourceTags: []
-  blockedSourceTags: []
   grantedTags:
   - State.Defense.Untargetable
-  modifiers: []
   periodicInterval: 0
-  activeVfxPrefab: {fileID: 5434144139528540934, guid: 4299d5c66d4d613479536f298412d2e9,
-    type: 3}
+  damagePerStack: 0
+  moveSpeedMultiplier: 1
+  activeVfxPrefab: {fileID: 0}
   parentVfxToTarget: 1
-  applyVfxPrefab: {fileID: 0}
-  expireVfxPrefab: {fileID: 0}
-  oneShotVfxDuration: 2
-  weaponVfxPrefab: {fileID: 0}
   hitVfxPrefab: {fileID: 0}
-  weaponVfxLifetime: 0
-  hitVfxLifetime: 0
-  attackVfxDuration: 1
+  hitVfxDuration: 1

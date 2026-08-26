@@ -113,11 +113,14 @@ Shader "Possession/CharacterFX"
             OutlineVaryings outlineVert(OutlineAttributes input)
             {
                 OutlineVaryings output;
-                float3 expandedPositionOS = input.positionOS.xyz + normalize(input.normalOS) * _OutlineWidth;
-                VertexPositionInputs positionInputs = GetVertexPositionInputs(expandedPositionOS);
-                output.positionCS = positionInputs.positionCS;
+                // Expand in world space so nested model scale (e.g. Sloth's 8.57 x 100
+                // import hierarchy) cannot turn a 0.018 outline into a giant light shell.
+                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
+                float3 normalWS = normalize(TransformObjectToWorldNormal(input.normalOS));
+                float3 expandedPositionWS = positionWS + normalWS * _OutlineWidth;
+                output.positionCS = TransformWorldToHClip(expandedPositionWS);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
-                output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
+                output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 return output;
             }
 
