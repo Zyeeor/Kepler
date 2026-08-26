@@ -32,6 +32,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
         SinType.Lust,
         SinType.Sloth,
     };
+    const float BossReserveHorizontalSpacing = 6f;
+    const float BossReserveRowSpacing = 6f;
     int spawnedBossCount;
     bool bossTimeReached;
 
@@ -157,8 +159,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
             int row = i / 4;
             int column = i % 4;
             int columnsInRow = row == 0 ? 4 : 3;
-            float horizontal = (column - (columnsInRow - 1) * 0.5f) * 3f;
-            Vector3 position = center + forward * (3.5f + row * 3f) + right * horizontal;
+            float horizontal = (column - (columnsInRow - 1) * 0.5f) * BossReserveHorizontalSpacing;
+            Vector3 position = center + forward * (3.5f + row * BossReserveRowSpacing) + right * horizontal;
             GameObject instance = MonsterPool.Instance.Spawn(prefab, position, Quaternion.LookRotation(-forward, Vector3.up));
             if (instance == null) continue;
 

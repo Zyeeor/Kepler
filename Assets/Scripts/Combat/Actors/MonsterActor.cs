@@ -1538,6 +1538,11 @@ public class MonsterActor : Actor
         // 恢复能力组件：SpawnAsPermanentCorpse（开场载体/刷尸体）与 BeginDisappearing 会禁用 EnemyAbility 组件，
         // 若附身时不恢复，EnemyAbility.Update 不执行 → currentCooldown 不递减 → 攻击一次后永久卡 CD 无法再攻击。
         SetAbilityComponentsEnabled(true);
+        // Boss reserve bodies are disabled while waiting as corpses. Their ability
+        // components can rebuild tags/slots during OnEnable, so synchronize the
+        // Boss-mode run build after re-enabling them and before player input starts.
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode && CardManager.Instance != null)
+            CardManager.Instance.ApplyAllUnlocksTo(gameObject);
         Body = BodyState.Active;
         gameObject.tag = "Player";
         SetPossessedAnimatorsUnscaled(true);
