@@ -38,11 +38,11 @@ public class BuildView : MonoBehaviour
 
     [Header("迷你卡条（模式 0：左上角一排，默认常驻 HUD）")]
     [Tooltip("控制默认左上角常驻的迷你卡条。")]
-    public float miniScale = 0.8f;        // 迷你卡相对原始卡面的缩放（原始卡面约 100×100）；调大卡更大更宽
+    public float miniScale = 0.15f;       // 迷你卡相对原始卡面的缩放（原始卡面约 100×100）；调大卡更大更宽
     float miniCardW = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
     float miniCardH = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
-    public float miniSpacing = 10f;        // ★ 迷你卡之间的间隔（像素）。想让模式0卡片排得更松/更紧，调这个值
-    public Vector2 miniAnchor = new Vector2(24f, -24f); // 迷你卡条距屏幕左上角的偏移（X 右移，Y 上移）
+    public float miniSpacing = 60f;       // ★ 迷你卡之间的间隔（像素）。想让模式0卡片排得更松/更紧，调这个值
+    public Vector2 miniAnchor = new Vector2(60f, -80f); // 迷你卡条距屏幕左上角的偏移（X 右移，Y 上移）
 
     [Header("Debug Toggles（调试开关）")]
     [Tooltip("没有卡的时候是否显示提示文本（如“尚未获得任何卡片”）。关闭则无卡时什么都不显示。")]
@@ -66,6 +66,11 @@ public class BuildView : MonoBehaviour
     int mode = 0;                         // 0=迷你一排 1=扇形放大 2=收回
     bool paused = false;
     bool initialized = false;
+
+    // 附身状态追踪：附身怪 / 灵魂态 / 换身 变化时实时刷新构筑（Update 轮询，与 AbilityCooldownUI 同模式）
+    MonsterActor trackedBody;
+    PossessionManager.SwitchState trackedState = PossessionManager.SwitchState.Idle;
+    bool trackedStateInited = false;
 
     const int ModeMini = 0;
     const int ModeFan = 1;
@@ -118,6 +123,22 @@ public class BuildView : MonoBehaviour
     void OnCardsChanged(CardData card)
     {
         if (mode == ModeMini) RefreshMini();
+    }
+
+    /// <summary>附身状态变化（附身 / 离开附身 / 更换附身）时实时刷新当前模式的构筑。
+    /// 用轮询而非事件：无需处理 PossessionManager 初始化时序，且天然覆盖附身怪死亡等边角。</summary>
+    void Update()
+    {
+        var pm = PossessionManager.Instance;
+        if (pm == null) return;
+        if (!trackedStateInited || pm.CurrentBody != trackedBody || pm.State != trackedState)
+        {
+            trackedStateInited = true;
+            trackedBody = pm.CurrentBody;
+            trackedState = pm.State;
+            if (mode == ModeMini) RefreshMini();
+            else if (mode == ModeFan) PopulateFan();
+        }
     }
 
     /// <summary>在 root 子树中按名递归查找（含自身）。</summary>
@@ -226,6 +247,11 @@ public class BuildView : MonoBehaviour
         miniEmptyHint = new GameObject("MiniEmpty", typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
         var me = miniEmptyHint.rectTransform;
         me.SetParent(mb, false);
+        // 提示文本跟随 miniAnchor：锚定 miniBar 左上角（miniBar 本身位于 miniAnchor 偏移处），
+        // 调 miniAnchor 时提示文本与迷你卡条一起移动
+        me.anchorMin = me.anchorMax = new Vector2(0f, 1f);
+        me.pivot = new Vector2(0f, 1f);
+        me.anchoredPosition = Vector2.zero;
         me.sizeDelta = new Vector2(200f, 40f);
         miniEmptyHint.alignment = TextAlignmentOptions.Left;
         miniEmptyHint.fontSize = 22;
