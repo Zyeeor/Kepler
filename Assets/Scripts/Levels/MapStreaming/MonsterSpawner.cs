@@ -34,6 +34,14 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("群系中心之间的最小间距（米）：不同批次刷出的怪群出生即保持距离，避免源头重叠堆积。0 = 关闭。")]
     [Min(0f)] public float minSpawnPointSeparation = 6f;
 
+    [Header("精英取点")]
+    [Tooltip("精英出生点到玩家的距离，占当前水平屏幕直径的比例。0.25 = 四分之一屏幕直径。")]
+    [Range(0.1f, 0.5f)] public float eliteSpawnScreenDiameterFraction = 0.25f;
+    [Tooltip("精英出生点在屏幕内目标半径附近的候选采样次数。")]
+    [Range(8, 64)] public int eliteSpawnSamples = 32;
+    [Tooltip("目标半径附近没有可走点时，允许收缩到目标半径的最低比例。")]
+    [Range(0.5f, 1f)] public float eliteSpawnFallbackRadiusFraction = 0.75f;
+
     [Header("出生点合法性")]
     [Tooltip("初始出生点落入岩浆、地刺或可阻挡碰撞体时，在此半径内寻找可走且合法的位置；0 表示不重定位。")]
     [Min(0f)] public float invalidSpawnRelocationRadius = 6f;
@@ -229,8 +237,18 @@ public class MonsterSpawner : MonoBehaviour
     /// 精英怪刷出：保留生命周期追踪和波次清点，但不占全局战斗配额或连续自动怪上限。
     /// </summary>
     public MonsterActor SpawnEliteMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
-        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure,
+    {
+        MonsterActor monster = SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure,
             countAsContinuousAutomatic: false, countsTowardCombatLimit: false);
+        if (monster == null) return null;
+
+        // Elite arrival is presentation-owned, but starting it here keeps wave, fallback and
+        // debug elite injection paths visually identical.
+        VoidWalkArrivalVisualFx arrivalFx = monster.GetComponent<VoidWalkArrivalVisualFx>();
+        if (arrivalFx == null) arrivalFx = monster.gameObject.AddComponent<VoidWalkArrivalVisualFx>();
+        arrivalFx.PlayArrival();
+        return monster;
+    }
 
     /// <summary>击杀回响刷怪：不占连续自动刷怪上限。</summary>
     public MonsterActor SpawnKillEchoMonster(GameObject prefab, Vector3 pos, bool immediateChase = true)
@@ -429,6 +447,51 @@ public class MonsterSpawner : MonoBehaviour
         // 放宽到一半间距再试一轮，避免本 tick 静默少刷；仍失败才放弃。
         if (minSpawnPointSeparation > 0f && TrySampleSpawnPosition(sin, minSpawnPointSeparation * 0.5f, out pos))
             return true;
+        return false;
+    }
+
+    /// <summary>
+    /// 精英取点：在玩家周围目标屏幕直径比例的环带内取点，并要求点位落在当前镜头内。
+    /// 候选点先通过 Chunk 的可走性快照；真正刷出时 SpawnMonster 还会用怪物自身的
+    /// Collider 重新执行 MonsterPathfinder 的危险区/实体碰撞/体积检查。
+    /// </summary>
+    public bool TryGetEliteSpawnPosition(out Vector3 pos)
+    {
+        pos = default;
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return false;
+
+        Vector3 player = GetPlayerPosition();
+        player.y = spawnHeightY;
+        Camera camera = GetMainCamera();
+        float targetRadius = Mathf.Max(0.5f,
+            GetScreenDiameterWorldDistance() * Mathf.Clamp(eliteSpawnScreenDiameterFraction, 0.1f, 0.5f));
+        float minimumRadius = targetRadius * Mathf.Clamp(eliteSpawnFallbackRadiusFraction, 0.5f, 1f);
+        int samples = Mathf.Max(8, eliteSpawnSamples);
+        float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
+        const float goldenAngle = 2.39996323f;
+
+        // Try the requested quarter-screen radius first. Only shrink the radius as a
+        // fallback when terrain legality leaves no usable point on the exact ring.
+        for (int ring = 0; ring < 3; ring++)
+        {
+            float ringT = ring / 2f;
+            float radius = Mathf.Lerp(targetRadius, minimumRadius, ringT);
+            for (int i = 0; i < samples; i++)
+            {
+                float angle = startAngle + goldenAngle * i;
+                Vector3 candidate = player + new Vector3(Mathf.Cos(angle) * radius, 0f,
+                    Mathf.Sin(angle) * radius);
+                if (camera != null && !IsOnScreen(camera, candidate)) continue;
+                if (!system.Registry.TryGetValue(system.WorldToChunk(candidate), out var chunk)
+                    || chunk == null || chunk.Tiles == null)
+                    continue;
+                if (!IsWalkable(chunk, candidate)) continue;
+
+                pos = candidate;
+                return true;
+            }
+        }
         return false;
     }
 
