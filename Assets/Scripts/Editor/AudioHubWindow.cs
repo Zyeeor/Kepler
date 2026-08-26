@@ -31,6 +31,9 @@ public class AudioHubWindow : EditorWindow
     Editor _sfxEditor, _monsterEditor, _bgmEditor;
     Object _sfxTarget, _monsterTarget, _bgmTarget;
 
+    // 各 Tab 独立滚动位置（切换 Tab 互不重置）
+    Vector2 _sfxScroll, _monsterScroll, _bgmScroll;
+
     void OnDestroy()
     {
         DisposeEditor(ref _sfxEditor);
@@ -59,11 +62,24 @@ public class AudioHubWindow : EditorWindow
     {
         _tab = GUILayout.Toolbar(_tab, Tabs);
         EditorGUILayout.Space(6);
+        // Tab 工具栏不放进滚动区，每个 Tab 内容独立滚动位置（切换 Tab 时保留各自滚动）
         switch (_tab)
         {
-            case 0: DrawAssetTab(ref _sfxEditor, ref _sfxTarget, SfxPath); break;
-            case 1: DrawAssetTab(ref _monsterEditor, ref _monsterTarget, MonsterPath); break;
-            case 2: DrawAssetTab(ref _bgmEditor, ref _bgmTarget, BgmPath); break;
+            case 0:
+                _sfxScroll = EditorGUILayout.BeginScrollView(_sfxScroll);
+                DrawAssetTab(ref _sfxEditor, ref _sfxTarget, SfxPath);
+                EditorGUILayout.EndScrollView();
+                break;
+            case 1:
+                _monsterScroll = EditorGUILayout.BeginScrollView(_monsterScroll);
+                DrawAssetTab(ref _monsterEditor, ref _monsterTarget, MonsterPath);
+                EditorGUILayout.EndScrollView();
+                break;
+            case 2:
+                _bgmScroll = EditorGUILayout.BeginScrollView(_bgmScroll);
+                DrawAssetTab(ref _bgmEditor, ref _bgmTarget, BgmPath);
+                EditorGUILayout.EndScrollView();
+                break;
         }
     }
 

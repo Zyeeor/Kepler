@@ -343,8 +343,10 @@ public abstract class EnemyAbility : MonoBehaviour
     /// 播放本能力的施放音：优先能力自身 castAudioName（SfxBank 覆盖，走音效表「3D 定位」），
     /// 否则按 owner.sinType + 技能类别查 MonsterSkillAudioConfig（七罪 × 位移/普攻/技能）。
     /// 抽成受保护方法，供绕过 Trigger 的自驱动能力（如蓄力位移）在真正释放时补播施放音。
+    /// virtual：自驱动且按蓄力档位自行选音的能力（如怠惰蓄力炮 Light/Heavy）可覆写为空，
+    /// 避免基类单一 cast 音与分档发射音重复播放。
     /// </summary>
-    protected void PlayCastSound()
+    protected virtual void PlayCastSound()
     {
         if (!string.IsNullOrWhiteSpace(castAudioName))
             CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);

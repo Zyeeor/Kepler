@@ -23,6 +23,8 @@ public class MonsterSkillAudioConfig : ScriptableObject
         Random = 0,
         [Tooltip("不连续重复：排除上一次播放的那一条（按列表条目去重；重复放同 clip 可加权）。")]
         NoRepeat = 1,
+        [Tooltip("蓄力分档：按蓄力程度二选一——clips[0]=低蓄力(Light)、clips[1]=高蓄力(Heavy)，阈值 heavyCastThreshold。用于蓄力类普攻（如怠惰蓄力炮）。")]
+        ChargeTiered = 2,
     }
 
     /// <summary>空间化模式：音效走 2D（恒定音量，不随距离衰减）还是 3D（随距离衰减）。</summary>
@@ -48,6 +50,8 @@ public class MonsterSkillAudioConfig : ScriptableObject
         [Range(0.5f, 1.5f)] public float pitch = 1f;
         [Tooltip("空间化：3D 随距离衰减 / 2D 恒定音量（附身/玩家音推荐 2D）。")]
         public SpatialMode spatialMode = SpatialMode.Positional3D;
+        [Tooltip("蓄力分档阈值（normalized charge 0~1）：仅 pickMode=ChargeTiered 生效。charge01 >= 阈值 → 播 clips[1]（高蓄力），否则播 clips[0]（低蓄力）。")]
+        [Range(0f, 1f)] public float heavyCastThreshold = 0.5f;
     }
 
     [Serializable]
@@ -72,10 +76,38 @@ public class MonsterSkillAudioConfig : ScriptableObject
         }
     }
 
+    /// <summary>
+    /// 召唤物（无人机/木灵）攻击音条目：按召唤者七罪类型查表。
+    /// 与技能条目同构（敌我分轨 + 空间化 + 音量/音高 + 候选音源列表随机播放），
+    /// 但不占用技能类别维度（召唤物不是怪物本体的位移/普攻/技能）。
+    /// </summary>
+    [Serializable]
+    public class DroneEntry
+    {
+        [Tooltip("召唤者七罪类型（无人机归属哪个怪，如 Sloth 怠惰的木灵）。")]
+        public SinType sin = SinType.None;
+        [Tooltip("敌我分轨：开 = 敌方/附身各配一组音源；关 = 敌我共用 enemy 组。")]
+        public bool splitSides = false;
+        [Tooltip("敌方（AI 控制）音源组。")]
+        public ClipSet enemy = new ClipSet();
+        [Tooltip("附身（玩家控制）音源组；splitSides=false 时忽略。")]
+        public ClipSet possessed = new ClipSet();
+
+        public DroneEntry()
+        {
+            enemy.spatialMode = SpatialMode.Positional3D;
+            possessed.spatialMode = SpatialMode.Flat2D;
+        }
+    }
+
     [Tooltip("条目列表（编辑器按七罪分区显示；同（sin, kind）重复时首个生效）。")]
     public List<Entry> entries = new List<Entry>();
 
+    [Tooltip("召唤物（无人机/木灵）攻击音条目列表（按召唤者七罪分区显示；同 sin 重复时首个生效）。")]
+    public List<DroneEntry> droneEntries = new List<DroneEntry>();
+
     Dictionary<(SinType, EnemyAbility.AbilityType), Entry> _cache;
+    Dictionary<SinType, DroneEntry> _droneCache;
 
     /// <summary>查表（构建一次缓存；sin=None / Passive 一律返回 false）。</summary>
     public bool TryGet(SinType sin, EnemyAbility.AbilityType kind, out Entry entry)
@@ -95,6 +127,23 @@ public class MonsterSkillAudioConfig : ScriptableObject
         return _cache.TryGetValue((sin, kind), out entry);
     }
 
+    /// <summary>查召唤物（无人机）攻击音：按召唤者七罪类型查表（构建一次缓存；sin=None 返回 false）。</summary>
+    public bool TryGetDrone(SinType sin, out DroneEntry entry)
+    {
+        entry = null;
+        if (sin == SinType.None) return false;
+        if (_droneCache == null)
+        {
+            _droneCache = new Dictionary<SinType, DroneEntry>();
+            foreach (var e in droneEntries)
+            {
+                if (e == null || e.sin == SinType.None) continue;
+                if (!_droneCache.ContainsKey(e.sin)) _droneCache[e.sin] = e; // 首个生效
+            }
+        }
+        return _droneCache.TryGetValue(sin, out entry);
+    }
+
     void OnValidate()
     {
         // 重复（sin, kind）告警（不改数据，仅提示策划清理）
@@ -106,6 +155,15 @@ public class MonsterSkillAudioConfig : ScriptableObject
             if (!seen.Add(key))
                 Debug.LogWarning($"[MonsterSkillAudioConfig] 重复条目 sin={e.sin} kind={e.kind}，运行时取首个，请清理资产。");
         }
+        // 重复无人机（sin）告警
+        var droneSeen = new HashSet<SinType>();
+        foreach (var e in droneEntries)
+        {
+            if (e == null || e.sin == SinType.None) continue;
+            if (!droneSeen.Add(e.sin))
+                Debug.LogWarning($"[MonsterSkillAudioConfig] 重复无人机条目 sin={e.sin}，运行时取首个，请清理资产。");
+        }
         _cache = null; // 编辑期数据变更后缓存失效
+        _droneCache = null;
     }
 }

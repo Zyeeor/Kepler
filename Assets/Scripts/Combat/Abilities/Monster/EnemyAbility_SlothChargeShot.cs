@@ -184,6 +184,9 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
         lastChargeTime = chargeTime;
         float t = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, maxChargeTime));
+        // 发射瞬间按蓄力档位播 Light/Heavy（玩家/AI/Boss 共用）。分档音源与阈值配在
+        // 音频配置中心 → 怪物技能音 → Sloth 怠惰 → 普攻（ClipSet 选「蓄力分档」）。
+        CombatAudioManager.PlayCastAudio(owner, AbilityType.BasicAttack, owner.transform.position, t);
         float scale = Mathf.Lerp(minChargeScale, maxChargeScale, t);
         float radius = Mathf.Lerp(minBlastRadius, maxBlastRadius, t);
         float shotDamage = Mathf.Lerp(minDamage, maxDamage, t);
@@ -238,6 +241,12 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         var anim = owner.GetComponent<Animator>();
         if (anim != null) anim.SetTrigger("Basic");
     }
+
+    /// <summary>
+    /// 禁用基类单一 cast 音：Sloth 发射音由 FireShot 按蓄力档位（Light/Heavy）播放，
+    /// 避免 Boss 经基类 Trigger 时额外播一次旧 castAudioName / 查表音。
+    /// </summary>
+    protected override void PlayCastSound() { }
 
     private IEnumerator PlayRecoil(float chargeFraction)
     {

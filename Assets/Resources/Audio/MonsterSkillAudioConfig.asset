@@ -15,106 +15,387 @@ MonoBehaviour:
   entries:
   - sin: 1
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips:
+      - {fileID: 8300000, guid: c435d09e6a5a35d4c9148a8120b142ee, type: 3}
+      pickMode: 0
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
+    possessed:
+      clips:
+      - {fileID: 8300000, guid: 56a040c9b6b01f248b23e87d659512fe, type: 3}
+      pickMode: 0
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 1
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips:
+      - {fileID: 8300000, guid: 1892b9efb08a1fe4598121a0f6f63dbd, type: 3}
+      pickMode: 1
+      volumeScale: 2
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 1
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 1
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips:
+      - {fileID: 8300000, guid: 0eef28e917fd98243927d95f333d9489, type: 3}
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 7
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 7
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 7
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 5
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 0.55
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 5
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 5
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 6
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 6
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 6
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 3
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 3
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 3
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 4
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 4
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 4
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 0
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 2
     kind: 3
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 1
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips:
+      - {fileID: 8300000, guid: 207e0ae99fcf239439a244bd4491f7aa, type: 3}
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 2
     kind: 1
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 1
+    enemy:
+      clips:
+      - {fileID: 0}
+      pickMode: 2
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
+    possessed:
+      clips:
+      - {fileID: 8300000, guid: 8dc2ffae142961542a9ae885edceb1f0, type: 3}
+      - {fileID: 8300000, guid: 1b960c80a8c44b94ab5e19def0a76c9d, type: 3}
+      pickMode: 2
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
   - sin: 2
     kind: 2
-    clip: {fileID: 0}
-    volumeScale: 1
-    pitch: 1
+    splitSides: 1
+    enemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips:
+      - {fileID: 8300000, guid: 0d00bbc73a83814408da1fe8f44ee656, type: 3}
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
+  droneEntries:
+  - sin: 2
+    splitSides: 1
+    enemy:
+      clips: []
+      pickMode: 0
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+    possessed:
+      clips:
+      - {fileID: 8300000, guid: d1bd60ce24f9cd74aa63ee12ad8d335d, type: 3}
+      - {fileID: 8300000, guid: 1c40f15e4f5d6074eac51d22629f95a5, type: 3}
+      - {fileID: 8300000, guid: 4d47e1cd7e164ed4482c382e36ac8d87, type: 3}
+      pickMode: 0
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
+      heavyCastThreshold: 0.5
