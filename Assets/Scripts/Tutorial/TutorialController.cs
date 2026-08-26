@@ -86,6 +86,8 @@ public class TutorialController : SceneSingleton<TutorialController>
     {
         get
         {
+            if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
+                return false;
             // force 开关为唯一口径：打开即全量显示，关闭即全部隐藏。
             return GameManager.ForceTutorial;
         }

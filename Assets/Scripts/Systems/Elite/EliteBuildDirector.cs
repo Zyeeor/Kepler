@@ -417,7 +417,7 @@ public class EliteBuildDirector : MonoBehaviour
             return;
         }
 
-        InjectElite(boundWaveManager, resp.snapshot, cycleIndex + 1, resp.relaxed, useScreenEdgePosition: true);
+        InjectElite(boundWaveManager, resp.snapshot, cycleIndex + 1, resp.relaxed);
     }
 
     /// <summary>
@@ -434,7 +434,7 @@ public class EliteBuildDirector : MonoBehaviour
         var snapshot = catalog != null ? catalog.PickPresetSnapshot() : null;
         if (snapshot != null)
         {
-            InjectElite(boundWaveManager, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
+            InjectElite(boundWaveManager, snapshot, cycleIndex + 1, false);
             return true;
         }
         // Preset 池空（内容待策划配置：OD-CAN-001）：空快照注入保底——定时节奏必出精英（无他人构筑、仅数值强化）
@@ -476,11 +476,11 @@ public class EliteBuildDirector : MonoBehaviour
             gameTime = (long)(RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : 0f),
         };
 
-        return InjectElite(wm, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
+        return InjectElite(wm, snapshot, cycleIndex + 1, false);
     }
 
     /// <summary>F9 注入：解析快照 → 刷出 → 挂载体还原历史 BD → 计入本波清点。</summary>
-    bool InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed, bool useScreenEdgePosition = false)
+    bool InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed)
     {
         if (catalog == null)
         {
@@ -499,13 +499,9 @@ public class EliteBuildDirector : MonoBehaviour
             Debug.LogWarning("[EliteBuildDirector] 场景中无 MonsterSpawner，本波不投放。");
             return false;
         }
-        Vector3 pos;
-        bool hasPosition = useScreenEdgePosition
-            ? spawner.TryGetWaveSpawnPosition(entry.sin, out pos)
-            : spawner.TryGetLegacyWaveSpawnPosition(out pos);
-        if (!hasPosition)
+        if (!spawner.TryGetEliteSpawnPosition(out Vector3 pos))
         {
-            Debug.LogWarning("[EliteBuildDirector] 无合法精英刷怪点，本波不投放。");
+            Debug.LogWarning("[EliteBuildDirector] 屏幕内无合法精英刷怪点，本波不投放。");
             return false;
         }
 
