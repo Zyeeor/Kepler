@@ -33,7 +33,7 @@ MonoBehaviour:
   - {fileID: 3196925563032784384, guid: 01f00c3a586f6824d8da506c0a5cfe10, type: 3}
   triggerTiles:
   - {fileID: 666978414410227392, guid: 35b25cfff689ed345a1866bdb4058c40, type: 3}
-  - {fileID: 2898380885021715338, guid: 6633367d5e9b9074abb71617699479d2, type: 3}
+  - {fileID: 2449339998477889666, guid: 50f17a84894320947bcc8ac943a102dd, type: 3}
   - {fileID: 3138969978686984857, guid: 0cd215212401b754089b85d6502a57e0, type: 3}
   decorationTiles:
   - {fileID: 3367049682111893204, guid: 24f306ecf3b018a47ae5a5aa93569d4e, type: 3}
@@ -43,6 +43,13 @@ MonoBehaviour:
   - {fileID: 7466312526658632280, guid: 7ce2625c3e461ac46999daefc9a4f3cf, type: 3}
   - {fileID: 6498301387584422922, guid: 4dc885a4ad17d40419d89e34fdcb0cb3, type: 3}
   - {fileID: 1346408801530255963, guid: 4c30216587fd5bf4ca4c296653559142, type: 3}
+  - {fileID: 884054818893629724, guid: 2fee252fb9783b24d8d910acf527d0e6, type: 3}
+  - {fileID: 8692942236956032075, guid: 27b09777242be58428d62dc1cba2d9f6, type: 3}
+  - {fileID: 5589345268312358667, guid: 71fa884f4268ca645a4883a494492f48, type: 3}
+  - {fileID: 3955400150935638268, guid: 85bfe7e64c05efb47809d5f350782edd, type: 3}
+  - {fileID: 8523959750506546147, guid: 4a5fa69781fa54d4e9fd7057b1d740ce, type: 3}
+  - {fileID: 9151723377845073831, guid: 996634615cda9d746b7ea61e82c7ceb5, type: 3}
+  - {fileID: 6057193568063877376, guid: 38955b1c44ab1d24ea913d03e19a1da3, type: 3}
   triggerPatterns:
   - shape: 2
     weight: 1
@@ -56,6 +63,8 @@ MonoBehaviour:
   - shape: 0
     weight: 1
   - shape: 1
+    weight: 1
+  - shape: 4
     weight: 1
   minPatternsPerChunk: 1
   maxPatternsPerChunk: 5

@@ -17,8 +17,9 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -106,23 +107,23 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _EmissionEnabled: 1
-    - _EmissionIntensity: 1.17
+    - _EmissionIntensity: 0.11
     - _EnvironmentReflections: 1
     - _GlossMapScale: 1
     - _Glossiness: 0
     - _GlossyReflections: 1
     - _Highlight_range: -0.5
     - _Highlight_soft: 0.5
-    - _Metallic: 0.484
+    - _Metallic: 1.43
     - _Mode: 0
-    - _NormalScale: 1
+    - _NormalScale: 0.67
     - _OcclusionStrength: 1
     - _OutlineWidth: 0
     - _Parallax: 0.02
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 1.385
+    - _Smoothness: 1.4
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -136,9 +137,9 @@ Material:
     - _UseRoughnessMap: 0
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.7610062, g: 0.7610062, b: 0.7610062, a: 1}
+    - _BaseColor: {r: 0.17647056, g: 0.42590964, b: 0.78431374, a: 1}
     - _Color: {r: 0.78616345, g: 0.44747034, b: 0.44747034, a: 1}
-    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0.85113317, g: 0.8994199, b: 0.9496855, a: 1}
     - _Highlight_Color: {r: 1, g: 1, b: 1, a: 1}
     - _MainColor: {r: 1, g: 1, b: 1, a: 1}
     - _Outline_color: {r: 0, g: 0, b: 0, a: 1}
