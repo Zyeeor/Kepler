@@ -99,8 +99,10 @@ MonoBehaviour:
   enemySlowMultiplier: 0.5
   segmentSpacing: 1.1
   oilZonePrefab: {fileID: 0}
-  oilTrailVfxPrefab: {fileID: 0}
-  burningOilVfxPrefab: {fileID: 0}
+  oilTrailVfxPrefab: {fileID: 6942737686762418349, guid: ad84c96b8c743f24e808dec2e4cb4761,
+    type: 3}
+  burningOilVfxPrefab: {fileID: 1458042168649295215, guid: 93bc75bb0af5cd440a7452b74156d6eb,
+    type: 3}
 --- !u!1 &1171335042777129862
 GameObject:
   m_ObjectHideFlags: 0
@@ -485,7 +487,7 @@ MonoBehaviour:
   collisionDamage: 10
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Envy_new
+  aiConfigId: Greed
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -507,6 +509,7 @@ MonoBehaviour:
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  corpseGroundYOffset: 0
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 5513348161308998187}

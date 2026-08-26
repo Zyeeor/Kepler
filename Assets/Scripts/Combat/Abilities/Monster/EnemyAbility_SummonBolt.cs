@@ -7,7 +7,8 @@ public class EnemyAbility_SummonBolt : EnemyAbility
     public GameObject projectilePrefab;
     public float projectileSpeed = 16f;
     public float projectileLifetime = 3f;
-    public float searchRange = 10f;
+    // Canonical Sloth drone attack range.
+    public float searchRange = 30f;
     public Vector3 muzzleOffset = new Vector3(0f, 0f, 0.4f);
 
     private void OnEnable()

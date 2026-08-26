@@ -539,7 +539,7 @@ MonoBehaviour:
   collisionDamage: 0
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Envy_new
+  aiConfigId: Sloth_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -561,6 +561,7 @@ MonoBehaviour:
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  corpseGroundYOffset: 1
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 1667697362641137907}
@@ -681,11 +682,11 @@ MonoBehaviour:
   eliteMaterialTemplate: {fileID: 0}
   eliteRimPower: 4.2
   eliteMetallic: 0.3
-  hitFlashColor: {r: 0.4726851, g: 0.5283019, b: 0.28076416, a: 1}
+  hitFlashColor: {r: 0, g: 0.0867854, b: 0.9339623, a: 1}
   hitFlashDuration: 0.25
   hitFlashPeak: 0.85
   dissolveEdgeColor: {r: 0.38197744, g: 0.6037736, b: 0.28669748, a: 1}
-  dissolveEdgeIntensity: 2.55
+  dissolveEdgeIntensity: 4.72
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!1 &2420022869048254844
 GameObject:
@@ -1193,6 +1194,7 @@ MonoBehaviour:
   bonusDroneCount: 2
   maxActiveDrones: 3
   pursuitAttackIntervalMultiplier: 0.6
+  droneAttackRange: 30
 --- !u!1 &6565463922317408885
 GameObject:
   m_ObjectHideFlags: 0
