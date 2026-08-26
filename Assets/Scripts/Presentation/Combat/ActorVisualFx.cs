@@ -24,6 +24,10 @@ public class ActorVisualFx : MonoBehaviour
     public static readonly int ColorId = Shader.PropertyToID("_Color");
     public static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
     public static readonly int EmissionMapId = Shader.PropertyToID("_EmissionMap");
+    public static readonly int SurfaceGlowColorId = Shader.PropertyToID("_SurfaceGlowColor");
+    public static readonly int SurfaceGlowIntensityId = Shader.PropertyToID("_SurfaceGlowIntensity");
+    public static readonly int SurfaceGlowPulseSpeedId = Shader.PropertyToID("_SurfaceGlowPulseSpeed");
+    public static readonly int SurfaceGlowPulseAmountId = Shader.PropertyToID("_SurfaceGlowPulseAmount");
 
     [Header("Possession Highlight")]
     [Tooltip("Emission tint while possessed.")]
@@ -32,10 +36,20 @@ public class ActorVisualFx : MonoBehaviour
     [Range(0f, 8f)] public float possessionRimIntensity = 1.8f;
 
     [Header("Possessable Corpse Highlight")]
-    [Tooltip("Emission tint for a corpse that is currently legal to possess. This uses a runtime material instance and never changes shared art materials.")]
-    [ColorUsage(true, true)] public Color corpseRimColor = new Color(0.2f, 0.95f, 1.25f, 1f);
-    [Tooltip("A restrained rim intensity so available corpses stay readable without competing with possessed bodies or Elites.")]
-    [Range(0f, 8f)] public float corpseRimIntensity = 0.75f;
+    [Tooltip("Subtle cyan rim for a corpse that is currently legal to possess. This uses a runtime material instance and never changes shared art materials.")]
+    [ColorUsage(true, true)] public Color corpseRimColor = new Color(0.12f, 0.55f, 1.0f, 1f);
+    [Tooltip("Brightness of the corpse's broad Fresnel rim. Keep this low so its original material features remain visible.")]
+    [Range(0f, 12f)] public float corpseRimIntensity = 1.35f;
+    [Tooltip("Lower values make the corpse rim wrap farther across the body; this intentionally differs from the sharper Elite rim.")]
+    [Range(0.5f, 8f)] public float corpseRimPower = 2.0f;
+    [Tooltip("Brightness added across the whole corpse surface when an optional corpse material template supports it.")]
+    [Range(0f, 12f)] public float corpseSurfaceGlowIntensity = 0.1f;
+    [Tooltip("Pulse speed of the corpse glow in Hz. Set to 0 for a steady glow.")]
+    [Min(0f)] public float corpsePulseSpeed = 1.1f;
+    [Tooltip("Pulse amplitude as a fraction of the corpse brightness.")]
+    [Range(0f, 1f)] public float corpsePulseAmount = 0.12f;
+    [Tooltip("Optional runtime material template for possessable corpses. Leave empty to retain a clone of each original material and only add its supported highlight properties.")]
+    public Material corpseMaterialTemplate;
 
     [Header("Elite Highlight")]
     [Tooltip("HDR rim/emission tint for Elite bodies. Original renderer materials are cloned at runtime; shared assets stay unchanged.")]
@@ -92,7 +106,7 @@ public class ActorVisualFx : MonoBehaviour
 #if UNITY_EDITOR
     void OnValidate()
     {
-        // Live-apply Inspector tweaks while possessed or while an Elite highlight is active.
+        // Live-apply Inspector tweaks while a highlight is active.
         if (!Application.isPlaying || _block == null) return;
         if (!_possessionEnabled && !_corpseEnabled && !_eliteEnabled && !_usingHighlightInstances) return;
         ApplyFx();
@@ -136,6 +150,8 @@ public class ActorVisualFx : MonoBehaviour
 
     public void SetCorpseHighlight(bool enabled)
     {
+        if (enabled && !_corpseEnabled && _usingHighlightInstances)
+            RestoreHighlightMaterialInstances();
         _corpseEnabled = enabled;
         if (!enabled && !_possessionEnabled && !_eliteEnabled)
             RestoreHighlightMaterialInstances();
@@ -224,6 +240,9 @@ public class ActorVisualFx : MonoBehaviour
     private float GetPossessionRimIntensity()
     {
         float possessionIntensity = _possessionEnabled ? Mathf.Max(0f, possessionRimIntensity) : 0f;
+        if (_corpseEnabled)
+            return Mathf.Max(possessionIntensity, Mathf.Max(0f, corpseRimIntensity));
+
         if (_eliteEnabled)
         {
             float pulse = 1f + Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * Mathf.Max(0f, elitePulseSpeed))
@@ -232,14 +251,14 @@ public class ActorVisualFx : MonoBehaviour
             return Mathf.Max(possessionIntensity, eliteIntensity);
         }
 
-        return Mathf.Max(possessionIntensity, _corpseEnabled ? Mathf.Max(0f, corpseRimIntensity) : 0f);
+        return possessionIntensity;
     }
 
     private Color GetRimColor()
     {
+        if (_corpseEnabled) return corpseRimColor;
         if (_eliteEnabled) return eliteRimColor;
         if (_possessionEnabled) return possessionRimColor;
-        if (_corpseEnabled) return corpseRimColor;
         return possessionRimColor;
     }
 
@@ -343,15 +362,19 @@ public class ActorVisualFx : MonoBehaviour
         if (_usingHighlightInstances || _usingDissolveMaterials) return;
         EnsureCache();
 
-        bool useEliteMaterial = _eliteEnabled;
-        Shader eliteShader = null;
+        bool useEliteMaterial = _eliteEnabled && !_corpseEnabled;
+        bool useCorpseMaterial = _corpseEnabled && corpseMaterialTemplate != null && corpseMaterialTemplate.shader != null;
+        bool useDedicatedMaterial = useEliteMaterial || useCorpseMaterial;
+        Shader dedicatedShader = null;
         if (useEliteMaterial)
         {
-            eliteShader = eliteMaterialTemplate != null
+            dedicatedShader = eliteMaterialTemplate != null
                 ? eliteMaterialTemplate.shader
                 : Shader.Find("Possession/CharacterFX");
-            useEliteMaterial = eliteShader != null;
+            useDedicatedMaterial = dedicatedShader != null;
         }
+        else if (useCorpseMaterial)
+            dedicatedShader = corpseMaterialTemplate.shader;
 
         _preHighlightSharedMaterials = new Material[_renderers.Length][];
         for (int r = 0; r < _renderers.Length; r++)
@@ -378,27 +401,28 @@ public class ActorVisualFx : MonoBehaviour
                 }
 
                 Material inst;
-                if (useEliteMaterial)
+                if (useDedicatedMaterial)
                 {
-                    inst = eliteMaterialTemplate != null
-                        ? new Material(eliteMaterialTemplate)
-                        : new Material(eliteShader);
-                    inst.name = src.name + "_EliteHighlight";
+                    Material template = useEliteMaterial ? eliteMaterialTemplate : corpseMaterialTemplate;
+                    inst = template != null
+                        ? new Material(template)
+                        : new Material(dedicatedShader);
+                    inst.name = src.name + (useEliteMaterial ? "_EliteHighlight" : "_CorpseGlow");
                     CopyLook(src, inst);
                     if (inst.HasProperty(RimColorId))
-                        inst.SetColor(RimColorId, eliteRimColor);
+                        inst.SetColor(RimColorId, useEliteMaterial ? eliteRimColor : corpseRimColor);
                     if (inst.HasProperty(RimPowerId))
-                        inst.SetFloat(RimPowerId, eliteRimPower);
-                    if (inst.HasProperty("_Metallic"))
+                        inst.SetFloat(RimPowerId, useEliteMaterial ? eliteRimPower : corpseRimPower);
+                    if (useEliteMaterial && inst.HasProperty("_Metallic"))
                         inst.SetFloat("_Metallic", eliteMetallic);
                 }
                 else
                 {
                     inst = new Material(src);
-                    inst.name = src.name + "_PossessHighlight";
+                    inst.name = src.name + (_corpseEnabled ? "_CorpseGlow" : "_PossessHighlight");
                 }
 
-                if (!useEliteMaterial && inst.HasProperty(EmissionColorId))
+                if (!useDedicatedMaterial && inst.HasProperty(EmissionColorId))
                 {
                     // Emission starts black; ApplyFx writes rimColor * intensity via MPB.
                     // Avoids revealing authored emission just by flipping the keyword on.
@@ -430,7 +454,8 @@ public class ActorVisualFx : MonoBehaviour
                 for (int m = 0; m < current.Length; m++)
                 {
                     if (current[m] != null &&
-                        (current[m].name.EndsWith("_PossessHighlight") || current[m].name.EndsWith("_EliteHighlight")))
+                        (current[m].name.EndsWith("_PossessHighlight") || current[m].name.EndsWith("_EliteHighlight")
+                            || current[m].name.EndsWith("_CorpseGlow")))
                         Destroy(current[m]);
                 }
             }
@@ -598,6 +623,9 @@ public class ActorVisualFx : MonoBehaviour
         // Always read Inspector fields live so prefab / Play Mode tweaks take effect immediately.
         float rimIntensity = GetPossessionRimIntensity();
         Color rimColor = rimIntensity > 0.001f ? GetRimColor() : Color.black;
+        float surfaceGlowIntensity = _corpseEnabled
+            ? Mathf.Max(0f, corpseSurfaceGlowIntensity)
+            : 0f;
         SyncPossessionHighlightMaterials(rimIntensity);
 
         bool anyFx = _dissolve < 0.999f || rimIntensity > 0.001f || _hitFlash > 0.001f;
@@ -642,6 +670,15 @@ public class ActorVisualFx : MonoBehaviour
                         _block.SetColor(HitFlashColorId, hitFlashColor);
                 }
 
+                if (mat.HasProperty(SurfaceGlowColorId))
+                    _block.SetColor(SurfaceGlowColorId, _corpseEnabled ? corpseRimColor : Color.black);
+                if (mat.HasProperty(SurfaceGlowIntensityId))
+                    _block.SetFloat(SurfaceGlowIntensityId, surfaceGlowIntensity);
+                if (mat.HasProperty(SurfaceGlowPulseSpeedId))
+                    _block.SetFloat(SurfaceGlowPulseSpeedId, _corpseEnabled ? Mathf.Max(0f, corpsePulseSpeed) : 0f);
+                if (mat.HasProperty(SurfaceGlowPulseAmountId))
+                    _block.SetFloat(SurfaceGlowPulseAmountId, _corpseEnabled ? Mathf.Clamp01(corpsePulseAmount) : 0f);
+
                 // Original materials: emission highlight / flash only. Never rewrite albedo in normal state.
                 int key = PackKey(r, m);
                 _baseEmission.TryGetValue(key, out Color baseEmission);
@@ -668,7 +705,7 @@ public class ActorVisualFx : MonoBehaviour
                 if (mat.HasProperty(RimColorId))
                     _block.SetColor(RimColorId, rimColor);
                 if (mat.HasProperty(RimPowerId))
-                    _block.SetFloat(RimPowerId, eliteRimPower);
+                    _block.SetFloat(RimPowerId, _corpseEnabled ? corpseRimPower : eliteRimPower);
 
                 // Hit flash on original materials: lerp albedo so it works without _EMISSION.
                 if (_hitFlash > 0.001f && !_usingDissolveMaterials && _baseColors.TryGetValue(key, out Color baseColor))

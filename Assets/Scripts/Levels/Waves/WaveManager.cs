@@ -60,15 +60,13 @@ public class WaveManager : SceneSingleton<WaveManager>
     public bool recycleRemainingOnTimeUp = true;
 
     [Header("新刷怪逻辑开关")]
-    [Tooltip("开启：使用新的连续刷怪 / 周期怪潮 / 定时精英逻辑；关闭：完全使用原有 CountKill / Timed 波次逻辑。")]
+    [Tooltip("开启：使用普通怪速率曲线与定时精英逻辑；关闭：完全使用原有 CountKill / Timed 波次逻辑。")]
     public bool continuousSpawning = true;
 
-    [Header("新逻辑：常规刷怪")]
-    [Tooltip("常规刷怪间隔（秒）。默认每 3 秒注入一次；每次生成数量会按时间成长档位乘算。")]
-    [Min(0.1f)] public float normalSpawnInterval = 3f;
-    [Tooltip("第一成长档位每次常规刷怪的基础数量。第 n 个成长档位实际生成数量 = 此值 × n。")]
-    [Min(0)] public int normalSpawnCountPerTick = 1;
-    [Tooltip("常规刷怪与怪潮使用的罪印轮换顺序。默认七种怪各出现一次后循环。")]
+    [Header("新逻辑：普通怪生成")]
+    [Tooltip("横轴为 0～7 分钟的战斗时间，纵轴为平均每秒生成的普通怪数量。代码按当前速率换算为每 1/速率 秒生成 1 只；0 表示暂停普通怪生成。")]
+    public AnimationCurve normalSpawnRateByMinute = AnimationCurve.Linear(0f, 1f / 3f, 7f, 7f / 3f);
+    [Tooltip("普通怪与精英使用的罪印轮换顺序。普通怪每种各生成一次后循环。")]
     public List<SinType> continuousSpawnOrder = new List<SinType>
     {
         SinType.Pride,
@@ -88,41 +86,24 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Tooltip("每次达到定向替换距离时最多替换的怪物数量。")]
     [Min(1)] public int sectorReplacementCountPerTrigger = 1;
 
-    [Header("新逻辑：时间成长")]
-    [Tooltip("连续刷怪数量与上限的成长周期（秒）。默认 60 秒，即按分钟切换一次成长档位。")]
-    [Min(0.1f)] public float continuousSpawnGrowthPeriodSeconds = 60f;
-    [Tooltip("连续自动怪同时存在上限按分钟配置：列表第 1 项对应第 1 分钟，第 2 项对应第 2 分钟；超过列表长度后沿用最后一项。")]
-    public List<int> continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30 };
+    [Header("新逻辑：普通怪上限")]
+    [Tooltip("同时存在的普通自动怪上限。数组 7 项依次对应第 0～1、1～2、…、6～7 分钟；精英不占用此上限。")]
+    public List<int> continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30, 30, 30, 30, 30 };
 
-    [Header("新逻辑：每分钟怪潮")]
-    [Tooltip("怪潮周期（秒）。")]
+    [Header("新逻辑：精英")]
+    [Tooltip("精英生成周期（秒）。默认每分钟一次。")]
     [Min(0.1f)] public float spawnCycleSeconds = 60f;
-    [Tooltip("每个周期开始后多少秒进入怪潮。默认第 30 秒。")]
-    [Min(0f)] public float tideStartSeconds = 30f;
-    [Tooltip("怪潮持续时间（秒）。默认 9 秒。")]
-    [Min(0f)] public float tideDurationSeconds = 9f;
-    [Tooltip("怪潮注入间隔（秒）。默认每 3 秒注入一次。")]
-    [Min(0.1f)] public float tideSpawnInterval = 3f;
-    [Tooltip("第一成长档位怪潮每次为每种罪印生成的基础数量。第 n 个成长档位实际数量 = 此值 × n。")]
-    [Min(0)] public int tideSpawnCountPerSin = 1;
-
-    [Header("新逻辑：精英与成长")]
-    [Tooltip("每个周期开始后多少秒生成精英。默认第 40 秒。")]
-    [Min(0f)] public float eliteSpawnOffsetSeconds = 40f;
-    [Tooltip("每个周期生成的精英数量。默认 1 只。")]
-    [Min(0)] public int eliteCountPerCycle = 1;
+    [Tooltip("每个周期的第几秒生成 1 只精英。默认每分钟第 30 秒。")]
+    [Min(0f)] public float eliteSpawnOffsetSeconds = 30f;
+    [Header("新逻辑：数值成长")]
     [Tooltip("Boss 前非 Boss 战斗时长（秒）。默认 7 分钟，倒计时从该值开始。")]
     [Min(1f)] public float nonBossDurationSeconds = 420f;
-    [Tooltip("怪物数值成长周期（秒）。每次成长点必须先于同一时刻的怪潮注入生效。")]
+    [Tooltip("横轴为 0～7 分钟的战斗时间，纵轴为新生成怪物基础生命值乘数。生命值 = 基础生命值 × 此曲线值。")]
+    public AnimationCurve monsterHealthMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 2.4f);
+    [Tooltip("横轴为 0～7 分钟的战斗时间，纵轴为新生成怪物基础攻击力乘数。攻击力 = 基础攻击力 × 此曲线值。")]
+    public AnimationCurve monsterAttackMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 1.84f);
+    [Tooltip("旧 Boss 仆从类型选择使用的成长档位间隔（秒）；不控制生命值或攻击力倍率。")]
     [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
-
-    [Header("新逻辑：击杀回响")]
-    [Tooltip("击杀回响在窗口内的全局数量上限，所有罪印类型合计。")]
-    [Min(0)] public int killEchoMaxCountPerWindow = 2;
-    [Tooltip("怪潮持续期间击杀回响在窗口内的全局数量上限，所有罪印类型合计。")]
-    [Min(0)] public int tideKillEchoMaxCountPerWindow = 7;
-    [Tooltip("击杀回响数量上限的刷新窗口（秒）。")]
-    [Min(0.1f)] public float killEchoWindowSeconds = 2f;
 
     [Header("波次配置")]
     [Tooltip("整体波次模式：CountKill=全部波为数量波；Timed=全部波为时间波。")]
@@ -158,27 +139,25 @@ public class WaveManager : SceneSingleton<WaveManager>
     void ApplyEnemyAiTestDefaults()
     {
         if (gameObject.scene.name != "EnemyAiTest") return;
-        bool fieldsWereAbsentFromScene = normalSpawnInterval < 0.1f || killEchoWindowSeconds < 0.1f;
-        if (fieldsWereAbsentFromScene)
+        continuousSpawning = true;
+        if (normalSpawnRateByMinute == null || normalSpawnRateByMinute.length == 0)
+            normalSpawnRateByMinute = AnimationCurve.Linear(0f, 1f / 3f, 7f, 7f / 3f);
+        if (monsterHealthMultiplierByMinute == null || monsterHealthMultiplierByMinute.length == 0)
+            monsterHealthMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 2.4f);
+        if (monsterAttackMultiplierByMinute == null || monsterAttackMultiplierByMinute.length == 0)
+            monsterAttackMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 1.84f);
+        if (continuousSpawnMaxCountsByMinute == null || continuousSpawnMaxCountsByMinute.Count == 0)
+            continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30, 30, 30, 30, 30 };
+        else
         {
-            continuousSpawning = true;
-            normalSpawnInterval = 3f;
-            normalSpawnCountPerTick = 1;
-            continuousSpawnGrowthPeriodSeconds = 60f;
-            continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30 };
-            spawnCycleSeconds = 60f;
-            tideStartSeconds = 30f;
-            tideDurationSeconds = 9f;
-            tideSpawnInterval = 3f;
-            tideSpawnCountPerSin = 1;
-            eliteSpawnOffsetSeconds = 40f;
-            eliteCountPerCycle = 1;
-            nonBossDurationSeconds = 420f;
-            difficultyGrowthIntervalSeconds = 30f;
-            killEchoMaxCountPerWindow = 2;
-            tideKillEchoMaxCountPerWindow = 7;
-            killEchoWindowSeconds = 2f;
+            int fallback = Mathf.Max(1, continuousSpawnMaxCountsByMinute[continuousSpawnMaxCountsByMinute.Count - 1]);
+            while (continuousSpawnMaxCountsByMinute.Count < 7)
+                continuousSpawnMaxCountsByMinute.Add(fallback);
         }
+        spawnCycleSeconds = 60f;
+        eliteSpawnOffsetSeconds = 30f;
+        nonBossDurationSeconds = 420f;
+        difficultyGrowthIntervalSeconds = 30f;
         if (continuousSpawnOrder == null || continuousSpawnOrder.Count == 0)
             continuousSpawnOrder = DefaultContinuousSpawnOrder();
     }
@@ -371,12 +350,11 @@ public class WaveManager : SceneSingleton<WaveManager>
     void ConfigureSpawnDirector(RunSpawnDirector director)
     {
         if (director == null) return;
-        director.SetPeriodicPressureEnabled(!UsesContinuousSpawning);
-        director.ConfigureKillEchoWindow(
-            UsesContinuousSpawning ? killEchoMaxCountPerWindow : 4,
-            UsesContinuousSpawning ? killEchoWindowSeconds : 10f,
-            UsesContinuousSpawning);
-        director.ConfigureRunTiming(nonBossDurationSeconds, difficultyGrowthIntervalSeconds);
+        director.ConfigureRunTiming(
+            nonBossDurationSeconds,
+            difficultyGrowthIntervalSeconds,
+            monsterHealthMultiplierByMinute,
+            monsterAttackMultiplierByMinute);
     }
 
     /// <summary>
@@ -630,7 +608,7 @@ public class WaveManager : SceneSingleton<WaveManager>
 
     // ── 数量波：刷满 totalCount 不再补，清场过波 ──
 
-    // ── 新模式：常规刷怪 + 每分钟怪潮 + 周期精英 ──
+    // ── 新模式：速率曲线普通怪 + 周期精英 ──
 
     IEnumerator RunContinuousWaves()
     {
@@ -644,8 +622,7 @@ public class WaveManager : SceneSingleton<WaveManager>
         IsWaveActive = true;
         PrepareWaveRandom(0);
         float combatTime = director.ActiveCombatSeconds;
-        float nextNormalTime = NextIntervalTime(combatTime, normalSpawnInterval);
-        float nextTideTickTime = NextTideTickTimeAfter(combatTime);
+        float nextNormalTime = NextNormalSpawnTime(combatTime);
         float nextEliteTime = NextCycleEventTimeAfter(combatTime, eliteSpawnOffsetSeconds);
         int normalOrderIndex = 0;
         MonsterSpawner movementSpawner = MonsterSpawner.Instance;
@@ -656,17 +633,14 @@ public class WaveManager : SceneSingleton<WaveManager>
         while (isRunning)
         {
             combatTime = director.ActiveCombatSeconds;
-            int growthStep = ContinuousSpawnGrowthStep(combatTime);
             if (movementSpawner != null)
             {
-                int continuousMaxCount = GetContinuousSpawnMaxCount(growthStep);
+                int continuousMaxCount = GetContinuousSpawnMaxCount(combatTime);
                 movementSpawner.ConfigureContinuousSpawnMaxCount(continuousMaxCount);
             }
             CurrentWaveIndex = Mathf.Max(0, Mathf.FloorToInt(combatTime / Mathf.Max(0.1f, spawnCycleSeconds)));
             TimeWaveRemaining = Mathf.Max(0f, nonBossDurationSeconds - combatTime);
             PruneWaveAlive();
-            ApplyKillEchoCapForTime(director, combatTime);
-
             if (directionalReplacementEnabled && movementSpawner != null)
             {
                 Vector3 playerPosition = movementSpawner.CurrentPlayerPosition;
@@ -705,45 +679,29 @@ public class WaveManager : SceneSingleton<WaveManager>
 
             while (combatTime >= nextNormalTime && nextNormalTime < nonBossDurationSeconds)
             {
-                ApplyKillEchoCapForTime(director, nextNormalTime);
-                int spawned = 0;
-                int normalGrowthStep = ContinuousSpawnGrowthStep(nextNormalTime);
-                int spawnCount = Mathf.Max(0, normalSpawnCountPerTick) * normalGrowthStep;
-                for (int i = 0; i < spawnCount; i++)
+                float rate = GetNormalSpawnRate(nextNormalTime);
+                MonsterActor monster = null;
+                if (rate > 0f)
                 {
                     SinType sin = continuousSpawnOrder[normalOrderIndex % continuousSpawnOrder.Count];
-                    MonsterActor monster = director.SpawnScheduledMonster(sin);
+                    monster = director.SpawnScheduledMonster(sin);
                     if (monster != null)
                     {
-                        // Advance the rotation only after a real spawn. A failed legal
-                        // position or a full cap must not skip that sin and create
-                        // duplicate sin types later in the same minute.
+                        // Only a real spawn advances the rotation, so failed legal-position
+                        // checks and a full normal cap cannot bias the type distribution.
                         normalOrderIndex++;
                         waveAlive.Add(monster);
-                        spawned++;
                     }
                 }
-                Debug.Log($"[WaveManager] 新逻辑常规刷怪：t={nextNormalTime:F1}s，成长档位 {normalGrowthStep}，生成 {spawned}/{spawnCount}，在场 {waveAlive.Count}。");
-                nextNormalTime += Mathf.Max(0.1f, normalSpawnInterval);
-            }
-
-            while (combatTime >= nextTideTickTime && nextTideTickTime < nonBossDurationSeconds)
-            {
-                ApplyKillEchoCapForTime(director, nextTideTickTime);
-                int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(nextTideTickTime / Mathf.Max(0.1f, spawnCycleSeconds)));
-                int tideGrowthStep = ContinuousSpawnGrowthStep(nextTideTickTime);
-                int perSin = Mathf.Max(0, tideSpawnCountPerSin) * tideGrowthStep;
-                int spawned = SpawnContinuousTide(director, perSin);
-                Debug.Log($"[WaveManager] 新逻辑怪潮：周期 {cycleIndex + 1}，t={nextTideTickTime:F1}s，成长档位 {tideGrowthStep}，生成 {spawned} 只（目标 {continuousSpawnOrder.Count * perSin}）。");
-                nextTideTickTime = NextTideTickTimeAfter(nextTideTickTime);
+                Debug.Log($"[WaveManager] 普通怪速率生成：t={nextNormalTime:F1}s，rate={rate:F3}/s，生成 {(monster != null ? 1 : 0)}，在场 {waveAlive.Count}。");
+                nextNormalTime = NextNormalSpawnTime(nextNormalTime);
             }
 
             while (combatTime >= nextEliteTime && nextEliteTime < nonBossDurationSeconds)
             {
-                ApplyKillEchoCapForTime(director, nextEliteTime);
                 int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(nextEliteTime / Mathf.Max(0.1f, spawnCycleSeconds)));
                 int spawned = SpawnContinuousElites(cycleIndex);
-                Debug.Log($"[WaveManager] 新逻辑精英：周期 {cycleIndex + 1}，t={nextEliteTime:F1}s，生成 {spawned}/{Mathf.Max(0, eliteCountPerCycle)} 只。");
+                Debug.Log($"[WaveManager] 定时精英：周期 {cycleIndex + 1}，t={nextEliteTime:F1}s，生成 {spawned}/1 只。");
                 nextEliteTime += Mathf.Max(0.1f, spawnCycleSeconds);
             }
 
@@ -759,67 +717,30 @@ public class WaveManager : SceneSingleton<WaveManager>
         EnemiesAlive = waveAlive.Count;
     }
 
-    void ApplyKillEchoCapForTime(RunSpawnDirector director, float time)
+    float GetNormalSpawnRate(float time)
     {
-        if (director == null) return;
-        int maxCount = IsTideActive(time) ? tideKillEchoMaxCountPerWindow : killEchoMaxCountPerWindow;
-        director.ConfigureKillEchoMaxCount(maxCount);
+        if (normalSpawnRateByMinute == null || normalSpawnRateByMinute.length == 0) return 0f;
+        return Mathf.Max(0f, normalSpawnRateByMinute.Evaluate(Mathf.Clamp(time / 60f, 0f, 7f)));
     }
 
-    bool IsTideActive(float time)
+    float NextNormalSpawnTime(float current)
     {
-        float cycle = Mathf.Max(0.1f, spawnCycleSeconds);
-        float start = Mathf.Clamp(tideStartSeconds, 0f, cycle);
-        float duration = Mathf.Clamp(tideDurationSeconds, 0f, cycle - start);
-        if (duration <= 0f) return false;
-
-        float phase = Mathf.Repeat(Mathf.Max(0f, time), cycle);
-        return phase >= start && phase < start + duration;
+        float rate = GetNormalSpawnRate(current);
+        // Keep probing a zero-rate curve so a later non-zero key can resume generation.
+        if (rate <= 0.0001f) return current + 0.25f;
+        return current + Mathf.Max(0.05f, 1f / rate);
     }
 
-    int ContinuousSpawnGrowthStep(float time)
-    {
-        float period = Mathf.Max(0.1f, continuousSpawnGrowthPeriodSeconds);
-        return Mathf.Max(1, Mathf.FloorToInt(Mathf.Max(0f, time) / period) + 1);
-    }
-
-    int GetContinuousSpawnMaxCount(int growthStep)
+    int GetContinuousSpawnMaxCount(float time)
     {
         if (continuousSpawnMaxCountsByMinute == null || continuousSpawnMaxCountsByMinute.Count == 0)
         {
-            continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30 };
+            continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30, 30, 30, 30, 30 };
         }
 
-        int index = Mathf.Clamp(Mathf.Max(1, growthStep) - 1, 0, continuousSpawnMaxCountsByMinute.Count - 1);
+        int minuteIndex = Mathf.Clamp(Mathf.FloorToInt(Mathf.Max(0f, time) / 60f), 0, 6);
+        int index = Mathf.Min(minuteIndex, continuousSpawnMaxCountsByMinute.Count - 1);
         return Mathf.Max(1, continuousSpawnMaxCountsByMinute[index]);
-    }
-
-    float NextIntervalTime(float current, float interval)
-    {
-        float safeInterval = Mathf.Max(0.1f, interval);
-        return (Mathf.Floor(Mathf.Max(0f, current) / safeInterval) + 1f) * safeInterval;
-    }
-
-    float NextTideTickTimeAfter(float current)
-    {
-        float cycle = Mathf.Max(0.1f, spawnCycleSeconds);
-        float start = Mathf.Clamp(tideStartSeconds, 0f, cycle);
-        float duration = Mathf.Clamp(tideDurationSeconds, 0f, cycle - start);
-        float interval = Mathf.Max(0.1f, tideSpawnInterval);
-        if (duration <= 0f) return (Mathf.Floor(Mathf.Max(0f, current) / cycle) + 1f) * cycle + start;
-
-        int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(Mathf.Max(0f, current) / cycle));
-        float cycleStart = cycleIndex * cycle;
-        float first = cycleStart + start;
-        float candidate = first;
-        if (current >= first - 0.0001f)
-        {
-            int passed = Mathf.FloorToInt((current - first) / interval) + 1;
-            candidate = first + passed * interval;
-        }
-        if (candidate < first + duration - 0.0001f)
-            return candidate;
-        return cycleStart + cycle + start;
     }
 
     float NextCycleEventTimeAfter(float current, float offset)
@@ -833,26 +754,6 @@ public class WaveManager : SceneSingleton<WaveManager>
         return candidate;
     }
 
-    int SpawnContinuousTide(RunSpawnDirector director, int perSin)
-    {
-        int spawned = 0;
-        perSin = Mathf.Max(0, perSin);
-        for (int sinIndex = 0; sinIndex < continuousSpawnOrder.Count; sinIndex++)
-        {
-            SinType sin = continuousSpawnOrder[sinIndex];
-            for (int i = 0; i < perSin; i++)
-            {
-                MonsterActor monster = director.SpawnScheduledMonster(sin);
-                if (monster != null)
-                {
-                    waveAlive.Add(monster);
-                    spawned++;
-                }
-            }
-        }
-        return spawned;
-    }
-
     int SpawnContinuousElites(int cycleIndex)
     {
         EliteBuildDirector eliteDirector = EliteBuildDirector.Instance != null
@@ -860,15 +761,10 @@ public class WaveManager : SceneSingleton<WaveManager>
             : EliteBuildDirector.EnsureInstance();
         if (eliteDirector == null) return 0;
 
-        int spawned = 0;
-        int eliteCount = Mathf.Max(0, eliteCountPerCycle);
-        for (int i = 0; i < eliteCount; i++)
-        {
-            SinType sin = continuousSpawnOrder[(cycleIndex + i) % continuousSpawnOrder.Count];
-            if (eliteDirector.TryInjectScheduledElite(sin, cycleIndex))
-                spawned++;
-        }
-        return spawned;
+        // 联网投放：优先向服务器请求他人构筑快照（wave = 投放序号 = cycleIndex + 1），
+        // 离线/失败/空候选走本地兜底（Preset → 空快照，定时节奏必出精英）。
+        SinType sin = continuousSpawnOrder[cycleIndex % continuousSpawnOrder.Count];
+        return eliteDirector.RequestScheduledElite(sin, cycleIndex) ? 1 : 0;
     }
 
     IEnumerator RunCountKillWave(WaveConfig wave)

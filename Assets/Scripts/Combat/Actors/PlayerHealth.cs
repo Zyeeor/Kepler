@@ -42,6 +42,7 @@ public class PlayerHealth : MonoBehaviour
     // null ⇒ Soul 池显示；非 null ⇒ 由 SyncBoundActorToUI 每帧同步 Body 池。
     private IActor _trackedActor;
     private float _lastBurnAnchorX = -1f; // 火苗锚点缓存：血量比例未变时不重复触发布局
+    private float _nextHealthSliderLookupTime;
 
     void Awake()
     {
@@ -53,11 +54,12 @@ public class PlayerHealth : MonoBehaviour
         visualFx = GetComponent<ActorVisualFx>();
         if (visualFx == null) visualFx = gameObject.AddComponent<ActorVisualFx>();
         visualFx.RefreshRenderers();
-
+        ResolveHealthSlider();
     }
 
     void Start()
     {
+        ResolveHealthSlider();
         currentHealth = soulMaxHealth;
         maxHealth = soulMaxHealth;
         UpdateHealthUI();
@@ -111,15 +113,39 @@ public class PlayerHealth : MonoBehaviour
     /// </summary>
     void SyncBoundActorToUI()
     {
+        ResolveHealthSlider();
         if (_trackedActor == null || healthSlider == null) return;
         float max = _trackedActor.MaxHealth;
         float cur = _trackedActor.CurrentHealth;
         if (Mathf.Abs(healthSlider.maxValue - max) > 0.001f) healthSlider.maxValue = max;
         if (Mathf.Abs(healthSlider.value - cur) > 0.001f) healthSlider.value = cur;
+        if (sliderFillImage != null && healthGradient != null)
+            sliderFillImage.color = healthGradient.Evaluate(max > 0f ? cur / max : 0f);
         if (dangerPanel != null && dangerPanel.activeSelf) dangerPanel.SetActive(false);
     }
 
-    
+    private void ResolveHealthSlider()
+    {
+        if (healthSlider != null) return;
+        if (Time.unscaledTime < _nextHealthSliderLookupTime) return;
+        _nextHealthSliderLookupTime = Time.unscaledTime + 1f;
+
+        Slider[] sliders = FindObjectsOfType<Slider>(true);
+        for (int i = 0; i < sliders.Length; i++)
+        {
+            Slider candidate = sliders[i];
+            if (candidate == null || !candidate.isActiveAndEnabled || candidate.gameObject.name != "HealthSlider") continue;
+
+            Canvas canvas = candidate.GetComponentInParent<Canvas>();
+            if (canvas == null || canvas.renderMode == RenderMode.WorldSpace) continue;
+
+            healthSlider = candidate;
+            if (sliderFillImage == null && healthSlider.fillRect != null)
+                sliderFillImage = healthSlider.fillRect.GetComponent<Image>();
+            return;
+        }
+    }
+
 
     /// <summary>
     /// 灵魂组件启停（PossessionManager 无 SoulActor 时的兜底路径）。
@@ -182,9 +208,10 @@ public class PlayerHealth : MonoBehaviour
     /// <summary>刷新玩家血条/危险UI（PossessionManager 附身切换时也调用）。</summary>
     public void UpdateHealthUI()
     {
+        ResolveHealthSlider();
         if (_trackedActor != null)
         {
-            // 附身中：滑块由 SyncBoundActorToUI 每帧写，这里只负责关掉 Soul 危险面板。
+            SyncBoundActorToUI();
             if (dangerPanel != null && dangerPanel.activeSelf) dangerPanel.SetActive(false);
             return;
         }
