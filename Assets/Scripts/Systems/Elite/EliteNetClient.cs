@@ -123,8 +123,9 @@ public class SnapshotEntry
     public List<BdCardEntry> bdData;
     public int sourceWave;
     /// <summary>
-    /// 独立阶段标记（Meta §6.7）：普通波 = "wave"，Final = "final"（不借用虚构 Wave 编号）。
-    /// sourceWave 始终记真实已完成波数；服务器当前忽略此未知字段，schema 支持后消费。
+    /// 独立阶段标记：普通波内选卡 = "wave"，Final = "final"（不借用虚构编号）。
+    /// sourceWave = 本局第几次选卡（1-based 选卡会话计数，含精英奖励选卡；Owner 2026-08-26
+    /// 决策，与投放序号同量纲）；服务器按数值透传比较（sourceWave >= wave + waveGap）。
     /// </summary>
     public string stage;
     public long gameTime;

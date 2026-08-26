@@ -139,6 +139,9 @@ public class CardManager : SceneSingleton<CardManager>
         // Investment/Known Type 均由已解锁卡 + 波次进度纯推导（无需额外存档字段）
         RebuildInvestments();
         RefreshKnownTypes(completedWaves);   // Pride 起始常驻 + 按已完成波次累加解锁表（幂等）
+
+        // 接好 AI 攻击/技能范围的解锁钩子：rangeUnlocks[].unlockId 视为卡牌 effectId。
+        MonsterAIConfig.IsUnlocked = id => unlockedEffects.Contains(id);
     }
 
     void Start()

@@ -79,13 +79,13 @@ public class MapStreamingSystem : MonoBehaviour
     [Tooltip("默认 Chunk 模板：WorldPlan 接入前所有 Chunk 共用；为空时 Tile 生成退化为纯随机（池内 prefab，可走性=无 solid Collider）。")]
     public ChunkDef defaultChunkDef;
 
-    [Header("神龛（PossessionBodyProvider 挂载 prefab；按 Chunk 分布放置）")]
-    [Tooltip("神龛 prefab（挂 PossessionBodyProvider 组件，如 RageStatue）。为空 = 不生成神龛。")]
+    [Header("神龛（出生点附身载体，作为 Chunk Tile 生成）")]
+    [Tooltip("普通神龛 prefab（挂 PossessionBodyProvider 组件，如 RageStatue）。为空 = 不生成神龛。")]
     public GameObject shrinePrefab;
-    [Tooltip("全图神龛总数。默认 3。")]
-    [Min(0)] public int shrineCount = 3;
-    [Tooltip("玩家出生点最近保底刷新的 Chunk 数（默认 4 = 出生点四邻接）。第 1 个神龛必定落在这几个 Chunk 之一。")]
-    [Min(1)] public int shrineNearbyChunkCount = 4;
+    [Tooltip("出生点神龛专用 prefab（如 ShrinePride = 固定 Pride 躯体），仅在新手教程局（GameManager.ForceTutorial=true，对应 TutorialController.TutorialAllowedThisRun）使用。非教程局或该字段为空时，出生点神龛也使用普通 shrinePrefab（随机躯体）。仅出生点所在 Chunk 使用，其余 Chunk 一律用普通 shrinePrefab。")]
+    public GameObject firstShrinePrefab;
+    [Tooltip("开局神龛数量。第一个必定落在玩家出生点所在 Chunk 且 tile 贴近出生点（3×3 邻域）；其余按出生点最近 Chunk 依次分配。")]
+    [Min(1)] public int shrineCount = 1;
 
     [Header("WorldPlan（宏观区域；空 = 全部用 defaultChunkDef）")]
     [Tooltip("主题映射表：按 RegionDef.themeCenter 排序后对连续噪声值做最近邻查表。空列表 = 不启用 WorldPlan。")]
@@ -176,8 +176,12 @@ public class MapStreamingSystem : MonoBehaviour
     WorldPlan worldPlan;
     /// <summary>全局模板分配器：协调「随机 ↔ 模板」融合与模板全局约束（mustGenerate/maxCount/weight），单局唯一。</summary>
     readonly ChunkTemplateAllocator templateAllocator = new ChunkTemplateAllocator();
-    /// <summary>神龛 Chunk 集合（Awake 规划，供 Tile 生成查询；空 = 无神龛）。</summary>
+    /// <summary>神龛 Chunk 集合（Awake 规划；空 = 无神龛）。</summary>
     readonly HashSet<ChunkCoord> shrineChunks = new HashSet<ChunkCoord>();
+    /// <summary>出生点 tile 下标（用于 PlaceShrine 贴出生点放置；仅在出生点 chunk 内有效）。</summary>
+    Vector2Int? shrinePreferredTile;
+    /// <summary>出生点 Chunk（第一个神龛所在；用 firstShrinePrefab）。</summary>
+    ChunkCoord shrineSpawnChunk;
     readonly List<MapStreamingJob> jobQueue = new List<MapStreamingJob>();
     readonly ChunkStateStore states = new ChunkStateStore();
     readonly PinRegistry pinRegistry = new PinRegistry();
@@ -279,26 +283,56 @@ public class MapStreamingSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 神龛规划（Awake，边界初始化后）：基于出生点 + 世界种子，确定性选出全图神龛 Chunk 集合。
-    /// 规则见 ShrinePlacement。无 shrinePrefab / shrineCount≤0 / 无边界时不生成。
+    /// 开局神龛规划（Awake，边界初始化后）：
+    /// 第 1 个神龛必定落在玩家出生点所在 Chunk（tile 贴出生点 3×3 邻域，见 PlaceShrine）——
+    /// 即游戏一开始玩家出生点附近已有一个神龛。
+    /// 第 2 个起按到出生点 Chunk 的距离（ring）外扩选取，且**任意两个神龛 Chunk 切比雪夫距离 ≥ 2**
+    /// （不四邻接、也不对角相邻）——相邻 Chunk 不会都出现神龛，出生点附近（相邻 Chunk）不再额外生成。
+    /// 神龛仍作为该 Chunk 的普通 Decoration Tile 生成，走 Tile 可视化与碰撞链路。
     /// </summary>
     void PlanShrines()
     {
         shrineChunks.Clear();
+        shrinePreferredTile = null;
         if (shrinePrefab == null || shrineCount <= 0) return;
 
         ChunkCoord spawnChunk = boundaryEnabled
             ? new ChunkCoord((boundaryMin.x + boundaryMax.x) / 2, (boundaryMin.y + boundaryMax.y) / 2)
             : ChunkFromLocal(GetPlayerPosition());
 
-        // 无边界时用出生点外扩一个足够大的范围（保守 64×64），避免无限地图无法确定候选域
+        shrineChunks.Add(spawnChunk); // 第 1 个神龛 = 出生点 Chunk（开局出生点附近已有一个神龛）
+        shrineSpawnChunk = spawnChunk;
+
         ChunkCoord min = boundaryEnabled ? boundaryMin : new ChunkCoord(spawnChunk.x - 64, spawnChunk.y - 64);
         ChunkCoord max = boundaryEnabled ? boundaryMax : new ChunkCoord(spawnChunk.x + 64, spawnChunk.y + 64);
 
-        var planned = ShrinePlacement.Plan(worldSeed, spawnChunk, min, max, shrineCount, shrineNearbyChunkCount);
-        foreach (var c in planned) shrineChunks.Add(c);
+        // 第 2 个起：按 ring 外扩；候选须与所有已选神龛 Chunk 切比雪夫距离 ≥ 2（不相邻，含对角相邻）。
+        // ring 上限 64 防止边界内放不下时无限循环；单次 ring 全被跳过（如 ring1 全与出生点相邻）不得 break，
+        // 否则会永远卡在 ring1 而放不满 shrineCount。
+        for (int ring = 1; ring <= 64 && shrineChunks.Count < shrineCount; ring++)
+        {
+            for (int dx = -ring; dx <= ring && shrineChunks.Count < shrineCount; dx++)
+            for (int dy = -ring; dy <= ring && shrineChunks.Count < shrineCount; dy++)
+            {
+                if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != ring) continue; // 仅当前 ring 外壳
+                var c = new ChunkCoord(spawnChunk.x + dx, spawnChunk.y + dy);
+                if (c.x < min.x || c.x > max.x || c.y < min.y || c.y > max.y) continue;
+                bool adjacent = false;
+                foreach (var s in shrineChunks)
+                {
+                    if (Mathf.Max(Mathf.Abs(c.x - s.x), Mathf.Abs(c.y - s.y)) < 2) { adjacent = true; break; }
+                }
+                if (adjacent) continue;
+                shrineChunks.Add(c);
+            }
+        }
 
-        Debug.Log($"[MapStreamingSystem] 神龛规划完成：共 {shrineChunks.Count}/{shrineCount} 个，出生点 chunk {spawnChunk}，坐标 {ShrineCoordsString()}");
+        // 出生点 tile 下标（供 PlaceShrine 贴出生点放置）
+        int tx, ty;
+        if (WorldToTileLocal(GetPlayerWorldPosition(), spawnChunk, out tx, out ty))
+            shrinePreferredTile = new Vector2Int(tx, ty);
+
+        Debug.Log($"[MapStreamingSystem] 开局神龛规划：共 {shrineChunks.Count}/{shrineCount} 个，出生点 chunk {spawnChunk}，优先 tile {shrinePreferredTile}（相邻 Chunk 间隔约束已启用）");
     }
 
     /// <summary>该 Chunk 是否被规划为神龛所在地（Tile 生成层查询）。</summary>
@@ -307,16 +341,17 @@ public class MapStreamingSystem : MonoBehaviour
         return shrineChunks.Contains(c);
     }
 
-    /// <summary>神龛坐标汇总（调试日志用）。</summary>
-    string ShrineCoordsString()
+    /// <summary>玩家世界坐标（与 GetPlayerPosition 同源，不做地图本地转换）。</summary>
+    Vector3 GetPlayerWorldPosition()
     {
-        var sb = new System.Text.StringBuilder();
-        foreach (var c in shrineChunks)
+        if (playerOverride != null) return playerOverride.position;
+        if (PlayerController.Instance != null) return PlayerController.Instance.transform.position;
+        if (playerFallback == null)
         {
-            if (sb.Length > 0) sb.Append(", ");
-            sb.Append(c.ToString());
+            var go = GameObject.FindGameObjectWithTag("Player");
+            if (go != null) playerFallback = go.transform;
         }
-        return sb.ToString();
+        return playerFallback != null ? playerFallback.position : transform.position;
     }
 
     void OnDestroy(){
@@ -771,9 +806,19 @@ public class MapStreamingSystem : MonoBehaviour
             ChunkTileGenerator.Generate(chunk, chunk.Def, seed, templateAllocator);
         }
 
-        // 神龛放置：若本 Chunk 被规划为神龛所在地，在内部区域确定性放一个神龛 Tile
-        if (shrinePrefab != null && shrineChunks.Contains(chunk.Coord))
-            ChunkTileGenerator.PlaceShrine(chunk, shrinePrefab, seed);
+        // 神龛放置：作为普通 Decoration Tile 生成。
+        // 出生点 Chunk 仅在新手教程局（GameManager.ForceTutorial=true）用 firstShrinePrefab（固定 Pride 躯体，作为 TUT-01 初始载体）；
+        // 非教程局或该字段为空时，出生点也用普通 shrinePrefab（随机躯体）。其余 Chunk 一律用普通 shrinePrefab。
+        bool tutorialActive = GameManager.ForceTutorial;
+        if (shrineChunks.Contains(chunk.Coord))
+        {
+            var prefab = chunk.Coord == shrineSpawnChunk && firstShrinePrefab != null && tutorialActive
+                ? firstShrinePrefab
+                : shrinePrefab;
+            if (prefab != null)
+                ChunkTileGenerator.PlaceShrine(chunk, prefab, seed,
+                    chunk.Coord == shrineSpawnChunk ? shrinePreferredTile : null);
+        }
 
         return chunk.OpenEdges;
     }

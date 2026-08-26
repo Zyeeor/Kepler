@@ -146,7 +146,8 @@ public class MonsterActor : Actor
     [Header("AI Config (unified library)")]
     [Tooltip("AI 配置库资产（单文件，同 CardLibrary 模式，位于 Assets/Configs/）。")]
     public MonsterAIConfig aiConfig;
-    [Tooltip("在配置库中按 id 查找 AI 配置条目。为空或未命中时使用默认值。")]
+    [AiConfigId]
+    [Tooltip("在配置库中按 id 查找 AI 配置条目。为空或未命中时使用默认值（Inspector 提供下拉）。")]
     public string aiConfigId;
 
     /// <summary>当前生效的 AI 配置条目（库未命中/未配置时回退共享默认条目）。</summary>
@@ -166,10 +167,10 @@ public class MonsterActor : Actor
     // 以下 AI 参数已统一收口到 MonsterAIConfig（Assets/Configs/AI/），只读属性转发便于代码访问。
     /// <summary>索敌半径（AI 配置）。</summary>
     public float detectionRadius => AiConfig.detectionRadius;
-    /// <summary>普攻范围（AI 配置，与技能范围相互独立）。</summary>
-    public float basicAttackRange => AiConfig.basicAttackRange;
-    /// <summary>技能范围（AI 配置，与普攻范围相互独立）。</summary>
-    public float skillAttackRange => AiConfig.skillAttackRange;
+    /// <summary>生效普攻范围（AI 配置 + 已解锁覆盖，实时取 max）。</summary>
+    public float basicAttackRange => AiConfig.EffectiveBasicAttackRange();
+    /// <summary>生效技能范围（AI 配置 + 已解锁覆盖，实时取 max）。</summary>
+    public float skillAttackRange => AiConfig.EffectiveSkillAttackRange();
     /// <summary>AI 停步距离（AI 配置）。</summary>
     public float aiMinRange => AiConfig.aiMinRange;
     /// <summary>攻击迟疑度（AI 配置，0~1）。</summary>
@@ -2414,6 +2415,12 @@ public class MonsterActor : Actor
             if (!possessedStats.HasConfiguredHealth)
                 possessedStats = enemyStats;
         }
+
+        // AI 配置引用防御：prefab 填了配置库却引用了不存在的 id → 静默落默认，行为异常难查。
+        if (aiConfig != null && !string.IsNullOrEmpty(aiConfigId) && aiConfig.Get(aiConfigId) == null)
+        {
+            Debug.LogWarning($"[MonsterActor] aiConfigId '{aiConfigId}' 未命中 {aiConfig.name} 中的条目，将使用默认配置（行为可能不符预期）。", this);
+        }
     }
 #endif
 
@@ -2475,11 +2482,8 @@ public class MonsterActor : Actor
             if ((cmd.Pressed & (CommandButtons.Basic | CommandButtons.Skill1 | CommandButtons.Mobility)) != 0)
                 FaceAttackTarget();
 
-            if ((cmd.Pressed & CommandButtons.Skill1) != 0 && TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill))
-            {
-                AIController ai = Controller as AIController;
-                if (ai != null) ai.NotifySkillTriggered();
-            }
+            if ((cmd.Pressed & CommandButtons.Skill1) != 0)
+                TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill);
             if ((cmd.Pressed & CommandButtons.Mobility) != 0) PlayerTriggerMobility();
             return;
         }

@@ -5,31 +5,28 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Chunk 固定布局手摆工具（菜单 Kepler/Map/Chunk Layout Editor，2026-08 双模式方案；2026-08-14 配置重构）。
-/// 左侧：刷子面板——扫描 TileAsset 目录下全部 prefab + 橡皮擦；
-/// 右侧：16×16 网格涂刷（点击/拖拽，按推导类别着色：Normal 绿 / Trigger 橙 / Decoration 红 / 空灰）。
-/// 布局紧凑序列化（决策 1）：每格仅记录 prefab 引用，玩法语义（触发逻辑/碰撞）由 prefab 自带组件推导。
-/// 显示约定：顶行 = y=15（北在上），与地图本地坐标一致（x→右，y→上）。
-/// 资产变更走 Undo.RecordObject + EditorUtility.SetDirty（支持撤销、随项目保存落盘）。
-/// </summary>
-/// <summary>
-/// 资产后处理：MapModules 下 prefab 增/删/改时自动刷新打开的 Chunk Layout Editor 刷子面板，
-/// 免去手动点"刷新 Tile 列表"。
+/// Chunk 固定布局手摆工具（菜单 Kepler/Map/Chunk Layout Editor）。
+/// 双层编辑（对齐双层 Tile 模型）：
+///   - 底层地砖 tiles[]（Normal/Trigger）+ 可选叠加装饰物 overlayTiles[]（Decoration/神龛）。
+///   - 编辑时按"刷子 prefab 的推导类别"自动归层：地砖类刷子 → 写底层；装饰物刷子 → 写叠加层（无需手动切层）。
+///   - 旧格式（装饰物整格摆在底层字段）显示时自动镜像运行时解析：默认地块兜底 + 装饰物转叠加，所见即所得。
+/// 直观显示：用 AssetPreview 缩略图代替纯色块；叠加层在格子右上角小窗叠加；"默认地块预览"开关让兜底地砖可见。
+/// 左侧：刷子面板（按推导类别分组：地砖 / 装饰物，每项带缩略图）；右侧：N×N 网格涂刷。
+/// 显示约定：顶行 = y=size-1（北在上），与地图本地坐标一致。资产变更走 Undo.RecordObject + EditorUtility.SetDirty。
 /// </summary>
 public class ChunkLayoutEditorPostprocessor : AssetPostprocessor
 {
     static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
-        // 仅关注 MapModules 目录下的 prefab 变化（增删改任一）
         bool relevant = false;
         foreach (var p in importedAssets)
-            if (p.StartsWith("Assets/Prefabs/MapModules/") && p.EndsWith(".prefab")) { relevant = true; break; }
+            if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) { relevant = true; break; }
         if (!relevant)
             foreach (var p in deletedAssets)
-                if (p.StartsWith("Assets/Prefabs/MapModules/") && p.EndsWith(".prefab")) { relevant = true; break; }
+                if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) { relevant = true; break; }
         if (!relevant)
             foreach (var p in movedAssets)
-                if (p.StartsWith("Assets/Prefabs/MapModules/") && p.EndsWith(".prefab")) { relevant = true; break; }
+                if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) { relevant = true; break; }
         if (!relevant) return;
 
         var wins = Resources.FindObjectsOfTypeAll<ChunkLayoutEditorWindow>();
@@ -40,33 +37,44 @@ public class ChunkLayoutEditorPostprocessor : AssetPostprocessor
 
 public class ChunkLayoutEditorWindow : EditorWindow
 {
+    /// <summary>当前编辑的层（决定橡皮擦清除哪一层；涂刷按刷子类别自动归层，与此无关）。</summary>
+    enum EditLayer { Base = 0, Overlay = 1 }
+
     /// <summary>格子像素（可缩放，滑块 24~72）。</summary>
-    float cellSize = 48f;
+    float cellSize = 52f;
     const float MinCell = 24f, MaxCell = 72f;
-    const float PaletteWidth = 300f;
+    const float PaletteWidth = 320f;
 
     /// <summary>目标布局资产（涂刷直接修改资产本身）。</summary>
     FixedChunkLayout target;
-    /// <summary>当前刷子（null = 橡皮擦，刷空）。</summary>
+    /// <summary>当前刷子（null = 橡皮擦，刷空当前层）。</summary>
     GameObject brush;
     Vector2 paletteScroll;
     Vector2 gridScroll;
     /// <summary>刷子候选：TileAsset 目录下全部 Tile prefab（类别经 TileSemantics 推导）。</summary>
     readonly List<GameObject> palette = new List<GameObject>();
     GUIStyle cellStyle;
+    GUIStyle axisStyle;
+
+    EditLayer editLayer = EditLayer.Base;
+    bool showPreview = true;
+    bool showDefaultGroundPreview = true;
+    /// <summary>AssetPreview 异步加载中标记：有任意预览未就绪则下一帧重绘。</summary>
+    bool needRepaint = false;
 
     [MenuItem("Kepler/Map/Chunk Layout Editor")]
     static void Open()
     {
         var w = GetWindow<ChunkLayoutEditorWindow>("Chunk Layout Editor");
-        w.minSize = new Vector2(PaletteWidth + 8 * w.cellSize + 80f, 8 * w.cellSize + 160f);
+        w.minSize = new Vector2(PaletteWidth + 8 * w.cellSize + 80f, 8 * w.cellSize + 200f);
         w.Show();
     }
 
     void OnEnable()
     {
+        // 关键：默认 EditorWindow 不接收 MouseMove 事件，悬停高亮不会刷新。开启后鼠标移动才会派发事件并触发重绘。
+        wantsMouseMove = true;
         RefreshPalette();
-        // 项目窗口选中布局资产时自动接管为目标
         if (target == null && Selection.activeObject is FixedChunkLayout sel) target = sel;
     }
 
@@ -79,11 +87,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
         }
     }
 
-    /// <summary>
-    /// 扫描 Tile 资产目录下的全部 prefab 构建刷子面板（按名称排序，稳定显示）。
-    /// 类别由 TileSemantics 推导（无需组件标记）。
-    /// public：供 ChunkLayoutEditorPostprocessor（资产变化自动刷新）调用。
-    /// </summary>
+    /// <summary>扫描 Tile 资产目录下的全部 prefab 构建刷子面板（按名称排序）。类别由 TileSemantics 推导。</summary>
     public void RefreshPalette()
     {
         palette.Clear();
@@ -98,9 +102,8 @@ public class ChunkLayoutEditorWindow : EditorWindow
 
     void OnGUI()
     {
-        // 窗口最小尺寸随布局边长 + 格子缩放动态调整（target 变化时网格重新适配）
         int curSize = target != null ? target.size : 8;
-        minSize = new Vector2(PaletteWidth + curSize * cellSize + 80f, curSize * cellSize + 180f);
+        minSize = new Vector2(PaletteWidth + curSize * cellSize + 80f, curSize * cellSize + 220f);
 
         DrawToolbar();
         if (target == null)
@@ -108,11 +111,14 @@ public class ChunkLayoutEditorWindow : EditorWindow
             EditorGUILayout.HelpBox("请选择或新建一个 FixedChunkLayout 资产（项目窗口选中即自动接管）。", MessageType.Info);
             return;
         }
+        DrawOptionsBar();
         EditorGUILayout.BeginHorizontal();
         DrawPalette();
         DrawGrid();
         EditorGUILayout.EndHorizontal();
         DrawFooter();
+
+        if (needRepaint) { needRepaint = false; Repaint(); }
     }
 
     void DrawToolbar()
@@ -122,7 +128,6 @@ public class ChunkLayoutEditorWindow : EditorWindow
         if (GUILayout.Button("新建布局", EditorStyles.toolbarButton, GUILayout.Width(70f))) CreateNewLayout();
         if (GUILayout.Button("刷新 Tile 列表", EditorStyles.toolbarButton, GUILayout.Width(110f))) RefreshPalette();
         GUILayout.FlexibleSpace();
-        // 缩放控件
         EditorGUILayout.LabelField("缩放", EditorStyles.miniLabel, GUILayout.Width(30f));
         if (GUILayout.Button("−", EditorStyles.toolbarButton, GUILayout.Width(22f))) SetCellSize(cellSize - 6f);
         cellSize = EditorGUILayout.Slider(cellSize, MinCell, MaxCell, GUILayout.Width(120f));
@@ -130,6 +135,28 @@ public class ChunkLayoutEditorWindow : EditorWindow
         EditorGUILayout.LabelField($"{target?.size ?? 8}×{target?.size ?? 8}", EditorStyles.miniLabel, GUILayout.Width(36f));
         if (target != null)
             EditorGUILayout.LabelField($"刷子：{(brush != null ? brush.name : "橡皮擦")}", EditorStyles.miniLabel, GUILayout.Width(150f));
+        EditorGUILayout.EndHorizontal();
+    }
+
+    void DrawOptionsBar()
+    {
+        EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+        EditorGUILayout.LabelField("编辑层", EditorStyles.miniLabel, GUILayout.Width(44f));
+        if (GUILayout.Toggle(editLayer == EditLayer.Base, "底层地砖", EditorStyles.toolbarButton, GUILayout.Width(90f)))
+            editLayer = EditLayer.Base;
+        if (GUILayout.Toggle(editLayer == EditLayer.Overlay, "叠加装饰物", EditorStyles.toolbarButton, GUILayout.Width(90f)))
+            editLayer = EditLayer.Overlay;
+        GUILayout.Space(8f);
+        showPreview = GUILayout.Toggle(showPreview, "缩略图", EditorStyles.toolbarButton, GUILayout.Width(70f));
+        showDefaultGroundPreview = GUILayout.Toggle(showDefaultGroundPreview, "默认地块预览", EditorStyles.toolbarButton, GUILayout.Width(100f));
+        GUILayout.FlexibleSpace();
+        EditorGUI.BeginChangeCheck();
+        target.defaultGround = (GameObject)EditorGUILayout.ObjectField("默认地块", target.defaultGround, typeof(GameObject), false, GUILayout.Width(240f));
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(target, "设默认地块");
+            EditorUtility.SetDirty(target);
+        }
         EditorGUILayout.EndHorizontal();
     }
 
@@ -142,13 +169,18 @@ public class ChunkLayoutEditorWindow : EditorWindow
     void DrawPalette()
     {
         EditorGUILayout.BeginVertical(GUILayout.Width(PaletteWidth));
-        EditorGUILayout.LabelField("Tile 刷子（TileAsset 目录全部 prefab）", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField("  绿=地面 橙=触发 红=装饰 灰=空（同类自动区分深浅）", EditorStyles.miniLabel);
-        // 刷子滚动区固定高度，避免挤压右侧网格
-        paletteScroll = EditorGUILayout.BeginScrollView(paletteScroll, GUILayout.Height(480f));
+        EditorGUILayout.LabelField("Tile 刷子（点击即按类别落层）", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("  地砖类→底层 ｜ 装饰物类→叠加层", EditorStyles.miniLabel);
+        paletteScroll = EditorGUILayout.BeginScrollView(paletteScroll, GUILayout.Height(460f));
         DrawBrushButton(null, "橡皮擦（刷空）");
+        EditorGUILayout.LabelField("— 地砖（底层） —", EditorStyles.miniLabel);
         for (int i = 0; i < palette.Count; i++)
-            DrawBrushButton(palette[i], BrushLabel(palette[i]));
+            if (TileSemantics.ResolveKind(palette[i]) != TerrainKind.Decoration)
+                DrawBrushButton(palette[i], BrushLabel(palette[i]));
+        EditorGUILayout.LabelField("— 装饰物（叠加层） —", EditorStyles.miniLabel);
+        for (int i = 0; i < palette.Count; i++)
+            if (TileSemantics.ResolveKind(palette[i]) == TerrainKind.Decoration)
+                DrawBrushButton(palette[i], BrushLabel(palette[i]));
         EditorGUILayout.EndScrollView();
         EditorGUILayout.EndVertical();
     }
@@ -158,84 +190,118 @@ public class ChunkLayoutEditorWindow : EditorWindow
         bool selected = brush == prefab;
         var oldColor = GUI.backgroundColor;
         if (selected) GUI.backgroundColor = new Color(0.4f, 0.8f, 1f);
+        EditorGUILayout.BeginHorizontal();
+        // 缩略图（或色块兜底）
+        var r0 = GUILayoutUtility.GetRect(24f, 24f, GUILayout.Width(26f), GUILayout.Height(26f));
+        var prev = showPreview ? GetPreview(prefab) : null;
+        if (prev != null) GUI.DrawTexture(r0, prev, ScaleMode.ScaleToFit);
+        else EditorGUI.DrawRect(r0, CellColor(prefab));
         if (GUILayout.Button(label, GUILayout.Height(26f))) brush = prefab;
+        EditorGUILayout.EndHorizontal();
         GUI.backgroundColor = oldColor;
-        // 左侧色条（与格子同色，便于对照）
-        var r = GUILayoutUtility.GetLastRect();
-        EditorGUI.DrawRect(new Rect(r.x, r.y, 4f, r.height), CellColor(prefab));
     }
-
-    /// <summary>坐标轴标签样式。</summary>
-    GUIStyle axisStyle;
 
     void DrawGrid()
     {
         int size = target != null ? target.size : 8;
         float gridPx = size * cellSize;
-        // 左侧坐标轴 + 网格总宽高
         const float axisW = 24f, axisH = 20f;
         float totalW = axisW + gridPx, totalH = axisH + gridPx;
         gridScroll = EditorGUILayout.BeginScrollView(gridScroll);
         var area = GUILayoutUtility.GetRect(totalW, totalH, GUILayout.Width(totalW), GUILayout.Height(totalH));
-        var axisStyle = AxisStyle();
+        var axStyle = AxisStyle();
 
-        // ── 坐标轴标签（装饰层，不参与涂刷命中） ──
-        // 顶部 y 轴（北在上：左 → 右 = y=size-1 → 0）
+        // 坐标轴标签（顶行 = y=size-1）
         for (int i = 0; i < size; i++)
         {
             var r = new Rect(area.x + axisW + i * cellSize, area.y, cellSize, axisH);
-            GUI.Label(r, (size - 1 - i).ToString(), axisStyle);
+            GUI.Label(r, (size - 1 - i).ToString(), axStyle);
         }
-        // 左侧 x 轴（北在上：上 → 下 = y=size-1 → 0）
         for (int j = 0; j < size; j++)
         {
             var r = new Rect(area.x, area.y + axisH + j * cellSize, axisW, cellSize);
-            GUI.Label(r, (size - 1 - j).ToString(), axisStyle);
+            GUI.Label(r, (size - 1 - j).ToString(), axStyle);
         }
 
-        // 网格实际区域（坐标轴内）
         var gridRect = new Rect(area.x + axisW, area.y + axisH, gridPx, gridPx);
 
-        // ── 涂刷事件 ──
+        // 鼠标移动时持续重绘，使悬停高亮跟随光标
         var e = Event.current;
-        if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0 && gridRect.Contains(e.mousePosition))
+        if (e.type == EventType.MouseMove) Repaint();
+        // scroll view 内 e.mousePosition 为视口坐标，需加回滚动偏移得到 content 坐标
+        var mp = e.mousePosition + gridScroll;
+
+        // 涂刷 / 擦除事件（左键涂刷当前刷子，右键擦整格两层）
+        if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && gridRect.Contains(mp))
         {
-            int cx = Mathf.FloorToInt((e.mousePosition.x - gridRect.x) / cellSize);
-            int cy = size - 1 - Mathf.FloorToInt((e.mousePosition.y - gridRect.y) / cellSize); // 顶行 = y=size-1
-            if (cx >= 0 && cy >= 0 && cx < size && cy < size) Paint(cx, cy);
-            e.Use();
+            int cx = Mathf.FloorToInt((mp.x - gridRect.x) / cellSize);
+            int cy = size - 1 - Mathf.FloorToInt((mp.y - gridRect.y) / cellSize);
+            if (cx >= 0 && cy >= 0 && cx < size && cy < size)
+            {
+                if (e.button == 0) Paint(cx, cy);
+                else if (e.button == 1) EraseCell(cx, cy);
+                e.Use();
+            }
         }
 
-        // ── 格子绘制 ──
         if (cellStyle == null)
-            cellStyle = new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(cellSize * 0.4f) };
+            cellStyle = new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(cellSize * 0.32f) };
+
         int hoverX = -1, hoverY = -1;
         for (int y = 0; y < size; y++)
         for (int x = 0; x < size; x++)
         {
             var r = CellRect(gridRect, x, y);
-            var prefab = target.GetTile(x, y);
-            if (prefab == null)
+            ResolveCell(x, y, out var ground, out var overlay, out var groundIsDefault);
+            var basePrefab = target.GetTile(x, y);
+
+            // 底色（按底层推导类别着色；无预览时仅靠色块区分）
+            EditorGUI.DrawRect(r, CellColor(basePrefab ?? ground));
+            if (r.Contains(mp)) { hoverX = x; hoverY = y; }
+
+            if (showPreview)
             {
-                // 空格：灰白棋盘格，便于看清格位
-                EditorGUI.DrawRect(r, ((x + y) % 2 == 0) ? new Color(0.30f, 0.30f, 0.30f) : new Color(0.24f, 0.24f, 0.24f));
+                var groundPrev = GetPreview(ground);
+                if (groundPrev != null)
+                {
+                    var dest = new Rect(r.x + 3f, r.y + 3f, r.width - 6f, r.height - 6f);
+                    GUI.DrawTexture(dest, groundPrev, ScaleMode.ScaleToFit);
+                }
+                // 旧格式装饰物整格但默认地块未配置：画占位提示（运行时仍会兜底 ChunkDef.normalTiles[0]）
+                if (ground == null && basePrefab != null && TileSemantics.ResolveKind(basePrefab) == TerrainKind.Decoration)
+                {
+                    EditorGUI.DrawRect(new Rect(r.x + 3f, r.y + 3f, r.width - 6f, r.height - 6f), new Color(0.6f, 0.5f, 0.1f, 0.3f));
+                    GUI.Label(new Rect(r.x + 2f, r.y + 2f, 22f, 14f), "默?", cellStyle);
+                }
+                if (overlay != null)
+                {
+                    var ovPrev = GetPreview(overlay);
+                    var oRect = new Rect(r.x + r.width * 0.5f, r.y, r.width * 0.5f, r.height * 0.5f);
+                    if (ovPrev != null) GUI.DrawTexture(oRect, ovPrev, ScaleMode.ScaleToFit);
+                    DrawRectOutline(oRect, new Color(1f, 0.85f, 0.2f, 0.95f), 2f); // 叠加层角标：仅描边，不遮挡缩略图
+                    if (basePrefab == null || TileSemantics.ResolveKind(basePrefab) == TerrainKind.Decoration)
+                        GUI.Label(oRect, "叠", cellStyle);
+                }
+                // 默认地块兜底遮罩提示
+                if (groundIsDefault && showDefaultGroundPreview)
+                {
+                    var mask = new Rect(r.x + 3f, r.y + 3f, r.width - 6f, r.height - 6f);
+                    EditorGUI.DrawRect(mask, new Color(0.5f, 0.5f, 0.5f, 0.35f));
+                    GUI.Label(new Rect(r.x + 2f, r.y + 2f, 18f, 14f), "默", cellStyle);
+                }
             }
             else
             {
-                EditorGUI.DrawRect(r, CellColor(prefab));
+                // 无预览：色块 + 缩写
+                if (basePrefab != null) GUI.Label(r, Abbrev(basePrefab), cellStyle);
+                else if (overlay != null) GUI.Label(r, "叠", cellStyle);
             }
-            // 悬停检测（记录格坐标供信息面板）
-            if (r.Contains(e.mousePosition)) { hoverX = x; hoverY = y; }
-            if (prefab != null) GUI.Label(r, Abbrev(prefab), cellStyle);
         }
-        // 悬停格描边高亮
+
         if (hoverX >= 0)
         {
             var hr = CellRect(gridRect, hoverX, hoverY);
             EditorGUI.DrawRect(hr, Color.white);
-            var prefab = target.GetTile(hoverX, hoverY);
-            if (prefab != null)
-                EditorGUI.DrawRect(new Rect(hr.x + 2f, hr.y + 2f, hr.width - 4f, hr.height - 4f), CellColor(prefab));
             hoveredCell = new Vector2Int(hoverX, hoverY);
         }
         else hoveredCell = new Vector2Int(-1, -1);
@@ -253,24 +319,38 @@ public class ChunkLayoutEditorWindow : EditorWindow
     /// <summary>当前悬停格（-1 表示无）。</summary>
     Vector2Int hoveredCell = new Vector2Int(-1, -1);
 
-    /// <summary>信息面板：当前悬停格的坐标 + prefab + 推导语义摘要。</summary>
+    /// <summary>信息面板：镜像运行时解析，显示底层（含默认地块兜底标记）+ 叠加 + 推导语义。</summary>
     void DrawCellInfo()
     {
         EditorGUILayout.Space(4f);
         if (hoveredCell.x < 0)
         {
-            EditorGUILayout.HelpBox("悬停网格查看格子配置（坐标 / prefab / 推导类别）。", MessageType.None);
+            EditorGUILayout.HelpBox("悬停网格查看格子配置（底层 / 叠加 / 推导语义）。", MessageType.None);
             return;
         }
-        var prefab = target.GetTile(hoveredCell.x, hoveredCell.y);
-        var sb = new StringBuilder($"({hoveredCell.x}, {hoveredCell.y}) ");
-        sb.Append(prefab != null ? prefab.name : "空");
-        if (prefab != null)
+        var baseP = target.GetTile(hoveredCell.x, hoveredCell.y);
+        var ov = target.GetOverlay(hoveredCell.x, hoveredCell.y);
+        ResolveCell(hoveredCell.x, hoveredCell.y, out var ground, out var overlay, out var gDefault);
+
+        var sb = new StringBuilder($"({hoveredCell.x}, {hoveredCell.y})\n");
+        sb.Append("底层：");
+        if (baseP == null && ov == null) sb.Append("空（普通地面）");
+        else if (ground != null)
         {
-            sb.Append("\n  kind=").Append(TileSemantics.ResolveKind(prefab))
-              .Append("（推导）")
-              .Append("\n  solidCollider=").Append(TileSemantics.HasSolidCollider(prefab));
+            if (gDefault) sb.Append("[默认地块兜底] ");
+            sb.Append(ground.name)
+              .Append("\n  kind=").Append(TileSemantics.ResolveKind(ground))
+              .Append(" solidCollider=").Append(TileSemantics.HasSolidCollider(ground));
         }
+        else sb.Append("空");
+        sb.Append("\n叠加：");
+        if (overlay != null)
+            sb.Append(overlay.name)
+              .Append("\n  kind=").Append(TileSemantics.ResolveKind(overlay))
+              .Append(" solidCollider=").Append(TileSemantics.HasSolidCollider(overlay));
+        else sb.Append("无");
+        if (baseP != null && TileSemantics.ResolveKind(baseP) == TerrainKind.Decoration)
+            sb.Append("\n（旧格式：装饰物整格将自动拆为 默认地块 + 叠加）");
         EditorGUILayout.HelpBox(sb.ToString(), MessageType.Info);
     }
 
@@ -281,11 +361,63 @@ public class ChunkLayoutEditorWindow : EditorWindow
         return new Rect(gridRect.x + x * cellSize + 1f, gridRect.y + (size - 1 - y) * cellSize + 1f, cellSize - 2f, cellSize - 2f);
     }
 
+    /// <summary>矩形描边（仅边框，不填充），用于叠加层角标等，避免遮挡内容。</summary>
+    static void DrawRectOutline(Rect r, Color color, float thickness = 2f)
+    {
+        EditorGUI.DrawRect(new Rect(r.x, r.y, r.width, thickness), color);
+        EditorGUI.DrawRect(new Rect(r.x, r.y + r.height - thickness, r.width, thickness), color);
+        EditorGUI.DrawRect(new Rect(r.x, r.y, thickness, r.height), color);
+        EditorGUI.DrawRect(new Rect(r.x + r.width - thickness, r.y, thickness, r.height), color);
+    }
+
+    /// <summary>左键涂刷：地砖刷子→底层，装饰刷子→叠加；橡皮擦（brush==null）→擦当前编辑层。</summary>
     void Paint(int x, int y)
     {
-        if (target.GetTile(x, y) == brush) return; // 无变化不记 Undo
-        Undo.RecordObject(target, "涂刷 Chunk 布局 Tile");
-        target.SetTile(x, y, brush);
+        var baseP = target.GetTile(x, y);
+        var ov = target.GetOverlay(x, y);
+        if (brush == null)
+        {
+            if (editLayer == EditLayer.Base)
+            {
+                if (baseP == null) return;
+                Undo.RecordObject(target, "擦除底层");
+                target.SetTile(x, y, null);
+            }
+            else
+            {
+                if (ov == null) return;
+                Undo.RecordObject(target, "擦除叠加");
+                target.SetOverlay(x, y, null);
+            }
+            EditorUtility.SetDirty(target);
+            Repaint();
+            return;
+        }
+
+        var kind = TileSemantics.ResolveKind(brush);
+        if (kind == TerrainKind.Decoration)
+        {
+            if (ov == brush) return;
+            Undo.RecordObject(target, "涂刷叠加层");
+            target.SetOverlay(x, y, brush);
+        }
+        else
+        {
+            if (baseP == brush) return;
+            Undo.RecordObject(target, "涂刷底层");
+            target.SetTile(x, y, brush);
+        }
+        EditorUtility.SetDirty(target);
+        Repaint();
+    }
+
+    /// <summary>右键擦除：整格两层皆空。</summary>
+    void EraseCell(int x, int y)
+    {
+        if (target.GetTile(x, y) == null && target.GetOverlay(x, y) == null) return;
+        Undo.RecordObject(target, "清空整格");
+        target.SetTile(x, y, null);
+        target.SetOverlay(x, y, null);
         EditorUtility.SetDirty(target);
         Repaint();
     }
@@ -294,6 +426,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
     {
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
+        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加）｜ 右键擦整格 ｜ 切到叠加层后左键橡皮擦只清叠加", MessageType.None);
         if (GUILayout.Button("清空全部", GUILayout.Width(100f), GUILayout.Height(24f))) ClearAll();
         EditorGUILayout.EndHorizontal();
     }
@@ -302,11 +435,14 @@ public class ChunkLayoutEditorWindow : EditorWindow
     {
         if (target == null) return;
         int size = target.size;
-        if (!EditorUtility.DisplayDialog("清空全部", $"确定清空布局 '{target.name}' 的全部 {size * size} 格？", "清空", "取消")) return;
+        if (!EditorUtility.DisplayDialog("清空全部", $"确定清空布局 '{target.name}' 的全部 {size * size} 格（底层+叠加，两层）？", "清空", "取消")) return;
         Undo.RecordObject(target, "清空 Chunk 布局");
         for (int x = 0; x < size; x++)
         for (int y = 0; y < size; y++)
+        {
             target.SetTile(x, y, null);
+            target.SetOverlay(x, y, null);
+        }
         EditorUtility.SetDirty(target);
         Repaint();
     }
@@ -323,26 +459,61 @@ public class ChunkLayoutEditorWindow : EditorWindow
         Repaint();
     }
 
+    // ── 显示辅助：镜像运行时 GenerateFromLayout 的解析语义，确保编辑器所见即所得 ──
+
+    /// <summary>编辑器可用的默认地块（仅 FixedChunkLayout.defaultGround；运行时还会回退 ChunkDef.normalTiles[0]，编辑器不预览后者）。</summary>
+    GameObject ResolveEditorDefaultGround() => target != null ? target.defaultGround : null;
+
+    /// <summary>解析单格显示内容（与 GenerateFromLayout 一致）：装饰物整格→默认地块+叠加；仅叠加无地砖→默认地块兜底。</summary>
+    void ResolveCell(int x, int y, out GameObject ground, out GameObject overlay, out bool groundIsDefault)
+    {
+        ground = null; overlay = null; groundIsDefault = false;
+        var baseP = target.GetTile(x, y);
+        var ov = target.GetOverlay(x, y);
+        if (baseP != null)
+        {
+            var r = TileSemantics.ResolveKind(baseP);
+            if (r == TerrainKind.Decoration)
+            {
+                ground = ResolveEditorDefaultGround();
+                groundIsDefault = ground != null;
+                overlay = baseP;
+            }
+            else
+            {
+                ground = baseP;
+            }
+        }
+        if (ground == null && ov != null)
+        {
+            ground = ResolveEditorDefaultGround();
+            groundIsDefault = ground != null;
+        }
+        if (ground != null && overlay == null && ov != null) overlay = ov;
+    }
+
+    /// <summary>资产缩略图（异步加载未就绪时返回 null，并标记下一帧重绘）。</summary>
+    Texture2D GetPreview(GameObject prefab)
+    {
+        if (prefab == null) return null;
+        var t = AssetPreview.GetAssetPreview(prefab);
+        if (t == null) needRepaint = true;
+        return t;
+    }
+
     // ── prefab 语义标签（推导：kind / solidCollider，无组件配置） ──
 
-    /// <summary>
-    /// 格子缩写（清晰标记）：[kind 字母][prefab 名首个数字或尾词首字母]。
-    ///  kind 字母：地面 G / 触发 T / 装饰 D / 未知 ?；
-    ///  变体：prefab 名含数字取数字（Brick01→G1），否则取最后一个单词首字母（lava→L、Spike_Trap→S）。
-    /// </summary>
     static string Abbrev(GameObject prefab)
     {
         if (prefab == null) return "";
         string name = prefab.name;
-        // ① kind 字母（推导分类）
         char kindCh;
         switch (TileSemantics.ResolveKind(prefab))
         {
             case TerrainKind.Trigger: kindCh = 'T'; break;
             case TerrainKind.Decoration: kindCh = 'D'; break;
-            default: kindCh = 'G'; break; // Normal 地面
+            default: kindCh = 'G'; break;
         }
-        // ② 变体：取 prefab 名中的"连续数字串"（Brick01→"1"、Brick12→"12"）；无有效数字或为 0 则取尾词首字母
         string variant = "";
         var digits = System.Text.RegularExpressions.Regex.Match(name, @"\d+");
         if (digits.Success && digits.Value != "0")
@@ -360,7 +531,6 @@ public class ChunkLayoutEditorWindow : EditorWindow
         return kindCh + variant;
     }
 
-    /// <summary>刷子标签：prefab 名 + [推导 kind, 有碰撞?]。</summary>
     static string BrushLabel(GameObject prefab)
     {
         string name = prefab != null ? prefab.name : "?";
@@ -374,41 +544,30 @@ public class ChunkLayoutEditorWindow : EditorWindow
         return sb.ToString();
     }
 
-    /// <summary>
-    /// 格子颜色：同类地块自动着色，确保同 kind 不同 prefab 差异明显（不靠自定义）。
-    /// 核心：直接解析 prefab 名中的数字变体 n（Brick03→3），用"黄金分割散列"把 n 映射到
-    /// 色相圆周上充分散开——1/2/3/4/5/6 必然彼此远离，肉眼可分（不再用 hash 碰运气）。
-    /// </summary>
+    /// <summary>格子颜色：同类地块按数字变体黄金分割散列均匀散开（绿=地面 橙=触发 红=装饰 灰=空）。</summary>
     static Color CellColor(GameObject prefab)
     {
-        if (prefab == null) return new Color(0.25f, 0.25f, 0.25f); // 空格：灰
-
-        // ① 数字变体 n（Brick03→3、Base→0、lava→0）；黄金分割散列保证相邻 n 充分散开
+        if (prefab == null) return new Color(0.25f, 0.25f, 0.25f);
         int n = VariantNumber(prefab);
         float phi = 0.61803398875f;
-        float t = (n * phi) % 1f; // [0,1) 均匀散布（1→0.618, 2→0.236, 3→0.854, 4→0.472, 5→0.09, 6→0.708 …）
-
-        // ② kind 决定基础色相中心 + 色相可偏移范围（推导分类）
+        float t = (n * phi) % 1f;
         float hBase, hRange, sMin;
         switch (TileSemantics.ResolveKind(prefab))
         {
-            case TerrainKind.Trigger: hBase = 0.07f; hRange = 0.06f; sMin = 0.85f; break; // 橙
-            case TerrainKind.Decoration: hBase = 0.02f; hRange = 0.10f; sMin = 0.7f; break; // 红/粉
-            default: hBase = 0.33f; hRange = 0.22f; sMin = 0.5f; break; // 绿 → 黄/青 更宽范围
+            case TerrainKind.Trigger: hBase = 0.07f; hRange = 0.06f; sMin = 0.85f; break;
+            case TerrainKind.Decoration: hBase = 0.02f; hRange = 0.10f; sMin = 0.7f; break;
+            default: hBase = 0.33f; hRange = 0.22f; sMin = 0.5f; break;
         }
-        // 色相在 kind 范围内按 n 均匀展开；明度/饱和度也随 n 交替变化，双维度保证可区分
         float h = (hBase - hRange * 0.5f + t * hRange + 1f) % 1f;
         float s = Mathf.Clamp01(sMin + 0.4f * (((n + 1) * phi) % 1f - 0.5f));
         float l = Mathf.Clamp01(0.38f + 0.44f * (((n + 3) * phi) % 1f));
         return Color.HSVToRGB(h, s, l);
     }
 
-    /// <summary>prefab 名中的数字变体（Brick03→3、Brick12→12）；无数字返回 0（如 Base、lava）。</summary>
     static int VariantNumber(GameObject prefab)
     {
         string name = prefab != null ? prefab.name : "";
         var m = System.Text.RegularExpressions.Regex.Match(name, @"\d+");
         return m.Success ? int.Parse(m.Value) : 0;
     }
-
 }

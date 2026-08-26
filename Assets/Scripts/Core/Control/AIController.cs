@@ -263,8 +263,4 @@ public class AIController : MonoBehaviour, IController
         return false;
     }
 
-    /// <summary>技能触发成功回调（保留：仍用于通知 AI 技能已释放，当前无额外冷却逻辑）。</summary>
-    public void NotifySkillTriggered(){
-        // 方案 A：技能冷却完全由技能自身 cooldown 管理，此处不再维护 SkillReadyAt。
-    }
 }

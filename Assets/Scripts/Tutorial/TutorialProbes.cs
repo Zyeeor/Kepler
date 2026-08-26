@@ -18,6 +18,13 @@ public class TutorialProbes : MonoBehaviour
     PossessionManager pm;
     bool probing;
 
+    /// <summary>
+    /// 原始附身观察事件（每次附身提交都转发，含开场载体附身）。
+    /// 供 TutorialController 订阅 TUT-MONSTER 怪介绍微教学——本组件对 PossessionManager 的绑定带每帧重试兜底，
+    /// 比 TutorialController 直接订阅 PossessionManager 可靠（零"晚创建漏订"时序风险）。
+    /// </summary>
+    public event System.Action<MonsterActor> OnPossessionObserved;
+
     /// <summary>开始探针：订阅事件 + 开启轮询（幂等）。</summary>
     public void StartProbing()
     {
@@ -77,7 +84,6 @@ public class TutorialProbes : MonoBehaviour
         nextPollTime = Time.time + PollInterval;
 
         PollKillEdge();
-        PollCorpseExists();
     }
 
     // ---- 探针 1：首次击杀（KilledFirstMonster） ----
@@ -124,10 +130,6 @@ public class TutorialProbes : MonoBehaviour
     // ---- 探针 2：场上尸体存在（CorpseExists） ----
     // 注意：本事实是"状态性"事实，不在此轮询报告（避免每 0.25s 刷屏）；
     // 由 TutorialController 经 TutorialProbes.QueryCorpseExists() 在 Step 激活/轮询时实时查询。
-    void PollCorpseExists()
-    {
-    }
-
     /// <summary>查询当前场上是否存在可附身尸体（含永久尸体；Controller 使用）。</summary>
     public static bool QueryCorpseExists()
     {
@@ -141,18 +143,6 @@ public class TutorialProbes : MonoBehaviour
         return false;
     }
 
-    /// <summary>查询当前场上是否存在存活怪（Controller 判断击杀事实可用）。</summary>
-    public static bool QueryAnyAlive()
-    {
-        var enemies = EnemyRegistry.All;
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            var e = enemies[i];
-            if (e != null && !e.isDowned) return true;
-        }
-        return false;
-    }
-
     // ---- 探针 3：附身语义细分（开场 / 首次 / 换身） ----
     MonsterActor lastPossessedBody;
 
@@ -160,12 +150,20 @@ public class TutorialProbes : MonoBehaviour
     {
         if (body == null) return;
 
-        // 开场载体附身：由 TutorialController.OpeningCarrierRoutine 标记 pending（时间戳防残留）
+        // 开场载体附身：由 TutorialController.OpeningCarrierRoutine 标记 pending（时间戳防残留）。
+        // 开场附身同样算"首次附身"：补报 PossessedFirstBody，否则 TUT-02（完成条件=首次附身）
+        // 在 autoPossessOpeningCarrier=true 的开场自动附身路径下永不完成、队列卡死。
         if (TutorialController.OpeningCarrierPendingUntil > Time.unscaledTime)
         {
             TutorialController.OpeningCarrierPendingUntil = 0f;   // 消费标记
             lastPossessedBody = body;   // 换身判定基线
             TutorialFactBus.Report(TutorialFact.OpeningCarrierPossessed);
+            if (!possessedFirstReported)
+            {
+                possessedFirstReported = true;
+                TutorialFactBus.Report(TutorialFact.PossessedFirstBody);
+            }
+            OnPossessionObserved?.Invoke(body);
             return;
         }
 
@@ -183,6 +181,7 @@ public class TutorialProbes : MonoBehaviour
         }
 
         lastPossessedBody = body;
+        OnPossessionObserved?.Invoke(body);
     }
 
     // ---- 探针 4：主动脱离（ReleasedBody） ----

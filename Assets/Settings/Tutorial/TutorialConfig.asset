@@ -20,76 +20,221 @@ MonoBehaviour:
     startFacts: 
     completeFacts: 0b000000
     blocking: 0
-    remindInterval: 12
+    remindInterval: 0
+    idleRemindSeconds: 5
+    queueDelivery: 1
+    displaySeconds: 0
     timeoutSeconds: 0
     persistAcrossRuns: 1
     nextStepId: TUT-02
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
   - id: TUT-02
-    title: "\u4E09\u69FD\u6218\u6597\u754C\u9762"
-    text: "{BASIC} \u666E\u653B,{SKILL} \u91CA\u653E\u6280\u80FD,{SKILL1} \u53D1\u8D77\u9644\u8EAB.\u8FD9\u5C31\u662F\u4F60\u7684\u4E09\u69FD\u6218\u6597\u754C\u9762"
+    title: "\u9644\u8EAB\u8EAF\u4F53"
+    text: "\u9760\u8FD1\u795E\u9F9B\u524D\u7684\u8EAF\u4F53,{SKILL1} \u53F3\u952E\u53D1\u8D77\u9644\u8EAB.\u9644\u8EAB\u540E\u4F60\u5C06\u64CD\u63A7\u8FD9\u5177\u8EAF\u4F53\u6218\u6597"
     textKey: 
-    startFacts: 04000000
-    completeFacts: 0600000007000000
+    startFacts: 
+    completeFacts: 02000000
     blocking: 0
-    remindInterval: 12
+    remindInterval: 8
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 0
     timeoutSeconds: 0
     persistAcrossRuns: 1
-    nextStepId: TUT-03
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 1
+  - id: "TUT-MONSTER-\u50B2\u6162"
+    title: "\u50B2\u6162\u7C7B\u602A\u7269"
+    text: "\u50B2\u6162\u7C7B\u602A\u7269:\u627F\u91CD\u7532\u3001\u6B63\u9762\u5F3A\u653B\u7684\u538B\u5236\u578B\u654C\u4EBA,\u8D34\u8FD1\u540E\u53CD\u5E94\u66F4\u51CC\u5389."
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
-  - id: TUT-03
-    title: "\u51FB\u6740\u602A\u7269"
-    text: "\u51FB\u8D25\u602A\u7269({BASIC} \u666E\u653B,{SKILL} \u6280\u80FD),\u602A\u7269\u5012\u4E0B\u540E\u5C38\u4F53\u53EF\u88AB\u9644\u8EAB"
+  - id: "TUT-MONSTER-\u8272\u6B32"
+    title: "\u8272\u6B32\u7C7B\u602A\u7269"
+    text: "\u8272\u6B32\u7C7B\u602A\u7269:\u7075\u5FF5\u7CFB\u654C\u4EBA,\u64C5\u957F\u5E72\u6270\u4E0E\u8BC0\u8BA1,\u4FDD\u6301\u6BCF\u4E00\u6B65\u90FD\u5728\u9884\u5224\u4E2D."
     textKey: 
-    startFacts: 04000000
-    completeFacts: 00000000
+    startFacts: 
+    completeFacts: 
     blocking: 0
-    remindInterval: 10
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: "TUT-MONSTER-\u6124\u6012"
+    title: "\u6124\u6012\u7C7B\u602A\u7269"
+    text: "\u6124\u6012\u7C7B\u602A\u7269:\u72C2\u66B4\u6012\u7259,\u4EE5\u7A81\u8FDB\u548C\u8FDE\u6253\u50AC\u622E\u5C40\u52BF,\u975E\u5E38\u5371\u9669."
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: "TUT-MONSTER-\u8D2A\u5A6A"
+    title: "\u8D2A\u5A6A\u7C7B\u602A\u7269"
+    text: "\u8D2A\u5A6A\u7C7B\u602A\u7269:\u7FA4\u96C6\u4F5C\u6D3E,\u64C5\u957F\u5305\u88F1\u4E0E\u7F60\u7EDA,\u8B66\u60D5\u88AB\u56F4\u653B."
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: "TUT-MONSTER-\u66B4\u98DF"
+    title: "\u66B4\u98DF\u7C7B\u602A\u7269"
+    text: "\u66B4\u98DF\u7C7B\u602A\u7269:\u8D2A\u5A6A\u7684\u54AC\u98DF\u8005,\u8D34\u8FD1\u65F6\u98DF\u5929\u98DF\u5730,\u4FDD\u6301\u8DDD\u79BB\u89C2\u5BDF."
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: "TUT-MONSTER-\u5AC9\u5992"
+    title: "\u5AC9\u5992\u7C7B\u602A\u7269"
+    text: "\u5AC9\u5992\u7C7B\u602A\u7269:\u8FDC\u7A0B\u5149\u675F\u4E0E\u96F7\u66B4\u7684\u5C04\u624B,\u5C3D\u65E9\u8D70\u4F4D\u907F\u5F00\u6295\u5C04\u8303\u56F4."
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: "TUT-MONSTER-\u6020\u60F0"
+    title: "\u6020\u60F0\u7C7B\u602A\u7269"
+    text: "\u6020\u60F0\u7C7B\u602A\u7269:\u673A\u68B0\u4E4B\u9B42,\u52A8\u4F5C\u6162\u5374\u6B7B\u6C14\u4E00\u62DB,\u6BCF\u4E00\u4E0B\u90FD\u5B9E\u6253\u5B9E."
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 0
+    nextStepId: TUT-03A
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: TUT-03A
+    title: "\u666E\u653B"
+    text: "{BASIC} \u5DE6\u952E\u666E\u653B\u653B\u51FB\u602A\u7269"
+    textKey: 
+    startFacts: 
+    completeFacts: 06000000
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 0
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: TUT-03B
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: TUT-03B
+    title: "\u6280\u80FD"
+    text: "{SKILL} Q \u91CA\u653E\u6280\u80FD"
+    textKey: 
+    startFacts: 
+    completeFacts: 07000000
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 0
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: TUT-03C
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
+  - id: TUT-03C
+    title: "\u4F4D\u79FB"
+    text: "{MOBILITY} \u7A7A\u683C\u4F4D\u79FB\u95EA\u907F"
+    textKey: 
+    startFacts: 
+    completeFacts: 05000000
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 0
     timeoutSeconds: 0
     persistAcrossRuns: 1
     nextStepId: TUT-04
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
   - id: TUT-04
-    title: "\u9644\u8EAB\u5C38\u4F53"
-    text: "\u9760\u8FD1\u5012\u4E0B\u7684\u5C38\u4F53,\u6309 {SKILL1} \u9644\u8EAB.\u9644\u8EAB\u540E\u4F60\u5C06\u4F7F\u7528\u602A\u7269\u7684\u80FD\u529B\u6218\u6597"
+    title: "\u51FB\u6740\u602A\u7269"
+    text: "\u51FB\u8D25\u602A\u7269\u540E\u5C38\u4F53\u53EF\u88AB\u9644\u8EAB,\u7EE7\u7EED\u653B\u51FB\u5373\u53EF\u6D4B\u8BD5\u6362\u8EAB"
     textKey: 
-    startFacts: 00000000
-    completeFacts: 02000000
+    startFacts: 
+    completeFacts: 00000000
     blocking: 0
-    remindInterval: 8
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 0
     timeoutSeconds: 0
     persistAcrossRuns: 1
     nextStepId: TUT-05
     reacquireOnTargetLost: 1
-    protectCorpseDuringStep: 1
+    protectCorpseDuringStep: 0
   - id: TUT-05
     title: "\u4E3B\u52A8\u6362\u8EAB"
     text: "\u6309 {RELEASE} \u8131\u79BB\u5F53\u524D\u8EAB\u4F53,\u6216\u76F4\u63A5\u5BF9\u53E6\u4E00\u5177\u5C38\u4F53\u6309
       {SKILL1},\u5373\u53EF\u6362\u8EAB"
     textKey: 
-    startFacts: 02000000
+    startFacts: 
     completeFacts: 08000000
     blocking: 0
-    remindInterval: 15
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 0
     timeoutSeconds: 90
     persistAcrossRuns: 1
-    nextStepId: 
-    reacquireOnTargetLost: 1
-    protectCorpseDuringStep: 0
-  - id: "TUT-MONSTER-\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
-    title: "\u50B2\u6162\xB7\u7EC8\u5203\u7EDD\u5F71"
-    text: "\u50B2\u6162\u64C5\u957F\u6B63\u9762\u5F3A\u653B:{SKILL} \u6280\u80FD\u9020\u6210\u9AD8\u989D\u4F24\u5BB3,{BASIC}
-      \u666E\u653B\u8FDE\u51FB.\u8BD5\u8BD5\u5B83\u7684\u624B\u611F!"
-    textKey: 
-    startFacts: 
-    completeFacts: 
-    blocking: 0
-    remindInterval: 0
-    timeoutSeconds: 12
-    persistAcrossRuns: 0
     nextStepId: 
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
