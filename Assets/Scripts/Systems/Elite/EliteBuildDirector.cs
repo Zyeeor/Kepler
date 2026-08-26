@@ -8,12 +8,15 @@ using UnityEngine;
 /// 精英怪投放总控（Canonical：01_DESIGN_CANONICAL §23 / Meta_Progression_Systems_Baseline §6；
 /// 服务器数据来源见 Server/）。
 ///
-/// 上传（Meta §6.1/§6.7 快照格式）：
-///   - 每波选卡完成后（RunFlow Choice→Waves）上传本局所有 bdCount>=1 的 Sin 快照
-///     （只含 MonsterType / TypeGrowth 卡，不含 Basic/Global；stack 恒 1；0 投资的 Sin 不上行）；
-///   - sourceWave = 快照拍摄时已完成的 Wave（真实值）；Final 上传使用独立阶段标记 stage="final"，
-///     不借用虚构 Wave 编号（§6.7；服务器 schema 支持前透传忽略）；
-///   - 上传失败静默跳过（不影响对局；崩溃/Fail 无需补传，上一波上传已在库）。
+/// 上传（Meta §6.1 快照格式；sourceWave 语义 = 第几次选卡，Owner 2026-08-26 决策）：
+///   - 每次选卡完成后（波次选卡 RunFlow Choice→Waves + 精英击杀奖励选卡）上传本局所有
+///     bdCount>=1 的 Sin 快照（只含 MonsterType / TypeGrowth 卡，不含 Basic/Global；stack 恒 1；
+///     0 投资的 Sin 不上行）；
+///   - sourceWave = 本局第几次选卡（1-based 选卡会话计数，含奖励选卡）——与投放序号
+///     （pick wave = 第几次投放）同量纲计数，服务器按 sourceWave >= wave + waveGap 越级筛选；
+///     读档恢复用已完成波数下限近似（历史奖励选卡次数不存档）；
+///   - Final 上传使用独立阶段标记 stage="final"；上传失败静默跳过（不影响对局；
+///     崩溃/Fail 无需补传，上一次选卡上传已在库）。
 ///
 /// 投放（前台定时投放模型 + Meta §6.3 来源优先级）：
 ///   - 节奏：新连续刷怪逻辑下由 WaveManager.SpawnContinuousElites 定时投放——每 60s 周期第 40s
@@ -65,7 +68,7 @@ public class EliteBuildDirector : MonoBehaviour
     [Range(0f, 1f)] public float finalWaveEliteChance = 0.8f;
 
     [Header("投放难度")]
-    [Tooltip("投放序号差：请求第 N 次投放的精英时，筛选 sourceWave >= N + waveGap 的快照（sourceWave = 上传者第几次投放精英怪）。1=别人多投一次时点的构筑，0=同投放序号，2=越两级。")]
+    [Tooltip("投放序号差：请求第 N 次投放的精英时，筛选 sourceWave >= N + waveGap 的快照（sourceWave = 上传者第几次选卡，与投放序号同量纲）。1=别人多选一次卡时点的构筑，0=同进度，2=越两级。")]
     [Min(0)] public int waveGap = 1;
 
     [Header("精英强化参数")]
@@ -551,7 +554,12 @@ public class EliteBuildDirector : MonoBehaviour
         EliteAnnouncementUI.ShowElite(name);
     }
 
-    // ── 上传（Meta §6.1/§6.7）──
+    // ── 上传（Meta §6.1；sourceWave = 第几次选卡，Owner 2026-08-26 决策）──
+
+    // 本局选卡会话计数（波次选卡 + 精英击杀奖励选卡）：sourceWave = 第几次选卡。
+    // runId 变化时重置；读档恢复用已完成波数作下限（历史奖励选卡次数不存档，波数近似）。
+    int pickSessionCount;
+    string pickSessionRunId;
 
     void HandlePhaseChanged(RunPhase next)
     {
@@ -568,14 +576,43 @@ public class EliteBuildDirector : MonoBehaviour
             TryFlushEliteEvents();
 
         if (prev == RunPhase.Choice && next == RunPhase.Waves)
-            UploadBuildSnapshots(run.CompletedWaveIndex + 1, "wave"); // 选卡完成：sourceWave = 刚完成波次（1-based，真实值）
+            UploadBuildSnapshots(AdvancePickSessionCount(run), "wave"); // 波次选卡完成：sourceWave = 第几次选卡
         else if (next == RunPhase.Final)
         {
-            // Meta §6.7：Final 上传使用独立阶段标记 stage="final"，不借用虚构 Wave 编号；
-            // sourceWave 记真实已完成波数——Boss 可能提前于最后一波刷出（RunSpawnDirector 按时长/难度触发），
-            // 取 TotalWaveCount 会虚高并污染 pick 的 sourceWave 越级筛选；服务器 schema 支持 stage 前透传忽略。
-            UploadBuildSnapshots(run.CompletedWaveIndex + 1, "final");
+            // Final 上传使用独立阶段标记 stage="final"；sourceWave = 当前选卡计数——
+            // Boss 可能提前于最后一波刷出（RunSpawnDirector 按时长/难度触发），不虚构补满计数；
+            // 服务器 schema 支持 stage 前透传忽略。
+            UploadBuildSnapshots(CurrentPickSessionCount(run), "final");
         }
+    }
+
+    /// <summary>
+    /// 选卡会话计数 +1（波次选卡 / 精英奖励选卡共用），返回新计数作为上传 sourceWave。
+    /// runId 变化（新局）时重置；读档恢复用已完成波数下限抬底——已完成波数 = 已完成波次
+    /// 选卡数，为可靠下限（读档前的奖励选卡次数不存档，从当前起算）。
+    /// </summary>
+    int AdvancePickSessionCount(RunSession run)
+    {
+        ResetPickSessionCountIfNewRun(run);
+        pickSessionCount++;
+        int waveFloor = run.CompletedWaveIndex + 1; // 已完成波次选卡数（1-based）
+        if (pickSessionCount < waveFloor) pickSessionCount = waveFloor;
+        return pickSessionCount;
+    }
+
+    /// <summary>当前选卡计数（不推进；Final 上传用），读档下限口径同上。</summary>
+    int CurrentPickSessionCount(RunSession run)
+    {
+        ResetPickSessionCountIfNewRun(run);
+        int waveFloor = run.CompletedWaveIndex + 1;
+        return Mathf.Max(pickSessionCount, waveFloor);
+    }
+
+    void ResetPickSessionCountIfNewRun(RunSession run)
+    {
+        if (pickSessionRunId == run.RunId) return;
+        pickSessionRunId = run.RunId;
+        pickSessionCount = 0;
     }
 
     async void UploadBuildSnapshots(int sourceWave, string stage)
@@ -585,8 +622,9 @@ public class EliteBuildDirector : MonoBehaviour
         var run = RunSession.Instance;
         if (run == null) return;
 
-        // 荣誉殿堂 §5.2：对局内持续更新构筑快照——与上传同源双写，本地无条件落盘（离线/上传失败不影响冻结源）
-        HallOfFameStore.UpsertFromSnapshots(run.RunId, sourceWave, stage, snapshots);
+        // 荣誉殿堂 §5.2：对局内持续更新构筑快照——与上传同源双写，本地无条件落盘（离线/上传失败不影响冻结源）。
+        // reachedWave 记真实波次（荣誉殿堂「到达第 N 波」展示口径）；wire 的 sourceWave = 第几次选卡，两语义分离。
+        HallOfFameStore.UpsertFromSnapshots(run.RunId, run.CompletedWaveIndex + 1, stage, snapshots);
 
         try
         {
@@ -739,6 +777,11 @@ public class EliteBuildDirector : MonoBehaviour
 
             while (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting)
                 yield return null;
+
+            // 奖励选卡完成：BD 可能变化 → 与波次选卡同口径上传（sourceWave = 第几次选卡）
+            var run = RunSession.Instance;
+            if (run != null && run.HasActiveRun && eliteEnabled)
+                UploadBuildSnapshots(AdvancePickSessionCount(run), "wave");
         }
 
         eliteCardRewardRoutine = null;
