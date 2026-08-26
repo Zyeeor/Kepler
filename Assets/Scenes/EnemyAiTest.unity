@@ -9701,6 +9701,7 @@ GameObject:
   - component: {fileID: 1807762707}
   - component: {fileID: 1807762709}
   - component: {fileID: 1807762710}
+  - component: {fileID: 1807762711}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -9733,7 +9734,36 @@ MonoBehaviour:
   forceTutorial: 0
   bootToMainMenu: 1
   useFormalFlow: 0
-  bulletTimeScale: 0.2
+--- !u!114 &1807762711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1807762705}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9606cfb7c93da42f392be5947ee62bb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 2
+  timeScale: 0.2
+  damageImmunityEffect: {fileID: 0}
+  effectCatalog: {fileID: 0}
+  damageImmunityEffectTag: Effect.Defense.DamageImmune
+  damageImmunityDuration: 0.5
+  postProcessEffectName: RadialBlur
+  postProcessSwitcher: {fileID: 9988776604}
+  overridePostProcessParams: 0
+  postStepFactor: 0.5
+  postMainAlpha: 1
+  postBlurFactor: 0.47
+  postLineUvScale: 2.24
+  postChromatic: 0.18
+  postFrequency: 0
+  postAmplitude: 0
+  postVignettePower: 1
+  postVignetteScale: 0
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -10265,7 +10295,6 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.05
   decayInterval: 1
-  bulletTimeDuration: 2
 --- !u!1 &1948264456
 GameObject:
   m_ObjectHideFlags: 0
