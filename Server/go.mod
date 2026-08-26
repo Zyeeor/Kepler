@@ -1,4 +1,4 @@
-module demo/server
+module possession/server
 
 go 1.26.5
 
