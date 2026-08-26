@@ -24,7 +24,7 @@ MonoBehaviour:
     weight: 0
   - layout: {fileID: 11400000, guid: 13cbbcc02fea4934c9e24d42214e7554, type: 2}
     mustGenerate: 0
-    maxCount: 2
+    maxCount: 1
     weight: 0
   templateWeight: 0.1
   normalTiles:

@@ -40,6 +40,13 @@ public static class TutorialDebugPanel
         Debug.Log("[TutorialDebug]\n" + (c != null ? c.DebugDescribeActive() : "TutorialController 未在场景中"));
     }
 
+    [MenuItem("Kepler/Tutorial/打印配置总览（可读）")]
+    static void DebugDescribeConfig()
+    {
+        var c = TutorialController.Instance;
+        Debug.Log("[TutorialDebug 配置]\n" + (c != null ? c.DebugDescribeConfig() : "TutorialController 未在场景中"));
+    }
+
     [MenuItem("Kepler/Tutorial/强制完成: TUT-01")]
     static void DebugCompleteT01() => ForceComplete("TUT-01");
     [MenuItem("Kepler/Tutorial/强制完成: TUT-02")]
@@ -57,9 +64,8 @@ public static class TutorialDebugPanel
         if (c != null) c.DebugForceCompleteStep(stepId);
         else Debug.LogWarning("[TutorialDebug] TutorialController 未在场景中");
     }
-#endif
 
-    /// <summary>运行时快捷键（Play 模式）：Shift+T = 查看状态；Shift+Y = 重置 Profile。</summary>
+    /// <summary>运行时快捷键（Play 模式）：Shift+T = 查看状态；Shift+Y = 重置 Profile。仅编辑器 Play 调试使用。</summary>
     static float nextKeyCheck;
     public static void TickRuntimeHotkeys()
     {
@@ -75,4 +81,5 @@ public static class TutorialDebugPanel
             TutorialProfileStore.ResetProfile();
         }
     }
+#endif
 }

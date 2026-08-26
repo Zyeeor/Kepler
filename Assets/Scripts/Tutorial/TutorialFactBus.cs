@@ -21,7 +21,7 @@ public enum TutorialFact
     // ---- M2 新增 ----
     /// <summary>开场载体附身完成（TutorialController.OpeningCarrierRoutine 报告；TUT-01 开始条件）。</summary>
     OpeningCarrierPossessed,
-    /// <summary>玩家按过位移键（Space 闪避；历史保留，当前 TUT-01 不再使用）。</summary>
+    /// <summary>玩家按过位移键（Space 闪避；TUT-03C 位移教学完成条件）。</summary>
     InputMobilityPressed,
     /// <summary>玩家按过普攻（左键；TUT-02）。</summary>
     InputBasicPressed,
@@ -53,7 +53,6 @@ public static class TutorialFactBus
     /// <summary>报告事实（正式路径：探针转译游戏事件后调用）。重复报告安全（订阅方幂等）。</summary>
     public static void Report(TutorialFact fact)
     {
-        Debug.Log($"[TutorialFact] 事实报告：{fact}");
         OnFactReported?.Invoke(fact);
     }
 

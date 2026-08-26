@@ -16,14 +16,28 @@ public class TutorialUI : MonoBehaviour
     public TMP_Text titleText;
     public TMP_Text bodyText;
 
+    [Header("字号（可调；ShowBanner 时应用到标题/正文，场景引用与运行时自举共用）")]
+    [Min(8f)] public float titleFontSize = 44f;
+    [Min(8f)] public float bodyFontSize = 36f;
+    [Tooltip("运行时自举横幅尺寸（场景引用模式由美术摆布，不受此值影响）")]
+    public Vector2 runtimePanelSize = new Vector2(1100f, 190f);
+
     public bool IsShowing => panelRoot != null && panelRoot.activeSelf;
 
-    /// <summary>显示 Banner（幂等：重复显示只刷新文案）。</summary>
+    /// <summary>显示 Banner（幂等：重复显示只刷新文案；同时应用可调字号）。</summary>
     public void ShowBanner(string title, string body)
     {
         if (panelRoot == null) return;
-        if (titleText != null) titleText.text = title ?? "";
-        if (bodyText != null) bodyText.text = body ?? "";
+        if (titleText != null)
+        {
+            titleText.text = title ?? "";
+            titleText.fontSize = titleFontSize;
+        }
+        if (bodyText != null)
+        {
+            bodyText.text = body ?? "";
+            bodyText.fontSize = bodyFontSize;
+        }
         panelRoot.SetActive(true);
     }
 
@@ -46,7 +60,7 @@ public class TutorialUI : MonoBehaviour
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, -40f);
-        rect.sizeDelta = new Vector2(880f, 110f);   // 固定宽度横幅
+        rect.sizeDelta = runtimePanelSize;   // 可调横幅尺寸（默认已适配大字号）
 
         var img = panelGo.AddComponent<Image>();
         img.color = new Color(0.05f, 0.05f, 0.08f, 0.92f);
@@ -62,7 +76,7 @@ public class TutorialUI : MonoBehaviour
         titleRect.pivot = new Vector2(0.5f, 1f);
         titleRect.offsetMin = new Vector2(24f, -40f);
         titleRect.offsetMax = new Vector2(-24f, -8f);
-        titleText = CreateTmpText(titleGo, 22f, new Color(1f, 0.85f, 0.4f), fontOverride);
+        titleText = CreateTmpText(titleGo, titleFontSize, new Color(1f, 0.85f, 0.4f), fontOverride);
 
         // 正文（标题下方剩余区域）
         var bodyGo = new GameObject("Body");
@@ -73,7 +87,7 @@ public class TutorialUI : MonoBehaviour
         bodyRect.pivot = new Vector2(0.5f, 0.5f);
         bodyRect.offsetMin = new Vector2(24f, 8f);
         bodyRect.offsetMax = new Vector2(-24f, -48f);
-        bodyText = CreateTmpText(bodyGo, 18f, Color.white, fontOverride);
+        bodyText = CreateTmpText(bodyGo, bodyFontSize, Color.white, fontOverride);
         bodyText.alignment = TextAlignmentOptions.Center;
         bodyText.enableWordWrapping = true;
 

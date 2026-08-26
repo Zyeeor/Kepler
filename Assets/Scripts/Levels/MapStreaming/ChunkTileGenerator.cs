@@ -507,23 +507,48 @@ public static class ChunkTileGenerator
         return null;
     }
 
-    // ── 神龛放置（全图按 Chunk 分布） ──
+    // ── 神龛放置（出生点 Chunk Tile） ──
 
     /// <summary>
-    /// 在指定 Chunk 内部区域确定性放置一个神龛 Tile。
-    /// 选取规则：遍历内部区域（边沿留 1 格）中所有 Normal 可走格，按确定性顺序取一个
-    /// （优先避开已占用的 Trigger/Decoration），把该格 prefab 替换为神龛 prefab（kind=Decoration）。
-    /// 无可用格（极端全被占）时回退覆盖任意内部格。
-    /// 确定性：随机源仅 seed，同 seed 同 Chunk 永远放同一格。
+    /// 在指定 Chunk 内放置神龛 Tile（kind=Decoration，走 Tile 可视化与碰撞链路）。
+    /// preferred：玩家出生点 tile 下标（可选）——在该格 3×3 邻域内按确定性顺序
+    /// （中心→上→下→左→右→四对角）取第一个 Normal 可走格放置，保证神龛 tile 贴近出生点；
+    /// 邻域无可用格时回退旧逻辑（内部区域随机 Normal 格，确定性种子）。
     /// </summary>
-    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed)
+    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed, Vector2Int? preferred = null)
     {
         if (chunk == null || chunk.Tiles == null || shrinePrefab == null) return;
         var tiles = chunk.Tiles;
         int n = tiles.GetLength(0);
         var rng = new System.Random(unchecked((int)seed) ^ 0x5E11);
+        var walkable = WalkableOf(shrinePrefab);
+        var kind = TileSemantics.ResolveKind(shrinePrefab);
 
-        // 收集内部区域（[1, n-2]）候选：优先 Normal 且可走格
+        // ① preferred 3×3 邻域优先（确定性顺序，同 seed 稳定）
+        if (preferred.HasValue)
+        {
+            var p = preferred.Value;
+            var offsets = new Vector2Int[]
+            {
+                Vector2Int.zero, Vector2Int.up, Vector2Int.down,
+                Vector2Int.left, Vector2Int.right,
+                new Vector2Int(1, 1), new Vector2Int(1, -1),
+                new Vector2Int(-1, 1), new Vector2Int(-1, -1),
+            };
+            foreach (var off in offsets)
+            {
+                int x = p.x + off.x, y = p.y + off.y;
+                if (x < 1 || x >= n - 1 || y < 1 || y >= n - 1) continue;
+                var t = tiles[x, y];
+                if (t.kind == TerrainKind.Normal && t.isWalkable)
+                {
+                    tiles[x, y] = new TileData(x, y, shrinePrefab, walkable, kind);
+                    return;
+                }
+            }
+        }
+
+        // ② 回退：内部区域随机 Normal 格
         var normalCandidates = new List<Vector2Int>();
         var anyInternal = new List<Vector2Int>();
         for (int x = 1; x < n - 1; x++)
@@ -538,14 +563,11 @@ public static class ChunkTileGenerator
         var pool = normalCandidates.Count > 0 ? normalCandidates : anyInternal;
         if (pool.Count == 0) return;
 
-        // 确定性选格：随机起点 + 固定偏移（不依赖 UnityEngine.Random）
         int idx = rng.Next(pool.Count);
         var cell = pool[idx];
-
-        bool walkable = WalkableOf(shrinePrefab);
-        var kind = TileSemantics.ResolveKind(shrinePrefab);
         tiles[cell.x, cell.y] = new TileData(cell.x, cell.y, shrinePrefab, walkable, kind);
     }
+
 }
 
 /// <summary>

@@ -31,6 +31,9 @@ public class EliteBuildCarrier : MonoBehaviour
     public int SourceWave { get; private set; }
 
     readonly HashSet<string> cardIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>运行时实际生效的 BD 卡 effectId（只读，供 BuildView 等外部查看精英构筑）。</summary>
+    public IReadOnlyCollection<string> CardIds => cardIds;
     readonly List<CapturedSlot> capturedSlots = new List<CapturedSlot>();
     readonly List<CapturedTags> capturedTags = new List<CapturedTags>();
     readonly List<AddedSlot> addedSlots = new List<AddedSlot>();

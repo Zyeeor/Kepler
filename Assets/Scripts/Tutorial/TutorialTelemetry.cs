@@ -20,8 +20,6 @@ public static class TutorialTelemetry
             "\"event\":\"" + eventName + "\"," +
             "\"detail\":\"" + (detail ?? "").Replace("\"", "'") + "\"}";
 
-        Debug.Log("[TutorialTelemetry] " + line);
-
         try
         {
             File.AppendAllText(TelemetryPath, line + Environment.NewLine);

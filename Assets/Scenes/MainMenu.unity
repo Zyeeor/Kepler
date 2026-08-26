@@ -1837,8 +1837,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u9000\u51FA"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
-  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
+  m_fontAsset: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
+  m_sharedMaterial: {fileID: -8090061765088616794, guid: fdf59ff5f3097914e90045f2082d3d1d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2288,8 +2288,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u65B0\u6E38\u620F"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
-  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
+  m_fontAsset: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
+  m_sharedMaterial: {fileID: -8090061765088616794, guid: fdf59ff5f3097914e90045f2082d3d1d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -3264,8 +3264,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u7EE7\u7EED\u6E38\u620F"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: be84d2124744ef849a28348063a09902, type: 2}
-  m_sharedMaterial: {fileID: 5068069437054760665, guid: be84d2124744ef849a28348063a09902,
+  m_fontAsset: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
+  m_sharedMaterial: {fileID: -8090061765088616794, guid: fdf59ff5f3097914e90045f2082d3d1d,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -5273,7 +5273,7 @@ MonoBehaviour:
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:

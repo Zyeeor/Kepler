@@ -207,6 +207,23 @@ public class CardFaceBrowser : MonoBehaviour
                 if (!anyLayer) DrawSprite(card.image, faceRect);
                 DrawFallbackCardText(card, faceRect);
             }
+
+            // ── 预览卡右侧：解锁此卡按钮（F3 调试）──
+            // 无论选卡弹窗是否开启都可解锁（即时注入本局已解锁卡，并应用到现存怪）。
+            float bw = 180f, bh = 44f;
+            float bx = Mathf.Min(Screen.width * 0.5f + 360f, Screen.width - bw - 12f);
+            float by = Screen.height * 0.5f - bh * 0.5f;
+            bool unlockedNow = cm != null && cm.IsEffectUnlocked(card.effectId);
+            GUI.enabled = cm != null && !unlockedNow;
+            if (GUI.Button(new Rect(bx, by, bw, bh), unlockedNow ? "已解锁 ✓" : "解锁此卡"))
+            {
+                if (cm != null)
+                {
+                    cm.UnlockEffect(card.effectId);
+                    Debug.Log($"[CardFaceBrowser] 调试解锁卡：{GetCardName(card)} ({card.effectId})");
+                }
+            }
+            GUI.enabled = true;
         }
         else
         {
