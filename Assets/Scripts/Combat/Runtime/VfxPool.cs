@@ -185,11 +185,14 @@ public class VfxPool : MonoBehaviour
     private IEnumerator ReleaseAfterDelay(GameObject instance, float delay, int epoch)
     {
         float remaining = delay;
+        BulletTimeVfxPlayback playback = instance != null ? instance.GetComponent<BulletTimeVfxPlayback>() : null;
         while (remaining > 0f)
         {
             if (instance == null) yield break;
             if (!IsCurrentEpoch(instance, epoch)) yield break;
-            remaining -= Time.unscaledDeltaTime;
+            remaining -= playback != null && playback.IsPlayerOrigin
+                ? Time.unscaledDeltaTime
+                : Time.deltaTime;
             yield return null;
         }
 
@@ -236,6 +239,10 @@ public class VfxPool : MonoBehaviour
             tracker.owner = null;
 
         StopAndClearParticles(instance);
+
+        BulletTimeVfxPlayback playback = instance.GetComponent<BulletTimeVfxPlayback>();
+        if (playback != null)
+            playback.SetPlayerOrigin(false);
     }
 
     private void PrepareForRelease(GameObject instance)

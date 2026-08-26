@@ -34,10 +34,6 @@ public class GameManager : MonoBehaviour
     [Tooltip("正式流程开关：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；同时屏蔽调试显示（F2 面板/作弊提示/刷怪面板）。关闭则直接进入当前场景（调试模式）。")]
     public bool useFormalFlow = false;
 
-    [Header("Bullet Time（子弹时间）")]
-    [Tooltip("子弹时间的时间缩放倍率（全局单源：PossessionManager 触发的子弹时间亦读此值）。")]
-    [Range(0.05f, 1f)] public float bulletTimeScale = 0.2f;
-
     public enum GameState
     {
         Soul,        // 灵魂态
@@ -64,6 +60,7 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            BulletTimeController.EnsureInstance();
             SceneManager.sceneLoaded += OnSceneLoaded;
             CombatHitboxDebugSettings.EnsureOnGameManager();
 
@@ -202,7 +199,7 @@ public class GameManager : MonoBehaviour
                 TimeScaleManager.Pop(TimeDomain.BulletTime);
                 break;
             case GameState.BulletTime:
-                TimeScaleManager.Push(TimeDomain.BulletTime, bulletTimeScale);   // 子弹时间（单源：bulletTimeScale 字段）
+                TimeScaleManager.Push(TimeDomain.BulletTime, BulletTimeController.ConfiguredTimeScale);
                 break;
             case GameState.GameOver:
                 ShowGameOverUI();

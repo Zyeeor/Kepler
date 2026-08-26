@@ -368,6 +368,7 @@ public abstract class EnemyAbility : MonoBehaviour
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
         activeVfx = VfxPool.Instance.Spawn(vfxPrefab, pos, rot);
+        BulletTimeController.MarkVfxOrigin(activeVfx, IsOwnedByPlayer);
         ScaleAbilityObject(activeVfx);
         PlayVfx(activeVfx);
         float duration = ResolveVfxPlayDuration(activeVfx);
@@ -384,6 +385,7 @@ public abstract class EnemyAbility : MonoBehaviour
         Vector3 pos = anchor.position + anchor.TransformDirection(vfxPositionOffset);
         Quaternion rot = anchor.rotation * Quaternion.Euler(vfxRotationOffset);
         GameObject instance = VfxPool.Instance.Spawn(weaponVfxPrefab, pos, rot);
+        BulletTimeController.MarkVfxOrigin(instance, IsOwnedByPlayer);
         ScaleAbilityObject(instance);
         PlayVfx(instance);
         float duration = ResolveVfxPlayDuration(instance);
@@ -395,6 +397,7 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (prefab == null) return null;
         GameObject go = VfxPool.Instance.Spawn(prefab, position, rotation);
+        BulletTimeController.MarkVfxOrigin(go, owner != null && owner.isPossessed);
         ScaleAbilityObject(go);
         PlayVfx(go);
         Projectile projectile = go.GetComponent<Projectile>();
@@ -405,6 +408,7 @@ public abstract class EnemyAbility : MonoBehaviour
         projectile.speed = speed;
         projectile.maxLifetime = lifetime;
         projectile.isPlayerProjectile = owner != null && owner.isPossessed;
+        BulletTimeController.MarkVfxOrigin(go, projectile.isPlayerProjectile);
         // After field writes: OnEnable may have reset against prefab maxLifetime.
         projectile.ResetForPoolSpawn();
         return projectile;
@@ -465,6 +469,7 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (prefab == null || owner == null) return null;
         GameObject go = VfxPool.Instance.Spawn(prefab, pos, rot);
+        BulletTimeController.MarkVfxOrigin(go, IsOwnedByPlayer);
         ScaleAbilityObject(go);
         PlayVfx(go);
         DestroyOnOwnerDeath tracker = go.GetComponent<DestroyOnOwnerDeath>();
@@ -566,6 +571,7 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (definition == null || definition.hitVfxPrefab == null) return;
         GameObject instance = VfxPool.Instance.Spawn(definition.hitVfxPrefab, hitPosition, Quaternion.identity);
+        BulletTimeController.MarkVfxOrigin(instance, IsOwnedByPlayer);
         PlayVfx(instance);
         if (definition.hitVfxDuration > 0f)
             ReleaseVfx(instance, definition.hitVfxDuration);

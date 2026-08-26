@@ -53,6 +53,7 @@ public class MineBehaviour : MonoBehaviour
         if (blastVfxPrefab != null)
         {
             var blast = VfxPool.Instance.Spawn(blastVfxPrefab, blastPos, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(blast, placer != null && placer.IsPlayerControlled);
             foreach (var ps in blast.GetComponentsInChildren<ParticleSystem>(true))
             {
                 var main = ps.main;

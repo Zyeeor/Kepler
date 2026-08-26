@@ -30,6 +30,10 @@ public class SummonActor : Enemy
     private float nextAttackAt;
     private bool consumed;
     private bool diving;
+    private bool playerOrigin;
+
+    private float SimulationTime => playerOrigin ? Time.unscaledTime : Time.time;
+    private float SimulationDeltaTime => playerOrigin ? Time.unscaledDeltaTime : Time.deltaTime;
 
     protected override IController CreateDefaultController()
     {
@@ -40,7 +44,7 @@ public class SummonActor : Enemy
     {
         base.Awake();
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Summon" });
-        spawnedAt = Time.time;
+        spawnedAt = SimulationTime;
         corpsePossessionWindow = 0f;
         showHealthBar = true;
     }
@@ -66,6 +70,7 @@ public class SummonActor : Enemy
         float blastVfxDuration)
     {
         summoner = owner;
+        playerOrigin = owner != null && owner.IsPlayerControlled;
         lifetime = duration;
         explodeOnDeath = deathBlast;
         deathExplosionDamage = blastDamage;
@@ -74,7 +79,7 @@ public class SummonActor : Enemy
         kamikazeSpeed = Mathf.Max(0.1f, diveSpeed);
         deathExplosionVfx = blastVfx;
         deathExplosionVfxDuration = Mathf.Max(0.01f, blastVfxDuration);
-        spawnedAt = Time.time;
+        spawnedAt = SimulationTime;
         SyncFaction();
     }
 
@@ -98,7 +103,7 @@ public class SummonActor : Enemy
         base.Update();
         if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned) return;
 
-        if (lifetime > 0f && Time.time >= spawnedAt + lifetime)
+        if (lifetime > 0f && SimulationTime >= spawnedAt + lifetime)
             BeginDeathDive();
         else
             TryAutoAttack();
@@ -121,11 +126,11 @@ public class SummonActor : Enemy
         if (pursued != null)
         {
             Vector3 targetPos = pursued.transform.position + Vector3.up * followHeight;
-            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-followLerp * Time.deltaTime));
+            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-followLerp * SimulationDeltaTime));
             Vector3 toTarget = pursued.transform.position - transform.position;
             toTarget.y = 0f;
             if (toTarget.sqrMagnitude > 0.0001f)
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(toTarget.normalized, Vector3.up), Time.deltaTime * 10f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(toTarget.normalized, Vector3.up), SimulationDeltaTime * 10f);
             return;
         }
 
@@ -136,11 +141,11 @@ public class SummonActor : Enemy
         back.Normalize();
 
         Vector3 desired = follow.position - back * followDistance + Vector3.up * followHeight;
-        transform.position = Vector3.Lerp(transform.position, desired, 1f - Mathf.Exp(-followLerp * Time.deltaTime));
+        transform.position = Vector3.Lerp(transform.position, desired, 1f - Mathf.Exp(-followLerp * SimulationDeltaTime));
 
         Vector3 look = GetLookDirection(follow);
         if (look.sqrMagnitude > 0.0001f)
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look, Vector3.up), Time.deltaTime * 10f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look, Vector3.up), SimulationDeltaTime * 10f);
     }
 
     protected override void ExecuteButtons(in ControlCommand cmd)
@@ -184,7 +189,7 @@ public class SummonActor : Enemy
 
     private void TryAutoAttack()
     {
-        if (Time.time < nextAttackAt) return;
+        if (SimulationTime < nextAttackAt) return;
         bool fired = false;
         foreach (var entry in basicAbilities)
         {
@@ -193,7 +198,7 @@ public class SummonActor : Enemy
             fired = true;
         }
         if (fired)
-            nextAttackAt = Time.time + Mathf.Max(0.05f, autoAttackInterval * pursuitAttackIntervalMultiplier);
+            nextAttackAt = SimulationTime + Mathf.Max(0.05f, autoAttackInterval * pursuitAttackIntervalMultiplier);
     }
 
     private Enemy FindNearestLegalEnemy()
@@ -295,7 +300,7 @@ public class SummonActor : Enemy
         }
 
         Vector3 dest = target.transform.position + Vector3.up * 0.6f;
-        transform.position = Vector3.MoveTowards(transform.position, dest, kamikazeSpeed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, dest, kamikazeSpeed * SimulationDeltaTime);
         Vector3 look = dest - transform.position;
         look.y = 0f;
         if (look.sqrMagnitude > 0.0001f)

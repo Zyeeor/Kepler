@@ -1140,26 +1140,87 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 3
-  normalSpawnCountPerTick: 1
+  normalSpawnRateByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.33333334
+      inSlope: 0
+      outSlope: 0.28571427
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.3333333
+      inSlope: 0.28571427
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnGrowthPeriodSeconds: 60
-  continuousSpawnMaxCountsByMinute: 070000000e00000015000000
+  continuousSpawnMaxCountsByMinute: 0300000006000000090000000c0000000f0000001200000015000000
   spawnCycleSeconds: 60
-  tideStartSeconds: 30
-  tideDurationSeconds: 9
-  tideSpawnInterval: 3
-  tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 30
-  eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
+  monsterHealthMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.20000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.4
+      inSlope: 0.20000002
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  monsterAttackMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.120000005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 1.84
+      inSlope: 0.120000005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   difficultyGrowthIntervalSeconds: 30
-  killEchoMaxCountPerWindow: 2
-  tideKillEchoMaxCountPerWindow: 7
-  killEchoWindowSeconds: 2
   waveMode: 1
   waves:
   - weightedTable:
@@ -9526,7 +9587,6 @@ MonoBehaviour:
   fixedSeed: 12345
   forceTutorial: 0
   useFormalFlow: 1
-  bulletTimeScale: 0.2
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -10058,7 +10118,6 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.05
   decayInterval: 1
-  bulletTimeDuration: 2
 --- !u!1 &1948264456
 GameObject:
   m_ObjectHideFlags: 0
@@ -10340,26 +10399,87 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 3
-  normalSpawnCountPerTick: 1
+  normalSpawnRateByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.33333334
+      inSlope: 0
+      outSlope: 0.28571427
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.3333333
+      inSlope: 0.28571427
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnGrowthPeriodSeconds: 60
   continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
   spawnCycleSeconds: 60
-  tideStartSeconds: 30
-  tideDurationSeconds: 9
-  tideSpawnInterval: 3
-  tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 40
-  eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
+  monsterHealthMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.20000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.4
+      inSlope: 0.20000002
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  monsterAttackMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.120000005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 1.84
+      inSlope: 0.120000005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   difficultyGrowthIntervalSeconds: 30
-  killEchoMaxCountPerWindow: 2
-  tideKillEchoMaxCountPerWindow: 7
-  killEchoWindowSeconds: 2
   waveMode: 0
   waves: []
   gracePeriod: 2

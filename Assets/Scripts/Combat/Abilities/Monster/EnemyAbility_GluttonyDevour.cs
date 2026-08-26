@@ -132,6 +132,7 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
     {
         if (blastVfxPrefab == null) return;
         GameObject blast = VfxPool.Instance.Spawn(blastVfxPrefab, position, Quaternion.identity);
+        BulletTimeController.MarkVfxOrigin(blast, IsOwnedByPlayer);
         ScaleAbilityObject(blast);
         PlayVfx(blast);
         StopVfxLooping(blast);
@@ -152,6 +153,7 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
 
         Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : owner.transform;
         activeVfx = VfxPool.Instance.Spawn(vfxPrefab, anchor.position, anchor.rotation, anchor);
+        BulletTimeController.MarkVfxOrigin(activeVfx, IsOwnedByPlayer);
         activeVfx.transform.localPosition = vfxPositionOffset;
         activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
         Vector3 authoredScale = activeVfx.transform.localScale * OwnerCombatScaleMultiplier;

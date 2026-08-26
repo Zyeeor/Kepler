@@ -40,7 +40,7 @@ public class Projectile : MonoBehaviour
     {
         if (settled) return;
 
-        float deltaTime = ownerEnemy != null && ownerEnemy.IsPlayerControlled ? Time.unscaledDeltaTime : Time.deltaTime;
+        float deltaTime = isPlayerProjectile ? Time.unscaledDeltaTime : Time.deltaTime;
         float stepDist = speed * deltaTime;
         int obstacleMask = ~((1 << 8) | (1 << 9));
         if (Physics.Raycast(transform.position, transform.forward, out RaycastHit wallHit, stepDist, obstacleMask, QueryTriggerInteraction.Ignore))
@@ -138,6 +138,7 @@ public class Projectile : MonoBehaviour
     {
         if (hitEffectPrefab == null) return;
         var effect = VfxPool.Instance.Spawn(hitEffectPrefab, position, rotation);
+        BulletTimeController.MarkVfxOrigin(effect, isPlayerProjectile);
         foreach (var ps in effect.GetComponentsInChildren<ParticleSystem>())
             ps.Play(true);
         VfxPool.ReleaseOrDestroy(effect, hitEffectDuration);
