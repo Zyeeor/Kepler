@@ -68,6 +68,7 @@ public static class ChunkTileGenerator
     public static void Generate(ChunkRuntime chunk, ChunkDef def, uint seed, ChunkTemplateAllocator allocator = null)
     {
         if (chunk == null) return;
+        chunk.WasLayoutGenerated = false;
         int n = ResolveChunkSize();
 
         // 模板分配：由全局分配器决定（确定性 + 全局约束复用）
@@ -97,6 +98,7 @@ public static class ChunkTileGenerator
     public static void GenerateFixed(ChunkRuntime chunk, FixedChunkLayout layout, ChunkDef def, uint seed)
     {
         if (chunk == null) return;
+        chunk.WasLayoutGenerated = false;
         int n = ResolveChunkSize();
         if (layout != null)
         {
@@ -113,6 +115,7 @@ public static class ChunkTileGenerator
     /// </summary>
     static void GenerateFromLayout(ChunkRuntime chunk, FixedChunkLayout layout, int n, ChunkDef def = null)
     {
+        chunk.WasLayoutGenerated = true;
         if (n != layout.size)
             Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 系统 chunkSize({n}) 与布局尺寸({layout.size}) 不一致：越界格按空处理（尺寸自适应未实现）。", layout);
 
@@ -170,7 +173,7 @@ public static class ChunkTileGenerator
 
         var openEdges = ComputeOpenEdges(tiles, n);
         if (openEdges.Count < 2)
-            Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 布局 '{layout.name}' 开放边 {openEdges.Count} < 2：Chunk 间连通由策划负责，该 Chunk 将被出入口校验安全兜底（全 Normal）替换。", layout);
+            Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 布局 '{layout.name}' 开放边 {openEdges.Count} < 2：Chunk 间连通由策划保证。该 Chunk 将保留作者布局（不静默覆盖），但可能与其他 Chunk 不连通，请检查布局边沿开口。", layout);
         chunk.SetTiles(tiles, openEdges);
     }
 
@@ -582,17 +585,13 @@ public static class ChunkTileGenerator
     /// 在指定 Chunk 内放置神龛 Tile（kind=Decoration，走 Tile 可视化与碰撞链路）。
     /// preferred：玩家出生点 tile 下标（可选）——在该格 3×3 邻域内按确定性顺序
     /// （中心→上→下→左→右→四对角）取第一个 Normal 可走格放置，保证神龛 tile 贴近出生点；
-    /// 邻域无可用格时回退旧逻辑（内部区域随机 Normal 格，确定性种子）。
+    /// 邻域无可用格时回退内部区域随机 Normal 格。
+    /// avoid：禁止落点的 tile 下标（可选，通常为玩家初始位置）——搜索与回退均排除该格，
+    /// 用于避免神龛与玩家初始位置重叠（出生点 Chunk 神龛贴出生点但错开一格）。
+    /// 放置后再清一次神龛 3×3 邻域（除中心）的其它装饰物 / 危险地形 overlay（Decoration 与 Trigger），
+    /// 保证"单个神龛周围八格无别的装饰物或地刺/岩浆"（跨 Chunk 不相邻由 PlanShrines 切比雪夫间隔约束）。
     /// </summary>
-    /// <summary>
-    /// 在指定 Chunk 内放置神龛 Tile（kind=Decoration，走 Tile 可视化与碰撞链路）。
-    /// preferred：玩家出生点 tile 下标（可选）——在该格 3×3 邻域内按确定性顺序
-    /// （中心→上→下→左→右→四对角）取第一个 Normal 可走格放置，保证神龛 tile 贴近出生点；
-    /// 邻域无可用格时回退旧逻辑（内部区域随机 Normal 格，确定性种子）。
-    /// 放置后再清一次神龛 3×3 邻域（除中心）的其它装饰物 overlay，保证"单个神龛周围八格无别的装饰物"
-    /// （跨 Chunk 不相邻已由 MapStreamingSystem.PlanShrines 的切比雪夫间隔约束保障）。
-    /// </summary>
-    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed, Vector2Int? preferred = null)
+    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed, Vector2Int? preferred = null, Vector2Int? avoid = null)
     {
         if (chunk == null || chunk.Tiles == null || shrinePrefab == null) return;
         var tiles = chunk.Tiles;
@@ -604,6 +603,7 @@ public static class ChunkTileGenerator
         Vector2Int? placed = null;
 
         // ① preferred 3×3 邻域优先（确定性顺序，同 seed 稳定）：叠加在底层地砖之上（保留底层）
+        //    avoid（玩家初始格）从候选中排除，避免神龛压在玩家身上
         if (preferred.HasValue)
         {
             var p = preferred.Value;
@@ -618,6 +618,7 @@ public static class ChunkTileGenerator
             {
                 int x = p.x + off.x, y = p.y + off.y;
                 if (x < 1 || x >= n - 1 || y < 1 || y >= n - 1) continue;
+                if (avoid.HasValue && x == avoid.Value.x && y == avoid.Value.y) continue;
                 var t = tiles[x, y];
                 if (t.kind == TerrainKind.Normal && t.isWalkable && t.overlayPrefab == null)
                 {
@@ -632,7 +633,7 @@ public static class ChunkTileGenerator
             }
         }
 
-        // ② 回退：内部区域随机 Normal 且未叠加的格
+        // ② 回退：内部区域随机 Normal 且未叠加的格（同样排除 avoid）
         if (placed == null)
         {
             var normalCandidates = new List<Vector2Int>();
@@ -640,6 +641,7 @@ public static class ChunkTileGenerator
             for (int x = 1; x < n - 1; x++)
             for (int y = 1; y < n - 1; y++)
             {
+                if (avoid.HasValue && x == avoid.Value.x && y == avoid.Value.y) continue;
                 var t = tiles[x, y];
                 anyInternal.Add(new Vector2Int(x, y));
                 if (t.kind == TerrainKind.Normal && t.isWalkable && t.overlayPrefab == null)
@@ -671,8 +673,8 @@ public static class ChunkTileGenerator
     }
 
     /// <summary>
-    /// 神龛保障：清除 (cx,cy) 的 3×3 邻域（除中心）内所有其它装饰物 overlay（仅 Decoration 类，保留底层地砖）。
-    /// 即保证"单个神龛周围八个格子没有别的装饰物"。越界邻域格（跨入相邻 Chunk）不处理——
+    /// 神龛保障：清除 (cx,cy) 的 3×3 邻域（除中心）内所有其它装饰物 / 危险地形 overlay（Decoration 与 Trigger 类，保留底层地砖）。
+    /// 即保证"单个神龛周围八个格子没有别的装饰物或地刺/岩浆"。越界邻域格（跨入相邻 Chunk）不处理——
     /// 神龛选位恒在内部（1..n-2），其 3×3 完全落在同一 Chunk 内；跨 Chunk 神龛间隔由 PlanShrines 约束。
     /// </summary>
     static void ClearNeighborsDecorations(TileData[,] tiles, int cx, int cy, int n)
@@ -683,7 +685,7 @@ public static class ChunkTileGenerator
             if (x == cx && y == cy) continue;
             if (x < 0 || y < 0 || x >= n || y >= n) continue;
             var t = tiles[x, y];
-            if (t.overlayKind == TerrainKind.Decoration)
+            if (t.overlayKind == TerrainKind.Decoration || t.overlayKind == TerrainKind.Trigger)
             {
                 t.overlayPrefab = null;
                 t.overlayKind = TerrainKind.Normal;

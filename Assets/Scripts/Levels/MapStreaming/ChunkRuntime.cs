@@ -37,6 +37,8 @@ public class ChunkRuntime
     public TileData[,] Tiles { get; private set; }
     /// <summary>可通行的邻接边（自身边沿有开口的方向）。</summary>
     public List<ChunkDirection> OpenEdges { get; private set; } = new List<ChunkDirection>();
+    /// <summary>本次生成是否来自手摆/模板布局（而非程序化随机）。Prepare 据此区分：布局路径开放边不达标时保留作者内容、不静默全 Normal 覆盖。</summary>
+    public bool WasLayoutGenerated { get; set; } = false;
     /// <summary>状态机当前位置。</summary>
     public ChunkStreamState State { get; private set; } = ChunkStreamState.None;
 
