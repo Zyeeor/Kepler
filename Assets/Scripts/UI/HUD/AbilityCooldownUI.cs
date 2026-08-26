@@ -47,6 +47,7 @@ public class AbilityCooldownUI : MonoBehaviour
     private EnemyAbility enemyBasicAbility;
     private EnemyAbility enemySkillAbility;
     private EnemyAbility enemyMobilityAbility;
+    private SinType enemySkillIconSin = SinType.None;
 
 
     // 场景默认图标作为配置缺省值；在玩家/怪物状态切换时避免沿用上一个角色的覆盖图。
@@ -99,6 +100,9 @@ public class AbilityCooldownUI : MonoBehaviour
             }
         }
 
+        if (!trackingPlayer && currentEnemy != null && IsEnemySkillDisplayChanged())
+            RefreshIcons();
+
         // Update cooldown overlays each frame
         UpdateCooldowns();
     }
@@ -134,6 +138,7 @@ public class AbilityCooldownUI : MonoBehaviour
         enemyBasicAbility = null;
         enemySkillAbility = null;
         enemyMobilityAbility = null;
+        enemySkillIconSin = SinType.None;
 
 
         if (trackingPlayer && playerCombat != null)
@@ -161,7 +166,8 @@ public class AbilityCooldownUI : MonoBehaviour
             if (currentEnemy.skillAbilities.Count > 0)
             {
                 enemySkillAbility = currentEnemy.skillAbilities[0].ability;
-                ApplyMonsterIcon(currentEnemy.sinType, MonsterSkillIconConfig.MonsterSlot.Skill, skillIconImage);
+                enemySkillIconSin = ResolveSkillIconSin(currentEnemy);
+                ApplyMonsterIcon(enemySkillIconSin, MonsterSkillIconConfig.MonsterSlot.Skill, skillIconImage);
                 if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(true);
             }
             else { if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false); }
@@ -223,6 +229,39 @@ public class AbilityCooldownUI : MonoBehaviour
         }
     }
 
+    bool IsEnemySkillDisplayChanged()
+    {
+        EnemyAbility currentSkill = null;
+        if (currentEnemy.skillAbilities != null && currentEnemy.skillAbilities.Count > 0)
+        {
+            MonsterActor.SkillAbilityEntry entry = currentEnemy.skillAbilities[0];
+            if (entry != null) currentSkill = entry.ability;
+        }
+
+        return currentSkill != enemySkillAbility
+            || ResolveSkillIconSin(currentEnemy) != enemySkillIconSin;
+    }
+
+    SinType ResolveSkillIconSin(MonsterActor monster)
+    {
+        if (monster == null) return SinType.None;
+        if (monster.sinType != SinType.Gluttony) return monster.sinType;
+
+        GluttonyBodyState state = monster.GetComponent<GluttonyBodyState>();
+        if (state != null && state.HasCopiedSkill && state.CopiedSkillSourceSin != SinType.None)
+            return state.CopiedSkillSourceSin;
+        return monster.sinType;
+    }
+
+    bool IsEnemySkillUnavailable()
+    {
+        if (trackingPlayer || currentEnemy == null || currentEnemy.sinType != SinType.Envy)
+            return false;
+
+        EnemyAbility_EnvyThunderstorm thunderstorm = enemySkillAbility as EnemyAbility_EnvyThunderstorm;
+        return thunderstorm != null && !thunderstorm.HasLegalMarkedTargets;
+    }
+
 
     Sprite GetDefaultIcon(Image target)
     {
@@ -249,7 +288,9 @@ public class AbilityCooldownUI : MonoBehaviour
             float total = 0f, remaining = 0f;
             if (playerSkillAbility != null) { total = playerSkillAbility.EffectiveCooldown; remaining = playerSkillAbility.CurrentCooldown; }
             else if (enemySkillAbility != null) { total = enemySkillAbility.EffectiveCooldown; remaining = enemySkillAbility.CurrentCooldown; }
-            skillCooldownOverlay.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
+            skillCooldownOverlay.fillAmount = IsEnemySkillUnavailable()
+                ? 1f
+                : (total > 0f ? Mathf.Clamp01(remaining / total) : 0f);
         }
 
         // Soul state reads possession cooldown; possessed state reads mobility cooldown.

@@ -18,6 +18,7 @@ public class GluttonyBodyState : MonoBehaviour
     public bool FirstDevourHealUsed { get; private set; }
     public bool IsSmallCatActive { get; private set; }
     public bool HasCopiedSkill => _copiedSkill != null;
+    public SinType CopiedSkillSourceSin { get; private set; } = SinType.None;
     /// <summary>Possessed move-facing turn multiplier while SmallCat + GL-M01 are active.</summary>
     public float SmallCatTurnMult { get; private set; } = 1f;
 
@@ -137,6 +138,8 @@ public class GluttonyBodyState : MonoBehaviour
             return false;
         }
 
+        CopiedSkillSourceSin = target is MonsterActor targetMonster ? targetMonster.sinType : SinType.None;
+
         // Instantiated under this body so Awake binds owner via GetComponentInParent.
         // Strip upgrade slots: the copy is a one-shot payload, not a Gluttony card host.
         if (_copiedSkill.upgrades != null)
@@ -180,6 +183,7 @@ public class GluttonyBodyState : MonoBehaviour
 
         // Slot is restored; keep the spent copy alive briefly for any in-flight coroutine payload.
         _copiedSkill = null;
+        CopiedSkillSourceSin = SinType.None;
         _restoreCopiedSkillRoutine = null;
         if (ability != null)
             Destroy(ability.gameObject, 8f);
@@ -201,6 +205,8 @@ public class GluttonyBodyState : MonoBehaviour
             Destroy(_copiedSkill.gameObject);
             _copiedSkill = null;
         }
+
+        CopiedSkillSourceSin = SinType.None;
 
         if (_devour != null) _devour.enabled = true;
     }
