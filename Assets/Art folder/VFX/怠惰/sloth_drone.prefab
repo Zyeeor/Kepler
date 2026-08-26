@@ -521,6 +521,8 @@ MonoBehaviour:
   maxHealth: 20
   currentHealth: 20
   displayName: "\u6728\u7075"
+  sinType: 0
+  isPossessable: 1
   enemyStats:
     maxHealth: 20
     moveSpeed: 8
@@ -547,6 +549,7 @@ MonoBehaviour:
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
   skillRangeColor: {r: 0.15, g: 0.4, b: 1, a: 0.9}
   rangeCircleSegments: 64
+  visualScaleRoot: {fileID: 0}
   bodyColor: {r: 1, g: 0, b: 0, a: 1}
   weakenedColor: {r: 1, g: 0.5, b: 0, a: 1}
   downedColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -562,6 +565,9 @@ MonoBehaviour:
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  corpseGroundYOffset: 0
+  abilityCostDeathGrace: 0.6
+  abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}
   healthCanvas: {fileID: 0}
   showHealthBar: 0
@@ -578,6 +584,11 @@ MonoBehaviour:
   weaponDescription: "\u53CC\u624B\u9501\u94FE"
   attackDowntime: 10
   meshRenderer: {fileID: 0}
+  spawnOrigin: 0
+  spawnDifficultyTier: 0
+  baseSpawnMaxHealth: 0
+  spawnHealthMultiplier: 1
+  spawnDamageMultiplier: 1
   soulAnchorPoint: {fileID: 0}
   summoner: {fileID: 0}
   followDistance: 2.2
@@ -593,6 +604,8 @@ MonoBehaviour:
     type: 3}
   deathExplosionVfxDuration: 1
   autoAttackInterval: 1
+  pursueNearestEnemy: 0
+  pursuitAttackIntervalMultiplier: 1
 --- !u!114 &5172934693774179922
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -607,6 +620,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 2.4
+  corpseRimColor: {r: 0.12, g: 0.55, b: 1, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 0.15, g: 0.8, b: 1.6, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.018
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
+  eliteRimColor: {r: 0.65, g: 0.15, b: 0.9, a: 1}
+  eliteRimIntensity: 0.8
+  elitePulseSpeed: 1.8
+  elitePulseAmount: 0.25
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 3
+  eliteMetallic: 0.2
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85

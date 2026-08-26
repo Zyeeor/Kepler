@@ -19480,7 +19480,6 @@ GameObject:
   - component: {fileID: 1753544537}
   - component: {fileID: 1753544536}
   - component: {fileID: 1753544535}
-  - component: {fileID: 1753544540}
   m_Layer: 0
   m_Name: UICanvas
   m_TagString: Untagged
@@ -20292,7 +20291,7 @@ MonoBehaviour:
   fixedSeed: 12345
   forceTutorial: 0
   bootToMainMenu: 0
-  useFormalFlow: 0
+  useFormalFlow: 1
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0

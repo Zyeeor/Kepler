@@ -1858,6 +1858,7 @@ MonoBehaviour:
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
+  corpseGroundYOffset: 0
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 5777998289787254826}
@@ -4171,9 +4172,9 @@ MonoBehaviour:
   - effectId: PR-M01
     unlocked: 0
   - effectId: PR-A03
-    unlocked: 0
+    unlocked: 1
   - effectId: PR-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

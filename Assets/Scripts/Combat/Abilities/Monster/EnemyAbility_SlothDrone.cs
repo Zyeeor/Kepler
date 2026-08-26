@@ -27,6 +27,8 @@ public class EnemyAbility_SlothDrone : EnemyAbility
     public int bonusDroneCount = 2;
     public int maxActiveDrones = 3;
     public float pursuitAttackIntervalMultiplier = 0.6f;
+    [Tooltip("Canonical attack range of each summoned drone.")]
+    public float droneAttackRange = 30f;
 
     private readonly System.Collections.Generic.List<SummonActor> activeDrones = new System.Collections.Generic.List<SummonActor>();
     public bool HasActiveDrone
@@ -113,6 +115,12 @@ public class EnemyAbility_SlothDrone : EnemyAbility
                 IsUpgradeUnlocked("SL-S03")
                     ? GetCardParameter("PursuitAttackIntervalMultiplier", pursuitAttackIntervalMultiplier)
                     : 1f);
+
+            // Keep spawned drones aligned with the monster contract even when an older
+            // drone prefab still carries the previous 10 m serialized value.
+            EnemyAbility_SummonBolt bolt = go.GetComponentInChildren<EnemyAbility_SummonBolt>(true);
+            if (bolt != null)
+                bolt.searchRange = Mathf.Max(0.1f, droneAttackRange);
 
             activeDrones.Add(summon);
             StartCoroutine(TossDrone(go, start, apex));
