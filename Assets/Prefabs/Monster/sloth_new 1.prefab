@@ -539,7 +539,7 @@ MonoBehaviour:
   collisionDamage: 0
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Sloth_new
+  aiConfigId: Envy_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -558,7 +558,7 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
-  corpsePossessionWindow: 5
+  corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
   abilityCostDeathGrace: 0.6
@@ -660,20 +660,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.58414173, g: 1, b: 0.19999999, a: 1}
-  possessionRimIntensity: 0.8
-  eliteRimColor: {r: 0.06, g: 0.35, b: 0.8, a: 1}
+  possessionRimColor: {r: 1, g: 1, b: 1, a: 1}
+  possessionRimIntensity: 3.47
+  corpseRimColor: {r: 0.44968545, g: 1, b: 0.4555296, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 1.1889753, g: 2.1361256, b: 1.2897577, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.0001
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
+  eliteRimColor: {r: 0.011175857, g: 0.83018863, b: 0, a: 1}
   eliteRimIntensity: 0.55
   elitePulseSpeed: 0.7
   elitePulseAmount: 0.13
   eliteMaterialTemplate: {fileID: 0}
   eliteRimPower: 4.2
   eliteMetallic: 0.3
-  hitFlashColor: {r: 0, g: 0.0867854, b: 0.9339623, a: 1}
+  hitFlashColor: {r: 0.4726851, g: 0.5283019, b: 0.28076416, a: 1}
   hitFlashDuration: 0.25
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 0.17982431, g: 0.8287561, b: 0.25189692, a: 1}
-  dissolveEdgeIntensity: 4.72
+  dissolveEdgeColor: {r: 0.38197744, g: 0.6037736, b: 0.28669748, a: 1}
+  dissolveEdgeIntensity: 2.55
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
 --- !u!1 &2420022869048254844
 GameObject:
