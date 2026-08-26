@@ -374,6 +374,8 @@ public class TerrainEffectTile : MonoBehaviour
 
         combat = other.GetComponentInParent<CombatAbilityComponent>();
         if (combat == null) return false;
+        MonsterActor monster = combat.GetComponent<MonsterActor>();
+        if (monster != null && monster.IsCorpse) return false;
         id = combat.GetInstanceID();
         return true;
     }
