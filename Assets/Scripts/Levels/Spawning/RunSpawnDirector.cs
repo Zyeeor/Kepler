@@ -2,36 +2,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Run-level orchestration above MonsterSpawner. It owns the active-combat clock, pressure
-/// cadence and kill-echo window; MonsterSpawner remains the legal spawn/pool executor.
+/// Run-level orchestration above MonsterSpawner. It owns the active-combat clock and Boss
+/// takeover timing; WaveManager owns all ordinary and Elite spawn scheduling.
 /// </summary>
 public sealed class RunSpawnDirector : MonoBehaviour
 {
     public static RunSpawnDirector Instance { get; private set; }
 
-    [Header("Pressure")]
-    public float pressureInterval = 8f;
-    public int earlyTarget = 6;
-    public int midTarget = 8;
-    public int lateTarget = 11;
-    public int earlyPerTick = 2;
-    public int midPerTick = 3;
-    public int latePerTick = 4;
-    [Header("Kill Echo")]
-    public int maxEchoesPerWindow = 4;
-    public float echoWindowSeconds = 10f;
-    public float echoMinDelay = 0.6f;
-    public float echoMaxDelay = 1.1f;
-    public float echoExpirySeconds = 2f;
     [Header("Boss")]
     [Min(1f)] public float bossCombatTime = 420f;
-    [Tooltip("怪物数值成长周期（秒）。RunSpawnDirector.CurrentTier 在每个周期开始时提升 1 级。")]
+    [Tooltip("仅供旧 Boss 仆从类型选择使用的成长档位间隔（秒）。")]
     [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
+    [Tooltip("横轴为战斗分钟数，纵轴为怪物基础生命值乘数。由 WaveManager 配置。")]
+    public AnimationCurve monsterHealthMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 2.4f);
+    [Tooltip("横轴为战斗分钟数，纵轴为怪物基础攻击力乘数。由 WaveManager 配置。")]
+    public AnimationCurve monsterAttackMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 1.84f);
     public GameObject bossPrefab;
     public List<GameObject> normalPrefabs = new List<GameObject>();
 
-    readonly List<float> successfulEchoTimes = new List<float>(8);
-    readonly List<PendingEcho> pendingEchoes = new List<PendingEcho>(8);
     readonly List<MonsterActor> bossBattleReserveBodies = new List<MonsterActor>(7);
     static readonly SinType[] BossBattleReserveOrder =
     {
@@ -43,25 +31,16 @@ public sealed class RunSpawnDirector : MonoBehaviour
         SinType.Lust,
         SinType.Sloth,
     };
-    float nextPressureTime;
     int spawnedBossCount;
-    bool periodicPressureEnabled = true;
     bool bossTimeReached;
-    bool matchFatalSinForEcho;
-
-    struct PendingEcho
-    {
-        public SpawnRequest request;
-        public GameObject prefab;
-        public float readyAt;
-    }
 
     public float ActiveCombatSeconds { get; private set; }
     public int CurrentTier => MonsterSpawnDifficulty.TierAt(ActiveCombatSeconds, difficultyGrowthIntervalSeconds);
+    public float CurrentHealthMultiplier => EvaluateMultiplier(monsterHealthMultiplierByMinute, 1f);
+    public float CurrentAttackMultiplier => EvaluateMultiplier(monsterAttackMultiplierByMinute, 1f);
     public bool BossSpawned => spawnedBossCount > 0;
     public bool BossDefeated { get; private set; }
     public bool NonBossTimeReached => bossTimeReached || BossSpawned;
-    public int EchoesInWindow => successfulEchoTimes.Count;
     public int BossBattleReserveBodyCount
     {
         get
@@ -87,36 +66,22 @@ public sealed class RunSpawnDirector : MonoBehaviour
             if (prefab != null && !normalPrefabs.Contains(prefab)) normalPrefabs.Add(prefab);
     }
 
-    public void SetPeriodicPressureEnabled(bool enabled)
-    {
-        periodicPressureEnabled = enabled;
-        if (enabled)
-            nextPressureTime = ActiveCombatSeconds + Mathf.Max(0.1f, pressureInterval);
-    }
-
-    public void ConfigureKillEchoWindow(int maxCount, float windowSeconds, bool newEchoRules)
-    {
-        maxEchoesPerWindow = Mathf.Max(0, maxCount);
-        echoWindowSeconds = Mathf.Max(0.1f, windowSeconds);
-        matchFatalSinForEcho = newEchoRules;
-        echoMinDelay = newEchoRules ? 0f : 0.6f;
-        echoMaxDelay = newEchoRules ? 0f : 1.1f;
-        PruneEchoWindow(Time.unscaledTime);
-    }
-
-    public void ConfigureKillEchoMaxCount(int maxCount)
-    {
-        int safeMaxCount = Mathf.Max(0, maxCount);
-        if (maxEchoesPerWindow == safeMaxCount) return;
-        maxEchoesPerWindow = safeMaxCount;
-        PruneEchoWindow(Time.unscaledTime);
-    }
-
-    public void ConfigureRunTiming(float nonBossSeconds, float growthIntervalSeconds)
+    public void ConfigureRunTiming(float nonBossSeconds, float growthIntervalSeconds,
+        AnimationCurve healthMultiplierByMinute, AnimationCurve attackMultiplierByMinute)
     {
         bossCombatTime = Mathf.Max(1f, nonBossSeconds);
         difficultyGrowthIntervalSeconds = Mathf.Max(0.1f, growthIntervalSeconds);
+        if (healthMultiplierByMinute != null && healthMultiplierByMinute.length > 0)
+            monsterHealthMultiplierByMinute = healthMultiplierByMinute;
+        if (attackMultiplierByMinute != null && attackMultiplierByMinute.length > 0)
+            monsterAttackMultiplierByMinute = attackMultiplierByMinute;
         bossTimeReached = BossSpawned || ActiveCombatSeconds >= bossCombatTime;
+    }
+
+    float EvaluateMultiplier(AnimationCurve curve, float fallback)
+    {
+        if (curve == null || curve.length == 0) return fallback;
+        return Mathf.Max(0.01f, curve.Evaluate(Mathf.Clamp(ActiveCombatSeconds / 60f, 0f, 7f)));
     }
 
     /// <summary>
@@ -242,7 +207,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
             return;
         }
         Instance = this;
-        nextPressureTime = pressureInterval;
         bossTimeReached = false;
     }
 
@@ -255,25 +219,11 @@ public sealed class RunSpawnDirector : MonoBehaviour
     {
         if (!IsActiveCombat()) return;
         ActiveCombatSeconds += Time.unscaledDeltaTime;
-        PruneEchoWindow(Time.unscaledTime);
-        bool spawnedEchoThisFrame = false;
-        while (!spawnedEchoThisFrame && pendingEchoes.Count > 0 && pendingEchoes[0].readyAt <= Time.unscaledTime)
-        {
-            PendingEcho echo = pendingEchoes[0];
-            pendingEchoes.RemoveAt(0);
-            if (Time.unscaledTime <= echo.request.expiryTime)
-                spawnedEchoThisFrame = TrySpawn(echo.prefab, echo.request);
-        }
         if (!bossTimeReached && ActiveCombatSeconds >= bossCombatTime)
         {
             bossTimeReached = true;
             if (!BossSpawned && !DebugSpawnBossNow())
                 Debug.LogWarning($"[RunSpawnDirector] 非 Boss 时长已到 {bossCombatTime:F1}s，但 Boss 未能生成。");
-        }
-        if (periodicPressureEnabled && !bossTimeReached && !BossSpawned && ActiveCombatSeconds >= nextPressureTime)
-        {
-            nextPressureTime += pressureInterval;
-            SpawnPressure();
         }
     }
 
@@ -283,51 +233,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (run != null && run.CurrentPhase != RunPhase.Waves && run.CurrentPhase != RunPhase.Final) return false;
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver) return false;
         return Time.timeScale > 0.0001f;
-    }
-
-    void SpawnPressure()
-    {
-        MonsterSpawner spawner = MonsterSpawner.Instance;
-        if (spawner == null || normalPrefabs == null || normalPrefabs.Count == 0) return;
-        int target = ActiveCombatSeconds < 120f ? earlyTarget : (ActiveCombatSeconds < 300f ? midTarget : lateTarget);
-        int perTick = ActiveCombatSeconds < 120f ? earlyPerTick : (ActiveCombatSeconds < 300f ? midPerTick : latePerTick);
-        int desired = Mathf.Min(perTick, Mathf.Max(0, target - spawner.TrackedMonsterCount));
-        for (int i = 0; i < desired; i++)
-        {
-            if (!spawner.TryGetLegacyWaveSpawnPosition(out Vector3 position)) break;
-            GameObject prefab = normalPrefabs[(i + CurrentTier) % normalPrefabs.Count];
-            TrySpawn(prefab, new SpawnRequest(SpawnOrigin.PeriodicPressure, CurrentTier, Vector3.zero, 0f,
-                Time.unscaledTime + 1f), position);
-        }
-    }
-
-    public bool RecordFatal(MonsterFatalEvent fatal)
-    {
-        if (fatal.actor == null || fatal.cause != FatalCause.PlayerDamage || fatal.killer == null || !fatal.killer.isPossessed)
-            return false;
-        if (fatal.actor.isPossessed || fatal.actor is BossSevenfoldActor) return false;
-        PruneEchoWindow(Time.unscaledTime);
-        if (successfulEchoTimes.Count >= maxEchoesPerWindow) return false;
-        GameObject prefab = matchFatalSinForEcho
-            ? FindNormalPrefabForSin(fatal.actor.sinType)
-            : (normalPrefabs != null && normalPrefabs.Count > 0 ? normalPrefabs[0] : null);
-        if (prefab == null) return false;
-        successfulEchoTimes.Add(Time.unscaledTime);
-        float delay = Mathf.Lerp(echoMinDelay, echoMaxDelay, fatal.killer.AiRandomValue());
-        SpawnRequest request = new SpawnRequest(SpawnOrigin.KillEcho, CurrentTier, fatal.actor.sinType,
-            fatal.actor.transform.position, 0f,
-            Time.unscaledTime + echoExpirySeconds);
-        PendingEcho pending = new PendingEcho { prefab = prefab, request = request, readyAt = Time.unscaledTime + delay };
-        int insertAt = pendingEchoes.Count;
-        while (insertAt > 0 && pendingEchoes[insertAt - 1].readyAt > pending.readyAt) insertAt--;
-        pendingEchoes.Insert(insertAt, pending);
-        return true;
-    }
-
-    void PruneEchoWindow(float now)
-    {
-        for (int i = successfulEchoTimes.Count - 1; i >= 0; i--)
-            if (now - successfulEchoTimes[i] >= echoWindowSeconds) successfulEchoTimes.RemoveAt(i);
     }
 
     bool TrySpawn(GameObject prefab, SpawnRequest request, Vector3 explicitPosition = default(Vector3))
@@ -346,7 +251,11 @@ public sealed class RunSpawnDirector : MonoBehaviour
             ? spawner.SpawnKillEchoMonster(prefab, position, immediateChase: true)
             : spawner.SpawnWaveMonster(prefab, position, immediateChase: false);
         if (monster == null) return false;
-        monster.ApplySpawnDifficultySnapshot(request.origin, request.difficultyTier);
+        monster.ApplySpawnDifficultySnapshot(
+            request.origin,
+            request.difficultyTier,
+            CurrentHealthMultiplier,
+            CurrentAttackMultiplier);
         if (request.origin == SpawnOrigin.KillEcho
             && WaveManager.Instance != null
             && WaveManager.Instance.IsUsingNewSpawnLogic)
@@ -360,7 +269,11 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (!MonsterSpawner.Instance.TryGetLegacyWaveSpawnPosition(out Vector3 position)) return false;
         MonsterActor actor = MonsterSpawner.Instance.SpawnWaveMonster(bossPrefab, position);
         if (actor == null) return false;
-        actor.ApplySpawnDifficultySnapshot(SpawnOrigin.Boss, CurrentTier);
+        actor.ApplySpawnDifficultySnapshot(
+            SpawnOrigin.Boss,
+            CurrentTier,
+            CurrentHealthMultiplier,
+            CurrentAttackMultiplier);
         if (actor is BossSevenfoldActor boss)
         {
             // Debug key [8] is an explicit Boss battle entry, not another wave spawn.
@@ -404,7 +317,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
         spawnedBossCount = bossSpawned ? 1 : 0;
         BossDefeated = bossDefeated;
         bossTimeReached = BossSpawned || ActiveCombatSeconds >= bossCombatTime;
-        nextPressureTime = Mathf.Ceil(ActiveCombatSeconds / pressureInterval) * pressureInterval;
     }
 
     Vector3 GetBossBattleReserveCenter()

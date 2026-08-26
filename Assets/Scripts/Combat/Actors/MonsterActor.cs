@@ -1321,11 +1321,6 @@ public class MonsterActor : Actor
             wasKilledByPlayer = playerDamageContext || (allowGreedGuardAbsorb
                 && lastDamageSource != null && lastDamageSource.isPossessed);
             if (wasKilledByPlayer) OnMonsterKilled?.Invoke(this);
-            if (RunSpawnDirector.Instance != null)
-            {
-                RunSpawnDirector.Instance.RecordFatal(new MonsterFatalEvent(
-                    this, lastDamageSource, FatalCause.PlayerDamage, spawnOrigin, Time.frameCount));
-            }
             Die();
         }
     }
@@ -1569,6 +1564,7 @@ public class MonsterActor : Actor
         if (visualFx != null)
         {
             visualFx.SetDissolve(1f);
+            visualFx.SetCorpseHighlight(false);
             visualFx.SetPossessionHighlight(true);
         }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
@@ -1601,7 +1597,11 @@ public class MonsterActor : Actor
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
         SetPossessedAnimatorsUnscaled(false);
-        if (visualFx != null) visualFx.SetPossessionHighlight(false);
+        if (visualFx != null)
+        {
+            visualFx.SetPossessionHighlight(false);
+            visualFx.SetCorpseHighlight(false);
+        }
         // Cheat immortality must not linger on bodies left as normal enemies.
         ClearCheatDefenseEffects();
         EnvyMarkTarget.ClearMarksFromSource(this as Enemy);
@@ -1664,6 +1664,7 @@ public class MonsterActor : Actor
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
         // Keep authored materials on corpse; dissolve FX handles fading later.
+        if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
 
@@ -1706,6 +1707,7 @@ public class MonsterActor : Actor
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
+        if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
 
@@ -1755,7 +1757,11 @@ public class MonsterActor : Actor
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
-        if (visualFx != null) visualFx.SetPossessionHighlight(false);
+        if (visualFx != null)
+        {
+            visualFx.SetPossessionHighlight(false);
+            visualFx.SetCorpseHighlight(false);
+        }
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
@@ -1853,6 +1859,7 @@ public class MonsterActor : Actor
         if (visualFx != null)
         {
             visualFx.SetDissolve(1f);
+            visualFx.SetCorpseHighlight(false);
             visualFx.SetPossessionHighlight(false);
         }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
@@ -1903,6 +1910,16 @@ public class MonsterActor : Actor
     /// <summary>Applies or refreshes a run spawn snapshot while preserving current health ratio.</summary>
     public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier)
     {
+        ApplySpawnDifficultySnapshot(
+            origin,
+            tier,
+            MonsterSpawnDifficulty.HealthMultiplier(tier),
+            MonsterSpawnDifficulty.DamageMultiplier(tier));
+    }
+
+    public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier,
+        float healthMultiplier, float damageMultiplier)
+    {
         float previousMaxHealth = maxHealth;
         float previousHealthRatio = previousMaxHealth > 0f
             ? Mathf.Clamp01(currentHealth / previousMaxHealth)
@@ -1910,13 +1927,13 @@ public class MonsterActor : Actor
         spawnOrigin = origin;
         spawnDifficultyTier = Mathf.Max(0, tier);
         baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
-        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier) * eliteHealthMultiplier;
-        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier) * eliteAttackDamageMultiplier;
+        spawnHealthMultiplier = Mathf.Max(0.01f, healthMultiplier) * eliteHealthMultiplier;
+        spawnDamageMultiplier = Mathf.Max(0.01f, damageMultiplier) * eliteAttackDamageMultiplier;
         maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
         currentHealth = maxHealth * previousHealthRatio;
         currentTenacity = maxTenacity;
         if (!isPossessed && enemyStats.HasConfiguredHealth)
-            collisionDamage = enemyStats.collisionDamage * eliteAttackDamageMultiplier;
+            collisionDamage = enemyStats.collisionDamage * spawnDamageMultiplier;
     }
 
     /// <summary>
@@ -1931,6 +1948,8 @@ public class MonsterActor : Actor
             ? Mathf.Clamp01(currentHealth / previousMaxHealth)
             : 1f;
 
+        float baseHealthMultiplier = spawnHealthMultiplier / Mathf.Max(0.01f, eliteHealthMultiplier);
+        float baseDamageMultiplier = spawnDamageMultiplier / Mathf.Max(0.01f, eliteAttackDamageMultiplier);
         eliteHealthMultiplier = Mathf.Max(1f, healthMultiplier);
         eliteAttackDamageMultiplier = Mathf.Max(1f, attackDamageMultiplier);
         eliteVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
@@ -1938,12 +1957,12 @@ public class MonsterActor : Actor
 
         if (baseSpawnMaxHealth <= 0f)
             baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
-        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier) * eliteHealthMultiplier;
-        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier) * eliteAttackDamageMultiplier;
+        spawnHealthMultiplier = baseHealthMultiplier * eliteHealthMultiplier;
+        spawnDamageMultiplier = baseDamageMultiplier * eliteAttackDamageMultiplier;
         maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
         currentHealth = maxHealth * previousHealthRatio;
         if (!isPossessed && enemyStats.HasConfiguredHealth)
-            collisionDamage = enemyStats.collisionDamage * eliteAttackDamageMultiplier;
+            collisionDamage = enemyStats.collisionDamage * spawnDamageMultiplier;
 
         ApplyVisualScale();
         if (visualFx != null)
@@ -1958,7 +1977,12 @@ public class MonsterActor : Actor
     public void RefreshEliteWaveDifficulty(int tier)
     {
         if (!IsElite || isPossessed || isDowned || Body != BodyState.Active) return;
-        ApplySpawnDifficultySnapshot(spawnOrigin, tier);
+        RunSpawnDirector director = RunSpawnDirector.Instance;
+        ApplySpawnDifficultySnapshot(
+            spawnOrigin,
+            tier,
+            director != null ? director.CurrentHealthMultiplier : MonsterSpawnDifficulty.HealthMultiplier(tier),
+            director != null ? director.CurrentAttackMultiplier : MonsterSpawnDifficulty.DamageMultiplier(tier));
         UpdateHealthUI();
     }
 
