@@ -327,11 +327,7 @@ public abstract class EnemyAbility : MonoBehaviour
         currentCooldown = EffectiveCooldown;
         _hitFeedbackFiredThisAttack = false;
         _hitAudioFiredThisAttack = false;
-        if (!string.IsNullOrWhiteSpace(castAudioName))
-            CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
-        else
-            // 施放音查表：owner.sinType + 技能类别 → MonsterSkillAudioConfig（七罪 × 位移/普攻/技能）
-            CombatAudioManager.PlayCastAudio(owner, type, owner != null ? owner.transform.position : transform.position);
+        PlayCastSound();
         if (debugLogCooldown)
             Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)
@@ -341,6 +337,21 @@ public abstract class EnemyAbility : MonoBehaviour
         OnTrigger();
         Activated?.Invoke(this);
         OnAnyTriggered?.Invoke(this);   // Run Analytics：全局触发广播（采集器内部过滤玩家控制）
+    }
+
+    /// <summary>
+    /// 播放本能力的施放音：优先能力自身 castAudioName（SfxBank 覆盖，走音效表「3D 定位」），
+    /// 否则按 owner.sinType + 技能类别查 MonsterSkillAudioConfig（七罪 × 位移/普攻/技能）。
+    /// 抽成受保护方法，供绕过 Trigger 的自驱动能力（如蓄力位移）在真正释放时补播施放音。
+    /// virtual：自驱动且按蓄力档位自行选音的能力（如怠惰蓄力炮 Light/Heavy）可覆写为空，
+    /// 避免基类单一 cast 音与分档发射音重复播放。
+    /// </summary>
+    protected virtual void PlayCastSound()
+    {
+        if (!string.IsNullOrWhiteSpace(castAudioName))
+            CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
+        else
+            CombatAudioManager.PlayCastAudio(owner, type, owner != null ? owner.transform.position : transform.position);
     }
 
     /// <summary>Begins this ability's configured Activation Effect. Effect duration controls the state lifetime.</summary>

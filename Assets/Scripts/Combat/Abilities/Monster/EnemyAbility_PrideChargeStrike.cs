@@ -103,6 +103,7 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
             float held = chargeTimer;
             isCharging = false;
             currentCooldown = EffectiveCooldown;
+            PlayCastSound(); // 玩家附身释放冲刺时补播施放音（蓄力路径绕过基类 Trigger）
             StartCoroutine(DashRoutine(held));
         }
     }

@@ -37,6 +37,7 @@ public class CardManager : SceneSingleton<CardManager>
 
     /// <summary>抽卡候选落定广播（叙事事件总线订阅：Offer=候选生成，含重抽外的每次呈现）。</summary>
     public static event System.Action OnCardOffered;
+    public static event System.Action OnCardRerolled;
 
     /// <summary>
     /// 卡牌解锁广播（Run Analytics 采集用）：UnlockEffect 成功后触发（含选卡与调试解锁）。
@@ -477,6 +478,7 @@ public class CardManager : SceneSingleton<CardManager>
         if (currentPicks != null && slotIndex >= 0 && slotIndex < currentPicks.Length)
             currentPicks[slotIndex] = picked;
         SyncChoicePicksToSession(); // 重抽后同步（退出时补弹候选含重抽结果）
+        OnCardRerolled?.Invoke();    // 图鉴采集：重抽后候选变化，标记已知
         return picked;
     }
 

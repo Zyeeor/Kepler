@@ -38,8 +38,34 @@ public class EnemyAbility_SummonBolt : EnemyAbility
         owner.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
         Vector3 origin = owner.transform.position + owner.transform.TransformDirection(muzzleOffset);
         SpawnAbilityProjectile(projectilePrefab, origin, Quaternion.LookRotation(direction, Vector3.up), damage, projectileSpeed, projectileLifetime);
+
+        // 木灵实际发射攻击时才播攻击音（无合法目标时 CanTrigger 已挡，不会走到这里，不发射不播）。
+        // 走 MonsterSkillAudioConfig 表「无人机」条目：按召唤者七罪类型查表（音频配置中心 → 怪物技能音 → 该罪 → 无人机）。
+        // 敌我分轨 / 空间化 / 音量 / 随机多音源均由该条目 ClipSet 控制，与技能条目同构。
+        PlayWoodlingAttackSound();
+
         EndActivationEffect();
     }
+
+    /// <summary>
+    /// 播放木灵攻击音：从召唤者（summoner）取七罪类型，查 MonsterSkillAudioConfig 的无人机条目。
+    /// 敌我按木灵 isPossessed（同步自召唤者附身状态）分流。召唤者非怪物或 sin=None → 静默。
+    /// </summary>
+    void PlayWoodlingAttackSound()
+    {
+        var summon = owner as SummonActor;
+        MonsterActor summoner = summon != null ? summon.summoner as MonsterActor : null;
+        SinType sin = summoner != null ? summoner.sinType : SinType.None;
+        if (sin == SinType.None) return;
+        CombatAudioManager.PlayDroneAttackAudio(sin, owner != null && owner.isPossessed, owner.transform.position);
+    }
+
+    /// <summary>
+    /// 木灵弹攻击音由 PlayWoodlingAttackSound 在 OnTrigger 实际发射弹体时播放（走 MonsterSkillAudioConfig 无人机条目）；
+    /// 屏蔽基类单一 cast 音（castAudioName / MonsterSkillAudioConfig 技能查表），
+    /// 避免基类 Trigger 在 OnTrigger 之前多播一次（且 SummonActor.sinType=None 技能查表本就静默）。
+    /// </summary>
+    protected override void PlayCastSound() { }
 
     private bool FindTargetDirection(out Vector3 direction)
     {
