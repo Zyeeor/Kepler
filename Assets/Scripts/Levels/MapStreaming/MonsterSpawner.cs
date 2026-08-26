@@ -331,6 +331,60 @@ public class MonsterSpawner : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Resolves one Boss reserve corpse position against the streamed world's walkability,
+    /// hazards and solid obstacles, while also keeping it away from reserve bodies that were
+    /// already placed in this encounter.
+    /// </summary>
+    public bool TryResolveBossReserveSpawnPosition(MonsterActor monster, Vector3 requestedPosition,
+        IList<Vector3> occupiedPositions, float minimumSeparation, out Vector3 resolvedPosition)
+    {
+        resolvedPosition = requestedPosition;
+        if (IsBossReserveCandidateLegal(monster, requestedPosition, occupiedPositions, minimumSeparation,
+            forceHazardRefresh: true))
+            return true;
+
+        float searchRadius = Mathf.Max(0f, invalidSpawnRelocationRadius);
+        if (searchRadius <= 0f) return false;
+
+        int samples = Mathf.Max(8, invalidSpawnRelocationSamples);
+        float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
+        const float goldenAngle = 2.39996323f;
+        for (int i = 0; i < samples; i++)
+        {
+            float distance = searchRadius * Mathf.Sqrt((i + 0.5f) / samples);
+            float angle = startAngle + goldenAngle * i;
+            Vector3 candidate = requestedPosition + new Vector3(Mathf.Cos(angle) * distance, 0f,
+                Mathf.Sin(angle) * distance);
+            if (!IsBossReserveCandidateLegal(monster, candidate, occupiedPositions, minimumSeparation,
+                forceHazardRefresh: false))
+                continue;
+
+            resolvedPosition = candidate;
+            return true;
+        }
+        return false;
+    }
+
+    bool IsBossReserveCandidateLegal(MonsterActor monster, Vector3 candidate,
+        IList<Vector3> occupiedPositions, float minimumSeparation, bool forceHazardRefresh)
+    {
+        if (!IsRelocationTileWalkable(candidate)) return false;
+
+        Transform spawnRoot = monster != null ? monster.transform.root : null;
+        if (MonsterPathfinder.IsSpawnPositionBlocked(monster, spawnRoot, candidate, forceHazardRefresh)) return false;
+
+        float minSqr = Mathf.Max(0f, minimumSeparation) * Mathf.Max(0f, minimumSeparation);
+        if (occupiedPositions == null || minSqr <= 0f) return true;
+        for (int i = 0; i < occupiedPositions.Count; i++)
+        {
+            Vector3 delta = candidate - occupiedPositions[i];
+            delta.y = 0f;
+            if (delta.sqrMagnitude < minSqr) return false;
+        }
+        return true;
+    }
+
     bool IsRelocationTileWalkable(Vector3 worldPosition)
     {
         var system = MapStreamingSystem.Instance;

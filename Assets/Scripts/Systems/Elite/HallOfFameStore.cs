@@ -68,6 +68,8 @@ public static class HallOfFameStore
     static readonly string FilePath =
         Path.Combine(Application.persistentDataPath, "possess_hall_of_fame.json");
 
+    const int CurrentSchemaVersion = 1;
+
     static HallOfFameData cached;
     static bool loaded;
 
@@ -210,7 +212,14 @@ public static class HallOfFameStore
             if (File.Exists(FilePath))
             {
                 var data = JsonUtility.FromJson<HallOfFameData>(File.ReadAllText(FilePath));
-                if (data != null && data.entries != null) cached = data;
+                if (data != null && data.entries != null)
+                {
+                    // 前向兼容（§3 内容版本兼容）：schema 为可加性（仅新增字段）。
+                    // 旧版本文件直接复用条目；更高版本（未来字段）也保留可读字段，不整体清库。
+                    if (data.schemaVersion != CurrentSchemaVersion)
+                        Debug.Log($"[HallOfFame] 荣誉记录 schemaVersion={data.schemaVersion}，当前={CurrentSchemaVersion}，按前向兼容载入（保留条目）。");
+                    cached = data;
+                }
             }
         }
         catch (Exception e)
@@ -224,6 +233,7 @@ public static class HallOfFameStore
     {
         try
         {
+            Data.schemaVersion = CurrentSchemaVersion;
             string dir = Path.GetDirectoryName(FilePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
             File.WriteAllText(FilePath, JsonUtility.ToJson(Data, true));

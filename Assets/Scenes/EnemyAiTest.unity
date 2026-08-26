@@ -9009,6 +9009,7 @@ GameObject:
   - component: {fileID: 1753544537}
   - component: {fileID: 1753544536}
   - component: {fileID: 1753544535}
+  - component: {fileID: 1753544540}
   m_Layer: 0
   m_Name: UICanvas
   m_TagString: Untagged
@@ -9050,6 +9051,7 @@ MonoBehaviour:
   quitButtonOnGameOverText: {fileID: 0}
   healthBarToggleButton: {fileID: 0}
   healthBarToggleText: {fileID: 0}
+  buildView: {fileID: 0}
   bringSoulToMainMenu: 1
   settingsPanel: {fileID: 1292743563}
   confirmDialog: {fileID: 2090953901}
@@ -9148,6 +9150,30 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1753544540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753544534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ede2d41f4d67de45a9f5c7c86cf151e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cardPrefab: {fileID: 0}
+  buildButton: {fileID: 0}
+  radius: 1000
+  maxSpreadDeg: 100
+  perCardDeg: 16
+  baseYOffset: 360
+  scaleMultiplier: 1.6
+  miniScale: 0.15
+  miniSpacing: 60
+  miniAnchor: {x: 60, y: -80}
+  showEmptyHint: 1
+  showInSoulState: 1
 --- !u!1 &1769012141
 GameObject:
   m_ObjectHideFlags: 0
@@ -9792,6 +9818,7 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
+  bootToMainMenu: 0
   useFormalFlow: 0
 --- !u!4 &1807762708
 Transform:
@@ -9823,7 +9850,7 @@ MonoBehaviour:
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 0}
   maxRerollsPerCard: 1
-  debugDoublePickOnStart: 0
+  debugDoublePickOnStart: 1
   currentPicks:
   - cardName: 
     textKey: 
@@ -10474,8 +10501,8 @@ MonoBehaviour:
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   shrinePrefab: {fileID: 5758130742685393213, guid: 29441edd9c539b943a3ddeeae892dfac,
     type: 3}
+  firstShrinePrefab: {fileID: 0}
   shrineCount: 3
-  shrineNearbyChunkCount: 4
   regionTable: []
   fixedAnchors: []
   regionCellSize: 2
@@ -10516,6 +10543,9 @@ MonoBehaviour:
   maxSpawnDistanceToPlayer: 25
   spawnHeightY: 0
   minSpawnPointSeparation: 6
+  eliteSpawnScreenDiameterFraction: 0.25
+  eliteSpawnSamples: 32
+  eliteSpawnFallbackRadiusFraction: 0.75
   invalidSpawnRelocationRadius: 6
   invalidSpawnRelocationSamples: 32
   killEchoScreenPadding: 0.75
@@ -16317,6 +16347,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: e23cca30eaf040699e4a330a85464c2a, type: 2}
+  autoPossessOpeningCarrier: 0
   openingCarrierPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
     type: 3}
   openingCarrierSpawnOffset: {x: 0, y: 0, z: 5}

@@ -43,6 +43,11 @@ public class MainMenuController : MonoBehaviour
     public HallOfFamePanel hallOfFamePanel;
     Button hallOfFameButton;
 
+    [Header("Card Archive (auto-created)")]
+    [Tooltip("卡牌图鉴面板（纯代码 UI，Start 时自动创建；留空自动生成）。")]
+    public CardArchivePanel cardArchivePanel;
+    Button cardArchiveButton;
+
     [Header("Panels to hide when sub panel opens")]
     public GameObject mainMenuPanel;
     private bool subPanelOpened = false;
@@ -85,6 +90,7 @@ public class MainMenuController : MonoBehaviour
         EnsureBossModeButton();
         ShowModeSelection();
         EnsureHallOfFameEntry();
+        EnsureCardArchiveEntry();
 
         ShowCursor();
     }
@@ -122,6 +128,41 @@ public class MainMenuController : MonoBehaviour
         hallOfFamePanel.Show();
     }
 
+    /// <summary>卡牌图鉴入口：克隆设置按钮生成（同荣誉殿堂风格、零场景编辑）。</summary>
+    void EnsureCardArchiveEntry()
+    {
+        if (cardArchivePanel == null) cardArchivePanel = CardArchivePanel.EnsureInstance();
+        if (cardArchiveButton != null || settingsButton == null) return;
+
+        var clone = Instantiate(settingsButton.gameObject, settingsButton.transform.parent);
+        clone.name = "CardArchiveButton";
+        clone.SetActive(true);
+        if (FontRegistry.Instance != null)
+            FontRegistry.Instance.ApplyToTree(clone.transform);
+        cardArchiveButton = clone.GetComponent<Button>();
+        if (cardArchiveButton != null)
+            cardArchiveButton.onClick.AddListener(OnCardArchive);
+        var label = clone.GetComponentInChildren<TMPro.TMP_Text>();
+        if (label != null) label.text = "卡牌图鉴";
+        clone.transform.SetSiblingIndex(settingsButton.transform.GetSiblingIndex() + 2);
+    }
+
+    public void OnCardArchive()
+    {
+        if (cardArchivePanel == null) cardArchivePanel = CardArchivePanel.EnsureInstance();
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        subPanelOpened = true;
+        cardArchivePanel.onClose = OnCardArchiveClosed;
+        cardArchivePanel.Show();
+    }
+
+    void OnCardArchiveClosed()
+    {
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+        subPanelOpened = false;
+        ShowCursor();
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -133,6 +174,10 @@ public class MainMenuController : MonoBehaviour
             else if (confirmDialog != null && confirmDialog.IsVisible())
             {
                 confirmDialog.Hide();
+            }
+            else if (cardArchivePanel != null && cardArchivePanel.IsVisible())
+            {
+                cardArchivePanel.Hide();
             }
             else if (!modeSelectionVisible && !subPanelOpened)
             {
@@ -306,7 +351,8 @@ public class MainMenuController : MonoBehaviour
             bool sVisible = settingsPanel != null && settingsPanel.IsVisible();
             bool cVisible = confirmDialog != null && confirmDialog.IsVisible();
             bool hVisible = hallOfFamePanel != null && hallOfFamePanel.IsVisible();
-            if (!sVisible && !cVisible && !hVisible)
+            bool aVisible = cardArchivePanel != null && cardArchivePanel.IsVisible();
+            if (!sVisible && !cVisible && !hVisible && !aVisible)
             {
                 if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
                 subPanelOpened = false;

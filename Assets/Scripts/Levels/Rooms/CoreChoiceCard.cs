@@ -141,7 +141,7 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         onSelectCallback = onSelect;
 
         if (cardText != null) cardText.text = text;
-        if (cardImage != null) cardImage.sprite = sprite;
+        if (cardImage != null) { cardImage.sprite = sprite; cardImage.color = ResolveIconColor(sprite); }
         if (descriptionText != null) descriptionText.text = description;
         ApplyLayers(data);
         if (confirmedMark != null) confirmedMark.SetActive(false);
@@ -234,7 +234,7 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         IsRerolled = false;
         IsSelected = false;
         if (cardText != null) cardText.text = text;
-        if (cardImage != null) cardImage.sprite = sprite;
+        if (cardImage != null) { cardImage.sprite = sprite; cardImage.color = ResolveIconColor(sprite); }
         if (descriptionText != null) descriptionText.text = description;
         ApplyLayers(data);
         if (confirmedMark != null) confirmedMark.SetActive(false);
@@ -259,6 +259,22 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             if (confirmButton != null) confirmButton.interactable = true;
             if (rerollButton != null) rerollButton.interactable = true;
         }
+    }
+
+    // ── 技能图标颜色：卡片主图（cardImage/image(1)）沿用 MonsterSkillIconConfig 对应槽位配置的颜色 ──
+    static MonsterSkillIconConfig iconConfigCache;
+    static MonsterSkillIconConfig ResolveIconConfig()
+    {
+        if (iconConfigCache == null) iconConfigCache = Resources.Load<MonsterSkillIconConfig>("UI/MonsterSkillIconConfig");
+        return iconConfigCache;
+    }
+    /// <summary>按卡片主图 sprite 反查 MonsterSkillIconConfig 对应图标颜色；查不到（如玩家卡/非技能图标）返回白色。</summary>
+    static Color ResolveIconColor(Sprite sprite)
+    {
+        if (sprite == null) return Color.white;
+        var cfg = ResolveIconConfig();
+        if (cfg != null && cfg.TryGetColorByIcon(sprite, out var color)) return color;
+        return Color.white;
     }
 
     // ── 动态生成的额外并列素材层（extraXxxSprites[0..N-1]），随 ApplyLayers 清理 ──
