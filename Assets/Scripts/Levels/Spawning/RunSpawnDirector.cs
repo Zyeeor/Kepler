@@ -93,6 +93,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
     /// </summary>
     public MonsterActor SpawnScheduledMonster(SinType sin)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return null;
         GameObject prefab = FindNormalPrefabForSin(sin);
         MonsterSpawner spawner = MonsterSpawner.Instance;
         if (prefab == null || spawner == null) return null;
@@ -109,6 +110,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
     /// </summary>
     public bool TryReplaceInvisibleContinuousMonster(SinType targetSin)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
         MonsterSpawner spawner = MonsterSpawner.Instance;
         if (spawner == null) return false;
         GameObject prefab = FindNormalPrefabForSin(targetSin);

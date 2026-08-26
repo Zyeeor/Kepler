@@ -362,6 +362,7 @@ public class EliteBuildDirector : MonoBehaviour
     /// <returns>同步兜底路径返回是否已注入；在线路径返回请求是否已受理（注入结果异步完成）。</returns>
     public bool RequestScheduledElite(SinType sin, int cycleIndex)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
         if (!eliteEnabled) return false;
         if (catalog == null)
             catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
@@ -482,6 +483,7 @@ public class EliteBuildDirector : MonoBehaviour
     /// <summary>F9 注入：解析快照 → 刷出 → 挂载体还原历史 BD → 计入本波清点。</summary>
     bool InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
         if (catalog == null)
         {
             Debug.LogWarning("[EliteBuildDirector] 未配置 EliteMonsterCatalog，无法注入精英（Resources/EliteMonsterCatalog.asset 或场景挂载指定）。");
