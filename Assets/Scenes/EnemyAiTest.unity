@@ -1140,26 +1140,87 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 2
-  normalSpawnCountPerTick: 1
+  normalSpawnRateByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.33333334
+      inSlope: 0
+      outSlope: 0.28571427
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.3333333
+      inSlope: 0.28571427
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnGrowthPeriodSeconds: 60
-  continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
+  continuousSpawnMaxCountsByMinute: 0300000006000000090000000c0000000f0000001200000015000000
   spawnCycleSeconds: 60
-  tideStartSeconds: 30
-  tideDurationSeconds: 9
-  tideSpawnInterval: 3
-  tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 40
-  eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
+  monsterHealthMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.20000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.4
+      inSlope: 0.20000002
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  monsterAttackMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.120000005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 1.84
+      inSlope: 0.120000005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   difficultyGrowthIntervalSeconds: 30
-  killEchoMaxCountPerWindow: 2
-  tideKillEchoMaxCountPerWindow: 7
-  killEchoWindowSeconds: 2
   waveMode: 1
   waves:
   - weightedTable:
@@ -8989,7 +9050,6 @@ MonoBehaviour:
   quitButtonOnGameOverText: {fileID: 0}
   healthBarToggleButton: {fileID: 0}
   healthBarToggleText: {fileID: 0}
-  buildView: {fileID: 0}
   bringSoulToMainMenu: 1
   settingsPanel: {fileID: 1292743563}
   confirmDialog: {fileID: 2090953901}
@@ -9732,38 +9792,7 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
-  bootToMainMenu: 1
   useFormalFlow: 0
---- !u!114 &1807762711
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1807762705}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9606cfb7c93da42f392be5947ee62bb2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  duration: 2
-  timeScale: 0.2
-  damageImmunityEffect: {fileID: 0}
-  effectCatalog: {fileID: 0}
-  damageImmunityEffectTag: Effect.Defense.DamageImmune
-  damageImmunityDuration: 0.5
-  postProcessEffectName: RadialBlur
-  postProcessSwitcher: {fileID: 9988776604}
-  overridePostProcessParams: 0
-  postStepFactor: 0.5
-  postMainAlpha: 1
-  postBlurFactor: 0.47
-  postLineUvScale: 2.24
-  postChromatic: 0.18
-  postFrequency: 0
-  postAmplitude: 0
-  postVignettePower: 1
-  postVignetteScale: 0
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -9882,6 +9911,36 @@ MonoBehaviour:
   toggleKey: 284
   previewScale: 0.7
   previewOffsetY: 0
+--- !u!114 &1807762711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1807762705}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9606cfb7c93da42f392be5947ee62bb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 2
+  timeScale: 0.2
+  damageImmunityEffect: {fileID: 0}
+  effectCatalog: {fileID: 0}
+  damageImmunityEffectTag: Effect.Defense.DamageImmune
+  damageImmunityDuration: 0.5
+  postProcessEffectName: RadialBlur
+  postProcessSwitcher: {fileID: 9988776604}
+  overridePostProcessParams: 0
+  postStepFactor: 0.5
+  postMainAlpha: 1
+  postBlurFactor: 0.47
+  postLineUvScale: 2.24
+  postChromatic: 0.18
+  postFrequency: 0
+  postAmplitude: 0
+  postVignettePower: 1
+  postVignetteScale: 0
 --- !u!1 &1845754592
 GameObject:
   m_ObjectHideFlags: 0
@@ -10415,9 +10474,8 @@ MonoBehaviour:
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   shrinePrefab: {fileID: 5758130742685393213, guid: 29441edd9c539b943a3ddeeae892dfac,
     type: 3}
-  firstShrinePrefab: {fileID: 5758130742685393213, guid: 6ec6b0224fd7ff74fb633bc9ab8b4873,
-    type: 3}
   shrineCount: 3
+  shrineNearbyChunkCount: 4
   regionTable: []
   fixedAnchors: []
   regionCellSize: 2
@@ -10577,26 +10635,87 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 2
-  normalSpawnCountPerTick: 1
+  normalSpawnRateByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.33333334
+      inSlope: 0
+      outSlope: 0.28571427
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.3333333
+      inSlope: 0.28571427
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnGrowthPeriodSeconds: 60
   continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
   spawnCycleSeconds: 60
-  tideStartSeconds: 30
-  tideDurationSeconds: 9
-  tideSpawnInterval: 3
-  tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 40
-  eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
+  monsterHealthMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.20000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.4
+      inSlope: 0.20000002
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  monsterAttackMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.120000005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 1.84
+      inSlope: 0.120000005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   difficultyGrowthIntervalSeconds: 30
-  killEchoMaxCountPerWindow: 2
-  tideKillEchoMaxCountPerWindow: 7
-  killEchoWindowSeconds: 2
   waveMode: 0
   waves: []
   gracePeriod: 2
@@ -16198,7 +16317,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: e23cca30eaf040699e4a330a85464c2a, type: 2}
-  autoPossessOpeningCarrier: 0
   openingCarrierPrefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
     type: 3}
   openingCarrierSpawnOffset: {x: 0, y: 0, z: 5}

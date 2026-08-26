@@ -20,6 +20,10 @@ Shader "Possession/CharacterFX"
         _RimColor ("Rim Color", Color) = (0.55, 0.2, 1, 1)
         _RimIntensity ("Rim Intensity", Range(0, 8)) = 0
         _RimPower ("Rim Power", Range(0.5, 8)) = 2.5
+        [HDR] _SurfaceGlowColor ("Surface Glow Color", Color) = (0, 0, 0, 1)
+        _SurfaceGlowIntensity ("Surface Glow Intensity", Range(0, 12)) = 0
+        _SurfaceGlowPulseSpeed ("Surface Glow Pulse Speed", Float) = 0
+        _SurfaceGlowPulseAmount ("Surface Glow Pulse Amount", Range(0, 1)) = 0
 
         [Header(Hit Flash)]
         _HitFlashColor ("Hit Flash Color", Color) = (1, 0.9, 0.9, 1)
@@ -75,6 +79,10 @@ Shader "Possession/CharacterFX"
                 half4 _RimColor;
                 half _RimIntensity;
                 half _RimPower;
+                half4 _SurfaceGlowColor;
+                half _SurfaceGlowIntensity;
+                half _SurfaceGlowPulseSpeed;
+                half _SurfaceGlowPulseAmount;
                 half4 _HitFlashColor;
                 half _HitFlashAmount;
                 half _Smoothness;
@@ -169,8 +177,10 @@ Shader "Possession/CharacterFX"
                 half3 viewDir = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half rim = pow(1.0h - saturate(dot(normalWS, viewDir)), _RimPower);
                 half3 rimCol = _RimColor.rgb * rim * _RimIntensity;
+                half surfacePulse = 1.0h + sin(_Time.y * 6.2831853h * _SurfaceGlowPulseSpeed) * _SurfaceGlowPulseAmount;
+                half3 surfaceGlow = _SurfaceGlowColor.rgb * _SurfaceGlowIntensity * max(0.0h, surfacePulse);
 
-                half3 color = albedo.rgb * lighting + rimCol;
+                half3 color = albedo.rgb * lighting + rimCol + surfaceGlow;
 
                 // Bright burn band only on the hole frontier — body albedo stays intact.
                 half edgeWidth = max(_DissolveEdgeWidth, 1e-4h);
