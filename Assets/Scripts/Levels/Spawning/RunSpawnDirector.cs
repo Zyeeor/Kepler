@@ -139,11 +139,25 @@ public sealed class RunSpawnDirector : MonoBehaviour
     {
         PruneBossBattleReserveBodies();
         if (MonsterPool.Instance == null) return 0;
+        MonsterSpawner spawner = MonsterSpawner.Instance != null
+            ? MonsterSpawner.Instance
+            : MonsterSpawner.EnsureInstance();
+        if (spawner == null) return 0;
 
         int spawned = 0;
         Vector3 center = GetBossBattleReserveCenter();
+        center.y = spawner.spawnHeightY;
         Vector3 forward = GetBossBattleReserveForward();
         Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+        float minimumSeparation = Mathf.Min(BossReserveHorizontalSpacing, BossReserveRowSpacing);
+        List<Vector3> occupiedPositions = new List<Vector3>(BossBattleReserveOrder.Length);
+        for (int i = 0; i < bossBattleReserveBodies.Count; i++)
+        {
+            MonsterActor existing = bossBattleReserveBodies[i];
+            if (existing != null && existing.Body != MonsterActor.BodyState.Despawned)
+                occupiedPositions.Add(existing.transform.position);
+        }
+
         for (int i = 0; i < BossBattleReserveOrder.Length; i++)
         {
             SinType sin = BossBattleReserveOrder[i];
@@ -156,14 +170,15 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 continue;
             }
 
-            // Keep every fixed reserve body visible and reachable: a compact 4+3 array
-            // immediately beside the current player body, in canonical sin order.
+            // Calculate and validate each slot before planning the next one. This lets a
+            // relocated corpse become an occupied point for all later corpses.
             int row = i / 4;
             int column = i % 4;
             int columnsInRow = row == 0 ? 4 : 3;
             float horizontal = (column - (columnsInRow - 1) * 0.5f) * BossReserveHorizontalSpacing;
-            Vector3 position = center + forward * (3.5f + row * BossReserveRowSpacing) + right * horizontal;
-            GameObject instance = MonsterPool.Instance.Spawn(prefab, position, Quaternion.LookRotation(-forward, Vector3.up));
+            Vector3 requestedPosition = center + forward * (3.5f + row * BossReserveRowSpacing) + right * horizontal;
+            GameObject instance = MonsterPool.Instance.Spawn(prefab, requestedPosition,
+                Quaternion.LookRotation(-forward, Vector3.up));
             if (instance == null) continue;
 
             MonsterActor body = instance.GetComponentInChildren<MonsterActor>(true);
@@ -172,6 +187,20 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 Debug.LogWarning("[RunSpawnDirector] Reserve prefab has no MonsterActor: " + prefab.name);
                 instance.SetActive(false);
                 continue;
+            }
+
+            if (!spawner.TryResolveBossReserveSpawnPosition(body, requestedPosition, occupiedPositions,
+                minimumSeparation, out Vector3 resolvedPosition))
+            {
+                Debug.LogWarning("[RunSpawnDirector] Boss reserve position is illegal and no nearby legal point was found. sin=" + sin,
+                    instance);
+                MonsterPool.Instance.Return(body);
+                continue;
+            }
+            if ((resolvedPosition - requestedPosition).sqrMagnitude > 0.0001f)
+            {
+                instance.transform.position = resolvedPosition;
+                MonsterPool.SnapCapsuleBottomToGround(instance);
             }
 
             body.ResolveSinIdentityFromHint(prefab.name);
@@ -184,6 +213,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
             body.SpawnAsBossBattleReserveCorpse();
             bossBattleReserveBodies.Add(body);
+            occupiedPositions.Add(body.transform.position);
             spawned++;
         }
 

@@ -106,6 +106,12 @@ public class CombatAbilityComponent : MonoBehaviour
         reason = string.Empty;
         if (ability != null && FindActiveAbility(ability) != null) return true;
 
+        if (IsCorpseActor)
+        {
+            reason = "Corpse cannot activate abilities";
+            return false;
+        }
+
         if (!tags.HasAll(requiredTags))
         {
             reason = "Missing required Gameplay Tag";
@@ -258,6 +264,12 @@ public class CombatAbilityComponent : MonoBehaviour
             return false;
         }
 
+        if (IsCorpseActor)
+        {
+            reason = "Corpse is immune to external Gameplay Effects";
+            return false;
+        }
+
         if (IsEffectBlockedByTargetRule(definition))
         {
             reason = "Target immunity Gameplay Tag blocks this Effect";
@@ -309,6 +321,7 @@ public class CombatAbilityComponent : MonoBehaviour
     /// </summary>
     public bool RefreshEffectDuration(GameplayEffectDefinition definition, float durationOverride = -1f)
     {
+        if (IsCorpseActor) return false;
         ActiveEffect active = FindActiveEffect(definition);
         if (active == null) return false;
         active.expiresAt = GetExpiry(definition, durationOverride);
@@ -323,7 +336,7 @@ public class CombatAbilityComponent : MonoBehaviour
 
     public void AddMoveSpeedMultiplier(object source, float multiplier)
     {
-        if (source == null) return;
+        if (source == null || IsCorpseActor) return;
         for (int i = 0; i < externalSpeedMultipliers.Count; i++)
         {
             if (ReferenceEquals(externalSpeedMultipliers[i].source, source))
@@ -349,6 +362,7 @@ public class CombatAbilityComponent : MonoBehaviour
 
     public float ModifyMoveSpeed(float value)
     {
+        if (IsCorpseActor) return value;
         float multiplier = 1f;
         for (int i = 0; i < activeEffects.Count; i++)
         {
@@ -375,6 +389,11 @@ public class CombatAbilityComponent : MonoBehaviour
     private void Update()
     {
         if (actor == null) actor = GetComponent<Actor>();
+        if (IsCorpseActor)
+        {
+            ClearEffectsForCorpse();
+            return;
+        }
         float now = EffectTime;
         for (int i = activeEffects.Count - 1; i >= 0; i--)
         {
@@ -408,6 +427,7 @@ public class CombatAbilityComponent : MonoBehaviour
         MonsterActor monster = GetComponent<MonsterActor>();
         if (monster != null)
         {
+            if (monster.IsCorpse) return;
             monster.TakeEnvironmentalDamage(amount);
             return;
         }
@@ -496,6 +516,25 @@ public class CombatAbilityComponent : MonoBehaviour
             if (effect.definition == definition && effect.ownerAbility == null) return effect;
         }
         return null;
+    }
+
+    /// <summary>Removes all effects and external modifiers from a corpse immediately.</summary>
+    public void ClearEffectsForCorpse()
+    {
+        for (int i = activeEffects.Count - 1; i >= 0; i--)
+            RemoveEffectInstance(activeEffects[i]);
+        activeAbilities.Clear();
+        externalSpeedMultipliers.Clear();
+    }
+
+    private bool IsCorpseActor
+    {
+        get
+        {
+            MonsterActor monster = actor as MonsterActor;
+            if (monster == null) monster = GetComponent<MonsterActor>();
+            return monster != null && monster.IsCorpse;
+        }
     }
 
     private float GetExpiry(GameplayEffectDefinition definition, float durationOverride = -1f)
