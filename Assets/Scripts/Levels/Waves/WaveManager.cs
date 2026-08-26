@@ -301,6 +301,17 @@ public class WaveManager : SceneSingleton<WaveManager>
     /// <summary>初始化正式连续战场的波次运行状态。</summary>
     public void Initialize()
     {
+        if (IsBossBattleMode)
+        {
+            initialized = true;
+            isRunning = false;
+            IsWaveActive = false;
+            TimeWaveRemaining = 0f;
+            waveAlive.Clear();
+            EnemiesAlive = 0;
+            Debug.Log("[WaveManager] Boss 模式：Initialize 也被禁用，避免任何入口重新启动普通刷怪。");
+            return;
+        }
         initialized = true;
         CurrentWaveIndex = -1;
         EnemiesAlive = 0;

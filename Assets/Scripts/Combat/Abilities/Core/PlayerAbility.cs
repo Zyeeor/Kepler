@@ -126,6 +126,7 @@ public abstract class PlayerAbility : MonoBehaviour
         _hitFeedbackFiredThisAttack = false;
         _hitAudioFiredThisAttack = false;
         if (!string.IsNullOrWhiteSpace(castAudioName))
+            // 灵魂/玩家自身施放音：2D/3D 走 SfxBank 条目 prefer3D（音效表「3D 定位」勾选框）
             CombatAudioManager.Play(castAudioName, owner != null ? owner.transform.position : transform.position);
         if (vfxDelay <= 0f)
             SpawnVfx();

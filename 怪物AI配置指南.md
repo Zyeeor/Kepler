@@ -228,7 +228,7 @@ AI 态下攻击前会先面向索敌目标（`FaceAttackTarget`，水平面 Look
 
 当前 7 个怪的索敌半径 `detectionRadius` 统一为 **15**。其余字段（`skillPriority=0.6`、`aiMobilityChance=0.3`、`chaseDuration=0`、`strafe*`、`moveSpeedJitter*`）目前全部用默认值。攻击冷却一律由各技能自身 `cooldown` 决定。
 
-当前 7 个怪均未配置 `rangeUnlocks`（攻击/技能范围即基础值，无解锁扩大）。如需「解锁能力后范围变大」，按上方「范围解锁：rangeUnlocks」小节在对应条目加 `rangeUnlocks`。
+当前仅 `Pride_new` 配置了 `rangeUnlocks`：解锁卡 `PR-A04`（王命远征，增大 Sword Qi 射程）后 `skillAttackRange` 由 3 → 15（能力实际射程 20，但被 `detectionRadius=15` 封顶，故 AI 交火距离取 15，无 onValidate 告警）。其余 6 个怪未配置 `rangeUnlocks`（范围即基础值）。如需「解锁能力后范围变大」，按上方「范围解锁：rangeUnlocks」小节在对应条目加 `rangeUnlocks`。
 
 ---
 

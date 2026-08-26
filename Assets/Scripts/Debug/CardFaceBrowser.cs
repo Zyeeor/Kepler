@@ -8,7 +8,8 @@ using UnityEngine.UI;
 /// UI 卡面浏览器（Debug，F3 切换）：浏览 CardLibrary 全池每张卡的卡面（多层素材叠画 + 名称/描述）。
 /// 选卡弹窗（CoreChoiceUI）打开期间，可将选中卡替换选卡界面的第一张候选（点选即生效）。
 /// OnGUI 面板遵循项目 Debug 惯例：正式流程（GameManager.IsFormalFlow）屏蔽；
-/// 运行时自动确保实例（场景加载后创建，主菜单→对局不失效），与 CardProgressPanel 同模式。
+/// 随 GameManager 常驻（EnsureOnGameManager），与 AudioDebugPanel/NarrativeDebugPanel 同模式。
+/// 快捷键 F3 可在 Inspector（toggleKey）改配；若 F3 被系统/编辑器占用无响应（同 DebugCameraController 先例），换其它键即可。
 /// </summary>
 public class CardFaceBrowser : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class CardFaceBrowser : MonoBehaviour
     public bool enableBrowser = true;
     [Tooltip("是否显示面板（F3 切换）。")]
     public bool showPanel = false;
-    [Tooltip("切换快捷键。")]
+    [Tooltip("切换快捷键（Inspector 可配；若 F3 被系统/编辑器占用无响应，可改其它键）。")]
     public KeyCode toggleKey = KeyCode.F3;
     [Tooltip("预览卡缩放（仅当无法取得选卡界面 cardParent 缩放时使用；正常情况自动继承 cardParent 缩放，与正式选卡完全一致）。")]
     [Range(0.2f, 2f)] public float previewScale = 0.7f;
@@ -43,23 +44,13 @@ public class CardFaceBrowser : MonoBehaviour
     TextMeshProUGUI previewTitle, previewDesc;
     int previewCardIndex = -1;   // 预览卡当前展示的池索引（-1 = 无）
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void EnsureInstance()
+    /// <summary>挂载到 GameManager（随常驻对象 DDOL；已挂则复用）。</summary>
+    public static CardFaceBrowser EnsureOnGameManager()
     {
-        EnsureInScene();
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedEnsure;
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedEnsure;
-    }
-
-    static void OnSceneLoadedEnsure(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
-    {
-        EnsureInScene();
-    }
-
-    static void EnsureInScene()
-    {
-        if (instance == null)
-            new GameObject(nameof(CardFaceBrowser)).AddComponent<CardFaceBrowser>();
+        var gm = GameManager.Instance;
+        if (gm == null) return null;
+        var existing = gm.GetComponent<CardFaceBrowser>();
+        return existing != null ? existing : gm.gameObject.AddComponent<CardFaceBrowser>();
     }
 
     void Awake()
@@ -117,27 +108,38 @@ public class CardFaceBrowser : MonoBehaviour
             RefreshPool();
         }
 
-        // ── 左侧窄面板：只保留列表（贴屏幕左缘）──
-        float w = 320f;
-        float h = Mathf.Min(Screen.height * 0.8f, 620f);
-        float x = 12f;
-        float y = (Screen.height - h) * 0.5f;
-        GUI.Box(new Rect(x, y, w, h), $"卡面浏览器（F3）· 全池 {pool.Count} 张");
+        // 高 DPI / 大分辨率自适应：以 1080p 为基准等比放大面板与字号。
+        // OnGUI 字号按逻辑像素渲染，4K（如 3840x2160）下 16px 视觉很小，需按 Screen.height/1080 放大。
+        float uiScale = Mathf.Max(1f, Screen.height / 1080f);
+        int uiFont = Mathf.Max(16, Mathf.RoundToInt(16 * uiScale));
+        TitleStyle().fontSize = uiFont;
+        ListRowStyle().fontSize = uiFont;
+        FilterStyle().fontSize = uiFont;
+        Label16().fontSize = uiFont;
+        BoldStyle().fontSize = uiFont;
+        UnlockBtnStyle().fontSize = uiFont;
 
-        const float listW = 296f;
-        const float lineH = 22f;
-        const float pad = 8f;
+        // ── 左侧窄面板：只保留列表（贴屏幕左缘）──
+        float w = 320f * uiScale;
+        float h = Mathf.Min(Screen.height * 0.8f, 620f * uiScale);
+        float x = 12f * uiScale;
+        float y = (Screen.height - h) * 0.5f;
+        GUI.Box(new Rect(x, y, w, h), $"卡面浏览器（F3）· 全池 {pool.Count} 张", TitleStyle());
+
+        float listW = 296f * uiScale;
+        float lineH = 26f * uiScale;
+        float pad = 8f * uiScale;
 
         // 过滤
-        y += lineH + 4f;
-        GUI.Label(new Rect(x + pad, y, 40f, lineH), "过滤:");
-        filter = GUI.TextField(new Rect(x + 48f, y, listW - 56f, lineH), filter);
+        y += lineH + 4f * uiScale;
+        GUI.Label(new Rect(x + pad, y, 40f * uiScale, lineH), "过滤:", Label16());
+        filter = GUI.TextField(new Rect(x + 48f * uiScale, y, listW - 56f * uiScale, lineH), filter, FilterStyle());
 
         // 列表（底部预留选中卡信息 + 替换按钮区）
         y += lineH + 4f;
-        float bottomH = 84f;
-        float listH = h - (lineH * 2 + 26f + bottomH);
-        var viewRect = new Rect(0f, 0f, listW - 24f, pool.Count * lineH);
+        float bottomH = 84f * uiScale;
+        float listH = h - (lineH * 2 + 26f * uiScale + bottomH);
+        var viewRect = new Rect(0f, 0f, listW - 24f * uiScale, pool.Count * lineH);
         scrollPos = GUI.BeginScrollView(new Rect(x + pad, y, listW, listH), scrollPos, viewRect);
 
         string f = filter.Trim().ToLowerInvariant();
@@ -155,25 +157,25 @@ public class CardFaceBrowser : MonoBehaviour
             string unlockedMark = cm != null && cm.IsEffectUnlocked(card.effectId) ? " ✓" : "";
             string label = $"{cardName}  [{card.category}/{card.monsterType}]{unlockedMark}";
             var rowRect = new Rect(0f, drawIndex * lineH, viewRect.width, lineH);
-            if (GUI.Button(rowRect, label))
+            if (GUI.Button(rowRect, label, ListRowStyle()))
                 selectedIndex = i;
             drawIndex++;
         }
         GUI.EndScrollView();
 
         // ── 面板底部：选中卡信息 + 替换按钮 ──
-        float bottomY = y + listH + 8f;
+        float bottomY = y + listH + 8f * uiScale;
         if (selectedIndex >= 0 && selectedIndex < pool.Count)
         {
             var card = pool[selectedIndex];
-            GUI.Label(new Rect(x + pad, bottomY, listW - 16f, lineH), GetCardName(card), BoldStyle());
-            GUI.Label(new Rect(x + pad, bottomY + lineH, listW - 16f, lineH), $"{card.effectId} · {card.category}/{card.monsterType}");
+            GUI.Label(new Rect(x + pad, bottomY, listW - 16f * uiScale, lineH), GetCardName(card), BoldStyle());
+            GUI.Label(new Rect(x + pad, bottomY + lineH, listW - 16f * uiScale, lineH), $"{card.effectId} · {card.category}/{card.monsterType}", Label16());
 
             var choiceUI = ResolveChoiceUI();
             bool drafting = choiceUI != null && choiceUI.IsDrafting;
             GUI.enabled = drafting;
-            if (GUI.Button(new Rect(x + pad, bottomY + lineH * 2, listW - 16f, 30f),
-                drafting ? "替换选卡界面第 1 张（立即生效）" : "（选卡弹窗未开启）"))
+            if (GUI.Button(new Rect(x + pad, bottomY + lineH * 2, listW - 16f * uiScale, 30f * uiScale),
+                drafting ? "替换选卡界面第 1 张（立即生效）" : "（选卡弹窗未开启）", UnlockBtnStyle()))
             {
                 if (cm != null && choiceUI != null)
                 {
@@ -193,7 +195,7 @@ public class CardFaceBrowser : MonoBehaviour
             if (!hasLivePreview)
             {
                 // 无选卡模板回退：屏幕中央静态多层叠画（仅无 prefab 时使用）
-                float fw = 300f * previewScale, fh = 600f * previewScale;
+                float fw = 300f * previewScale * uiScale, fh = 600f * previewScale * uiScale;
                 var faceRect = new Rect(Screen.width * 0.5f - fw * 0.5f, Screen.height * 0.5f - fh * 0.5f, fw, fh);
                 bool anyLayer = false;
                 if (!card.hideBackgroundLayer && card.backgroundSprite != null) { DrawSprite(card.backgroundSprite, faceRect); anyLayer = true; }
@@ -210,12 +212,12 @@ public class CardFaceBrowser : MonoBehaviour
 
             // ── 预览卡右侧：解锁此卡按钮（F3 调试）──
             // 无论选卡弹窗是否开启都可解锁（即时注入本局已解锁卡，并应用到现存怪）。
-            float bw = 180f, bh = 44f;
-            float bx = Mathf.Min(Screen.width * 0.5f + 360f, Screen.width - bw - 12f);
+            float bw = 180f * uiScale, bh = 44f * uiScale;
+            float bx = Mathf.Min(Screen.width * 0.5f + 360f * uiScale, Screen.width - bw - 12f * uiScale);
             float by = Screen.height * 0.5f - bh * 0.5f;
             bool unlockedNow = cm != null && cm.IsEffectUnlocked(card.effectId);
             GUI.enabled = cm != null && !unlockedNow;
-            if (GUI.Button(new Rect(bx, by, bw, bh), unlockedNow ? "已解锁 ✓" : "解锁此卡"))
+            if (GUI.Button(new Rect(bx, by, bw, bh), unlockedNow ? "已解锁 ✓" : "解锁此卡", UnlockBtnStyle()))
             {
                 if (cm != null)
                 {
@@ -409,11 +411,56 @@ public class CardFaceBrowser : MonoBehaviour
     {
         if (boldStyle == null)
         {
-            boldStyle = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold };
+            boldStyle = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, fontSize = 16 };
         }
         return boldStyle;
     }
     static GUIStyle boldStyle;
+
+    /// <summary>列表行（GUI.skin.button + 16 号字 + 左对齐）。</summary>
+    static GUIStyle ListRowStyle()
+    {
+        if (listRowStyle == null)
+            listRowStyle = new GUIStyle(GUI.skin.button) { fontSize = 16, alignment = TextAnchor.MiddleLeft };
+        return listRowStyle;
+    }
+    static GUIStyle listRowStyle;
+
+    /// <summary>过滤输入框（16 号字）。</summary>
+    static GUIStyle FilterStyle()
+    {
+        if (filterStyle == null)
+            filterStyle = new GUIStyle(GUI.skin.textField) { fontSize = 16 };
+        return filterStyle;
+    }
+    static GUIStyle filterStyle;
+
+    /// <summary>面板标题（GUI.skin.box + 16 号字）。</summary>
+    static GUIStyle TitleStyle()
+    {
+        if (titleStyle == null)
+            titleStyle = new GUIStyle(GUI.skin.box) { fontSize = 16 };
+        return titleStyle;
+    }
+    static GUIStyle titleStyle;
+
+    /// <summary>普通文本（16 号字）。</summary>
+    static GUIStyle Label16()
+    {
+        if (label16Style == null)
+            label16Style = new GUIStyle(GUI.skin.label) { fontSize = 16 };
+        return label16Style;
+    }
+    static GUIStyle label16Style;
+
+    /// <summary>操作按钮（解锁此卡 / 替换选卡；GUI.skin.button + 动态字号，居中）。</summary>
+    static GUIStyle UnlockBtnStyle()
+    {
+        if (unlockBtnStyle == null)
+            unlockBtnStyle = new GUIStyle(GUI.skin.button) { fontSize = 16 };
+        return unlockBtnStyle;
+    }
+    static GUIStyle unlockBtnStyle;
     static GUIStyle fallbackTitleStyle;
     static GUIStyle fallbackDescriptionStyle;
 
