@@ -1664,7 +1664,7 @@ public class MonsterActor : Actor
         }
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
-        // Keep authored materials on corpse; dissolve FX handles fading later.
+        // Preserve the authored look in runtime FX material instances; dissolve FX handles fading later.
         if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
