@@ -84,6 +84,20 @@ public class MonsterSkillIconConfig : ScriptableObject
         return playerCache.TryGetValue(slot, out icon) && icon != null;
     }
 
+    /// <summary>按图标 sprite 反查其配置颜色（用于卡片/卡面等区域：CardLibrary 的 image 已替换为本配置的技能图标）。
+    /// 玩家条目无颜色配置，命中返回 false。</summary>
+    public bool TryGetColorByIcon(Sprite icon, out Color color)
+    {
+        color = Color.white;
+        if (icon == null || monsterEntries == null) return false;
+        BuildCache();
+        foreach (var e in monsterEntries)
+        {
+            if (e != null && e.icon == icon) { color = e.iconColor; return true; }
+        }
+        return false;
+    }
+
     void BuildCache()
     {
         if (monsterCache != null && playerCache != null) return;
