@@ -3928,15 +3928,15 @@ MonoBehaviour:
   - effectId: Pride01
     unlocked: 0
   - effectId: PR-A01
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A02
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A03
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A04
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 856368647163548680, guid: fc56af2bff4fd2d46bc00f7c48767b9a,
     type: 3}
   vfxSpawnPoint: {fileID: 0}

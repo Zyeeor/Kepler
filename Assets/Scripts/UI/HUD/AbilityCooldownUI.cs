@@ -28,8 +28,15 @@ public class AbilityCooldownUI : MonoBehaviour
     public Image possessCooldownOverlay;
     public TMP_Text possessKeyHint;
 
+    [Header("Current Enemy Icon")]
+    [Tooltip("当前附身怪物身份图标的根节点；灵魂态自动隐藏。")]
+    public RectTransform enemyIconRoot;
+    [Tooltip("当前附身怪物身份图标图片。")]
+    public Image enemyIconImage;
+
     [Header("Icon Configuration")]
     [Tooltip("技能 HUD 图标配置；为空时自动加载 Resources/UI/MonsterSkillIconConfig。")]
+
     public MonsterSkillIconConfig iconConfig;
 
     [Header("Style")]
@@ -190,7 +197,9 @@ public class AbilityCooldownUI : MonoBehaviour
             if (possessIconRoot != null) possessIconRoot.gameObject.SetActive(true);
         }
 
+        RefreshEnemyIcon();
     }
+
 
     void ApplyPlayerIcon(MonsterSkillIconConfig.PlayerSlot slot, Image target)
     {
@@ -224,7 +233,27 @@ public class AbilityCooldownUI : MonoBehaviour
     }
 
 
+    void RefreshEnemyIcon()
+    {
+        if (enemyIconRoot == null || enemyIconImage == null) return;
+
+        Sprite icon = null;
+        Color color = Color.white;
+        bool show = !trackingPlayer
+            && currentEnemy != null
+            && iconConfig != null
+            && iconConfig.TryGetMonsterIdentity(currentEnemy.sinType, out icon, out color);
+        if (show)
+
+        {
+            enemyIconImage.sprite = icon;
+            enemyIconImage.color = color;
+        }
+        enemyIconRoot.gameObject.SetActive(show);
+    }
+
     Sprite GetDefaultIcon(Image target)
+
     {
         if (target == basicIconImage) return defaultBasicIcon;
         if (target == skillIconImage) return defaultSkillIcon;
