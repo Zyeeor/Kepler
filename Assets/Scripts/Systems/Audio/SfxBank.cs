@@ -53,7 +53,8 @@ public enum SfxId
     Hazard = 26,
 
     // 怪物技能施放音已拆出（MonsterSkillAudioConfig，七罪×技能类别），不在此枚举内。
-    // 编号 29/30 已随技能音效拆分弃用（按约定不复用），新成员从 31 起追加。
+    // 召唤物（无人机/木灵）攻击音也已拆入 MonsterSkillAudioConfig 无人机条目。
+    // 编号 27/28 = Shrine 神龛，29/30 已随技能音效拆分弃用（按约定不复用），新成员从 31 起追加。
 }
 
 /// <summary>音效类别（SfxBank 编辑器分区显示 + 策划配置导航用；不影响运行时行为）。</summary>

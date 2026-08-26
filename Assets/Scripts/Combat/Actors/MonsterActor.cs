@@ -16,6 +16,8 @@ public class MonsterActor : Actor
 
     /// <summary>Current combat/lifecycle state. Downed bodies remain possessable only during their configured window.</summary>
     public BodyState Body { get; private set; } = BodyState.Active;
+    /// <summary>True while this monster is a downed, fading, or already despawned corpse.</summary>
+    public bool IsCorpse => isDowned || Body == BodyState.Downed || Body == BodyState.Fading || Body == BodyState.Despawned;
     public bool CanBePossessed => isPossessable && Body == BodyState.Downed && !isPossessed && !isPossessionReserved
         && (!IsBossBattleReserveBody || currentHealth > 0f) && Time.time < possessionWindowEndsAt;
     public bool CanCompleteReservedPossession => Body == BodyState.Downed && !isPossessed && isPossessionReserved;
@@ -95,7 +97,7 @@ public class MonsterActor : Actor
     public void InitAiRng(int salt)
     {
         AiRng = SeedSystem.CreateFlow(SeedSystem.DomainAI, salt);
-        var ai = GetComponent<AIController>();
+        AIController ai = GetCachedAiController();
         if (ai != null) ai.ResetDecisionPhase();
     }
 
@@ -259,6 +261,8 @@ public class MonsterActor : Actor
     [Min(0f)] public float corpsePossessionWindow = 5f;
     [Min(0f)] public float corpseFadeDuration = 3f;
     [Min(0f)] public float hitStateDuration = 0.12f;
+    [Tooltip("尸体 Collider 包围盒最低点相对地面的目标高度偏移。")]
+    public float corpseGroundYOffset = 0f;
 
     [Header("Ability HP Cost Death")]
     [Tooltip("附身技能烧血把耐久扣到 0 时，延迟死亡结算的最长宽限秒数。窗口内让该次技能跑完伤害判定（如砸地的延迟命中），随后立即死亡。充能/持续类技能会等到本次释放结束。")]
@@ -294,8 +298,14 @@ public class MonsterActor : Actor
     private const float CorpseGroundAlignmentDuration = 0.5f;
     private Vector3 initialLocalPosition;
     private Quaternion initialLocalRotation;
+    private AIController aiController;
+    private GluttonyBodyState gluttonyBodyState;
+    private BossReserveCorpseVisualFx reserveCorpseVisual;
     private Animator bodyAnimator;
     private AnimatorUpdateMode originalAnimatorUpdateMode;
+    private Animator[] cachedAnimators;
+    private bool animatorCacheInitialized;
+    private Camera billboardCamera;
     private readonly Dictionary<Animator, AnimatorUpdateMode> possessedAnimatorUpdateModes = new Dictionary<Animator, AnimatorUpdateMode>();
     private LineRenderer detectRangeRing;
     private LineRenderer basicRangeRing;
@@ -406,6 +416,10 @@ public class MonsterActor : Actor
         base.Awake(); // Actor：挂载默认 Controller
         if (Combat != null) Combat.AddLooseTags(this, new[] { "Actor.Monster" });
 
+        aiController = GetComponent<AIController>();
+        if (sinType == SinType.Gluttony)
+            gluttonyBodyState = GetComponent<GluttonyBodyState>();
+        reserveCorpseVisual = GetComponent<BossReserveCorpseVisualFx>();
         meshRenderer = GetComponent<Renderer>();
         if (visualScaleRoot != null)
         {
@@ -418,6 +432,7 @@ public class MonsterActor : Actor
         }
         bodyAnimator = GetComponent<Animator>();
         if (bodyAnimator != null) originalAnimatorUpdateMode = bodyAnimator.updateMode;
+        CacheAnimators();
         initialLocalPosition = transform.localPosition;
         initialLocalRotation = transform.localRotation;
         corpseFadeBlock = new MaterialPropertyBlock();
@@ -598,8 +613,29 @@ public class MonsterActor : Actor
     public void BeginImmediateChase()
     {
         RefreshPlayerTarget();
-        AIController ai = GetComponent<AIController>();
+        AIController ai = GetCachedAiController();
         if (ai != null) ai.BeginImmediateChase();
+    }
+
+    private AIController GetCachedAiController()
+    {
+        if (aiController == null) aiController = GetComponent<AIController>();
+        return aiController;
+    }
+
+    private BossReserveCorpseVisualFx GetCachedReserveCorpseVisual()
+    {
+        if (reserveCorpseVisual == null) reserveCorpseVisual = GetComponent<BossReserveCorpseVisualFx>();
+        return reserveCorpseVisual;
+    }
+
+    private GluttonyBodyState GetCachedGluttonyBodyState()
+    {
+        // Gluttony abilities can add this component lazily from their first activation. Keep
+        // the legacy per-frame lookup until it appears, then retain the component permanently.
+        if (gluttonyBodyState == null && sinType == SinType.Gluttony)
+            gluttonyBodyState = GetComponent<GluttonyBodyState>();
+        return gluttonyBodyState;
     }
 
     bool BasicListContains(EnemyAbility a)
@@ -688,7 +724,7 @@ public class MonsterActor : Actor
                 {
                     Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
                     float turnRate = 12f;
-                    GluttonyBodyState gluttonyState = GetComponent<GluttonyBodyState>();
+                    GluttonyBodyState gluttonyState = GetCachedGluttonyBodyState();
                     if (gluttonyState != null && gluttonyState.SmallCatTurnMult > 0.01f)
                         turnRate *= gluttonyState.SmallCatTurnMult;
                     transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, movementDeltaTime * turnRate);
@@ -968,8 +1004,52 @@ public class MonsterActor : Actor
     /// </summary>
     public Animator GetActiveAnimator()
     {
-        if (bodyAnimator != null) return bodyAnimator;
-        return GetComponentInChildren<Animator>(false);
+        // Preserve the legacy root Animator contract: callers may drive it even when the
+        // component/object is disabled. Child-model swaps use the active hierarchy fallback.
+        if (bodyAnimator != null)
+            return bodyAnimator;
+
+        Animator[] animators = GetCachedAnimators();
+        for (int i = 0; i < animators.Length; i++)
+        {
+            Animator animator = animators[i];
+            if (animator != null && animator.gameObject.activeInHierarchy)
+                return animator;
+        }
+        return null;
+    }
+
+    private void CacheAnimators()
+    {
+        cachedAnimators = GetComponentsInChildren<Animator>(true);
+        animatorCacheInitialized = true;
+    }
+
+    private Animator[] GetCachedAnimators()
+    {
+        if (!animatorCacheInitialized || cachedAnimators == null)
+        {
+            CacheAnimators();
+            return cachedAnimators;
+        }
+
+        for (int i = 0; i < cachedAnimators.Length; i++)
+        {
+            if (cachedAnimators[i] == null)
+            {
+                CacheAnimators();
+                break;
+            }
+        }
+        return cachedAnimators;
+    }
+
+    private Camera GetBillboardCamera()
+    {
+        if (billboardCamera == null || !billboardCamera.isActiveAndEnabled
+            || !billboardCamera.CompareTag("MainCamera"))
+            billboardCamera = Camera.main;
+        return billboardCamera;
     }
 
     bool TryTriggerAbilitiesOfType(EnemyAbility.AbilityType t)
@@ -1205,8 +1285,12 @@ public class MonsterActor : Actor
             if (healthCanvas.gameObject.activeSelf != shouldShow) healthCanvas.gameObject.SetActive(shouldShow);
 
             // Always face the camera (billboard)
-            if (healthCanvas.gameObject.activeSelf && Camera.main != null)
-                healthCanvas.transform.LookAt(healthCanvas.transform.position + Camera.main.transform.forward, Camera.main.transform.up);
+            if (healthCanvas.gameObject.activeSelf)
+            {
+                Camera camera = GetBillboardCamera();
+                if (camera != null)
+                    healthCanvas.transform.LookAt(healthCanvas.transform.position + camera.transform.forward, camera.transform.up);
+            }
         }
     }
 
@@ -1262,7 +1346,7 @@ public class MonsterActor : Actor
             if (tracingBoss) Debug.LogWarning("[BossDamage] Blocked in base settlement: reason=BossReserveBodyOutsideBossContext", this);
             return;
         }
-        if (isDowned || Body == BodyState.Fading || Body == BodyState.Despawned)
+        if (IsCorpse)
         {
             if (tracingBoss) Debug.LogWarning($"[BossDamage] Blocked in base settlement: reason=InvalidBodyState, downed={isDowned}, body={Body}", this);
             return;
@@ -1329,13 +1413,11 @@ public class MonsterActor : Actor
     }
 
     /// <summary>
-    /// Environmental / tile hazard damage. Works on Active and Downed bodies (spike enter on corpses).
-    /// Does not apply tenacity / weaken flow for downed corpses.
+    /// Environmental / tile hazard damage. Corpse bodies are fully immune.
     /// </summary>
     public void TakeEnvironmentalDamage(float amount)
     {
-        if (IsBossBattleReserveBody) return;
-        if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        if (IsCorpse) return;
         if (IsDamageImmune(this)) return;
         // GR-M02: own normal black oil ignores terrain damage (no Guard convert credit).
         EnemyAbility_GreedBlackOil blackOil = GetComponentInChildren<EnemyAbility_GreedBlackOil>(true);
@@ -1345,13 +1427,6 @@ public class MonsterActor : Actor
         if (amount <= 0f) return;
         if (TryGreedGuardAbsorb(amount, environmental: true))
         {
-            FlashDamage();
-            return;
-        }
-
-        if (isDowned || Body == BodyState.Downed)
-        {
-            // Corpse: edge-trigger feedback only (HP already 0).
             FlashDamage();
             return;
         }
@@ -1394,8 +1469,7 @@ public class MonsterActor : Actor
     {
         bool selfPlayerFaction = isPossessed || CharmController.IsCharmedMonster(this);
         bool targetPlayerFaction = target != null && (target.isPossessed || CharmController.IsCharmedMonster(target));
-        return target != null && target != this && !target.isDowned &&
-               target.Body != BodyState.Fading && target.Body != BodyState.Despawned &&
+        return target != null && target != this && !target.IsCorpse &&
                selfPlayerFaction != targetPlayerFaction &&
                !IsUntargetable(target);
     }
@@ -1627,7 +1701,7 @@ public class MonsterActor : Actor
         if (possessed)
         {
             possessedAnimatorUpdateModes.Clear();
-            Animator[] animators = GetComponentsInChildren<Animator>(true);
+            Animator[] animators = GetCachedAnimators();
             for (int i = 0; i < animators.Length; i++)
             {
                 Animator animator = animators[i];
@@ -1662,6 +1736,9 @@ public class MonsterActor : Actor
         isDowned = true;
         isPossessed = false;
         Body = BodyState.Downed;
+        CancelAbilityRuntimeState();
+        SetAbilityComponentsEnabled(false);
+        Combat?.ClearEffectsForCorpse();
         possessionWindowEndsAt = Time.time + corpsePossessionWindow;
         isPossessionReserved = false;
         transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
@@ -1728,6 +1805,7 @@ public class MonsterActor : Actor
         SetController(NullController.Instance); // 尸体 AI 完全休眠
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
+        Combat?.ClearEffectsForCorpse();
 
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
@@ -1778,12 +1856,13 @@ public class MonsterActor : Actor
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
 
-        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         isPossessed = false;
         isDowned = true;
         Body = BodyState.Fading;
+        Combat?.ClearEffectsForCorpse();
         possessionWindowEndsAt = 0f;
         // 停下所有残留惯性与指令，尸体在淡出期间必须原地不动。
         pendingCmd = new ControlCommand();
@@ -1828,7 +1907,8 @@ public class MonsterActor : Actor
         }
 
         float startY = groundTransform.position.y;
-        float deltaY = MonsterPool.GroundY - colliderBounds.min.y;
+        float targetGroundY = MonsterPool.GroundY + corpseGroundYOffset;
+        float deltaY = targetGroundY - colliderBounds.min.y;
         if (Mathf.Abs(deltaY) <= 0.0001f)
         {
             corpseGroundAlignmentRoutine = null;
@@ -1905,7 +1985,7 @@ public class MonsterActor : Actor
         isDowned = false;
         isPossessed = false;
         ResetEliteRuntimeState();
-        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         isPossessable = true;
@@ -1962,7 +2042,7 @@ public class MonsterActor : Actor
         if (animator != null) animator.SetBool("IsDowned", false);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(showHealthBar && ShowHealthBars);
         RefreshPlayerTarget();
-        SetController(GetComponent<AIController>());
+        SetController(GetCachedAiController());
         UpdateHealthUI();
         OnResetForSpawn();
     }
@@ -1975,7 +2055,7 @@ public class MonsterActor : Actor
         StopCorpseGroundAlignment();
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
-        BossReserveCorpseVisualFx reserveVisual = GetComponent<BossReserveCorpseVisualFx>();
+        BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
         bossDamageContext = false;
@@ -2356,7 +2436,8 @@ public class MonsterActor : Actor
         bool hasBounds = false;
         foreach (Renderer renderer in bodyRenderers)
         {
-            if (renderer == null || !renderer.enabled || renderer is ParticleSystemRenderer || renderer is TrailRenderer || renderer is LineRenderer) continue;
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy
+                || renderer is ParticleSystemRenderer || renderer is TrailRenderer || renderer is LineRenderer) continue;
 
             Bounds rendererBounds = renderer.bounds;
             Vector3 extents = rendererBounds.extents;

@@ -10,6 +10,20 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class TerrainEffectTile : MonoBehaviour
 {
+    // A list keeps the read-only traversal allocation-free (HashSet's interface enumerator
+    // boxes its struct enumerator). OnEnable is idempotent so duplicate callbacks cannot
+    // duplicate a tile in the registry.
+    private static readonly List<TerrainEffectTile> EnabledTiles = new List<TerrainEffectTile>();
+    public static IReadOnlyList<TerrainEffectTile> EnabledInstances => EnabledTiles;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetEnabledTiles()
+    {
+        // Enter Play Mode with domain reload disabled can retain the previous run's static
+        // list while scene objects are recreated. Clear it before the next load.
+        EnabledTiles.Clear();
+    }
+
     public enum TerrainEffectKind
     {
         SpeedBoost,
@@ -69,6 +83,7 @@ public class TerrainEffectTile : MonoBehaviour
     private readonly HashSet<int> _frameOccupants = new HashSet<int>();
     private readonly Dictionary<int, CombatAbilityComponent> _combatById = new Dictionary<int, CombatAbilityComponent>();
     private readonly Dictionary<int, float> _lavaNextPulseAt = new Dictionary<int, float>();
+    private readonly List<int> _exited = new List<int>();
     private Collider[] _overlapBuffer;
     private BoxCollider _volumeCollider;
     private float _nextSpikeAt;
@@ -87,6 +102,12 @@ public class TerrainEffectTile : MonoBehaviour
         // localScale/localPosition（bounds 对齐），Awake 时 transform 仍是 prefab 原始值。
         if (autoCalibrateToVisual)
             CalibrateDetectionToVisual();
+    }
+
+    void OnEnable()
+    {
+        if (!EnabledTiles.Contains(this))
+            EnabledTiles.Add(this);
     }
 
     /// <summary>
@@ -140,12 +161,14 @@ public class TerrainEffectTile : MonoBehaviour
 
     void OnDisable()
     {
-        if (_occupants.Count == 0) return;
+        EnabledTiles.Remove(this);
 
-        List<int> exited = new List<int>(_occupants);
-        for (int i = 0; i < exited.Count; i++)
+        _exited.Clear();
+        foreach (int id in _occupants)
+            _exited.Add(id);
+        for (int i = 0; i < _exited.Count; i++)
         {
-            int id = exited[i];
+            int id = _exited[i];
             _combatById.TryGetValue(id, out CombatAbilityComponent combat);
             HandleExit(combat, id);
         }
@@ -153,6 +176,7 @@ public class TerrainEffectTile : MonoBehaviour
         _combatById.Clear();
         _lavaNextPulseAt.Clear();
         _frameOccupants.Clear();
+        _exited.Clear();
     }
 
     void FixedUpdate()
@@ -228,6 +252,7 @@ public class TerrainEffectTile : MonoBehaviour
             QueryTriggerInteraction.Ignore);
 
         _frameOccupants.Clear();
+        _exited.Clear();
         for (int i = 0; i < count; i++)
         {
             Collider hit = _overlapBuffer[i];
@@ -246,25 +271,24 @@ public class TerrainEffectTile : MonoBehaviour
 
         if (_occupants.Count == 0) return;
 
-        List<int> exited = null;
         foreach (int id in _occupants)
         {
             if (_frameOccupants.Contains(id)) continue;
-            if (exited == null) exited = new List<int>();
-            exited.Add(id);
+            _exited.Add(id);
         }
 
-        if (exited == null) return;
+        if (_exited.Count == 0) return;
 
-        for (int i = 0; i < exited.Count; i++)
+        for (int i = 0; i < _exited.Count; i++)
         {
-            int id = exited[i];
+            int id = _exited[i];
             _combatById.TryGetValue(id, out CombatAbilityComponent combat);
             HandleExit(combat, id);
             _occupants.Remove(id);
             _combatById.Remove(id);
             _lavaNextPulseAt.Remove(id);
         }
+        _exited.Clear();
     }
 
     private void HandleEnter(CombatAbilityComponent combat, int id)
@@ -374,6 +398,8 @@ public class TerrainEffectTile : MonoBehaviour
 
         combat = other.GetComponentInParent<CombatAbilityComponent>();
         if (combat == null) return false;
+        MonsterActor monster = combat.GetComponent<MonsterActor>();
+        if (monster != null && monster.IsCorpse) return false;
         id = combat.GetInstanceID();
         return true;
     }

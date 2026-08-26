@@ -16,6 +16,9 @@ public class MineBehaviour : MonoBehaviour
     public System.Action<GameObject> onExplode;
     [Tooltip("Draw trigger and blast ranges when CombatHitboxDebug.Enabled is true.")]
     public bool drawHitboxes;
+    // Fixed-capacity (64 colliders), instance-local so nested mine callbacks cannot overwrite
+    // another query's results. Returned slots only are processed.
+    private readonly Collider[] overlapBuffer = new Collider[64];
 
     void Update()
     {
@@ -27,9 +30,12 @@ public class MineBehaviour : MonoBehaviour
             return;
         }
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, triggerRadius, ~0, QueryTriggerInteraction.Collide);
-        foreach (var hit in hits)
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            transform.position, triggerRadius, overlapBuffer, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = overlapBuffer[i];
+            if (hit == null) continue;
             var enemy = hit.GetComponentInParent<Enemy>();
             if (enemy != null && enemy != placer && !enemy.isDowned)
             {
@@ -63,9 +69,12 @@ public class MineBehaviour : MonoBehaviour
             VfxPool.ReleaseOrDestroy(blast, Mathf.Max(0.01f, blastVfxDuration));
         }
 
-        var allHits = Physics.OverlapSphere(blastPos, blastRadius, ~0, QueryTriggerInteraction.Collide);
-        foreach (var hit in allHits)
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            blastPos, blastRadius, overlapBuffer, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = overlapBuffer[i];
+            if (hit == null) continue;
             var enemy = hit.GetComponentInParent<Enemy>();
             if (enemy != null && enemy != placer && !enemy.isDowned)
             {

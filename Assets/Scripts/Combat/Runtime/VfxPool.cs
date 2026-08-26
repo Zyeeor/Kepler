@@ -52,18 +52,25 @@ public class VfxPool : MonoBehaviour
         while (available.Count > 0 && rented == null)
             rented = available.Dequeue();
 
+        bool newlyInstantiated = rented == null;
         if (rented == null)
         {
             // Instantiate inactive so Awake/OnEnable run only after pose is applied below.
             rented = Instantiate(prefab);
             rented.SetActive(false);
             prefabByInstance[rented] = prefab;
+        }
 
-            PooledObject marker = rented.GetComponent<PooledObject>();
-            if (marker == null) marker = rented.AddComponent<PooledObject>();
+        // Existing pool instances may predate PooledObject's particle cache; initialize lazily
+        // here so old instances and newly instantiated ones share the same cleanup path.
+        PooledObject marker = rented.GetComponent<PooledObject>();
+        if (marker == null) marker = rented.AddComponent<PooledObject>();
+        if (newlyInstantiated || marker.SourcePrefab == null)
+        {
             marker.SourcePrefab = prefab;
             marker.OriginalLocalScale = rented.transform.localScale;
         }
+        if (!prefabByInstance.ContainsKey(rented)) prefabByInstance[rented] = prefab;
 
         BumpReleaseEpoch(rented);
         PrepareForSpawn(rented);
@@ -257,8 +264,13 @@ public class VfxPool : MonoBehaviour
     private static void StopAndClearParticles(GameObject instance)
     {
         if (instance == null) return;
-        foreach (ParticleSystem ps in instance.GetComponentsInChildren<ParticleSystem>(true))
+        PooledObject marker = instance.GetComponent<PooledObject>();
+        if (marker == null) marker = instance.AddComponent<PooledObject>();
+        ParticleSystem[] particleSystems = marker.ParticleSystems;
+        for (int i = 0; i < particleSystems.Length; i++)
         {
+            ParticleSystem ps = particleSystems[i];
+            if (ps == null) continue;
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             ps.Clear(true);
         }

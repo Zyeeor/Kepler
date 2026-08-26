@@ -22,6 +22,9 @@ public class Projectile : MonoBehaviour
     private float hitCheckInterval = 0.05f;
     private float hitCheckTimer;
     private bool settled;
+    // Fixed-capacity (32 colliders) per-projectile buffer avoids shared query state when hit
+    // settlement re-enters another projectile; returned slots only are processed.
+    private readonly Collider[] overlapBuffer = new Collider[32];
 
     void OnEnable()
     {
@@ -69,9 +72,11 @@ public class Projectile : MonoBehaviour
         MonsterActor ownerMonster = ownerEnemy as MonsterActor;
         float checkRadius = 0.8f * (ownerMonster != null ? ownerMonster.CombatScaleMultiplier : 1f);
         CombatHitboxDebug.DrawSphere(true, transform.position, checkRadius, 0f);
-        var hits = Physics.OverlapSphere(transform.position, checkRadius);
-        foreach (var hit in hits)
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, checkRadius, overlapBuffer);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = overlapBuffer[i];
+            if (hit == null) continue;
             var enemy = hit.GetComponentInParent<Enemy>();
             if (ownerEnemy != null && ownerEnemy.CanDamage(enemy))
             {
