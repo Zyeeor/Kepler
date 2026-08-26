@@ -45,6 +45,7 @@ MonsterActor 执行：朝向修正 → 移动 / 触发 EnemyAbility
 4. **范围不可超出索敌半径**：`basicAttackRange` / `skillAttackRange` 应 ≤ `detectionRadius`，否则索敌失效（编辑期 `OnValidate` 会警告）。
 5. **`chaseDuration = 0` 表示一直直线追击**（向后兼容旧行为）；配 > 0 才启用"追击超时转对峙"。
 6. **`id` 全局唯一**：重复 id 编辑期警告，运行时后者被忽略。
+7. **解锁可动态扩大范围（取最大值）**：通过 `rangeUnlocks` 列表声明「解锁某卡牌能力（effectId）后，普攻/技能范围提升到指定值」；最终生效范围 = `max(基础值, 所有已解锁条目)`。范围实时计算（无快照），解锁变化下一帧即生效。
 
 ---
 
@@ -58,6 +59,27 @@ MonsterActor 执行：朝向修正 → 移动 / 触发 EnemyAbility
 | `basicAttackRange` | 3 | 普攻范围：玩家在此半径内才能尝试普攻 |
 | `skillAttackRange` | 6 | 技能范围：玩家在此半径内才能释放技能 |
 | `aiMinRange` | 0 | 停步距离：玩家在此距离内不再前进（只侧移） |
+
+### 范围解锁：rangeUnlocks（② 解锁驱动的范围覆盖）
+
+> 让「游戏进度解锁能力后，怪的攻击/技能范围变大」成为可能。范围取 **max（基础值, 所有已解锁条目）**，例如基础普攻 5、解锁 A 后 8、解锁 B 后 10，全解锁则为 10。
+
+在条目 `entries` 中，每个 `MonsterAIConfigEntry` 都有一个 `rangeUnlocks` 列表（元素类型为 `AIRangeUnlock`）：
+
+| 字段 | 默认 | 含义 |
+|---|---|---|
+| `unlockId` | 空 | 解锁标识：通常为卡牌的 `effectId`（运行时 `CardManager.UnlockedEffects` 中存在即视为已解锁）。空值不会被任何解锁触发（编辑期警告） |
+| `basicAttackRange` | -1 | 解锁后普攻范围覆盖值。`-1` 表示该项不修改普攻范围；≥ 0 才参与取大 |
+| `skillAttackRange` | -1 | 解锁后技能范围覆盖值。`-1` 表示不修改技能范围；≥ 0 才参与取大 |
+
+**配置步骤**：
+
+1. 在目标条目展开 `rangeUnlocks`，点 `+` 新增一条 `AIRangeUnlock`
+2. `unlockId` 填对应卡牌的 `effectId`（需与 `CardManager` 解锁集合里的 id 一致）
+3. 想扩大普攻就填 `basicAttackRange` 为正值，不想动就保持 `-1`；技能同理
+4. 可加多条（不同 `unlockId` 各管各的），最终普攻范围 = `max(基础普攻, 各条已解锁的 basicAttackRange)`，技能范围同理
+
+> **生效范围 ≠ 列表里写的数值**：代码每帧实时计算 `EffectiveBasicAttackRange()` / `EffectiveSkillAttackRange()`（= max），行为树判定用的是这个生效值，不是 `basicAttackRange` / `skillAttackRange` 本身。调试圆环（`showDebugRanges`）显示的也是生效值。
 
 ### 2.2 攻击节奏（1 项）
 
@@ -147,6 +169,8 @@ MonsterActor 执行：朝向修正 → 移动 / 触发 EnemyAbility
 
 - `id` 重复
 - `basicAttackRange` / `skillAttackRange` > `detectionRadius`
+- `rangeUnlocks` 中含空 `unlockId`
+- `rangeUnlocks` 中 `basicAttackRange` / `skillAttackRange`（≥ 0）> `detectionRadius`
 - `decisionIntervalMin` / `strafeIntervalMin` / `moveSpeedJitterMin` > 各自 max
 
 出现警告应立即处理，否则运行时行为异常（如索敌失效、追击反向）。
@@ -173,6 +197,8 @@ MonsterActor 执行：朝向修正 → 移动 / 触发 EnemyAbility
 ### 4.2 攻击范围拆分（普攻 / 技能）
 
 - `InAttackRange = basic || skill`（任一范围内即进攻击分支）
+
+> 上文 `basic` / `skill` 指**生效范围**（实时 = `max(基础值, 已解锁 rangeUnlocks)`），非条目里填的静态 `basicAttackRange` / `skillAttackRange`。解锁能力后范围自动变大，无需改其它字段。
 - 攻击分支内部：`Skill` 带 `InSkillRange` 守卫、`Basic` 带 `InBasicRange` 守卫，`WeightedSelector` 按 `skillPriority` 权重互斥选择；范围不满足的分支自动回退到满足的那支
 - 技能与普攻各自受冷却约束；同一决策节拍只执行一种攻击
 
@@ -202,6 +228,8 @@ AI 态下攻击前会先面向索敌目标（`FaceAttackTarget`，水平面 Look
 
 当前 7 个怪的索敌半径 `detectionRadius` 统一为 **15**。其余字段（`skillPriority=0.6`、`aiMobilityChance=0.3`、`chaseDuration=0`、`strafe*`、`moveSpeedJitter*`）目前全部用默认值。攻击冷却一律由各技能自身 `cooldown` 决定。
 
+当前 7 个怪均未配置 `rangeUnlocks`（攻击/技能范围即基础值，无解锁扩大）。如需「解锁能力后范围变大」，按上方「范围解锁：rangeUnlocks」小节在对应条目加 `rangeUnlocks`。
+
 ---
 
 ## 6. 常见坑
@@ -215,6 +243,8 @@ AI 态下攻击前会先面向索敌目标（`FaceAttackTarget`，水平面 Look
 | `aiConfigId` 写错/漏填 | 未命中条目 → 用默认值 | 检查 id 精确匹配（大小写敏感） |
 | 所有怪同步出手 | 决策节拍未随机化 | 确认 `decisionIntervalMin/Max` 有差异；间隔抖动 + 相位随机已内置 |
 | 追不上还死磕直线 | `chaseDuration = 0` | 配 > 0 启用对峙 |
+| 解锁后范围没变大 | `unlockId` 与卡牌 `effectId` 不一致 / 卡未真正解锁；或 `basicAttackRange`/`skillAttackRange` 仍是 `-1` | 核对 `unlockId` 与 `CardManager.UnlockedEffects`；确认覆盖值 ≥ 0 |
+| 解锁范围后「能打却先得被发现」 | `rangeUnlocks` 中 `basic/skillAttackRange` > `detectionRadius` | 调小覆盖值或调大 `detectionRadius`；编辑期有警告 |
 
 ---
 
@@ -222,7 +252,7 @@ AI 态下攻击前会先面向索敌目标（`FaceAttackTarget`，水平面 Look
 
 | 文件 | 职责 |
 |---|---|
-| `Assets/Scripts/AI/MonsterAIConfig.cs` | 配置条目 + 库 + `Get(id)` + 默认条目 + `OnValidate` |
+| `Assets/Scripts/AI/MonsterAIConfig.cs` | 配置条目 `MonsterAIConfigEntry` + 解锁范围覆盖 `AIRangeUnlock` + 库 `MonsterAIConfig`（含 `IsUnlocked` 解锁钩子）+ `Get(id)` + 默认条目 + `OnValidate` + 生效范围 `EffectiveBasicAttackRange()`/`EffectiveSkillAttackRange()`（实时取 max） |
 | `Assets/Scripts/Core/Control/AIController.cs` | `BuildTree()` 接线、`RefreshBlackboard`、决策节拍、追击计时、意图声明 |
 | `Assets/Scripts/AI/BehaviorTree/MonsterBTNodes.cs` | 条件节点（InSkillRange / InBasicRange / InDetectRange / ChaseExpired / SkillReady / BasicReady / MobilityReady）+ 动作节点（Skill / Basic / Mobility / MoveToPlayer / Standoff / Idle） |
 | `Assets/Scripts/AI/BehaviorTree/BTBlackboard.cs` | 运行时状态：`ChaseElapsed` / `StandoffMove` / `StandoffTimer` 等 |
@@ -240,6 +270,7 @@ AI 态下攻击前会先面向索敌目标（`FaceAttackTarget`，水平面 Look
 - [ ] 各技能自身 `cooldown` 符合攻击节奏（唯一事实源）
 - [ ] `skillPriority` / `aiMobilityChance` 符合预期权重
 - [ ] `chaseDuration` 按需设置（0 = 一直追，> 0 = 超时对峙）
+- [ ] （如需解锁扩大范围）`rangeUnlocks` 的 `unlockId` 与卡牌 `effectId` 一致、覆盖值 ≥ 0、且 ≤ `detectionRadius`
 - [ ] Play 下勾选 `showDebugRanges` 验证三圈
 - [ ] 索敌范围外待机、追击、攻击范围独立生效、追击超时对峙
 

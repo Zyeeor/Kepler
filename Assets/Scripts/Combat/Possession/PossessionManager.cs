@@ -16,10 +16,6 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public float possessionDecayPercent = 0.05f;
     public float decayInterval = 1f;
 
-    [Header("Bullet Time")]
-    [Tooltip("子弹时间持续时长（倍率单源在 GameManager.bulletTimeScale）。")]
-    [Min(0.01f)] public float bulletTimeDuration = 2f;
-
     public enum SwitchState { Idle, Flying, Possessing, Releasing }
     public SwitchState State { get; private set; }
     public MonsterActor CurrentBody { get; private set; }
@@ -47,13 +43,11 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     }
 
     private Coroutine flyRoutine;
-    private Coroutine bulletTimeRoutine;
     private float possessStartTime;
     private SoulActor soul;
     private PossessionBehavior behavior;
     private MonsterActor reservedBody;
     private bool handlingGameOver;
-    private bool ownsBulletTime;
     private long possessionTransactionId;
     private bool nextPossessionIsDeathRelay;
     private PossessionGrantReason reservedGrantReason = PossessionGrantReason.PlayerPossession;
@@ -334,32 +328,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void TriggerBulletTime()
     {
         if (State != SwitchState.Possessing || CurrentBody == null) return;
-
-        if (bulletTimeRoutine != null || ownsBulletTime) StopBulletTime();
-        bulletTimeRoutine = StartCoroutine(BulletTimeRoutine());
-    }
-
-    private IEnumerator BulletTimeRoutine()
-    {
-        ownsBulletTime = true;
-        // SwitchState(BulletTime) 内部经 TimeScaleManager.Push(BulletTime, GameManager.bulletTimeScale) 生效（单写点+单源）
-        if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.BulletTime);
-        float scale = GameManager.Instance != null ? GameManager.Instance.bulletTimeScale : 0.2f;
-        Debug.Log($"[Possession] Bullet time started: scale={scale:F2}, duration={bulletTimeDuration:F2}s");
-        float effectiveDuration = PossessionImprintManager.Instance != null
-            ? PossessionImprintManager.Instance.GetBulletTimeDuration(bulletTimeDuration)
-            : bulletTimeDuration;
-        yield return new WaitForSecondsRealtime(effectiveDuration);
-
-        if (ownsBulletTime && State == SwitchState.Possessing && !handlingGameOver)
-        {
-            ownsBulletTime = false;
-            if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Possessed);   // 内部 Pop(BulletTime)
-            else TimeScaleManager.Pop(TimeDomain.BulletTime);
-        }
-
-        bulletTimeRoutine = null;
-        Debug.Log("[Possession] Bullet time ended.");
+        BulletTimeController.EnsureInstance().Trigger(CurrentBody);
     }
 
     private IEnumerator FlyAndCommitRoutine(MonsterActor target)
@@ -542,27 +511,12 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
     private void StopBulletTime()
     {
-        if (bulletTimeRoutine != null)
-        {
-            StopCoroutine(bulletTimeRoutine);
-            bulletTimeRoutine = null;
-        }
+        BulletTimeController controller = BulletTimeController.Instance;
+        if (controller == null) return;
 
-        if (ownsBulletTime)
-        {
-            if (GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.GameOver)
-            {
-                GameManager.Instance.SwitchState(State == SwitchState.Possessing
-                    ? GameManager.GameState.Possessed
-                    : GameManager.GameState.Soul);
-            }
-            else
-            {
-                // GameManager 缺失或 GameOver 中：直接撤子弹时间请求（GameOver 冻结优先级更高，不受影响）
-                TimeScaleManager.Pop(TimeDomain.BulletTime);
-            }
-        }
-        ownsBulletTime = false;
+        controller.Stop(State == SwitchState.Possessing
+            ? GameManager.GameState.Possessed
+            : GameManager.GameState.Soul);
     }
 
     private static void SetCameraTarget(Transform target)

@@ -239,6 +239,7 @@ public class HookProjectile : MonoBehaviour
         if (hitVfxPrefab != null)
         {
             GameObject vfx = VfxPool.Instance.Spawn(hitVfxPrefab, target.position, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(vfx, useUnscaledTime);
             foreach (ParticleSystem ps in vfx.GetComponentsInChildren<ParticleSystem>())
                 ps.Play(true);
             VfxPool.ReleaseOrDestroy(vfx, hitVfxDuration);

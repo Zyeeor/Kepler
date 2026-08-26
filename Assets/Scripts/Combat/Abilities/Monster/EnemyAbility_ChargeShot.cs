@@ -230,6 +230,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         if (blastVfxPrefab != null)
         {
             var blast = VfxPool.Instance.Spawn(blastVfxPrefab, pos, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(blast, IsOwnedByPlayer);
             blast.transform.localScale = Vector3.one * scale * OwnerCombatScaleMultiplier;
             PlayVfx(blast);
             ReleaseVfx(blast, blastVfxDuration);

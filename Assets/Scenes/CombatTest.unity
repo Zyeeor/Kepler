@@ -8647,7 +8647,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 299.99994, y: 20.000002}
+  m_AnchoredPosition: {x: 300, y: 20.000002}
   m_SizeDelta: {x: 160, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &678916214
@@ -9286,8 +9286,8 @@ MonoBehaviour:
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
   shrinePrefab: {fileID: 5758130742685393213, guid: 29441edd9c539b943a3ddeeae892dfac,
     type: 3}
+  firstShrinePrefab: {fileID: 5758130742685393213, guid: 6ec6b0224fd7ff74fb633bc9ab8b4873, type: 3}
   shrineCount: 3
-  shrineNearbyChunkCount: 4
   regionTable: []
   fixedAnchors: []
   regionCellSize: 2
@@ -11628,6 +11628,7 @@ MonoBehaviour:
   quitButtonOnGameOverText: {fileID: 0}
   healthBarToggleButton: {fileID: 0}
   healthBarToggleText: {fileID: 0}
+  buildView: {fileID: 0}
   bringSoulToMainMenu: 1
   settingsPanel: {fileID: 1731005095}
   confirmDialog: {fileID: 153670386}
@@ -19569,6 +19570,7 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
+  bootToMainMenu: 1
   useFormalFlow: 0
   bulletTimeScale: 0.2
 --- !u!4 &1807762708

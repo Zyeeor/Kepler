@@ -11,7 +11,7 @@ fi
 
 echo "[1/2] Building server..."
 mkdir -p bin
-if ! go build -o bin/server .; then
+if ! go build -o bin/server ./cmd/server; then
     echo "[ERROR] Build failed. Send the messages above to the dev team."
     exit 1
 fi

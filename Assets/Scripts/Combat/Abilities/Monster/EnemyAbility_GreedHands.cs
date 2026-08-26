@@ -292,6 +292,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
         {
             GameObject spawnVfx = VfxPool.Instance.Spawn(handSpawnVfxPrefab, origin, Quaternion.identity);
+            BulletTimeController.MarkVfxOrigin(spawnVfx, IsOwnedByPlayer);
 
             ScaleAbilityObject(spawnVfx);
             PlayVfx(spawnVfx);

@@ -244,6 +244,7 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
         CleanupStormVfx();
         if (stormVfxPrefab == null || owner == null) return;
         _stormVfx = VfxPool.Instance.Spawn(stormVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
+        BulletTimeController.MarkVfxOrigin(_stormVfx, IsOwnedByPlayer);
         ScaleAbilityObject(_stormVfx);
         PlayVfx(_stormVfx);
         ReleaseVfx(_stormVfx, duration + stormVfxLifetimePadding);

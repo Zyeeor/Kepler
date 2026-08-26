@@ -69,6 +69,7 @@ public class EnemyAbility_WrathSlam : EnemyAbility
 
         Transform anchor = vfxSpawnPoint != null ? vfxSpawnPoint : owner.transform;
         activeVfx = VfxPool.Instance.Spawn(vfxPrefab, anchor.position, anchor.rotation, anchor);
+        BulletTimeController.MarkVfxOrigin(activeVfx, IsOwnedByPlayer);
         activeVfx.transform.localPosition = vfxPositionOffset;
         activeVfx.transform.localRotation = Quaternion.Euler(vfxRotationOffset);
         ScaleAbilityObject(activeVfx);

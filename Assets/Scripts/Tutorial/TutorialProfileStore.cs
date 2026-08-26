@@ -16,6 +16,8 @@ public class TutorialProfileData
     public int schemaVersion = 1;
     public bool tutorialEnabled = true;
     public bool tutorialSkippedByUser = false;
+    [Tooltip("新手引导是否已完成（仅当第一局胜利 Result 结算才置 true；失败/中途退出/重开不计入，下次新游戏仍触发引导）")]
+    public bool tutorialCompleted = false;
     [Tooltip("已完成的 Step ID 列表")]
     public List<string> completedStepIds = new List<string>();
     [Tooltip("已首次附身过的 Monster 类型名（TUT-MONSTER 幂等）")]
@@ -51,6 +53,17 @@ public static class TutorialProfileStore
     {
         get => Data.tutorialEnabled;
         set { Data.tutorialEnabled = value; Save(); }
+    }
+
+    /// <summary>新手引导是否已完成（仅第一局胜利 Result 结算后置 true；此后不再触发引导）。</summary>
+    public static bool TutorialCompleted => Data.tutorialCompleted;
+
+    /// <summary>标记新手引导完成（第一局胜利 Result 结算后调用；幂等）。失败/中途退出/重开不调用，故不算完成。</summary>
+    public static void MarkTutorialCompleted()
+    {
+        if (Data.tutorialCompleted) return;
+        Data.tutorialCompleted = true;
+        Save();
     }
 
     /// <summary>某 Step 是否已完成（幂等判定依据）。</summary>

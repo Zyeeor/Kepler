@@ -13,7 +13,7 @@ if errorlevel 1 (
 
 echo [1/2] Building server...
 if not exist bin mkdir bin
-go build -o bin\server.exe .
+go build -o bin\server.exe ./cmd/server
 if errorlevel 1 (
     echo [ERROR] Build failed. Send the messages above to the dev team.
     pause

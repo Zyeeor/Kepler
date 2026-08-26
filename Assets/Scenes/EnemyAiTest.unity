@@ -1140,26 +1140,87 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 3
-  normalSpawnCountPerTick: 1
+  normalSpawnRateByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.33333334
+      inSlope: 0
+      outSlope: 0.28571427
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.3333333
+      inSlope: 0.28571427
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnGrowthPeriodSeconds: 60
-  continuousSpawnMaxCountsByMinute: 070000000e00000015000000
+  continuousSpawnMaxCountsByMinute: 0300000006000000090000000c0000000f0000001200000015000000
   spawnCycleSeconds: 60
-  tideStartSeconds: 30
-  tideDurationSeconds: 9
-  tideSpawnInterval: 3
-  tideSpawnCountPerSin: 1
-  eliteSpawnOffsetSeconds: 30
-  eliteCountPerCycle: 1
+  eliteSpawnOffsetSeconds: 40
   nonBossDurationSeconds: 420
+  monsterHealthMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.20000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.4
+      inSlope: 0.20000002
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  monsterAttackMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.120000005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 1.84
+      inSlope: 0.120000005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   difficultyGrowthIntervalSeconds: 30
-  killEchoMaxCountPerWindow: 2
-  tideKillEchoMaxCountPerWindow: 7
-  killEchoWindowSeconds: 2
   waveMode: 1
   waves:
   - weightedTable:
@@ -2391,6 +2452,85 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 592737163}
+  m_CullTransparentMesh: 1
+--- !u!1 &593701240
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 593701241}
+  - component: {fileID: 593701243}
+  - component: {fileID: 593701242}
+  m_Layer: 0
+  m_Name: Text
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &593701241
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593701240}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1303920000}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &593701242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593701240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FontData:
+    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_FontSize: 24
+    m_FontStyle: 0
+    m_BestFit: 0
+    m_MinSize: 10
+    m_MaxSize: 40
+    m_Alignment: 4
+    m_AlignByGeometry: 0
+    m_RichText: 1
+    m_HorizontalOverflow: 0
+    m_VerticalOverflow: 0
+    m_LineSpacing: 1
+  m_Text: "\u6784\u7B51"
+--- !u!222 &593701243
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593701240}
   m_CullTransparentMesh: 1
 --- !u!1 &596907509
 GameObject:
@@ -3979,7 +4119,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0
+  near clip plane: 0.01
   far clip plane: 10000
   field of view: 81.1
   orthographic: 1
@@ -4879,6 +5019,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a01173ddd9b4b5584e5259c51c0ce31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sfxPoolSize: 6
+  sfxMinInterval: 0.06
+  sfx3DMinDistance: 2
+  sfx3DMaxDistance: 28
 --- !u!114 &915700999
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5946,7 +6090,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 0.8, g: 0.8330709, b: 1, a: 1}
-  m_Intensity: 4
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -6985,6 +7129,127 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1292743562}
+  m_CullTransparentMesh: 1
+--- !u!1 &1303919999
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1303920000}
+  - component: {fileID: 1303920003}
+  - component: {fileID: 1303920002}
+  - component: {fileID: 1303920001}
+  m_Layer: 0
+  m_Name: BuildButton
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1303920000
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1303919999}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 593701241}
+  m_Father: {fileID: 1753544539}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -50, y: 120}
+  m_SizeDelta: {x: 80, y: 60}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1303920001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1303919999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 0.12, g: 0.12, b: 0.16, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1303920002}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1303920002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1303919999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.12, g: 0.12, b: 0.16, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1303920003
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1303919999}
   m_CullTransparentMesh: 1
 --- !u!1 &1312176468
 GameObject:
@@ -8471,7 +8736,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfb6e7daf61d3db4fb5196b0d8e82733, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bgmClip: {fileID: 8300000, guid: dd9a1e9b611615a44af24b82b1bcd5c3, type: 3}
+  bgmClip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
 --- !u!4 &1638854451
 Transform:
   m_ObjectHideFlags: 0
@@ -8875,6 +9140,7 @@ RectTransform:
   - {fileID: 1292743564}
   - {fileID: 2090953904}
   - {fileID: 1867474567}
+  - {fileID: 1303920000}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -9495,6 +9761,7 @@ GameObject:
   - component: {fileID: 1807762707}
   - component: {fileID: 1807762709}
   - component: {fileID: 1807762710}
+  - component: {fileID: 1807762711}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -9522,11 +9789,10 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 0}
-  useFixedSeed: 1
+  useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
-  useFormalFlow: 1
-  bulletTimeScale: 0.2
+  useFormalFlow: 0
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
@@ -9645,6 +9911,36 @@ MonoBehaviour:
   toggleKey: 284
   previewScale: 0.7
   previewOffsetY: 0
+--- !u!114 &1807762711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1807762705}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9606cfb7c93da42f392be5947ee62bb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 2
+  timeScale: 0.2
+  damageImmunityEffect: {fileID: 0}
+  effectCatalog: {fileID: 0}
+  damageImmunityEffectTag: Effect.Defense.DamageImmune
+  damageImmunityDuration: 0.5
+  postProcessEffectName: RadialBlur
+  postProcessSwitcher: {fileID: 9988776604}
+  overridePostProcessParams: 0
+  postStepFactor: 0.5
+  postMainAlpha: 1
+  postBlurFactor: 0.47
+  postLineUvScale: 2.24
+  postChromatic: 0.18
+  postFrequency: 0
+  postAmplitude: 0
+  postVignettePower: 1
+  postVignetteScale: 0
 --- !u!1 &1845754592
 GameObject:
   m_ObjectHideFlags: 0
@@ -10058,7 +10354,6 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.05
   decayInterval: 1
-  bulletTimeDuration: 2
 --- !u!1 &1948264456
 GameObject:
   m_ObjectHideFlags: 0
@@ -10216,7 +10511,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxCombatMonsters: 60
-  continuousSpawnMaxCount: 20
+  continuousSpawnMaxCount: 10
   minSpawnDistanceToPlayer: 10
   maxSpawnDistanceToPlayer: 25
   spawnHeightY: 0
@@ -10340,26 +10635,87 @@ MonoBehaviour:
   autoShowChoiceUI: 1
   recycleRemainingOnTimeUp: 1
   continuousSpawning: 1
-  normalSpawnInterval: 3
-  normalSpawnCountPerTick: 1
+  normalSpawnRateByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.33333334
+      inSlope: 0
+      outSlope: 0.28571427
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.3333333
+      inSlope: 0.28571427
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnGrowthPeriodSeconds: 60
   continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
   spawnCycleSeconds: 60
-  tideStartSeconds: 30
-  tideDurationSeconds: 9
-  tideSpawnInterval: 3
-  tideSpawnCountPerSin: 1
   eliteSpawnOffsetSeconds: 40
-  eliteCountPerCycle: 1
   nonBossDurationSeconds: 420
+  monsterHealthMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.20000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 2.4
+      inSlope: 0.20000002
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  monsterAttackMultiplierByMinute:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.120000005
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 7
+      value: 1.84
+      inSlope: 0.120000005
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   difficultyGrowthIntervalSeconds: 30
-  killEchoMaxCountPerWindow: 2
-  tideKillEchoMaxCountPerWindow: 7
-  killEchoWindowSeconds: 2
   waveMode: 0
   waves: []
   gracePeriod: 2
@@ -16594,7 +16950,7 @@ PrefabInstance:
         type: 3}
       propertyPath: healthSlider
       value: 
-      objectReference: {fileID: 657345308}
+      objectReference: {fileID: 0}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: currentHealth
@@ -16609,7 +16965,7 @@ PrefabInstance:
         type: 3}
       propertyPath: sliderFillImage
       value: 
-      objectReference: {fileID: 450816212}
+      objectReference: {fileID: 0}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: healthDecayPercent

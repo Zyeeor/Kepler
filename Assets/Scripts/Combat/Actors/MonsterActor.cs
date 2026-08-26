@@ -146,7 +146,8 @@ public class MonsterActor : Actor
     [Header("AI Config (unified library)")]
     [Tooltip("AI 配置库资产（单文件，同 CardLibrary 模式，位于 Assets/Configs/）。")]
     public MonsterAIConfig aiConfig;
-    [Tooltip("在配置库中按 id 查找 AI 配置条目。为空或未命中时使用默认值。")]
+    [AiConfigId]
+    [Tooltip("在配置库中按 id 查找 AI 配置条目。为空或未命中时使用默认值（Inspector 提供下拉）。")]
     public string aiConfigId;
 
     /// <summary>当前生效的 AI 配置条目（库未命中/未配置时回退共享默认条目）。</summary>
@@ -166,10 +167,10 @@ public class MonsterActor : Actor
     // 以下 AI 参数已统一收口到 MonsterAIConfig（Assets/Configs/AI/），只读属性转发便于代码访问。
     /// <summary>索敌半径（AI 配置）。</summary>
     public float detectionRadius => AiConfig.detectionRadius;
-    /// <summary>普攻范围（AI 配置，与技能范围相互独立）。</summary>
-    public float basicAttackRange => AiConfig.basicAttackRange;
-    /// <summary>技能范围（AI 配置，与普攻范围相互独立）。</summary>
-    public float skillAttackRange => AiConfig.skillAttackRange;
+    /// <summary>生效普攻范围（AI 配置 + 已解锁覆盖，实时取 max）。</summary>
+    public float basicAttackRange => AiConfig.EffectiveBasicAttackRange();
+    /// <summary>生效技能范围（AI 配置 + 已解锁覆盖，实时取 max）。</summary>
+    public float skillAttackRange => AiConfig.EffectiveSkillAttackRange();
     /// <summary>AI 停步距离（AI 配置）。</summary>
     public float aiMinRange => AiConfig.aiMinRange;
     /// <summary>攻击迟疑度（AI 配置，0~1）。</summary>
@@ -1321,11 +1322,6 @@ public class MonsterActor : Actor
             wasKilledByPlayer = playerDamageContext || (allowGreedGuardAbsorb
                 && lastDamageSource != null && lastDamageSource.isPossessed);
             if (wasKilledByPlayer) OnMonsterKilled?.Invoke(this);
-            if (RunSpawnDirector.Instance != null)
-            {
-                RunSpawnDirector.Instance.RecordFatal(new MonsterFatalEvent(
-                    this, lastDamageSource, FatalCause.PlayerDamage, spawnOrigin, Time.frameCount));
-            }
             Die();
         }
     }
@@ -1569,6 +1565,7 @@ public class MonsterActor : Actor
         if (visualFx != null)
         {
             visualFx.SetDissolve(1f);
+            visualFx.SetCorpseHighlight(false);
             visualFx.SetPossessionHighlight(true);
         }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
@@ -1601,7 +1598,11 @@ public class MonsterActor : Actor
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
         SetPossessedAnimatorsUnscaled(false);
-        if (visualFx != null) visualFx.SetPossessionHighlight(false);
+        if (visualFx != null)
+        {
+            visualFx.SetPossessionHighlight(false);
+            visualFx.SetCorpseHighlight(false);
+        }
         // Cheat immortality must not linger on bodies left as normal enemies.
         ClearCheatDefenseEffects();
         EnvyMarkTarget.ClearMarksFromSource(this as Enemy);
@@ -1663,7 +1664,8 @@ public class MonsterActor : Actor
         }
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
-        // Keep authored materials on corpse; dissolve FX handles fading later.
+        // Preserve the authored look in runtime FX material instances; dissolve FX handles fading later.
+        if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
 
@@ -1706,6 +1708,7 @@ public class MonsterActor : Actor
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
+        if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
 
@@ -1755,7 +1758,11 @@ public class MonsterActor : Actor
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
-        if (visualFx != null) visualFx.SetPossessionHighlight(false);
+        if (visualFx != null)
+        {
+            visualFx.SetPossessionHighlight(false);
+            visualFx.SetCorpseHighlight(false);
+        }
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
@@ -1853,6 +1860,7 @@ public class MonsterActor : Actor
         if (visualFx != null)
         {
             visualFx.SetDissolve(1f);
+            visualFx.SetCorpseHighlight(false);
             visualFx.SetPossessionHighlight(false);
         }
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
@@ -1903,6 +1911,16 @@ public class MonsterActor : Actor
     /// <summary>Applies or refreshes a run spawn snapshot while preserving current health ratio.</summary>
     public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier)
     {
+        ApplySpawnDifficultySnapshot(
+            origin,
+            tier,
+            MonsterSpawnDifficulty.HealthMultiplier(tier),
+            MonsterSpawnDifficulty.DamageMultiplier(tier));
+    }
+
+    public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier,
+        float healthMultiplier, float damageMultiplier)
+    {
         float previousMaxHealth = maxHealth;
         float previousHealthRatio = previousMaxHealth > 0f
             ? Mathf.Clamp01(currentHealth / previousMaxHealth)
@@ -1910,13 +1928,13 @@ public class MonsterActor : Actor
         spawnOrigin = origin;
         spawnDifficultyTier = Mathf.Max(0, tier);
         baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
-        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier) * eliteHealthMultiplier;
-        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier) * eliteAttackDamageMultiplier;
+        spawnHealthMultiplier = Mathf.Max(0.01f, healthMultiplier) * eliteHealthMultiplier;
+        spawnDamageMultiplier = Mathf.Max(0.01f, damageMultiplier) * eliteAttackDamageMultiplier;
         maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
         currentHealth = maxHealth * previousHealthRatio;
         currentTenacity = maxTenacity;
         if (!isPossessed && enemyStats.HasConfiguredHealth)
-            collisionDamage = enemyStats.collisionDamage * eliteAttackDamageMultiplier;
+            collisionDamage = enemyStats.collisionDamage * spawnDamageMultiplier;
     }
 
     /// <summary>
@@ -1931,6 +1949,8 @@ public class MonsterActor : Actor
             ? Mathf.Clamp01(currentHealth / previousMaxHealth)
             : 1f;
 
+        float baseHealthMultiplier = spawnHealthMultiplier / Mathf.Max(0.01f, eliteHealthMultiplier);
+        float baseDamageMultiplier = spawnDamageMultiplier / Mathf.Max(0.01f, eliteAttackDamageMultiplier);
         eliteHealthMultiplier = Mathf.Max(1f, healthMultiplier);
         eliteAttackDamageMultiplier = Mathf.Max(1f, attackDamageMultiplier);
         eliteVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
@@ -1938,12 +1958,12 @@ public class MonsterActor : Actor
 
         if (baseSpawnMaxHealth <= 0f)
             baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
-        spawnHealthMultiplier = MonsterSpawnDifficulty.HealthMultiplier(spawnDifficultyTier) * eliteHealthMultiplier;
-        spawnDamageMultiplier = MonsterSpawnDifficulty.DamageMultiplier(spawnDifficultyTier) * eliteAttackDamageMultiplier;
+        spawnHealthMultiplier = baseHealthMultiplier * eliteHealthMultiplier;
+        spawnDamageMultiplier = baseDamageMultiplier * eliteAttackDamageMultiplier;
         maxHealth = baseSpawnMaxHealth * spawnHealthMultiplier;
         currentHealth = maxHealth * previousHealthRatio;
         if (!isPossessed && enemyStats.HasConfiguredHealth)
-            collisionDamage = enemyStats.collisionDamage * eliteAttackDamageMultiplier;
+            collisionDamage = enemyStats.collisionDamage * spawnDamageMultiplier;
 
         ApplyVisualScale();
         if (visualFx != null)
@@ -1958,7 +1978,12 @@ public class MonsterActor : Actor
     public void RefreshEliteWaveDifficulty(int tier)
     {
         if (!IsElite || isPossessed || isDowned || Body != BodyState.Active) return;
-        ApplySpawnDifficultySnapshot(spawnOrigin, tier);
+        RunSpawnDirector director = RunSpawnDirector.Instance;
+        ApplySpawnDifficultySnapshot(
+            spawnOrigin,
+            tier,
+            director != null ? director.CurrentHealthMultiplier : MonsterSpawnDifficulty.HealthMultiplier(tier),
+            director != null ? director.CurrentAttackMultiplier : MonsterSpawnDifficulty.DamageMultiplier(tier));
         UpdateHealthUI();
     }
 
@@ -2390,6 +2415,12 @@ public class MonsterActor : Actor
             if (!possessedStats.HasConfiguredHealth)
                 possessedStats = enemyStats;
         }
+
+        // AI 配置引用防御：prefab 填了配置库却引用了不存在的 id → 静默落默认，行为异常难查。
+        if (aiConfig != null && !string.IsNullOrEmpty(aiConfigId) && aiConfig.Get(aiConfigId) == null)
+        {
+            Debug.LogWarning($"[MonsterActor] aiConfigId '{aiConfigId}' 未命中 {aiConfig.name} 中的条目，将使用默认配置（行为可能不符预期）。", this);
+        }
     }
 #endif
 
@@ -2451,11 +2482,8 @@ public class MonsterActor : Actor
             if ((cmd.Pressed & (CommandButtons.Basic | CommandButtons.Skill1 | CommandButtons.Mobility)) != 0)
                 FaceAttackTarget();
 
-            if ((cmd.Pressed & CommandButtons.Skill1) != 0 && TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill))
-            {
-                AIController ai = Controller as AIController;
-                if (ai != null) ai.NotifySkillTriggered();
-            }
+            if ((cmd.Pressed & CommandButtons.Skill1) != 0)
+                TryTriggerAbilitiesOfType(EnemyAbility.AbilityType.Skill);
             if ((cmd.Pressed & CommandButtons.Mobility) != 0) PlayerTriggerMobility();
             return;
         }

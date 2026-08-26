@@ -39,6 +39,9 @@ public class UIManager : SceneSingleton<UIManager>
     public Button healthBarToggleButton;
     public TMP_Text healthBarToggleText;
 
+    [Header("Build View (构筑界面)")]
+    public BuildView buildView;
+
     [Header("Soul Showcase (Main Menu)")]
     [Tooltip("回主菜单时是否把玩家灵魂带过去展示（主菜单背景后可移动，禁自然衰减）。开启即触发主界面主角展示效果。")]
     public bool bringSoulToMainMenu = true;
@@ -113,6 +116,27 @@ public class UIManager : SceneSingleton<UIManager>
         UpdatePauseButtonText();
         UpdateHealthBarToggleText();
         ApplyCatalogButtonTexts();
+
+        // 构筑界面：场景未配引用时运行期自举挂载，避免改场景
+        EnsureBuildView();
+    }
+
+    void EnsureBuildView()
+    {
+        if (buildView == null)
+        {
+            // 场景未放置 BuildView 时，自动创建一个（面板由代码生成）。
+            // 构筑按钮为场景静态对象：设计者在 UICanvas 下摆放 BuildButton，BuildView 会按名自发现它。
+            var go = new GameObject("BuildView", typeof(RectTransform));
+            var brt = go.GetComponent<RectTransform>();
+            brt.SetParent(transform, false);
+            brt.anchorMin = Vector2.zero;
+            brt.anchorMax = Vector2.one;
+            brt.offsetMin = Vector2.zero;
+            brt.offsetMax = Vector2.zero;
+            buildView = go.AddComponent<BuildView>();
+        }
+        if (buildView != null) buildView.Initialize();
     }
 
     /// <summary>
@@ -418,6 +442,14 @@ public class UIManager : SceneSingleton<UIManager>
     public void OnReturnToMenuClicked()
     {
         Debug.Log("UIManager: OnReturnToMenuClicked CALLED. confirmDialog null? " + (confirmDialog == null));
+        // 容错：ConfirmDialog 可能未配置完整（dialogPanel 为空 = 空壳组件，战斗场景历史遗留），
+        // 此时确认弹窗无法显示，直接执行回主菜单，避免点击无反应。
+        if (confirmDialog != null && confirmDialog.dialogPanel == null)
+        {
+            Debug.LogWarning("UIManager: confirmDialog 未配置 dialogPanel（空壳），跳过确认弹窗直接回主菜单。");
+            OnReturnToMenuConfirmed();
+            return;
+        }
         if (confirmDialog != null)
         {
             if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);

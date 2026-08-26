@@ -66,6 +66,7 @@ public class EnemyAbility_WrathBurnAura : EnemyAbility
         _nextTickAt = Time.time;
         if (auraVfxPrefab == null || owner == null || _auraVfx != null) return;
         _auraVfx = VfxPool.Instance.Spawn(auraVfxPrefab, owner.transform.position, Quaternion.identity, owner.transform);
+        BulletTimeController.MarkVfxOrigin(_auraVfx, IsOwnedByPlayer);
         PlayVfx(_auraVfx);
     }
 

@@ -89,10 +89,10 @@ public static class HallOfFameStore
     /// 本地无条件写入（不依赖网络），保证异常终止也有最后一波间存档点的构筑记录。
     /// </summary>
     /// <param name="runId">本局 Run ID。</param>
-    /// <param name="sourceWave">刚完成的波次（1-based 真实值）。</param>
+    /// <param name="reachedWave">刚完成的波次（1-based 真实值；荣誉殿堂「到达第 N 波」展示口径，与上传 wire 的选卡计数 sourceWave 语义分离）。</param>
     /// <param name="stage">阶段标记（"wave" / "final"）。</param>
     /// <param name="snapshots">本局全部 bdCount>=1 的 Sin 快照（EliteBuildDirector.BuildSnapshots 产物）。</param>
-    public static void UpsertFromSnapshots(string runId, int sourceWave, string stage, List<SnapshotEntry> snapshots)
+    public static void UpsertFromSnapshots(string runId, int reachedWave, string stage, List<SnapshotEntry> snapshots)
     {
         if (string.IsNullOrEmpty(runId) || snapshots == null || snapshots.Count == 0) return;
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -104,7 +104,7 @@ public static class HallOfFameStore
             entry.playerId = DeviceIdentity.Id;
             entry.savedAtUnix = now;
             entry.stage = stage;
-            entry.reachedWave = Mathf.Max(entry.reachedWave, sourceWave);
+            entry.reachedWave = Mathf.Max(entry.reachedWave, reachedWave);
             entry.bdCount = snap.bdCount;
             entry.cardIds = ExtractCardIds(snap.bdData);
             changed = true;

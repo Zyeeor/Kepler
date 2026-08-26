@@ -31,12 +31,10 @@ public class GameManager : MonoBehaviour
     public bool forceTutorial = false;
 
     [Header("Flow（流程）")]
-    [Tooltip("正式流程开关：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；同时屏蔽调试显示（F2 面板/作弊提示/刷怪面板）。关闭则直接进入当前场景（调试模式）。")]
+    [Tooltip("启动进主菜单（与 useFormalFlow 相互独立）：开启后游戏启动先进主菜单（MainMenu），由主菜单进入对局；关闭则直接进入当前场景（调试模式）。配合 useFormalFlow=false 即为\"主界面开始 + 保留调试\"模式。")]
+    public bool bootToMainMenu = false;
+    [Tooltip("正式流程（屏蔽调试显示）：开启后屏蔽全部调试组件（F2/F4/F5/F6 面板、作弊提示、刷怪面板、调试相机等）。不再控制\"是否进主菜单\"——由 bootToMainMenu 单独决定。")]
     public bool useFormalFlow = false;
-
-    [Header("Bullet Time（子弹时间）")]
-    [Tooltip("子弹时间的时间缩放倍率（全局单源：PossessionManager 触发的子弹时间亦读此值）。")]
-    [Range(0.05f, 1f)] public float bulletTimeScale = 0.2f;
 
     public enum GameState
     {
@@ -46,7 +44,7 @@ public class GameManager : MonoBehaviour
         GameOver
     }
     
-    /// <summary>正式流程（屏蔽调试显示/先进主菜单）。供调试组件查询：调试组件在 Update/OnGUI 开头检查并跳过。</summary>
+    /// <summary>正式流程（屏蔽调试显示）。供调试组件查询：调试组件在 Update/OnGUI 开头检查并跳过。仅由 useFormalFlow 控制，与是否进主菜单（bootToMainMenu）无关。</summary>
     public static bool IsFormalFlow => Instance != null && Instance.useFormalFlow;
 
     /// <summary>强制开启新人引导（GameManager 调试开关，供 TutorialController 准入判定查询）。</summary>
@@ -64,6 +62,7 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            BulletTimeController.EnsureInstance();
             SceneManager.sceneLoaded += OnSceneLoaded;
             CombatHitboxDebugSettings.EnsureOnGameManager();
 
@@ -77,9 +76,12 @@ public class GameManager : MonoBehaviour
             // 正式流程：游戏启动先进主菜单（而非直接进入对局场景）。
             // 注意仅在首次创建时跳转——主菜单点"开始/继续"二次进入对局场景时
             // Instance 已存在（DDOL 保留），不会重新跳转。
-            if (useFormalFlow && SceneManager.GetActiveScene().name != "MainMenu")
+            // 进主菜单由 bootToMainMenu 或 useFormalFlow 任一为真触发（与屏蔽调试解耦）：
+            // - bootToMainMenu=true & useFormalFlow=false → 主界面开始 + 保留调试（新需求）
+            // - useFormalFlow=true                    → 主界面开始 + 屏蔽调试（原正式流程）
+            if ((bootToMainMenu || useFormalFlow) && SceneManager.GetActiveScene().name != "MainMenu")
             {
-                Debug.Log("[GameManager] 正式流程：启动先进主菜单。");
+                Debug.Log("[GameManager] 启动进主菜单。");
                 SceneManager.LoadScene("MainMenu");
             }
         }
@@ -202,7 +204,7 @@ public class GameManager : MonoBehaviour
                 TimeScaleManager.Pop(TimeDomain.BulletTime);
                 break;
             case GameState.BulletTime:
-                TimeScaleManager.Push(TimeDomain.BulletTime, bulletTimeScale);   // 子弹时间（单源：bulletTimeScale 字段）
+                TimeScaleManager.Push(TimeDomain.BulletTime, BulletTimeController.ConfiguredTimeScale);
                 break;
             case GameState.GameOver:
                 ShowGameOverUI();

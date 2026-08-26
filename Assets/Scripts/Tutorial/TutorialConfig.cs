@@ -64,6 +64,15 @@ public class TutorialStepConfig
     [Tooltip("提醒间隔（秒）：未完成时 Banner 每隔该间隔重新弹出一次；0 = 不提醒")]
     public float remindInterval = 12f;
 
+    [Tooltip("静止提醒（秒）：激活后该时长仍未满足完成条件 → 重新弹出一次 Banner（如 TUT-01 五秒未移动提示 WASD）；0 = 不启用")]
+    public float idleRemindSeconds = 0f;
+
+    [Tooltip("队列交付：true = 本条提示进入提示队列（按触发顺序排队、按 displaySeconds/完成条件自动切换，前一条未结束下一条排队）；false = 旧状态机直显（激活即显示、完成即隐藏）")]
+    public bool queueDelivery = false;
+
+    [Tooltip("队列显示时长（秒）：queueDelivery 时生效。>0 = 显示该时长后自动消失并播放下一条；0 = 显示到完成条件满足（completeFacts 为空则永不自动跳，需 timeoutSeconds 兜底）")]
+    public float displaySeconds = 0f;
+
     [Tooltip("超时（秒）：激活后超时仍未完成 → 自动标记完成并放行；0 = 永不超时")]
     public float timeoutSeconds = 0f;
 
