@@ -22,6 +22,11 @@ public class MainMenuController : MonoBehaviour
     [Header("Scene Settings")]
     [Tooltip("开始游戏时加载的战斗场景名")]
     public string battleSceneName = "CombatTest";
+    [Tooltip("Boss 模式加载的正式战斗场景名。Boss 模式会在该场景中直接进入 Boss 阶段。")]
+    public string bossBattleSceneName = "EnemyAiTest";
+    [Min(0)]
+    [Tooltip("Boss 模式开局给七种罪印的层数。七种罪印统一使用该值，改动后无需修改代码。")]
+    public int bossModeInitialImprintStacks = 50;
 
     [Header("Soul Showcase (Main Menu)")]
     [Tooltip("主菜单原生展示灵魂 prefab（Player.prefab）。游戏启动直进主菜单时实例化，让主角一开始就在主界面（背景后可移动）。")]
@@ -41,6 +46,8 @@ public class MainMenuController : MonoBehaviour
     [Header("Panels to hide when sub panel opens")]
     public GameObject mainMenuPanel;
     private bool subPanelOpened = false;
+    private Button bossModeButton;
+    private bool modeSelectionVisible = true;
 
     void Start()
     {
@@ -51,9 +58,6 @@ public class MainMenuController : MonoBehaviour
         // Initialize sub-panels (they may start inactive, so their own Start won't run)
         if (settingsPanel != null) settingsPanel.Init();
         if (confirmDialog != null) confirmDialog.Init();
-
-        if (startGameButton != null)
-            startGameButton.onClick.AddListener(OnStartGame);
 
         // 继续按钮：有存档才可点（每帧监听存档文件状态）
         if (continueGameButton != null)
@@ -78,6 +82,8 @@ public class MainMenuController : MonoBehaviour
         if (settingsButtonText != null) settingsButtonText.text = TextCatalog.Get("ui.mainmenu.settings");
         if (quitGameButtonText != null) quitGameButtonText.text = TextCatalog.Get("ui.mainmenu.quit");
 
+        EnsureBossModeButton();
+        ShowModeSelection();
         EnsureHallOfFameEntry();
 
         ShowCursor();
@@ -128,7 +134,89 @@ public class MainMenuController : MonoBehaviour
             {
                 confirmDialog.Hide();
             }
+            else if (!modeSelectionVisible && !subPanelOpened)
+            {
+                ShowModeSelection();
+            }
         }
+    }
+
+    /// <summary>
+    /// 首屏只显示模式选择：复用现有开始按钮作为普通模式，并运行时复制一个 Boss 模式按钮，
+    /// 避免修改现有 MainMenu 场景布局与美术资源。
+    /// </summary>
+    void EnsureBossModeButton()
+    {
+        if (bossModeButton != null || startGameButton == null) return;
+
+        Transform parent = startGameButton.transform.parent;
+        if (parent == null) return;
+        GameObject clone = Instantiate(startGameButton.gameObject, parent);
+        clone.name = "BossModeButton";
+        clone.SetActive(true);
+
+        RectTransform cloneRect = clone.GetComponent<RectTransform>();
+        RectTransform continueRect = continueGameButton != null
+            ? continueGameButton.GetComponent<RectTransform>() : null;
+        if (cloneRect != null && continueRect != null)
+            cloneRect.anchoredPosition = continueRect.anchoredPosition;
+        else if (cloneRect != null)
+            cloneRect.anchoredPosition += Vector2.down * 100f;
+
+        bossModeButton = clone.GetComponent<Button>();
+        if (bossModeButton == null) return;
+        // 克隆按钮只保留场景持久化外观，不复用开始/继续的运行时监听。
+        bossModeButton.onClick.RemoveAllListeners();
+        bossModeButton.onClick.AddListener(OnStartBossGame);
+        SetButtonLabel(bossModeButton, "Boss模式");
+        if (FontRegistry.Instance != null)
+            FontRegistry.Instance.ApplyToTree(clone.transform);
+    }
+
+    /// <summary>显示首屏的普通模式 / Boss 模式选择。</summary>
+    void ShowModeSelection()
+    {
+        modeSelectionVisible = true;
+        if (startGameButton != null)
+        {
+            startGameButton.gameObject.SetActive(true);
+            startGameButton.onClick.RemoveListener(OnStartGame);
+            startGameButton.onClick.RemoveListener(OnSelectNormalMode);
+            startGameButton.onClick.AddListener(OnSelectNormalMode);
+            SetButtonLabel(startGameButton, "普通模式");
+        }
+        if (continueGameButton != null)
+            continueGameButton.gameObject.SetActive(false);
+        if (bossModeButton != null)
+            bossModeButton.gameObject.SetActive(true);
+    }
+
+    /// <summary>进入普通模式菜单，恢复原有开始 / 继续入口。</summary>
+    public void OnSelectNormalMode()
+    {
+        modeSelectionVisible = false;
+        if (bossModeButton != null)
+            bossModeButton.gameObject.SetActive(false);
+        if (startGameButton != null)
+        {
+            startGameButton.gameObject.SetActive(true);
+            startGameButton.onClick.RemoveListener(OnSelectNormalMode);
+            startGameButton.onClick.RemoveListener(OnStartGame);
+            startGameButton.onClick.AddListener(OnStartGame);
+            SetButtonLabel(startGameButton, TextCatalog.Get("ui.mainmenu.start"));
+        }
+        if (continueGameButton != null)
+        {
+            continueGameButton.gameObject.SetActive(true);
+            continueGameButton.interactable = SaveCoordinator.HasSaveFile;
+        }
+    }
+
+    static void SetButtonLabel(Button button, string label)
+    {
+        if (button == null) return;
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+        if (text != null) text.text = label;
     }
 
     public void OnStartGame()
@@ -154,6 +242,15 @@ public class MainMenuController : MonoBehaviour
         RunSession.EnsureInstance().BeginNewRun();
         SoulMenuShowcase.ExitShowcase(); // 展示灵魂随主菜单卸载销毁（须在 LoadScene 前，防双 Player 实例竞争）
         SceneManager.LoadScene(battleSceneName);
+    }
+
+    /// <summary>Boss 模式不经过普通模式确认框，直接创建 Boss 对局并进入正式场景。</summary>
+    public void OnStartBossGame()
+    {
+        Debug.Log("MainMenu: Starting Boss mode - loading: " + bossBattleSceneName);
+        RunSession.EnsureInstance().BeginBossRun(bossModeInitialImprintStacks);
+        SoulMenuShowcase.ExitShowcase();
+        SceneManager.LoadScene(bossBattleSceneName);
     }
 
     public void OnContinueGame()

@@ -219,6 +219,16 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 精英投放总控拉起（幂等）：订阅本 WaveManager 波次事件与 RunSession 阶段事件
         EliteBuildDirector.EnsureInstance().AttachToWaveManager(this);
 
+        // Boss 模式仍使用本场景的 Boss/仆从资源，但完全停用普通波次、精英、教程和选卡调度。
+        if (IsBossBattleMode)
+        {
+            isRunning = false;
+            IsWaveActive = false;
+            TimeWaveRemaining = 0f;
+            Debug.Log("[WaveManager] Boss 模式：普通波次与 WaveManager 生怪逻辑已禁用。");
+            return;
+        }
+
         // 等待地图就绪后自动启动正式波次
         if (!autoStart) return;
         StartCoroutine(AutoStartRoutine());
@@ -380,6 +390,11 @@ public class WaveManager : SceneSingleton<WaveManager>
     /// <summary>开始波次流程。</summary>
     public void StartWaves()
     {
+        if (IsBossBattleMode)
+        {
+            Debug.Log("[WaveManager] Boss 模式跳过 StartWaves。");
+            return;
+        }
         if (!isRunning || ActiveWaves == null || ActiveWaves.Count == 0)
         {
             Debug.LogWarning($"[WaveManager] StartWaves SKIPPED: isRunning={isRunning}, waves={ActiveWaves?.Count}");
@@ -399,6 +414,8 @@ public class WaveManager : SceneSingleton<WaveManager>
         EnemiesAlive = 0;
         IsWaveActive = false;
     }
+
+    bool IsBossBattleMode => RunSession.Instance != null && RunSession.Instance.IsBossMode;
 
     /// <summary>
     /// 调试：立即清掉当前波所有在场怪（视为全部击杀）并结束本波 → 进入选卡 → 下一波。

@@ -98,6 +98,11 @@ public class CoreChoiceUI : MonoBehaviour
     /// <param name="waveIndex">波次号（种子确定性：本波抽卡序列由 种子+波次 派生，同种子可复现）。</param>
     public void Show(Action onClosed = null, bool doublePick = false, bool keepPicks = false, int waveIndex = -1)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
+        {
+            Debug.Log("[CoreChoiceUI] Boss 模式跳过选卡。");
+            return;
+        }
         if (_isDrafting) return;   // 会话进行中忽略重复打开
         _isDrafting = true;
 

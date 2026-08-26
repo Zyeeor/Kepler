@@ -288,11 +288,16 @@ public class UIManager : SceneSingleton<UIManager>
     {
         Debug.Log("UIManager: Restart clicked - ending run, reloading scene");
         // 重开 = 结束当前对局（清内存态+清存档），再重载场景开始新局
-        RunSession.EnsureInstance().EndRun();
+        RunSession session = RunSession.EnsureInstance();
+        bool restartBossMode = session.IsBossMode;
+        int bossStacks = session.BossModeInitialImprintStacks;
+        session.EndRun();
         // 重置常驻 GameManager 战斗状态：GameManager 为 DontDestroyOnLoad，
         // 场景重载不重建——不 Reset 则 currentState 停在 GameOver，新局附身会被 CanStartPossession 拒绝。
         // （ResetGame 内部已 TimeScaleManager.ResetAll 清空全部时间请求）
         if (GameManager.Instance != null) GameManager.Instance.ResetGame();
+        if (restartBossMode)
+            session.BeginBossRun(bossStacks);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

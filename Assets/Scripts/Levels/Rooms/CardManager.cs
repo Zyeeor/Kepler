@@ -142,12 +142,37 @@ public class CardManager : SceneSingleton<CardManager>
 
         // 接好 AI 攻击/技能范围的解锁钩子：rangeUnlocks[].unlockId 视为卡牌 effectId。
         MonsterAIConfig.IsUnlocked = id => unlockedEffects.Contains(id);
+
+        // Boss 模式不弹选卡，直接把卡库中所有启用的构筑效果视为已解锁。
+        if (run != null && run.IsBossMode)
+            UnlockAllEffectsForBossMode();
     }
 
     void Start()
     {
-        if (debugDoublePickOnStart)
+        if (debugDoublePickOnStart && !(RunSession.Instance != null && RunSession.Instance.IsBossMode))
             StartCoroutine(DebugTriggerDoublePickOnStart());
+    }
+
+    /// <summary>Boss 模式解锁卡库中所有启用效果，供新生成怪物的构筑应用路径复用。</summary>
+    public void UnlockAllEffectsForBossMode()
+    {
+        if (RunSession.Instance == null || !RunSession.Instance.IsBossMode) return;
+        if (cardLibrary == null || cardLibrary.cards == null)
+        {
+            Debug.LogWarning("[CardManager] Boss 模式无法全解锁：CardLibrary 未配置。");
+            return;
+        }
+
+        var unlockedIds = new HashSet<string>();
+        foreach (var card in cardLibrary.cards)
+        {
+            if (card == null || string.IsNullOrEmpty(card.effectId)
+                || !cardLibrary.IsEffectEnabled(card.effectId)
+                || !unlockedIds.Add(card.effectId)) continue;
+            UnlockEffect(card.effectId);
+        }
+        Debug.Log($"[CardManager] Boss 模式构筑全解锁：{unlockedIds.Count} 个效果。");
     }
 
     /// <summary>
