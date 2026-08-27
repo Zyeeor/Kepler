@@ -14,475 +14,779 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries: []
   sections:
-    - sectionName: ui.core
-      entries:
-      - key: ui.settings.voice
-        text: "\u8BED\u97F3\uFF1A{0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.settings.music
-        text: "\u97F3\u4E50\uFF1A{0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.settings.sfx
-        text: "\u97F3\u6548\uFF1A{0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.settings.ui
-        text: "\u754C\u9762\uFF1A{0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.dialog.title
-        text: "\u786E\u8BA4"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.dialog.message
-        text: "\u786E\u5B9A\u8981\u6267\u884C\u6B64\u64CD\u4F5C\u5417\uFF1F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.dialog.confirm
-        text: "\u786E\u8BA4"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.dialog.cancel
-        text: "\u53D6\u6D88"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.result.victory
-        text: "\u80DC\u5229"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.result.gameover
-        text: "\u6E38\u620F\u7ED3\u675F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.toggle.hp_on
-        text: "\u8840\u91CF\u6761\uFF1A\u5F00"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.toggle.hp_off
-        text: "\u8840\u91CF\u6761\uFF1A\u5173"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.elite.offline
-        text: "\u7CBE\u82F1\u670D\u52A1\u5668\u79BB\u7EBF"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.start
-        text: "\u5F00\u59CB\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.continue
-        text: "\u7EE7\u7EED\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.settings
-        text: "\u8BBE\u7F6E"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.quit
-        text: "\u9000\u51FA\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.hall_of_fame
-        text: "\u8363\u8A89\u6BBF\u5802"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.newgame_title
-        text: "\u5F00\u59CB\u65B0\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.newgame_message
-        text: "\u5F00\u59CB\u65B0\u6E38\u620F\u5C06\u8986\u76D6\u5DF2\u4FDD\u5B58\u7684\u8FDB\u5EA6\u3002\u7EE7\u7EED\u5417\uFF1F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.quit_title
-        text: "\u9000\u51FA\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.mainmenu.quit_message
-        text: "\u786E\u5B9A\u8981\u9000\u51FA\u6E38\u620F\u5417\uFF1F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.pause.resume
-        text: "\u7EE7\u7EED\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.pause.settings
-        text: "\u8BBE\u7F6E"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.pause.return_menu
-        text: "\u8FD4\u56DE\u4E3B\u83DC\u5355"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.gameover.restart
-        text: "\u91CD\u65B0\u5F00\u59CB"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.gameover.home
-        text: "\u4E3B\u83DC\u5355"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.gameover.settings
-        text: "\u8BBE\u7F6E"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.gameover.quit
-        text: "\u9000\u51FA\u6E38\u620F"
-        mythicText:
-        systemText:
-        carrier: 0
-    - sectionName: ui.hud
-      entries:
-      - key: ui.hud.attack
-        text: "\u5DE6\u952E - {0}"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.skill
-        text: ""
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.possess
-        text: "E - \u5B50\u5F39\u65F6\u95F4 / F - \u8131\u79BB"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.basic_default
-        text: "\u666E\u653B"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.skill_default
-        text: "\u6280\u80FD"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.key_left
-        text: "\u5DE6\u952E"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.key_q
-        text: ""
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hud.key_right
-        text: "\u53F3\u952E"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.title
-        text: "\u73A9\u5BB6\u5C5E\u6027"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.health
-        text: "\u751F\u547D"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.move_speed
-        text: "\u79FB\u52A8\u901F\u5EA6"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.attack_speed
-        text: "\u653B\u51FB\u901F\u5EA6"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.life_steal
-        text: "\u751F\u547D\u5077\u53D6"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.passive_buffs
-        text: "\u88AB\u52A8\u589E\u76CA\uFF08\u9644\u8EAB\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.move_speed_short
-        text: "\u79FB\u901F"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.stats.life_steal_short
-        text: "\u5438\u8840"
-        mythicText:
-        systemText:
-        carrier: 0
-    - sectionName: ui.hof
-      entries:
-      - key: ui.hof.title
-        text: "\u8363\u8A89\u6BBF\u5802"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.refresh
-        text: "\u5237\u65B0\u6218\u7EE9"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.sort.saved_time
-        text: "\u6392\u5E8F\uFF1A\u4FDD\u5B58\u65F6\u95F4"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.sort.kills
-        text: "\u6392\u5E8F\uFF1A\u672C\u5C40\u51FB\u6740"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.sort.run_fail
-        text: "\u6392\u5E8F\uFF1A\u81F4 Run Fail"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.sort.bd_count
-        text: "\u6392\u5E8F\uFF1ABD \u5361\u6570"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.status.count
-        text: "\u5171 {0} \u6761\u8BB0\u5F55"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.status.refreshing
-        text: "\u6218\u7EE9\u5237\u65B0\u4E2D\u2026"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.status.refreshed
-        text: "\u5DF2\u5237\u65B0 {0}\uFF08\u66F4\u65B0 {1} \u6761\u6218\u7EE9\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.status.offline
-        text: "\u5237\u65B0\u5931\u8D25\u2014\u2014\u663E\u793A\u672C\u5730\u7F13\u5B58\uFF08\u79BB\u7EBF\u53EF\u67E5\u770B\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.header
-        text: "\u25C6 {0}\uFF08{1}\uFF09  {2}  {3}"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.raw_section
-        text: "\u2500\u2500 \u539F\u59CB Run \u8868\u73B0 \u2500\u2500"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.raw_line
-        text: "BD \u6DF1\u5EA6 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740
-      {2}"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.stats_section
-        text: "\u2500\u2500 \u5F02\u6B65\u6218\u7EE9{0}\u2500\u2500"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.stats_line
-        text: "\u88AB\u6295\u653E {0}\uFF5C\u88AB\u51FB\u6740 {1}\uFF5C\u88AB\u9644\u8EAB
-      {2}\uFF5C\u81F4 Body Fatal {3}\uFF5C\u81F4 Run Fail {4}"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.no_cards
-        text: "\uFF08\u65E0\u6E05\u5355\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.stale_cards
-        text: "\uFF08\u90E8\u5206\u5361\u724C\u5DF2\u5931\u6548 / \u5386\u53F2\u7248\u672C\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.not_synced
-        text: "\uFF08\u672A\u540C\u6B65\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.entry.synced_at
-        text: "\uFF08{0} \u66F4\u65B0\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.victory
-        text: "\u80DC\u5229"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.failed
-        text: "\u5931\u8D25"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.aborted
-        text: "\u4E2D\u9014\u9000\u51FA"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.newrun
-        text: "\u5F00\u65B0\u5C40\u6253\u65AD"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.reached_wave
-        text: "{0} \xB7 \u5230\u8FBE\u7B2C {1} \u6CE2"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.in_final
-        text: "\u8BB0\u5F55\u4E8E Final\uFF08\u5BF9\u5C40\u4E2D\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.in_wave
-        text: "\u8BB0\u5F55\u4E8E\u7B2C {0} \u6CE2\uFF08\u5BF9\u5C40\u4E2D\uFF09"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.phase.in_run
-        text: "\u5BF9\u5C40\u4E2D"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: ui.hof.empty
-        text: "\u6682\u65E0\u8363\u8A89\u8BB0\u5F55\n\n\u5B8C\u6210\u4E00\u5C40\u643A\u5E26\u5361\u724C\u7684\u6218\u6597\u540E\uFF0C\u4F60\u7684\u6784\u7B51\u5C06\u8F7D\u5165\u6BBF\u5802\uFF1B\n\u88AB\u5176\u4ED6\u73A9\u5BB6\u9047\u5230\u7684\u7CBE\u82F1\u4E5F\u4F1A\u5728\u6B64\u79EF\u7D2F\u6218\u7EE9\u3002"
-        mythicText:
-        systemText:
-        carrier: 0
-    - sectionName: imprint
-      entries:
-      - key: elite.name_prefix
-        text: "\u7CBE\u82F1\xB7"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.pride
-        text: "\u50B2\u6162\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.wrath
-        text: "\u6124\u6012\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.gluttony
-        text: "\u66B4\u98DF\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.greed
-        text: "\u8D2A\u5A6A\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.envy
-        text: "\u5AC9\u5992\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.lust
-        text: "\u8272\u6B32\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.sloth
-        text: "\u6020\u60F0\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.title.default
-        text: "\u7F6A\u5370"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.stack_suffix
-        text: "{0} \xB7 {1}\u5C42"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.pride
-        text: "\u6280\u80FD\u51B7\u5374\u7F29\u51CF {0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.wrath
-        text: "\u653B\u51FB\u4F24\u5BB3\u63D0\u5347 {0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.gluttony
-        text: "\u9644\u8EAB\u4F53\u751F\u547D\u63D0\u5347 {0}%\n\u89C6\u89C9\u4F53\u578B\u63D0\u5347
-      {1}%\n\u6295\u63B7\u7269\u4E0E\u6280\u80FD\u547D\u4E2D\u8303\u56F4\u540C\u6B65\u653E\u5927"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.greed
-        text: "\u6BCF\u6B21\u593A\u820D\u989D\u5916\u53E0\u5C42\u8FDB\u5EA6 {0}%\n\u5F53\u524D\u8FDB\u5EA6
-      {1}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.envy
-        text: "\u5B50\u5F39\u65F6\u95F4\u5EF6\u957F {0}\u79D2"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.lust
-        text: "\u653B\u51FB\u4F24\u5BB3\u8F6C\u5316\u5438\u8840 {0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.effect.sloth
-        text: "\u9644\u8EAB\u4E0E\u6280\u80FD\u751F\u547D\u6D88\u8017\u964D\u4F4E {0}%"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.acquired
-        text: "{0}\u5DF2\u83B7\u5F97"
-        mythicText:
-        systemText:
-        carrier: 0
-      - key: imprint.acquire_hint
-        text: "\u6BCF\u6B21\u593A\u820D\u8BE5\u7C7B\u602A\u7269\u90FD\u4F1A\u589E\u52A0\u4E00\u5C42\u3002"
-        mythicText:
-        systemText:
-        carrier: 0
+  - sectionName: ui.core
+    entries:
+    - key: ui.settings.voice
+      text: "\u8BED\u97F3\uFF1A{0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.settings.music
+      text: "\u97F3\u4E50\uFF1A{0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.settings.sfx
+      text: "\u97F3\u6548\uFF1A{0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.settings.ui
+      text: "\u754C\u9762\uFF1A{0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.dialog.title
+      text: "\u786E\u8BA4"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.dialog.message
+      text: "\u786E\u5B9A\u8981\u6267\u884C\u6B64\u64CD\u4F5C\u5417\uFF1F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.dialog.confirm
+      text: "\u786E\u8BA4"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.dialog.cancel
+      text: "\u53D6\u6D88"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.result.victory
+      text: "\u80DC\u5229"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.result.gameover
+      text: "\u6E38\u620F\u7ED3\u675F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.toggle.hp_on
+      text: "\u8840\u91CF\u6761\uFF1A\u5F00"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.toggle.hp_off
+      text: "\u8840\u91CF\u6761\uFF1A\u5173"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.elite.offline
+      text: "\u7CBE\u82F1\u670D\u52A1\u5668\u79BB\u7EBF"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.start
+      text: "\u5F00\u59CB\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.continue
+      text: "\u7EE7\u7EED\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.settings
+      text: "\u8BBE\u7F6E"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.quit
+      text: "\u9000\u51FA\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.hall_of_fame
+      text: "\u8363\u8A89\u6BBF\u5802"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.card_archive
+      text: "\u5361\u724C\u56FE\u9274"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.newgame_title
+      text: "\u5F00\u59CB\u65B0\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.newgame_message
+      text: "\u5F00\u59CB\u65B0\u6E38\u620F\u5C06\u8986\u76D6\u5DF2\u4FDD\u5B58\u7684\u8FDB\u5EA6\u3002\u7EE7\u7EED\u5417\uFF1F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.quit_title
+      text: "\u9000\u51FA\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.mainmenu.quit_message
+      text: "\u786E\u5B9A\u8981\u9000\u51FA\u6E38\u620F\u5417\uFF1F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.pause.resume
+      text: "\u7EE7\u7EED\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.pause.settings
+      text: "\u8BBE\u7F6E"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.pause.return_menu
+      text: "\u8FD4\u56DE\u4E3B\u83DC\u5355"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.gameover.restart
+      text: "\u91CD\u65B0\u5F00\u59CB"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.gameover.home
+      text: "\u4E3B\u83DC\u5355"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.gameover.settings
+      text: "\u8BBE\u7F6E"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.gameover.quit
+      text: "\u9000\u51FA\u6E38\u620F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+  - sectionName: ui.hud
+    entries:
+    - key: ui.hud.attack
+      text: "\u5DE6\u952E - {0}"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.skill
+      text: 
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.possess
+      text: "E - \u5B50\u5F39\u65F6\u95F4 / F - \u8131\u79BB"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.basic_default
+      text: "\u666E\u653B"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.skill_default
+      text: "\u6280\u80FD"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.key_left
+      text: "\u5DE6\u952E"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.key_q
+      text: 
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hud.key_right
+      text: "\u53F3\u952E"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.title
+      text: "\u73A9\u5BB6\u5C5E\u6027"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.health
+      text: "\u751F\u547D"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.move_speed
+      text: "\u79FB\u52A8\u901F\u5EA6"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.attack_speed
+      text: "\u653B\u51FB\u901F\u5EA6"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.life_steal
+      text: "\u751F\u547D\u5077\u53D6"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.passive_buffs
+      text: "\u88AB\u52A8\u589E\u76CA\uFF08\u9644\u8EAB\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.move_speed_short
+      text: "\u79FB\u901F"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.stats.life_steal_short
+      text: "\u5438\u8840"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: elite.announce.banner
+      text: "\u7CBE\u82F1\u602A{0}\u51FA\u73B0\uFF01"
+      mythicText: "\u7CBE\u82F1\u602A{0}\u51FA\u73B0\uFF01"
+      systemText: 'ELITE SPAWNED: {0}'
+      carrier: 1
+    - key: elite.announce.unknown
+      text: "\u672A\u77E5\u602A\u7269"
+      mythicText: "\u672A\u77E5\u602A\u7269"
+      systemText: UNKNOWN MONSTER
+      carrier: 1
+  - sectionName: ui.hof
+    entries:
+    - key: ui.hof.title
+      text: "\u8363\u8A89\u6BBF\u5802"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.refresh
+      text: "\u5237\u65B0\u6218\u7EE9"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.sort.saved_time
+      text: "\u6392\u5E8F\uFF1A\u4FDD\u5B58\u65F6\u95F4"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.sort.kills
+      text: "\u6392\u5E8F\uFF1A\u672C\u5C40\u51FB\u6740"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.sort.run_fail
+      text: "\u6392\u5E8F\uFF1A\u81F4 Run Fail"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.sort.bd_count
+      text: "\u6392\u5E8F\uFF1ABD \u5361\u6570"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.status.count
+      text: "\u5171 {0} \u6761\u8BB0\u5F55"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.status.refreshing
+      text: "\u6218\u7EE9\u5237\u65B0\u4E2D\u2026"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.status.refreshed
+      text: "\u5DF2\u5237\u65B0 {0}\uFF08\u66F4\u65B0 {1} \u6761\u6218\u7EE9\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.status.offline
+      text: "\u5237\u65B0\u5931\u8D25\u2014\u2014\u663E\u793A\u672C\u5730\u7F13\u5B58\uFF08\u79BB\u7EBF\u53EF\u67E5\u770B\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.header
+      text: "\u25C6 {0}\uFF08{1}\uFF09  {2}  {3}"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.raw_section
+      text: "\u2500\u2500 \u539F\u59CB Run \u8868\u73B0 \u2500\u2500"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.raw_line
+      text: "BD \u6DF1\u5EA6 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740
+        {2}"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.stats_section
+      text: "\u2500\u2500 \u5F02\u6B65\u6218\u7EE9{0}\u2500\u2500"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.stats_line
+      text: "\u88AB\u6295\u653E {0}\uFF5C\u88AB\u51FB\u6740 {1}\uFF5C\u88AB\u9644\u8EAB
+        {2}\uFF5C\u81F4 Body Fatal {3}\uFF5C\u81F4 Run Fail {4}"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.no_cards
+      text: "\uFF08\u65E0\u6E05\u5355\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.stale_cards
+      text: "\uFF08\u90E8\u5206\u5361\u724C\u5DF2\u5931\u6548 / \u5386\u53F2\u7248\u672C\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.not_synced
+      text: "\uFF08\u672A\u540C\u6B65\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.synced_at
+      text: "\uFF08{0} \u66F4\u65B0\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.victory
+      text: "\u80DC\u5229"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.failed
+      text: "\u5931\u8D25"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.aborted
+      text: "\u4E2D\u9014\u9000\u51FA"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.newrun
+      text: "\u5F00\u65B0\u5C40\u6253\u65AD"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.reached_wave
+      text: "{0} \xB7 \u5230\u8FBE\u7B2C {1} \u6CE2"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.in_final
+      text: "\u8BB0\u5F55\u4E8E Final\uFF08\u5BF9\u5C40\u4E2D\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.in_wave
+      text: "\u8BB0\u5F55\u4E8E\u7B2C {0} \u6CE2\uFF08\u5BF9\u5C40\u4E2D\uFF09"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.phase.in_run
+      text: "\u5BF9\u5C40\u4E2D"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.empty
+      text: "\u6682\u65E0\u8363\u8A89\u8BB0\u5F55\n\n\u5B8C\u6210\u4E00\u5C40\u643A\u5E26\u5361\u724C\u7684\u6218\u6597\u540E\uFF0C\u4F60\u7684\u6784\u7B51\u5C06\u8F7D\u5165\u6BBF\u5802\uFF1B\n\u88AB\u5176\u4ED6\u73A9\u5BB6\u9047\u5230\u7684\u7CBE\u82F1\u4E5F\u4F1A\u5728\u6B64\u79EF\u7D2F\u6218\u7EE9\u3002"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.hof.entry.species
+      text: "\u79CD\u7C7B {0}"
+      mythicText: "\u79CD\u7C7B {0}"
+      systemText: 'Species: {0}'
+      carrier: 1
+  - sectionName: imprint
+    entries:
+    - key: elite.name_prefix
+      text: "\u7CBE\u82F1\xB7"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.pride
+      text: "\u50B2\u6162\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.wrath
+      text: "\u6124\u6012\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.gluttony
+      text: "\u66B4\u98DF\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.greed
+      text: "\u8D2A\u5A6A\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.envy
+      text: "\u5AC9\u5992\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.lust
+      text: "\u8272\u6B32\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.sloth
+      text: "\u6020\u60F0\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.title.default
+      text: "\u7F6A\u5370"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.stack_suffix
+      text: "{0} \xB7 {1}\u5C42"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.pride
+      text: "\u6280\u80FD\u51B7\u5374\u7F29\u51CF {0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.wrath
+      text: "\u653B\u51FB\u4F24\u5BB3\u63D0\u5347 {0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.gluttony
+      text: "\u9644\u8EAB\u4F53\u751F\u547D\u63D0\u5347 {0}%\n\u89C6\u89C9\u4F53\u578B\u63D0\u5347
+        {1}%\n\u6295\u63B7\u7269\u4E0E\u6280\u80FD\u547D\u4E2D\u8303\u56F4\u540C\u6B65\u653E\u5927"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.greed
+      text: "\u6BCF\u6B21\u593A\u820D\u989D\u5916\u53E0\u5C42\u8FDB\u5EA6 {0}%\n\u5F53\u524D\u8FDB\u5EA6
+        {1}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.envy
+      text: "\u5B50\u5F39\u65F6\u95F4\u5EF6\u957F {0}\u79D2"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.lust
+      text: "\u653B\u51FB\u4F24\u5BB3\u8F6C\u5316\u5438\u8840 {0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.effect.sloth
+      text: "\u9644\u8EAB\u4E0E\u6280\u80FD\u751F\u547D\u6D88\u8017\u964D\u4F4E {0}%"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.acquired
+      text: "{0}\u5DF2\u83B7\u5F97"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: imprint.acquire_hint
+      text: "\u6BCF\u6B21\u593A\u820D\u8BE5\u7C7B\u602A\u7269\u90FD\u4F1A\u589E\u52A0\u4E00\u5C42\u3002"
+      mythicText: 
+      systemText: 
+      carrier: 0
+  - sectionName: card.epithet
+    entries:
+    - key: card.PR-TG01.epithet
+      text: "\u8FC5\u6377"
+      mythicText: "\u8FC5\u6377"
+      systemText: "\u901F\u7387\u7EDF\u8C03"
+      carrier: 1
+    - key: card.PR-A04.epithet
+      text: "\u8FDC\u51FB"
+      mythicText: "\u8FDC\u51FB"
+      systemText: "\u7A0B\u589E"
+      carrier: 1
+    - key: card.PR-A01.epithet
+      text: "\u4E09\u91CD"
+      mythicText: "\u4E09\u91CD"
+      systemText: "\u4E09\u5B9E\u4F8B"
+      carrier: 1
+    - key: card.PR-S01.epithet
+      text: "\u75BE\u5DE1"
+      mythicText: "\u75BE\u5DE1"
+      systemText: "\u6BB5\u6570\u6269\u5C55"
+      carrier: 1
+    - key: card.PR-A02.epithet
+      text: "\u4EA4\u9519"
+      mythicText: "\u4EA4\u9519"
+      systemText: "\u5341\u5B57\u9762"
+      carrier: 1
+    - key: card.PR-X01.epithet
+      text: "\u9057\u950B"
+      mythicText: "\u9057\u950B"
+      systemText: "\u8DEF\u5F84\u6D3E\u751F"
+      carrier: 1
+    - key: card.PR-A03.epithet
+      text: "\u65A9\u7EDD"
+      mythicText: "\u65A9\u7EDD"
+      systemText: "\u5207\u65AD\u534F\u8BAE"
+      carrier: 1
+    - key: card.PR-M01.epithet
+      text: "\u9A81\u70C8"
+      mythicText: "\u9A81\u70C8"
+      systemText: "\u524D\u7AEF\u589E\u76CA"
+      carrier: 1
+    - key: card.SL-S03.epithet
+      text: "\u4E0D\u5026"
+      mythicText: "\u4E0D\u5026"
+      systemText: "\u8282\u594F\u63D0\u5347"
+      carrier: 1
+    - key: card.SL-A03.epithet
+      text: "\u8FF8\u6563"
+      mythicText: "\u8FF8\u6563"
+      systemText: "\u6563\u5C04\u6269\u5C55"
+      carrier: 1
+    - key: card.SL-S01.epithet
+      text: "\u4F17\u4EC6"
+      mythicText: "\u4F17\u4EC6"
+      systemText: "\u5355\u5143\u6269\u5BB9"
+      carrier: 1
+    - key: card.SL-A04.epithet
+      text: "\u9F50\u9E23"
+      mythicText: "\u9F50\u9E23"
+      systemText: "\u591A\u53D1\u5206\u644A"
+      carrier: 1
+    - key: card.SL-M01.epithet
+      text: "\u9057\u4F0F"
+      mythicText: "\u9057\u4F0F"
+      systemText: "\u8D77\u70B9\u90E8\u7F72"
+      carrier: 1
+    - key: card.SL-A05.epithet
+      text: "\u539A\u91CD"
+      mythicText: "\u539A\u91CD"
+      systemText: "\u538B\u5236\u534F\u8BAE"
+      carrier: 1
+    - key: card.SL-M02.epithet
+      text: "\u9707\u5730"
+      mythicText: "\u9707\u5730"
+      systemText: "\u7EC8\u70B9\u7ED3\u7B97"
+      carrier: 1
+    - key: card.GL-M01.epithet
+      text: "\u8F7B\u6377"
+      mythicText: "\u8F7B\u6377"
+      systemText: "\u5F62\u6001\u4FDD\u6301"
+      carrier: 1
+    - key: card.GL-A03.epithet
+      text: "\u8FDC\u8BF1"
+      mythicText: "\u8FDC\u8BF1"
+      systemText: "\u843D\u70B9\u89E3\u9501"
+      carrier: 1
+    - key: card.GL-A02.epithet
+      text: "\u9614\u53E3"
+      mythicText: "\u9614\u53E3"
+      systemText: "\u8986\u76D6\u7FFB\u500D"
+      carrier: 1
+    - key: card.GL-A01.epithet
+      text: "\u53CC\u989A"
+      mythicText: "\u53CC\u989A"
+      systemText: "\u53CC\u5B9E\u4F8B"
+      carrier: 1
+    - key: card.GL-S03.epithet
+      text: "\u8D2A\u566C"
+      mythicText: "\u8D2A\u566C"
+      systemText: "\u5168\u91CF\u541E\u566C"
+      carrier: 1
+    - key: card.GL-S01.epithet
+      text: "\u9971\u8840"
+      mythicText: "\u9971\u8840"
+      systemText: "\u8010\u4E45\u56DE\u8865"
+      carrier: 1
+    - key: card.GL-S02.epithet
+      text: "\u7EC8\u98DF"
+      mythicText: "\u7EC8\u98DF"
+      systemText: "\u4F4E\u8010\u4E45\u7EC8\u6B62"
+      carrier: 1
+    - key: card.EN-A01.epithet
+      text: "\u4E07\u773C"
+      mythicText: "\u4E07\u773C"
+      systemText: "\u56DB\u76EE\u6807\u5206\u914D"
+      carrier: 1
+    - key: card.EN-A03.epithet
+      text: "\u7A7F\u955C"
+      mythicText: "\u7A7F\u955C"
+      systemText: "\u7A7F\u900F\u534F\u8BAE"
+      carrier: 1
+    - key: card.EN-M01.epithet
+      text: "\u9057\u75D5"
+      mythicText: "\u9057\u75D5"
+      systemText: "\u8DEF\u5F84\u5199\u5165"
+      carrier: 1
+    - key: card.EN-R01.epithet
+      text: "\u65E0\u5E95"
+      mythicText: "\u65E0\u5E95"
+      systemText: "\u50A8\u5B58\u589E\u76CA"
+      carrier: 1
+    - key: card.EN-S01.epithet
+      text: "\u590D\u96F7"
+      mythicText: "\u590D\u96F7"
+      systemText: "\u540C\u70B9\u590D\u73B0"
+      carrier: 1
+    - key: card.EN-A05.epithet
+      text: "\u6E10\u70BD"
+      mythicText: "\u6E10\u70BD"
+      systemText: "\u4F24\u5BB3\u722C\u5347"
+      carrier: 1
+    - key: card.WR-S01.epithet
+      text: "\u98CE\u9A70"
+      mythicText: "\u98CE\u9A70"
+      systemText: "\u79FB\u52A8\u589E\u76CA"
+      carrier: 1
+    - key: card.WR-M02.epithet
+      text: "\u8FDC\u9501"
+      mythicText: "\u8FDC\u9501"
+      systemText: "\u4F4D\u79FB\u6269\u5C55"
+      carrier: 1
+    - key: card.WR-S03.epithet
+      text: "\u957F\u65CB"
+      mythicText: "\u957F\u65CB"
+      systemText: "\u7A97\u53E3\u5EF6\u957F"
+      carrier: 1
+    - key: card.WR-B02.epithet
+      text: "\u7099\u4F53"
+      mythicText: "\u7099\u4F53"
+      systemText: "\u8D34\u8EAB\u71C3\u70E7"
+      carrier: 1
+    - key: card.WR-M01.epithet
+      text: "\u711A\u9014"
+      mythicText: "\u711A\u9014"
+      systemText: "\u8DEF\u5F84\u4F24\u5BB3"
+      carrier: 1
+    - key: card.WR-B01.epithet
+      text: "\u6B89\u8EAB"
+      mythicText: "\u6B89\u8EAB"
+      systemText: "\u4F4E\u8010\u4E45\u54CD\u5E94"
+      carrier: 1
+    - key: card.GR-A01.epithet
+      text: "\u4E07\u624B"
+      mythicText: "\u4E07\u624B"
+      systemText: "\u5E93\u5B58\u6269\u5C55"
+      carrier: 1
+    - key: card.GR-A03.epithet
+      text: "\u589E\u6B96"
+      mythicText: "\u589E\u6B96"
+      systemText: "\u5B9E\u4F8B\u6D3E\u751F"
+      carrier: 1
+    - key: card.GR-A07.epithet
+      text: "\u8FC2\u56DE"
+      mythicText: "\u8FC2\u56DE"
+      systemText: "\u8DEF\u5F84\u91CD\u5199"
+      carrier: 1
+    - key: card.GR-M01.epithet
+      text: "\u6CE5\u6CBC"
+      mythicText: "\u6CE5\u6CBC"
+      systemText: "\u79FB\u52A8\u6291\u5236"
+      carrier: 1
+    - key: card.GR-A02.epithet
+      text: "\u4E0D\u820D"
+      mythicText: "\u4E0D\u820D"
+      systemText: "\u518D\u83B7\u53D6"
+      carrier: 1
+    - key: card.GR-S01.epithet
+      text: "\u7EB3\u8D21"
+      mythicText: "\u7EB3\u8D21"
+      systemText: "\u8D44\u6E90\u8F6C\u5316"
+      carrier: 1
+    - key: card.GR-M02.epithet
+      text: "\u5E87\u8DEF"
+      mythicText: "\u5E87\u8DEF"
+      systemText: "\u5730\u5F62\u9694\u79BB"
+      carrier: 1
+    - key: card.GR-S04.epithet
+      text: "\u575A\u58C1"
+      mythicText: "\u575A\u58C1"
+      systemText: "\u7A97\u53E3\u5EF6\u957F"
+      carrier: 1
+    - key: card.LU-TG01.epithet
+      text: "\u8FC5\u6F6E"
+      mythicText: "\u8FC5\u6F6E"
+      systemText: "\u5FAA\u73AF\u52A0\u901F"
+      carrier: 1
+    - key: card.LU-A04.epithet
+      text: "\u73AF\u6D8C"
+      mythicText: "\u73AF\u6D8C"
+      systemText: "\u5F84\u5411\u6269\u6563"
+      carrier: 1
+    - key: card.LU-M05.epithet
+      text: "\u540C\u5F71"
+      mythicText: "\u540C\u5F71"
+      systemText: "\u955C\u50CF\u6267\u884C"
+      carrier: 1
+    - key: card.LU-A03.epithet
+      text: "\u6B89\u7206"
+      mythicText: "\u6B89\u7206"
+      systemText: "\u7EC8\u6B62\u7206\u7834"
+      carrier: 1
+    - key: card.LU-M03.epithet
+      text: "\u80CC\u79BB"
+      mythicText: "\u80CC\u79BB"
+      systemText: "\u6362\u4F4D\u7206\u7834"
+      carrier: 1
+    - key: card.LU-S05.epithet
+      text: "\u76F8\u566C"
+      mythicText: "\u76F8\u566C"
+      systemText: "\u78B0\u649E\u7206\u7834"
+      carrier: 1
+    - key: card.LU-S06.epithet
+      text: "\u65E0\u5BB3"
+      mythicText: "\u65E0\u5BB3"
+      systemText: "\u4F24\u5BB3\u9694\u79BB"
+      carrier: 1
+  - sectionName: concept.sin
+    entries:
+    - key: concept.sin.pride
+      text: "\u50B2\u6162"
+      mythicText: "\u50B2\u6162"
+      systemText: Pride
+      carrier: 1
+    - key: concept.sin.sloth
+      text: "\u6020\u60F0"
+      mythicText: "\u6020\u60F0"
+      systemText: Sloth
+      carrier: 1
+    - key: concept.sin.gluttony
+      text: "\u66B4\u98DF"
+      mythicText: "\u66B4\u98DF"
+      systemText: Gluttony
+      carrier: 1
+    - key: concept.sin.envy
+      text: "\u5AC9\u5992"
+      mythicText: "\u5AC9\u5992"
+      systemText: Envy
+      carrier: 1
+    - key: concept.sin.wrath
+      text: "\u6124\u6012"
+      mythicText: "\u6124\u6012"
+      systemText: Wrath
+      carrier: 1
+    - key: concept.sin.greed
+      text: "\u8D2A\u5A6A"
+      mythicText: "\u8D2A\u5A6A"
+      systemText: Greed
+      carrier: 1
+    - key: concept.sin.lust
+      text: "\u8272\u6B32"
+      mythicText: "\u8272\u6B32"
+      systemText: Lust
+      carrier: 1
