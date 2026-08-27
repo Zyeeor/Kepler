@@ -93,6 +93,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   range: 1
   angle: 100
   damageAmount: 40
@@ -559,6 +569,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   formDuration: 3
   scaleMultiplier: 0.5
   speedMultiplier: 2
@@ -1158,6 +1178,8 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
+  aliveY: 0
+  corpseY: 0.8
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -1416,6 +1438,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   maxAimDistance: 8
   glA03AimDistance: 12
   warnDelay: 0.5

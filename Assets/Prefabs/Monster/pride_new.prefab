@@ -367,6 +367,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
@@ -845,10 +855,11 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
+  aliveY: -0.175
+  corpseY: 0.7
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
-  corpseGroundYOffset: 0
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}
@@ -1143,6 +1154,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   chargeDistance: 5
   chargeSpeed: 60
   hitRadius: 0.8
@@ -1759,6 +1780,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   moveSpeedBonusPercent: 5
   lifestealBonusPercent: 0
   burnBonusPercent: 0
@@ -2076,6 +2107,16 @@ MonoBehaviour:
     hitStopDuration: 1
     hitStopScale: 0.166
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   searchRange: 8
   blinkCount: 4
   blinkInterval: 0.25

@@ -274,6 +274,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,
     type: 3}
   projectileSpawnPoint: {fileID: 4738218620331132360}
@@ -558,10 +568,11 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
+  aliveY: -0.2
+  corpseY: 1.8
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
-  corpseGroundYOffset: 0
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 1667697362641137907}
@@ -1178,6 +1189,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   dronePrefab: {fileID: 6114247635342975564, guid: 7cb74f0d689f64bfbb41a3d25ad27b0b,
     type: 3}
   droneLifetime: 4
@@ -1628,6 +1649,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   windupDuration: 0.25
   launchDistance: 5
   jumpHeight: 2.4

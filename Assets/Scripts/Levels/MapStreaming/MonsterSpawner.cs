@@ -29,8 +29,6 @@ public class MonsterSpawner : MonoBehaviour
     [Min(0f)] public float minSpawnDistanceToPlayer = 20f;
     [Tooltip("波次刷怪点到玩家的最大距离（米）——须在 B 缓冲带内。")]
     [Min(0f)] public float maxSpawnDistanceToPlayer = 50f;
-    [Tooltip("刷怪统一高度（世界 y）：所有怪物生成在这个高度，按地面实际高度手动调整即可。")]
-    public float spawnHeightY = 0f;
     [Tooltip("群系中心之间的最小间距（米）：不同批次刷出的怪群出生即保持距离，避免源头重叠堆积。0 = 关闭。")]
     [Min(0f)] public float minSpawnPointSeparation = 6f;
 
@@ -270,16 +268,19 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(go);
             return null;
         }
+        pos.y = monster.aliveY;
         if (!TryResolveSpawnPosition(monster, pos, out Vector3 resolvedPosition))
         {
             Debug.LogWarning($"[MonsterSpawner] 波次刷怪 '{prefab.name}' 未能在 {invalidSpawnRelocationRadius:0.##}m 内找到合法出生点，已取消。", go);
             MonsterPool.Instance.Return(monster);
             return null;
         }
-        if ((resolvedPosition - pos).sqrMagnitude > 0.0001f)
+        bool relocated = Mathf.Abs(resolvedPosition.x - pos.x) > 0.0001f
+            || Mathf.Abs(resolvedPosition.z - pos.z) > 0.0001f;
+        if (relocated)
         {
+            resolvedPosition.y = monster.aliveY;
             go.transform.position = resolvedPosition;
-            MonsterPool.SnapCapsuleBottomToGround(go);
             pos = go.transform.position;
         }
 
@@ -410,7 +411,6 @@ public class MonsterSpawner : MonoBehaviour
         if (system == null) return false;
 
         Vector3 player = GetPlayerPosition();
-        player.y = spawnHeightY;
         Vector3 awayFromDeath = player - lastDeathPosition;
         awayFromDeath.y = 0f;
         if (awayFromDeath.sqrMagnitude < 0.0001f)
@@ -440,7 +440,6 @@ public class MonsterSpawner : MonoBehaviour
             if (!system.Registry.TryGetValue(system.WorldToChunk(candidate), out var chunk) || chunk == null || chunk.Tiles == null)
                 continue;
             if (!IsWalkable(chunk, candidate)) continue;
-            candidate.y = spawnHeightY;
             pos = candidate;
             return true;
         }
@@ -515,7 +514,6 @@ public class MonsterSpawner : MonoBehaviour
         if (system == null) return false;
 
         Vector3 player = GetPlayerPosition();
-        player.y = spawnHeightY;
         Camera camera = GetMainCamera();
         float targetRadius = Mathf.Max(0.5f,
             GetScreenDiameterWorldDistance() * Mathf.Clamp(eliteSpawnScreenDiameterFraction, 0.1f, 0.5f));
@@ -579,7 +577,6 @@ public class MonsterSpawner : MonoBehaviour
             if (!IsWalkable(chunk, c)) continue;
             if (TooCloseToRecentCenter(c, separation)) continue;
             pos = c;
-            pos.y = spawnHeightY; // 统一生成高度（世界 y，手动调到地面高度）
             RememberSpawnCenter(pos);
             return true;
         }
@@ -636,7 +633,6 @@ public class MonsterSpawner : MonoBehaviour
             return Mathf.Max(1f, maxSpawnDistanceToPlayer - minSpawnDistanceToPlayer) * 2f;
 
         Vector3 origin = GetPlayerPosition();
-        origin.y = spawnHeightY;
         Vector3 right = camera.transform.right;
         right.y = 0f;
         if (right.sqrMagnitude < 0.0001f)
@@ -712,7 +708,6 @@ public class MonsterSpawner : MonoBehaviour
             if (!IsWalkable(chunk, c)) continue;
             if (TooCloseToRecentCenter(c, minSpawnPointSeparation)) continue; // 与已刷点保持最小间距，避免源头重叠
             pos = c;
-            pos.y = spawnHeightY;
             RememberSpawnCenter(pos);
             return true;
         }

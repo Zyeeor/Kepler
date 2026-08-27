@@ -423,7 +423,6 @@ public sealed class BossSevenfoldActor : Enemy
     void RestoreTeleportHitbox()
     {
         if (IsDefeated) return;
-        MonsterPool.SnapCapsuleBottomToGround(gameObject);
         SetRootCollidersEnabled(true);
     }
 
