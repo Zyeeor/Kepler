@@ -31,7 +31,7 @@ MonoBehaviour:
     fadeOverride: 0
   fail:
     action: 2
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: dd9a1e9b611615a44af24b82b1bcd5c3, type: 3}
     fadeOverride: 0
   soul:
     action: 1
