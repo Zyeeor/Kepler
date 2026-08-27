@@ -1612,7 +1612,11 @@ public class MonsterActor : Actor
         isPossessed = true;
         isDowned = false;
         isWeakened = false;
+        transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+        Transform possessedGroundRoot = transform.root != null ? transform.root : transform;
+        MonsterPool.SnapCapsuleBottomToGround(possessedGroundRoot.gameObject, MonsterPool.GroundY + corpseGroundYOffset);
         // 恢复能力组件：SpawnAsPermanentCorpse（开场载体/刷尸体）与 BeginDisappearing 会禁用 EnemyAbility 组件，
+
         // 若附身时不恢复，EnemyAbility.Update 不执行 → currentCooldown 不递减 → 攻击一次后永久卡 CD 无法再攻击。
         SetAbilityComponentsEnabled(true);
         // Boss reserve bodies are disabled while waiting as corpses. Their ability

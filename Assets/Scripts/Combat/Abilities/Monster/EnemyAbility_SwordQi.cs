@@ -114,8 +114,10 @@ public class EnemyAbility_SwordQi : EnemyAbility
     {
         if (owner == null) return;
         SetActivationDisplay(true);
-        var anim = owner.GetComponent<Animator>();
-        if (anim != null) anim.SetTrigger("Skill");
+        var anim = owner.GetActiveAnimator();
+        if (anim != null) anim.SetTrigger("Basic");
+
+
         StartCoroutine(SwordQiRoutine());
     }
 
