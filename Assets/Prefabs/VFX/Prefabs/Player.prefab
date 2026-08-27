@@ -10861,7 +10861,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7602918447346185847
 Transform:
   m_ObjectHideFlags: 0
@@ -11231,6 +11231,7 @@ GameObject:
   - component: {fileID: 3162179642722458772}
   - component: {fileID: 477096510868814234}
   - component: {fileID: 7668934807647666515}
+  - component: {fileID: 8833556406809801437}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -11291,7 +11292,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   soulMaxHealth: 100
   currentHealth: 100
-  healthDecayPercent: 0
+  healthDecayPercent: 0.02
   decayInterval: 1
   healthSlider: {fileID: 0}
   sliderFillImage: {fileID: 0}
@@ -11347,7 +11348,7 @@ MonoBehaviour:
   totalDamageAmp: 0
   burnVfxPrefab: {fileID: 5253147887093941663, guid: 5718ae819ff41404cb03d4072bde1578,
     type: 3}
-  baseMoveSpeed: 5
+  baseMoveSpeed: 10
   passiveIconParent: {fileID: 0}
   prideIconPrefab: {fileID: 4563893726970356341, guid: d40d824d40ac8b54388a82f429499e75,
     type: 3}
@@ -11420,6 +11421,7 @@ MonoBehaviour:
   stats: {fileID: 1025113241247231900}
   combat: {fileID: 920952039045924966}
   possessYOffset: 0.5
+  hoverHeight: 1
 --- !u!114 &7668934807647666515
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11434,11 +11436,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
   possessionRimIntensity: 2.4
+  corpseRimColor: {r: 0.12, g: 0.55, b: 1, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 0.15, g: 0.8, b: 1.6, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.018
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
+  eliteRimColor: {r: 0.65, g: 0.15, b: 0.9, a: 1}
+  eliteRimIntensity: 0.8
+  elitePulseSpeed: 1.8
+  elitePulseAmount: 0.25
+  eliteMaterialTemplate: {fileID: 0}
+  eliteRimPower: 3
+  eliteMetallic: 0.2
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.12
   hitFlashPeak: 0.85
+  dissolveEdgeColor: {r: 1.4, g: 0.35, b: 2.2, a: 1}
+  dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
-  convertMaterialsToFxShader: 1
+  possessionImprintMeteorSpeed: 1200
+  possessionImprintMeteorWidth: 42
+  possessionImprintMeteorTailLength: 0.34
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 0.25, g: 0.85, b: 1, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+--- !u!114 &8833556406809801437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6619887426231394227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18cbdbcbb1b95c54da541b4ccd98a16b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possessFlySpeedMultiplier: 5
+  possessYOffset: 0.5
+  possessCooldown: 3
+  minPossessTime: 1
+  possessionDecayPercent: 0.05
+  decayInterval: 1
 --- !u!1 &6785086658669047551
 GameObject:
   m_ObjectHideFlags: 0
