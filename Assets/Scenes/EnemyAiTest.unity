@@ -22262,7 +22262,7 @@ PrefabInstance:
         type: 3}
       propertyPath: dangerPanel
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1867474566}
     - target: {fileID: 1025113241247231900, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
         type: 3}
       propertyPath: healthSlider

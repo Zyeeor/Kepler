@@ -33,12 +33,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 1
@@ -61,12 +69,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 1
@@ -89,12 +105,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 7
@@ -117,7 +141,15 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
       clips:
       - {fileID: 8300000, guid: a261a93317d19444f8a9d53e35617c89, type: 3}
       pickMode: 1
@@ -146,12 +178,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 7
@@ -174,12 +214,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 5
@@ -202,12 +250,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 5
@@ -230,12 +286,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 5
@@ -258,12 +322,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 1
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 6
@@ -286,12 +358,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 6
@@ -314,12 +394,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 6
@@ -343,12 +431,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 3
@@ -372,12 +468,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 3
@@ -400,12 +504,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 3
@@ -428,12 +540,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 4
@@ -456,12 +576,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 4
@@ -484,12 +612,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 1
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 4
@@ -512,12 +648,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 2
@@ -540,12 +684,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 2
@@ -570,12 +722,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   - sin: 2
@@ -598,12 +758,20 @@ MonoBehaviour:
       spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
-    returnSet:
+    returnEnemy:
       clips: []
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
+      heavyCastThreshold: 0.5
+      loop: 0
+    returnPossessed:
+      clips: []
+      pickMode: 1
+      volumeScale: 1
+      pitch: 1
+      spatialMode: 1
       heavyCastThreshold: 0.5
       loop: 0
   droneEntries:

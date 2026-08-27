@@ -129,9 +129,13 @@ public class CombatAudioManager : AudioChannelController
         // 敌我分轨：splitSides 开且玩家控制 → 用 possessed 组；否则用 enemy 组（splitSides 关 = 共用 enemy）
         bool possessed = owner.IsPlayerControlled;
         var set = e.splitSides && possessed ? e.possessed : e.enemy;
-        // 回归段（两段式位移第二段，如色欲魅影换位）：配置了回归音则用它，否则回退去程音组
-        if (returnSegment && e.returnSet != null && e.returnSet.clips != null && e.returnSet.clips.Count > 0)
-            set = e.returnSet;
+        // 回归段（两段式位移第二段，如色欲魅影换位）：配了回归音则用回归音（与去程同 splitSides 分轨），否则回退去程音组
+        if (returnSegment)
+        {
+            var rSet = e.splitSides && possessed ? e.returnPossessed : e.returnEnemy;
+            if (rSet != null && rSet.clips != null && rSet.clips.Count > 0)
+                set = rSet;
+        }
         if (set == null) return;
 
         var clip = inst.PickCastClip(owner.sinType, kind, possessed, set, charge01);
