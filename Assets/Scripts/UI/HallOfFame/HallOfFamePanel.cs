@@ -111,8 +111,12 @@ public class HallOfFamePanel : MonoBehaviour
 
     void RenderLocal()
     {
+        // 老档 / 词表改版补生成称号（方案 §7.2）：无词缀的条目用当前词表生成一次并写入
+        HallOfFameStore.BackfillMissingEpithets();
+
         var entries = HallOfFameStore.EntriesBySavedTimeDesc();
         entries = ApplySort(entries);
+        generationIndex = BuildGenerationIndex(entries);
 
         if (emptyLabel != null)
             emptyLabel.gameObject.SetActive(entries.Count == 0);
@@ -195,19 +199,102 @@ public class HallOfFamePanel : MonoBehaviour
     string FormatEntry(HallOfFameEntry e)
     {
         // 统一文本目录：条目模板（ui.hof.entry.*，{0} 占位符）；颜色标记保留在代码（富文本标记非文案）
+        // 标题改为**词缀名**（方案 Phase 2）：同名构筑靠词缀区分，Sin 种类名降级为副行。
+        string epithetName = EpithetName(e);
         string sinName = SinDisplay(e.sin);
+        string speciesLine = TextCatalog.Get("ui.hof.entry.species", sinName);
         string phase = PhaseText(e);
         string cards = e.cardIds != null && e.cardIds.Count > 0 ? string.Join("、", e.cardIds) : TextCatalog.Get("ui.hof.entry.no_cards");
         string staleMark = HasStaleCards(e) ? TextCatalog.Get("ui.hof.entry.stale_cards") : ""; // §5.9
         string statsTime = e.statsUpdatedAtUnix > 0
             ? TextCatalog.Get("ui.hof.entry.synced_at", FormatClock(e.statsUpdatedAtUnix)) : TextCatalog.Get("ui.hof.entry.not_synced");
 
-        return TextCatalog.Get("ui.hof.entry.header", sinName, e.sin, FormatClock(e.savedAtUnix), phase) + "\n" +
+        return TextCatalog.Get("ui.hof.entry.header", epithetName, e.sin, FormatClock(e.savedAtUnix), phase) + "\n" +
+               speciesLine + "\n" +
                "<color=#9fd4ff>" + TextCatalog.Get("ui.hof.entry.raw_section") + "</color>\n" +
                TextCatalog.Get("ui.hof.entry.raw_line", e.bdCount, e.controlSeconds.ToString("F0"), e.kills) + "\n" +
                cards + staleMark + "\n" +
                "<color=#ffd79f>" + TextCatalog.Get("ui.hof.entry.stats_section", statsTime) + "</color>\n" +
                TextCatalog.Get("ui.hof.entry.stats_line", e.deployed, e.fatal, e.possessed, e.bodyFatal, e.runFail);
+    }
+
+    // 同名世代标记：key = 成品名（不含序号），value = 该条在其同名组中的次序（1-based）
+    Dictionary<string, int> generationIndex = new Dictionary<string, int>();
+
+    /// <summary>
+    /// 构建同名世代索引（方案 §7.4）。
+    /// 判定基准用**成品名**（即生成后的词序列），而非 cardIds 集合——
+    /// 过滤失效卡后不同 BD 可能产出相同词序列，按名判定才与玩家看到的一致。
+    /// 只在真正重名时标记（单例永不带序号）。
+    /// </summary>
+    static Dictionary<string, int> BuildGenerationIndex(List<HallOfFameEntry> entries)
+    {
+        var counts = new Dictionary<string, int>();
+        foreach (var e in entries)
+        {
+            if (e == null) continue;
+            string name = RawEpithetName(e);
+            counts.TryGetValue(name, out int n);
+            counts[name] = n + 1;
+        }
+
+        var seen = new Dictionary<string, int>();
+        var index = new Dictionary<string, int>();
+        // 按 savedAt 升序编号：最早的第 1 条不带序号，其后 II / III …
+        var sorted = new List<HallOfFameEntry>(entries);
+        sorted.Sort((a, b) => a.savedAtUnix.CompareTo(b.savedAtUnix));
+        foreach (var e in sorted)
+        {
+            if (e == null) continue;
+            string name = RawEpithetName(e);
+            if (counts.TryGetValue(name, out int total) && total < 2) continue; // 不重名则完全不标记
+            seen.TryGetValue(name, out int k);
+            k++;
+            seen[name] = k;
+            index[Key(e)] = k;
+        }
+        return index;
+    }
+
+    static string Key(HallOfFameEntry e) => e.runId + "|" + e.sin;
+
+    /// <summary>成品名（不含世代序号）。</summary>
+    static string RawEpithetName(HallOfFameEntry e)
+    {
+        var words = CardEpithetGenerator.DecodeCache(e.epithetCache);
+        int valid = e.cardIds != null ? e.cardIds.Count : 0;
+        return CardEpithetGenerator.Format(e.sin, words, valid, CardEpithetCatalog.Instance);
+    }
+
+    /// <summary>
+    /// 条目标题：词缀名 + 世代序号（重名时）。
+    /// 无词缀（老档 / 卡池无词）时回退为 Sin 种类名，不虚构词缀、不显示空「之傲慢」（方案 §7.3）。
+    /// </summary>
+    string EpithetName(HallOfFameEntry e)
+    {
+        string name = RawEpithetName(e);
+        bool hasWords = !string.IsNullOrEmpty(e.epithetCache);
+        if (!hasWords) return SinDisplay(e.sin);   // 兜底：只有中心词
+
+        if (generationIndex != null && generationIndex.TryGetValue(Key(e), out int gen) && gen > 1)
+            return name + " · " + RomanNumeral(gen);
+        return name;
+    }
+
+    static string RomanNumeral(int n)
+    {
+        switch (n)
+        {
+            case 2: return "II";
+            case 3: return "III";
+            case 4: return "IV";
+            case 5: return "V";
+            case 6: return "VI";
+            case 7: return "VII";
+            case 8: return "VIII";
+            case 9: return "IX";
+            default: return n.ToString();
+        }
     }
 
     static string SinDisplay(string wire)
