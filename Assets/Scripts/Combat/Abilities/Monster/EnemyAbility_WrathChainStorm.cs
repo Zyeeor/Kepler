@@ -62,6 +62,13 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
         return base.CanTrigger();
     }
 
+    protected override bool TryGetEnemyTelegraphGeometryInternal(out Vector3 center, out float telegraphRadius)
+    {
+        center = owner != null ? owner.transform.position : transform.position;
+        telegraphRadius = pullRadius;
+        return enemyIndicatorEnabled && telegraphRadius > 0f;
+    }
+
     protected override void OnDisable()
     {
         StopStormInternal();

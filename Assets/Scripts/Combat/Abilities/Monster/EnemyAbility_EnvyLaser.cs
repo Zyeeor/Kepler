@@ -93,6 +93,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         {
             if (!_isFiring)
             {
+                if (!TryPrepareDeferredEnemyActivation()) return;
+                ConsumeDeferredEnemyActivation();
                 if (!TryBeginActivationEffect()) return;
                 _isFiring = true;
                 _damageTimer = 0f;
@@ -127,6 +129,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
 
     /// <summary>持续开火中视为释放未结束：附身代价致死时等这束激光熄火后再死。</summary>
     public override bool IsActivationInProgress => _isFiring;
+    protected override bool UsesDeferredEnemyActivation => true;
 
     protected override void OnTrigger() { }
 

@@ -32,6 +32,13 @@ public class EnemyAbility_GroundSlam : EnemyAbility
         return base.CanTrigger() && owner != null && owner.targetPlayer != null;
     }
 
+    protected override bool TryGetEnemyTelegraphGeometryInternal(out Vector3 center, out float telegraphRadius)
+    {
+        center = owner != null ? owner.transform.position : transform.position;
+        telegraphRadius = radius;
+        return enemyIndicatorEnabled && telegraphRadius > 0f;
+    }
+
     protected override void OnTrigger()
     {
         if (owner == null) return;

@@ -62,6 +62,17 @@ public class EnemyAbility_WrathSlam : EnemyAbility
         return base.CanTrigger() && owner != null && owner.targetPlayer != null;
     }
 
+    protected override bool TryGetEnemyTelegraphGeometryInternal(out Vector3 center, out float telegraphRadius)
+    {
+        center = owner != null
+            ? owner.transform.position + owner.transform.TransformDirection(slamOffset)
+            : transform.position;
+        float missingRatio = GetMissingDurabilityRatio();
+        float martyr = IsUpgradeUnlocked(CardMartyr) ? missingRatio : 0f;
+        telegraphRadius = radius * (1f + 0.5f * martyr);
+        return enemyIndicatorEnabled && telegraphRadius > 0f;
+    }
+
     protected override GameObject SpawnVfx()
     {
         SpawnWeaponVfx();
