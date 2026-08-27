@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slots:
   - slotName: default
-    font: {fileID: 11400000, guid: fdf59ff5f3097914e90045f2082d3d1d, type: 2}
+    font: {fileID: 11400000, guid: c0e14d4bc643cf340ba0adc2cba45ea2, type: 2}
   - slotName: title
     font: {fileID: 0}
   - slotName: number

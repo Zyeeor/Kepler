@@ -77,6 +77,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     private bool isFiringRoutineActive;
 
     private float chargeTimer;
+    /// <summary>AI 怪物本次蓄力的目标时长（0 ~ maxChargeTime 随机），蓄到即自动出手。</summary>
+    private float aiChargeTargetTime;
     private float lastChargeTime;
     private GameObject chargeVfxInstance;
     private Coroutine recoilRoutine;
@@ -112,6 +114,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     /// 附身代价致死时先把这一发打出去，再结算死亡。
     /// </summary>
     public override bool IsActivationInProgress => isCharging || isFiringRoutineActive || bossPatternRoutine != null;
+    protected override bool UsesDeferredEnemyActivation => !(owner is BossSevenfoldActor);
 
     void Update()
     {
@@ -136,9 +139,15 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         {
             if (!isCharging)
             {
+                if (!TryPrepareDeferredEnemyActivation()) return;
+                ConsumeDeferredEnemyActivation();
                 if (!TryBeginActivationEffect()) return;
                 isCharging = true;
                 chargeTimer = 0f;
+                // AI 怪物：本次蓄力目标时长在 0 ~ maxChargeTime 之间随机（下限 0，可能立即出手），
+                // 蓄到即自动发射；玩家附身仍走按住/松开逻辑，不参与随机。
+                if (!owner.isPossessed)
+                    aiChargeTargetTime = Random.Range(0f, maxChargeTime);
                 currentCooldown = 0f;
                 owner.PayAbilityHpCost(this);
 
@@ -159,6 +168,14 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             {
                 float ct = Mathf.Clamp01(chargeTimer / Mathf.Max(0.01f, maxChargeTime));
                         chargeVfxInstance.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 2f, ct) * OwnerCombatScaleMultiplier;
+            }
+
+            // AI 怪物蓄到随机目标时长自动出手（否则会因 targetPlayer 恒存在而无限蓄力不出手）
+            if (!owner.isPossessed && chargeTimer >= aiChargeTargetTime)
+            {
+                StartCoroutine(FireShotRoutine(chargeTimer));
+                StopCharging();
+                return;
             }
         }
         else if (isCharging)
@@ -184,6 +201,9 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
         lastChargeTime = chargeTime;
         float t = Mathf.Clamp01(chargeTime / Mathf.Max(0.01f, maxChargeTime));
+        // 发射瞬间按蓄力档位播 Light/Heavy（玩家/AI/Boss 共用）。分档音源与阈值配在
+        // 音频配置中心 → 怪物技能音 → Sloth 怠惰 → 普攻（ClipSet 选「蓄力分档」）。
+        CombatAudioManager.PlayCastAudio(owner, AbilityType.BasicAttack, owner.transform.position, t);
         float scale = Mathf.Lerp(minChargeScale, maxChargeScale, t);
         float radius = Mathf.Lerp(minBlastRadius, maxBlastRadius, t);
         float shotDamage = Mathf.Lerp(minDamage, maxDamage, t);
@@ -238,6 +258,12 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         var anim = owner.GetComponent<Animator>();
         if (anim != null) anim.SetTrigger("Basic");
     }
+
+    /// <summary>
+    /// 禁用基类单一 cast 音：Sloth 发射音由 FireShot 按蓄力档位（Light/Heavy）播放，
+    /// 避免 Boss 经基类 Trigger 时额外播一次旧 castAudioName / 查表音。
+    /// </summary>
+    protected override void PlayCastSound() { }
 
     private IEnumerator PlayRecoil(float chargeFraction)
     {

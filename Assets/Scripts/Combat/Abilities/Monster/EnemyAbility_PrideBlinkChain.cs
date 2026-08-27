@@ -73,8 +73,12 @@ public class EnemyAbility_PrideBlinkChain : EnemyAbility
 
     protected override void OnTrigger()
     {
+        var anim = owner != null ? owner.GetActiveAnimator() : null;
+        if (anim != null) anim.SetTrigger("Skill");
+
         blinkRoutine = StartCoroutine(BlinkRoutine());
     }
+
 
     /// <summary>Boss-only escape hatch: a player Mobility activation breaks the remaining chain.</summary>
     public void InterruptBossBlink()

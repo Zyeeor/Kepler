@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -23,6 +24,9 @@ public class FixedChunkLayout : ScriptableObject
 
     [Tooltip("叠加层网格（可选，与 tiles 同索引）。每格一个 StructureLayer prefab（装饰物/神龛），叠加在底层地砖之上。空 = 无叠加。旧布局无此层时留空（自动兼容）。")]
     public GameObject[] overlayTiles;
+
+    [Tooltip("多格装饰物实例列表。每条只生成一个 prefab，并占用 anchor 起始的 footprintSize 矩形区域。旧的 overlayTiles 仍兼容为单格实例。")]
+    public List<DecorationPlacement> decorationPlacements = new List<DecorationPlacement>();
 
     [Tooltip("默认底层地砖：当某格只有叠加装饰物（旧格式把装饰物整格摆在 tiles 字段，或 overlayTiles 有值而 tiles 为空）时，底层用此地砖兜底。留空则回退生成所用 ChunkDef.normalTiles[0]。")]
     public GameObject defaultGround;
@@ -98,6 +102,12 @@ public class FixedChunkLayout : ScriptableObject
     void OnValidate()
     {
         EnsureCapacity();
+        if (decorationPlacements == null) return;
+        foreach (var placement in decorationPlacements)
+        {
+            if (placement == null) continue;
+            placement.footprintSize = new Vector2Int(Mathf.Max(1, placement.footprintSize.x), Mathf.Max(1, placement.footprintSize.y));
+        }
     }
 #endif
 }

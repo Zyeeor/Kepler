@@ -32,18 +32,22 @@ public class BgmController : AudioChannelController
     Coroutine _duckFadeRoutine;
     /// <summary>下一次 CrossFade 的时长覆盖（ReconcileBgm 按槽位 fadeOverride 设置；≤0 走全局 bgmFadeDuration）。</summary>
     float _pendingFadeOverride;
+    /// <summary>当前曲目的音量倍率（RefreshVolume/Duck 实时刷新用；CrossFade 内每次切曲时更新）。</summary>
+    float _currentVolumeScale = 1f;
 
     struct BgmOverride
     {
         public string token;
         public AudioClip clip;
         public float fadeOverride;
+        public float volumeScale;
     }
 
     AudioClip _sceneBgm;                                          // Scene 层（SceneBgm 请求）
     BgmAction _baseAction;                                        // 基础层（Phase/Wave）目标动作
     AudioClip _baseClip;                                          // 基础层 Play 目标 clip
     float _baseFade;                                              // 基础层 fade 覆盖（≤0 用全局）
+    float _baseVolume = 1f;                                       // 基础层音量倍率（ApplySlotToBase 按槽位 volumeScale 设置）
     bool _baseExplicit;                                           // 当前阶段是否有显式配置（Inherit 也是显式=保持；false=无映射落 Scene 层）
     bool _bgmStopped;                                             // Stop 已执行守卫（防重复淡出）
     RunPhase _currentPhase = RunPhase.Opening;                    // 当前 RunPhase（SetPhaseBgm 记录）
@@ -75,8 +79,8 @@ public class BgmController : AudioChannelController
 
     // ── 播放与交叉淡化 ──
 
-    /// <summary>播放 BGM（同 clip 不重启；切换时双源真交叉淡化，无静默谷）。</summary>
-    public void PlayBgm(AudioClip clip)
+    /// <summary>播放 BGM（同 clip 不重启；切换时双源真交叉淡化，无静默谷）。volumeScale 为该曲目音量倍率。</summary>
+    public void PlayBgm(AudioClip clip, float volumeScale = 1f)
     {
         if (clip == null || bgmSource == null || bgmSource2 == null)
         {
@@ -108,7 +112,7 @@ public class BgmController : AudioChannelController
             return;
         }
         if (_bgmFadeRoutine != null) { StopCoroutine(_bgmFadeRoutine); _bgmFadeRoutine = null; }
-        _bgmFadeRoutine = StartCoroutine(CrossFadeBgm(clip, _pendingFadeOverride));
+        _bgmFadeRoutine = StartCoroutine(CrossFadeBgm(clip, _pendingFadeOverride, volumeScale));
         _pendingFadeOverride = 0f;
     }
 
@@ -119,9 +123,10 @@ public class BgmController : AudioChannelController
         _bgmFadeRoutine = StartCoroutine(FadeOutBgm());
     }
 
-    /// <summary>双源乒乓交叉淡化：旧源淡出的同时新源淡入（无静默谷）。fadeOverride≤0 用全局 bgmFadeDuration。</summary>
-    IEnumerator CrossFadeBgm(AudioClip clip, float fadeOverride = 0f)
+    /// <summary>双源乒乓交叉淡化：旧源淡出的同时新源淡入（无静默谷）。fadeOverride≤0 用全局 bgmFadeDuration。volumeScale 为该曲目音量倍率。</summary>
+    IEnumerator CrossFadeBgm(AudioClip clip, float fadeOverride = 0f, float volumeScale = 1f)
     {
+        _currentVolumeScale = volumeScale; // 记录本次曲目音量倍率（RefreshVolume/Duck 实时刷新用）
         _bgmFading = true;
         float fadeDuration = fadeOverride > 0f ? fadeOverride : bgmFadeDuration;
         // 当前在播源（首次播放 = null）
@@ -141,8 +146,8 @@ public class BgmController : AudioChannelController
             t += Time.unscaledDeltaTime;
             float k = fadeDuration > 0f ? Mathf.Clamp01(t / fadeDuration) : 1f;
             if (from != null) from.volume = Mathf.Lerp(fromVol, 0f, k);
-            // 目标音量每帧实时读（调音量即时生效）；BGM Duck 系数实时乘入
-            to.volume = Mathf.Lerp(0f, Perceptual(Owner.BgmVolume) * _bgmDuckFactor, k);
+            // 目标音量每帧实时读（调音量即时生效）；BGM Duck 系数 + 曲目音量倍率实时乘入
+            to.volume = Mathf.Lerp(0f, Perceptual(Owner.BgmVolume) * _bgmDuckFactor * _currentVolumeScale, k);
             yield return null;
         }
         if (from != null) { from.Stop(); from.clip = null; }
@@ -239,13 +244,11 @@ public class BgmController : AudioChannelController
         {
             ApplySlotToBase(tier.slot, $"第 {waveNumber} 波");
         }
-        else if (map != null && map.waveTiers.Count == 0 && map.combat != null && map.combat.action == BgmAction.Play && map.combat.clip != null)
+        else if (map != null && map.waveTiers.Count == 0 && map.combat != null)
         {
-            // 旧行为兜底：未使用逐波配置时，所有波次共用 combat 槽（Play 且 clip 非空才生效）
-            _baseAction = BgmAction.Play;
-            _baseClip = map.combat.clip;
-            _baseFade = map.combat.fadeOverride;
-            _baseExplicit = true;
+            // 旧行为兜底：未使用逐波配置时，所有波次共用 combat 槽。
+            // 走 ApplySlotToBase 完整支持三态（含 Stop 关战斗 BGM），并正确带 volumeScale。
+            ApplySlotToBase(map.combat, "Waves（combat 兜底）");
         }
         else
         {
@@ -275,6 +278,7 @@ public class BgmController : AudioChannelController
                     _baseAction = BgmAction.Play;
                     _baseClip = slot.clip;
                     _baseFade = slot.fadeOverride;
+                    _baseVolume = slot.volumeScale;
                 }
                 else
                 {
@@ -293,12 +297,12 @@ public class BgmController : AudioChannelController
     }
 
     /// <summary>Override 层压栈（token 去重幂等：同 token 重复 Push 不叠加）。clip 空 = no-op。</summary>
-    public void PushOverrideBgm(string token, AudioClip clip, float fadeOverride = 0f)
+    public void PushOverrideBgm(string token, AudioClip clip, float fadeOverride = 0f, float volumeScale = 1f)
     {
         if (string.IsNullOrEmpty(token) || clip == null) return;
         for (int i = 0; i < _bgmOverrideStack.Count; i++)
             if (_bgmOverrideStack[i].token == token) return;
-        _bgmOverrideStack.Add(new BgmOverride { token = token, clip = clip, fadeOverride = fadeOverride });
+        _bgmOverrideStack.Add(new BgmOverride { token = token, clip = clip, fadeOverride = fadeOverride, volumeScale = volumeScale });
         ReconcileBgm();
     }
 
@@ -355,7 +359,7 @@ public class BgmController : AudioChannelController
             var top = _bgmOverrideStack[_bgmOverrideStack.Count - 1];
             _bgmStopped = false;
             _pendingFadeOverride = top.fadeOverride;
-            PlayBgm(top.clip);
+            PlayBgm(top.clip, top.volumeScale);
             return;
         }
         ApplyBaseTarget();
@@ -373,7 +377,7 @@ public class BgmController : AudioChannelController
         {
             _bgmStopped = false;
             _pendingFadeOverride = _baseFade;
-            PlayBgm(_baseClip);
+            PlayBgm(_baseClip, _baseVolume);
             return;
         }
         // Inherit：保持当前曲（含 Waves 未配置波次、显式 Inherit 槽位）
@@ -418,7 +422,7 @@ public class BgmController : AudioChannelController
     {
         _bgmDuckFactor = factor;
         if (_duckFadeRoutine != null) StopCoroutine(_duckFadeRoutine);
-        _duckFadeRoutine = StartCoroutine(FadeDuckRoutine(Perceptual(Owner.BgmVolume) * factor));
+        _duckFadeRoutine = StartCoroutine(FadeDuckRoutine(Perceptual(Owner.BgmVolume) * factor * _currentVolumeScale));
     }
 
     IEnumerator FadeDuckRoutine(float target)
@@ -441,7 +445,7 @@ public class BgmController : AudioChannelController
     public override void RefreshVolume()
     {
         if (!_bgmFading && _activeBgm != null)
-            _activeBgm.volume = MixerActive ? 1f : Perceptual(Owner.BgmVolume) * _bgmDuckFactor;
+            _activeBgm.volume = MixerActive ? _currentVolumeScale : Perceptual(Owner.BgmVolume) * _bgmDuckFactor * _currentVolumeScale;
     }
 
     public override void PauseAll()

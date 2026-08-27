@@ -66,11 +66,15 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
         serializedObject.Update();
 
         var monsterEntries = serializedObject.FindProperty("monsterEntries");
+        var identityEntries = serializedObject.FindProperty("monsterIdentityEntries");
         var playerEntries = serializedObject.FindProperty("playerEntries");
         var monsterMap = BuildMonsterMap(monsterEntries);
+        var identityMap = BuildIdentityMap(identityEntries);
         var playerMap = BuildPlayerMap(playerEntries);
         var usedMonster = new HashSet<int>();
+        var usedIdentity = new HashSet<int>();
         var usedPlayer = new HashSet<int>();
+
 
         EditorGUILayout.HelpBox(
             "Ability HUD 图标配置。怪物附身态显示三槽：普攻（左键）/ 技能（右键）/ 位移（空格）；每个槽位可独立配置 Sprite 与颜色。\n" +
@@ -88,7 +92,32 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
             if (!folded) continue;
 
             EditorGUI.indentLevel++;
+            int identityIndex;
+            if (identityMap.TryGetValue(sin, out identityIndex) && !usedIdentity.Contains(identityIndex))
+            {
+                usedIdentity.Add(identityIndex);
+                var identity = identityEntries.GetArrayElementAtIndex(identityIndex);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("身份", GUILayout.Width(52));
+                EditorGUILayout.PropertyField(identity.FindPropertyRelative("icon"), GUIContent.none);
+                EditorGUILayout.PropertyField(identity.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("身份", GUILayout.Width(52));
+                if (GUILayout.Button("＋ 添加条目"))
+                {
+                    identityEntries.arraySize++;
+                    var identity = identityEntries.GetArrayElementAtIndex(identityEntries.arraySize - 1);
+                    identity.FindPropertyRelative("sin").intValue = (int)sin;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+
             foreach (var slot in MonsterSlotOrder)
+
             {
                 int index;
                 var key = (sin, slot);
@@ -167,7 +196,19 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
         return map;
     }
 
+    static Dictionary<SinType, int> BuildIdentityMap(SerializedProperty entries)
+    {
+        var map = new Dictionary<SinType, int>();
+        for (int i = 0; i < entries.arraySize; i++)
+        {
+            var sin = (SinType)entries.GetArrayElementAtIndex(i).FindPropertyRelative("sin").intValue;
+            if (sin != SinType.None && !map.ContainsKey(sin)) map[sin] = i;
+        }
+        return map;
+    }
+
     static Dictionary<MonsterSkillIconConfig.PlayerSlot, int> BuildPlayerMap(SerializedProperty entries)
+
     {
         var map = new Dictionary<MonsterSkillIconConfig.PlayerSlot, int>();
         for (int i = 0; i < entries.arraySize; i++)

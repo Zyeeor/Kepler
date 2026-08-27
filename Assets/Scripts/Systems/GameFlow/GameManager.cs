@@ -157,6 +157,10 @@ public class GameManager : MonoBehaviour
         CombatHitboxDebugSettings.EnsureOnGameManager();
         AudioDebugPanel.EnsureOnGameManager();
         NarrativeDebugPanel.EnsureOnGameManager();
+        CardArchiveTracker.EnsureOnGameManager();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        CardFaceBrowser.EnsureOnGameManager();
+#endif
         soulTime = 15f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;

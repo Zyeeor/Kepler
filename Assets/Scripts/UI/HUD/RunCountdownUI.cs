@@ -103,6 +103,12 @@ public sealed class RunCountdownUI : MonoBehaviour
     void RefreshLabel(bool force)
     {
         if (label == null) return;
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
+        {
+            if (label.text.Length > 0) label.text = string.Empty;
+            lastShownSeconds = -1;
+            return;
+        }
 
         float total = durationSeconds;
         float elapsed = 0f;

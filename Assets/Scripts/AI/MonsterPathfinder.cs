@@ -402,10 +402,10 @@ public sealed class MonsterPathfinder : MonoBehaviour
         nextHazardRefreshAt = Time.time + HazardRefreshInterval;
         HazardBuckets.Clear();
 
-        TerrainEffectTile[] tiles = Object.FindObjectsOfType<TerrainEffectTile>();
-        for (int i = 0; i < tiles.Length; i++)
+        IReadOnlyList<TerrainEffectTile> enabledTiles = TerrainEffectTile.EnabledInstances;
+        for (int i = 0; i < enabledTiles.Count; i++)
         {
-            TerrainEffectTile tile = tiles[i];
+            TerrainEffectTile tile = enabledTiles[i];
             if (tile == null || !tile.isActiveAndEnabled) continue;
             if (tile.kind != TerrainEffectTile.TerrainEffectKind.Lava && tile.kind != TerrainEffectTile.TerrainEffectKind.Spike)
                 continue;

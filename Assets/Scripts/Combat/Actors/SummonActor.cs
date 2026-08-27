@@ -80,7 +80,9 @@ public class SummonActor : Enemy
         deathExplosionVfx = blastVfx;
         deathExplosionVfxDuration = Mathf.Max(0.01f, blastVfxDuration);
         spawnedAt = SimulationTime;
+        nextAttackAt = SimulationTime;
         SyncFaction();
+        RefreshPlayerTarget();
     }
 
     public void ConfigurePursuit(bool enabled, float attackIntervalMultiplier)

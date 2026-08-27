@@ -11,16 +11,21 @@ public sealed class PossessionImprintManager : MonoBehaviour
     public static PossessionImprintManager Instance { get; private set; }
 
     readonly int[] stacks = new int[8];
+    readonly int[] displayedStacks = new int[8];
     readonly HashSet<long> consumedTransactions = new HashSet<long>();
     readonly HashSet<SinType> shownTutorials = new HashSet<SinType>();
     PossessionManager attachedPossessionManager;
     bool hasRun;
     bool restoredRun;
+    int visualGeneration;
 
     public float GreedBonusProgress { get; private set; }
     public float LustHealProgress { get; private set; }
     public int GetStacks(SinType sin) => (int)sin > 0 && (int)sin < stacks.Length
         ? Mathf.Clamp(stacks[(int)sin], 0, Mathf.Max(1, PossessionImprintMath.MaxStacks))
+        : 0;
+    public int GetDisplayedStacks(SinType sin) => (int)sin > 0 && (int)sin < displayedStacks.Length
+        ? Mathf.Clamp(displayedStacks[(int)sin], 0, Mathf.Max(1, PossessionImprintMath.MaxStacks))
         : 0;
     public IReadOnlyList<int> Stacks => stacks;
     public bool HasRun => hasRun;
@@ -74,11 +79,27 @@ public sealed class PossessionImprintManager : MonoBehaviour
 
     public void BeginNewRun()
     {
+        visualGeneration++;
         Array.Clear(stacks, 0, stacks.Length);
+        Array.Clear(displayedStacks, 0, displayedStacks.Length);
         consumedTransactions.Clear();
         shownTutorials.Clear();
         GreedBonusProgress = 0f;
         LustHealProgress = 0f;
+        hasRun = true;
+        restoredRun = false;
+    }
+
+    /// <summary>Boss 模式开局：七种罪印统一获得可配置层数。</summary>
+    public void BeginBossModeRun(int initialStacks)
+    {
+        BeginNewRun();
+        int value = Mathf.Clamp(initialStacks, 0, Mathf.Max(1, PossessionImprintMath.MaxStacks));
+        for (int i = 1; i < stacks.Length; i++)
+        {
+            stacks[i] = value;
+            displayedStacks[i] = value;
+        }
         hasRun = true;
         restoredRun = false;
     }
@@ -91,7 +112,9 @@ public sealed class PossessionImprintManager : MonoBehaviour
 
     public void LoadFromSave(List<PossessionImprintState> saved, float greedProgress, float lustHealProgress = 0f)
     {
+        visualGeneration++;
         Array.Clear(stacks, 0, stacks.Length);
+        Array.Clear(displayedStacks, 0, displayedStacks.Length);
         consumedTransactions.Clear();
         shownTutorials.Clear();
         if (saved != null)
@@ -105,6 +128,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
         }
         GreedBonusProgress = Mathf.Clamp01(greedProgress);
         LustHealProgress = Mathf.Max(0f, lustHealProgress);
+        Array.Copy(stacks, displayedStacks, stacks.Length);
         hasRun = true;
         restoredRun = true;
     }
@@ -119,20 +143,64 @@ public sealed class PossessionImprintManager : MonoBehaviour
 
     void HandlePossessionCommitted(MonsterActor body, PossessionGrantReason reason, long transactionId)
     {
-        if (body == null || !IsRealPossession(reason)) return;
+        if (body == null || !IsRealPossession(reason))
+        {
+            Debug.Log($"[PossessionImprint] Commit ignored: body={(body != null ? body.name : "NULL")}, reason={reason}, transaction={transactionId}.");
+            return;
+        }
+
+        Debug.Log($"[PossessionImprint] Commit received: body='{body.name}', displayName='{body.displayName}', reason={reason}, transaction={transactionId}, world={body.transform.position}, active={body.isActiveAndEnabled}, possessed={body.isPossessed}, managerHasRun={hasRun}.");
         body.ResolveSinIdentityFromHint(body.name + " " + body.displayName);
         if (body.sinType == SinType.None)
         {
             Debug.LogWarning("[PossessionImprint] 无法解析附身体罪印身份：" + body.name);
             return;
         }
-        if (!consumedTransactions.Add(transactionId)) return;
+        if (!consumedTransactions.Add(transactionId))
+        {
+            Debug.Log($"[PossessionImprint] Commit ignored as duplicate: body='{body.name}', transaction={transactionId}.");
+            return;
+        }
         if (!hasRun) BeginNewRun();
+        int oldStackCount = stacks[(int)body.sinType];
+        int oldDisplayedStackCount = displayedStacks[(int)body.sinType];
         float greedProgress = GreedBonusProgress;
         PossessionImprintMath.ApplyTransaction(stacks, ref greedProgress, body.sinType);
         GreedBonusProgress = greedProgress;
         ApplyBodyEffects(body);
-        OnImprintChanged?.Invoke(body.sinType, stacks[(int)body.sinType]);
+
+        int gainedStacks = Mathf.Max(0, stacks[(int)body.sinType] - oldStackCount);
+        Debug.Log($"[PossessionImprint] Transaction applied: sin={body.sinType}, actualStacks={oldStackCount}->{stacks[(int)body.sinType]}, displayedStacks={oldDisplayedStackCount}, gained={gainedStacks}, gainListenerCount={(OnImprintGainRequested != null ? OnImprintGainRequested.GetInvocationList().Length : 0)}.");
+        if (gainedStacks <= 0)
+        {
+            Debug.Log($"[PossessionImprint] No visual gain requested: sin={body.sinType}, transaction={transactionId}.");
+            return;
+        }
+
+        int generation = visualGeneration;
+        bool completed = false;
+        Action completeVisualGain = () =>
+        {
+            if (completed || generation != visualGeneration) return;
+            completed = true;
+            displayedStacks[(int)body.sinType] = Mathf.Clamp(
+                displayedStacks[(int)body.sinType] + gainedStacks,
+                0,
+                Mathf.Max(1, PossessionImprintMath.MaxStacks));
+            Debug.Log($"[PossessionImprint] Visual gain completed: sin={body.sinType}, displayedStacks={oldDisplayedStackCount}->{displayedStacks[(int)body.sinType]}, gained={gainedStacks}, transaction={transactionId}.");
+            OnImprintChanged?.Invoke(body.sinType, displayedStacks[(int)body.sinType]);
+        };
+
+        if (OnImprintGainRequested != null)
+        {
+            Debug.Log($"[PossessionImprint] Visual gain requested: sin={body.sinType}, body='{body.name}', gained={gainedStacks}, transaction={transactionId}.");
+            OnImprintGainRequested.Invoke(body.sinType, body, gainedStacks, completeVisualGain);
+        }
+        else
+        {
+            Debug.LogWarning($"[PossessionImprint] No visual listener; completing immediately: sin={body.sinType}, transaction={transactionId}.");
+            completeVisualGain();
+        }
     }
 
     static bool IsRealPossession(PossessionGrantReason reason)
@@ -143,6 +211,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
     }
 
     public event Action<SinType, int> OnImprintChanged;
+    public event Action<SinType, MonsterActor, int, Action> OnImprintGainRequested;
 
     public void ApplyBodyEffects(MonsterActor body)
     {

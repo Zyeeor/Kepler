@@ -37,6 +37,7 @@ public class CardManager : SceneSingleton<CardManager>
 
     /// <summary>抽卡候选落定广播（叙事事件总线订阅：Offer=候选生成，含重抽外的每次呈现）。</summary>
     public static event System.Action OnCardOffered;
+    public static event System.Action OnCardRerolled;
 
     /// <summary>
     /// 卡牌解锁广播（Run Analytics 采集用）：UnlockEffect 成功后触发（含选卡与调试解锁）。
@@ -45,6 +46,11 @@ public class CardManager : SceneSingleton<CardManager>
 
     // Track which effects have been permanently unlocked this run（已取得的卡；本局不再出现——最新需求：所有卡都只会出现一次）
     private HashSet<string> unlockedEffects = new HashSet<string>();
+    // Boss mode can enter the scene while the persistent RunSession is still being
+    // resolved by another scene object. Keep the initialization idempotent so every
+    // later spawn/possession path can safely repair that ordering without repeating
+    // the full-card scan every frame.
+    private bool bossModeBuildsInitialized;
     // Known Type Set（§2）：本 Run 已合法遭遇的 Sin 类型（Pride 起始即进入，其余按波次解锁表推导）
     private readonly HashSet<SinType> knownTypes = new HashSet<SinType>();
     // 各 Sin 的 Investment（§6）：取得该 Sin 的 Monster-Type / Type Growth 卡数量（Slot B 加权用；可从已解锁卡推导，无需存档）
@@ -142,12 +148,43 @@ public class CardManager : SceneSingleton<CardManager>
 
         // 接好 AI 攻击/技能范围的解锁钩子：rangeUnlocks[].unlockId 视为卡牌 effectId。
         MonsterAIConfig.IsUnlocked = id => unlockedEffects.Contains(id);
+
+        // Boss 模式不弹选卡，直接把卡库中所有启用的构筑效果视为已解锁。
+        if (run != null && run.IsBossMode)
+            UnlockAllEffectsForBossMode();
     }
 
     void Start()
     {
-        if (debugDoublePickOnStart)
+        // Awake ordering is not guaranteed across the persistent RunSession and the
+        // scene CardManager. Retry once after all scene Awake calls have completed.
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
+            UnlockAllEffectsForBossMode();
+        if (debugDoublePickOnStart && !(RunSession.Instance != null && RunSession.Instance.IsBossMode))
             StartCoroutine(DebugTriggerDoublePickOnStart());
+    }
+
+    /// <summary>Boss 模式解锁卡库中所有启用效果，供新生成怪物的构筑应用路径复用。</summary>
+    public void UnlockAllEffectsForBossMode()
+    {
+        if (RunSession.Instance == null || !RunSession.Instance.IsBossMode) return;
+        if (bossModeBuildsInitialized) return;
+        if (cardLibrary == null || cardLibrary.cards == null)
+        {
+            Debug.LogWarning("[CardManager] Boss 模式无法全解锁：CardLibrary 未配置。");
+            return;
+        }
+
+        bossModeBuildsInitialized = true;
+        var unlockedIds = new HashSet<string>();
+        foreach (var card in cardLibrary.cards)
+        {
+            if (card == null || string.IsNullOrEmpty(card.effectId)
+                || !cardLibrary.IsEffectEnabled(card.effectId)
+                || !unlockedIds.Add(card.effectId)) continue;
+            UnlockEffect(card.effectId);
+        }
+        Debug.Log($"[CardManager] Boss 模式构筑全解锁：{unlockedIds.Count} 个效果。");
     }
 
     /// <summary>
@@ -441,13 +478,19 @@ public class CardManager : SceneSingleton<CardManager>
         if (currentPicks != null && slotIndex >= 0 && slotIndex < currentPicks.Length)
             currentPicks[slotIndex] = picked;
         SyncChoicePicksToSession(); // 重抽后同步（退出时补弹候选含重抽结果）
+        OnCardRerolled?.Invoke();    // 图鉴采集：重抽后候选变化，标记已知
         return picked;
     }
 
     /// <summary>Apply all previously unlocked effects to a newly spawned GameObject.</summary>
     public void ApplyAllUnlocksTo(GameObject go)
     {
-        if (go == null || unlockedEffects.Count == 0) return;
+        if (go == null) return;
+        // This is also the repair path for objects spawned before CardManager.Start.
+        // It makes Boss mode independent of Unity's cross-object initialization order.
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
+            UnlockAllEffectsForBossMode();
+        if (unlockedEffects.Count == 0) return;
         var abilities = go.GetComponentsInChildren<EnemyAbility>(true);
         int applied = 0;
         foreach (var a in abilities)
@@ -614,6 +657,8 @@ public class CardManager : SceneSingleton<CardManager>
     /// <summary>Check if an effect has been unlocked.</summary>
     public bool IsEffectUnlocked(string effectId)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
+            UnlockAllEffectsForBossMode();
         return !string.IsNullOrEmpty(effectId) && unlockedEffects.Contains(effectId);
     }
 

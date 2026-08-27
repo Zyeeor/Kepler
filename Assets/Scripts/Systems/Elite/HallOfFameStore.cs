@@ -48,6 +48,16 @@ public class HallOfFameEntry
     public int runFail;
     /// <summary>战绩缓存刷新时间（Unix 秒；0 = 从未拉取过，UI 显示"未同步"）。</summary>
     public long statsUpdatedAtUnix;
+
+    // ── 称号词缀缓存（词缀命名系统，方案 §7：生命周期 C 混合冻结）──
+    /// <summary>
+    /// 冻结的中性词序列（如 "远诱|阔口|贪噬|终食"；空 = 未生成）。
+    /// 存**中性词序列**而非成品字符串：切 Mythic/System 显示线时仍需重新套模板，
+    /// 冻结成品会锁死显示线。
+    /// </summary>
+    public string epithetCache;
+    /// <summary>生成时的词表版本号；0 = 未生成。词表改版时用当前词表重算并写入。</summary>
+    public int epithetRev;
 }
 
 /// <summary>荣誉殿堂持久化数据（独立长期存储，§5.3：永久保留，不受 Elite 候选库 FIFO 淘汰影响）。</summary>
@@ -67,6 +77,11 @@ public static class HallOfFameStore
 {
     static readonly string FilePath =
         Path.Combine(Application.persistentDataPath, "possess_hall_of_fame.json");
+
+    // v1 → v2：追加 epithetCache / epithetRev（称号词缀缓存，方案 §7）。
+    // 均为可空 / 有缺省值字段，旧档载入后字段为 null/0，首次展示时用当前词表补生成，
+    // 因此**无需显式迁移代码**（Load 已有前向兼容：版本不符仍保留条目）。
+    const int CurrentSchemaVersion = 2;
 
     static HallOfFameData cached;
     static bool loaded;
@@ -107,6 +122,9 @@ public static class HallOfFameStore
             entry.reachedWave = Mathf.Max(entry.reachedWave, reachedWave);
             entry.bdCount = snap.bdCount;
             entry.cardIds = ExtractCardIds(snap.bdData);
+            // 称号词缀：与上传端共用 CardEpithetGenerator（验收项 14：不得各写一份）。
+            // 每次滚动更新都重算——构筑变了名字就该变；epithetRev 记录所用词表版本。
+            RefreshEpithet(entry);
             changed = true;
         }
         if (changed) Save();
@@ -163,6 +181,54 @@ public static class HallOfFameStore
         return applied;
     }
 
+    // ── 称号词缀（方案 §7：生命周期 C 混合冻结）──
+
+    /// <summary>
+    /// 按当前卡清单与词表重算并冻结称号词序列。
+    /// 目录缺失 / 卡池无词时写入空串（UI 走兜底命名，不虚构词缀，方案 §7.3）。
+    /// </summary>
+    public static void RefreshEpithet(HallOfFameEntry entry)
+    {
+        if (entry == null) return;
+        var catalog = CardEpithetCatalog.Instance;
+        if (catalog == null || entry.cardIds == null || entry.cardIds.Count == 0)
+        {
+            entry.epithetCache = "";
+            entry.epithetRev = 0;
+            return;
+        }
+        var words = CardEpithetGenerator.Generate(entry.cardIds, catalog);
+        entry.epithetCache = CardEpithetGenerator.EncodeCache(words);
+        entry.epithetRev = catalog.epithetRev;
+    }
+
+    /// <summary>
+    /// 老档补生成：epithetCache 为空（旧档 / 词表改版）时用当前词表生成一次并写入。
+    /// 返回是否有变更（有则调用方需落盘）。
+    /// 名字已冻结的条目**不会**被覆写（方案 §5.9：历史语义不静默改写）。
+    /// </summary>
+    public static bool BackfillMissingEpithets()
+    {
+        var catalog = CardEpithetCatalog.Instance;
+        if (catalog == null) return false;
+
+        bool changed = false;
+        foreach (var e in Data.entries)
+        {
+            if (e == null) continue;
+            // 已是当前词表版本 → 保持不动（名字已冻结，不静默改写）
+            if (!string.IsNullOrEmpty(e.epithetCache) && e.epithetRev == catalog.epithetRev) continue;
+
+            // 两种情况重算：
+            //   1) 老档 / 从未生成过（epithetCache 空）
+            //   2) 词表已改版（bump 过 epithetRev）—— 按新词表重算，便于修错别字
+            RefreshEpithet(e);
+            changed = true;
+        }
+        if (changed) Save();
+        return changed;
+    }
+
     // ── 查询 ──
 
     /// <summary>全部荣誉记录（按保存时间倒序副本，§5.6 默认排序）。</summary>
@@ -210,7 +276,14 @@ public static class HallOfFameStore
             if (File.Exists(FilePath))
             {
                 var data = JsonUtility.FromJson<HallOfFameData>(File.ReadAllText(FilePath));
-                if (data != null && data.entries != null) cached = data;
+                if (data != null && data.entries != null)
+                {
+                    // 前向兼容（§3 内容版本兼容）：schema 为可加性（仅新增字段）。
+                    // 旧版本文件直接复用条目；更高版本（未来字段）也保留可读字段，不整体清库。
+                    if (data.schemaVersion != CurrentSchemaVersion)
+                        Debug.Log($"[HallOfFame] 荣誉记录 schemaVersion={data.schemaVersion}，当前={CurrentSchemaVersion}，按前向兼容载入（保留条目）。");
+                    cached = data;
+                }
             }
         }
         catch (Exception e)
@@ -224,6 +297,7 @@ public static class HallOfFameStore
     {
         try
         {
+            Data.schemaVersion = CurrentSchemaVersion;
             string dir = Path.GetDirectoryName(FilePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
             File.WriteAllText(FilePath, JsonUtility.ToJson(Data, true));

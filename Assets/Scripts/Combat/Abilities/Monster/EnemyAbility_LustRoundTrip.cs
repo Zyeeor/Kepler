@@ -4,7 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Lust LMB: outbound + return mist, each segment hits independently and writes Link.
-/// LU-A04 replaces the cast with an expanding ring mist.
+/// LU-A04 adds an expanding ring mist while retaining the outbound and return mist cast.
+
 /// LU-M05: current Anchor mirrors the attack after 0.10s at 50% damage (no recurse).
 /// LU-A03: Linked target death consumes Link and blasts after 0.10s.
 /// </summary>
@@ -147,11 +148,12 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         if (anim != null && canMirror) anim.SetTrigger("Basic");
 
         float dmg = (damage > 0f ? damage : segmentDamage) * damageMul;
-        bool useRing = IsUpgradeUnlocked("LU-A04");
-        if (useRing)
-            yield return RingMistRoutine(origin, dmg);
+        if (IsUpgradeUnlocked("LU-A04"))
+            yield return SixWayRingRoundTripRoutine(origin, dmg);
         else
             yield return RoundTripRoutine(origin, direction, dmg);
+
+
 
         if (canMirror && IsUpgradeUnlocked("LU-M05"))
             StartCoroutine(MirrorRoutine(direction));
@@ -189,7 +191,24 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         if (mist != null) Object.Destroy(mist, 0.05f);
     }
 
-    private IEnumerator RingMistRoutine(Vector3 origin, float dmg)
+    private IEnumerator SixWayRingRoundTripRoutine(Vector3 origin, float dmg)
+    {
+        const int directionCount = 6;
+        for (int i = 0; i < directionCount; i++)
+        {
+            Vector3 direction = Quaternion.Euler(0f, i * (360f / directionCount), 0f) * Vector3.forward;
+            StartCoroutine(RoundTripRoutine(origin, direction, dmg));
+        }
+
+        yield return RingDamageRoutine(origin, dmg);
+
+        float roundTripDuration = ScaleAbilityRadius(mistRange) * 2f / Mathf.Max(0.1f, mistSpeed);
+        float ringDuration = GetCardParameter("T", ringExpandDuration);
+        if (roundTripDuration > ringDuration)
+            yield return AbilityWait(roundTripDuration - ringDuration);
+    }
+
+    private IEnumerator RingDamageRoutine(Vector3 origin, float dmg)
     {
         float r0 = GetCardParameter("R0", ringInnerRadius);
         float r1 = GetCardParameter("R1", ringOuterRadius);
@@ -197,27 +216,19 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         float width = GetCardParameter("Width", ringWidth);
         HashSet<int> hitIds = new HashSet<int>();
 
-        GameObject ring = null;
-        if (ringMistVfx != null)
-            ring = Object.Instantiate(ringMistVfx, origin, Quaternion.identity);
-        else if (mistVfxPrefab != null)
-            ring = Object.Instantiate(mistVfxPrefab, origin, Quaternion.identity);
-
         float elapsed = 0f;
         while (elapsed < expand)
         {
             elapsed += AbilityDeltaTime;
             float u = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, expand));
             float radius = Mathf.Lerp(r0, r1, u);
-            if (ring != null)
-                ring.transform.localScale = Vector3.one * Mathf.Max(0.1f, radius * 2f * OwnerCombatScaleMultiplier);
             RegisterRingHits(origin, radius, width, dmg, hitIds);
             yield return null;
         }
 
         RegisterRingHits(origin, r1, width, dmg, hitIds);
-        if (ring != null) Object.Destroy(ring, 0.2f);
     }
+
 
     private IEnumerator MirrorRoutine(Vector3 direction)
     {

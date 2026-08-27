@@ -155,7 +155,7 @@ public class CombatHitboxDebugSettings : MonoBehaviour
     private void SyncEnabled(bool forceLog)
     {
         bool allow = enableHitboxDebug && !GameManager.IsFormalFlow;
-        CombatHitboxDebug.Enabled = allow;
+        CombatHitboxDebug.Enabled = false;
         CombatHitboxDebug.Color = gizmoColor;
         if (_instance == null) _instance = this;
 

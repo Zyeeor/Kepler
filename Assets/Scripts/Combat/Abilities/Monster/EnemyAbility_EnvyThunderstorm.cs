@@ -42,10 +42,12 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
             abilityTags.Add(AbilityTag);
     }
 
+    public bool HasLegalMarkedTargets => CountLegalMarkedTargets() > 0;
+
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        return CountLegalMarkedTargets() > 0;
+        return HasLegalMarkedTargets;
     }
 
     protected override void OnTrigger()

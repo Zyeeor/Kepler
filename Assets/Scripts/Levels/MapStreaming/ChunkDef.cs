@@ -22,6 +22,22 @@ public class ChunkTemplateEntry
 }
 
 /// <summary>
+/// 装饰地块条目：一个装饰 prefab + 其在单个 Chunk 内的最大生成数。
+/// maxPerChunk &lt; 0 表示不限制（默认）；&gt;=0 时该 prefab 在每个 Chunk 内最多放置该数量，
+/// 用于避免同种装饰物相邻重复 / 密集堆叠。
+/// </summary>
+[Serializable]
+public class DecorationTileEntry
+{
+    [Tooltip("装饰地块 prefab（玩法由自带组件推导）。")]
+    public GameObject prefab;
+    [Tooltip("该装饰物在每个 Chunk 内的最大实例数；-1 = 不限制。多格装饰物放置一次只计 1 个实例。")]
+    public int maxPerChunk = -1;
+    [Tooltip("该装饰物占用的矩形格子尺寸（宽×深）。1×1 为普通单格装饰物；例如 2×1 / 2×2 表示一个 prefab 跨多格。暂不允许跨 Chunk。")]
+    public Vector2Int footprintSize = Vector2Int.one;
+}
+
+/// <summary>
 /// 地形图案形状（程序生成：整块放置于 Chunk 内部区域，不触碰边沿）。
 /// </summary>
 public enum PatternShape
@@ -36,6 +52,14 @@ public enum PatternShape
     Square2 = 3,
     /// <summary>L 形 3 格直角（2×2 包围盒缺一角，4 朝向随机）。</summary>
     LShape = 4,
+    /// <summary>S 形 4 格（2×3 包围盒，水平/垂直 2 朝向随机）。</summary>
+    SShape = 5,
+    /// <summary>Z 形 4 格（S 形镜像，2×3 包围盒，水平/垂直 2 朝向随机）。</summary>
+    ZShape = 6,
+    /// <summary>T 形 4 格（3×2 包围盒，4 朝向随机）。</summary>
+    TShape = 7,
+    /// <summary>十字形 5 格（3×3 包围盒，固定朝向）。</summary>
+    Cross = 8,
 }
 
 /// <summary>
@@ -84,8 +108,24 @@ public class ChunkDef : ScriptableObject
     public List<GameObject> normalTiles = new List<GameObject>();
     [Tooltip("可触发地块候选（岩浆/地刺/传送/事件等触发区，prefab 自带 TerrainEffectTile）；为空时 triggerPatterns 不参与抽取（该类不生成）。")]
     [FormerlySerializedAs("lavaTiles")] [FormerlySerializedAs("hazardTiles")] public List<GameObject> triggerTiles = new List<GameObject>();
-    [Tooltip("装饰地块候选（柱子/雕塑等视觉装饰）。阻挡由 prefab 自带 solid Collider 决定（物理精确挡路）；为空时 decorationPatterns 不参与抽取（该类不生成）。")]
-    [FormerlySerializedAs("blockerTiles")] public List<GameObject> decorationTiles = new List<GameObject>();
+    [Tooltip("装饰地块候选（柱子/雕塑等视觉装饰）。阻挡由 prefab 自带 solid Collider 决定（物理精确挡路）；为空时 decorationPatterns 不参与抽取（该类不生成）。每条可配 maxPerChunk：该装饰物每个 Chunk 内的最大生成数，-1 不限制。")]
+    public List<DecorationTileEntry> decorationTiles = new List<DecorationTileEntry>();
+
+    // 旧版 decorationTiles 是 List<GameObject>（无 maxPerChunk），升级时自动迁移为默认条目（-1 不限制）。
+    [SerializeField, HideInInspector, FormerlySerializedAs("decorationTiles")]
+    private List<GameObject> decorationTilesLegacy = new List<GameObject>();
+
+    void OnEnable()
+    {
+        if (decorationTilesLegacy == null || decorationTilesLegacy.Count == 0) return;
+        foreach (var g in decorationTilesLegacy)
+        {
+            if (g == null) continue;
+            if (decorationTiles.Exists(e => e != null && e.prefab == g)) continue;
+            decorationTiles.Add(new DecorationTileEntry { prefab = g, maxPerChunk = -1 });
+        }
+        decorationTilesLegacy.Clear();
+    }
 
     [Header("形状图案（程序生成：各类合并按权重抽取，整块放置于内部区域）")]
     [Tooltip("可触发地块图案（岩浆/地刺等触发区）。默认 Line3(1) + Single(0.5)。")]
@@ -145,12 +185,12 @@ public class ChunkDef : ScriptableObject
             Debug.LogWarning($"[ChunkDef] {name}.fillTiles 为空：将回退 normalTiles 作填充（建议直接复用 normalTiles）。", this);
         CheckPool(normalTiles, TerrainKind.Normal, nameof(normalTiles));
         CheckPool(triggerTiles, TerrainKind.Trigger, nameof(triggerTiles));
-        CheckPool(decorationTiles, TerrainKind.Decoration, nameof(decorationTiles));
+        CheckDecorationPool(decorationTiles, nameof(decorationTiles));
         CheckPool(roadTiles, TerrainKind.Normal, nameof(roadTiles));
         CheckPool(plazaTiles, TerrainKind.Normal, nameof(plazaTiles));
         CheckPool(fillTiles, TerrainKind.Normal, nameof(fillTiles));
         CheckPatterns(triggerPatterns, triggerTiles, nameof(triggerPatterns), nameof(triggerTiles));
-        CheckPatterns(decorationPatterns, decorationTiles, nameof(decorationPatterns), nameof(decorationTiles));
+        CheckDecorationPatterns(decorationPatterns, decorationTiles, nameof(decorationPatterns), nameof(decorationTiles));
     }
 
     /// <summary>模板条目检查：layout 空 / weight≤0（mustGenerate 例外）/ maxCount<0 提示。</summary>
@@ -185,6 +225,30 @@ public class ChunkDef : ScriptableObject
         }
     }
 
+    /// <summary>池检查（装饰条目版）：逐条目取 prefab 做同样的语义比对。</summary>
+    void CheckDecorationPool(List<DecorationTileEntry> pool, string poolName)
+    {
+        if (pool == null) return;
+        for (int i = 0; i < pool.Count; i++)
+        {
+            var entry = pool[i];
+            var prefab = entry != null ? entry.prefab : null;
+            if (entry != null)
+            {
+                entry.footprintSize = new Vector2Int(Mathf.Max(1, entry.footprintSize.x), Mathf.Max(1, entry.footprintSize.y));
+                if (entry.maxPerChunk < -1)
+                {
+                    Debug.LogWarning($"[ChunkDef] {name}.{poolName}[{i}] maxPerChunk({entry.maxPerChunk}) < -1：已改为 -1（不限制）。", this);
+                    entry.maxPerChunk = -1;
+                }
+            }
+            if (prefab == null) continue;
+            var resolved = TileSemantics.ResolveKind(prefab);
+            if (resolved != TerrainKind.Decoration)
+                Debug.LogWarning($"[ChunkDef] {name}.{poolName}[{i}] = '{prefab.name}' 推导类别 {resolved}，与池类别 Decoration 不匹配（装饰地块应自带 solid Collider——如 Capsule/Box/Mesh，生成器不再兜底补碰撞）。", this);
+        }
+    }
+
     /// <summary>图案配置检查：非空但权重和 ≤0 → 永不抽中；非空但池空 → 该类不生成。</summary>
     void CheckPatterns(List<TerrainPattern> patterns, List<GameObject> pool, string patternsName, string poolName)
     {
@@ -195,6 +259,19 @@ public class ChunkDef : ScriptableObject
         if (sum <= 0f)
             Debug.LogWarning($"[ChunkDef] {name}.{patternsName} 权重全为 0：该类别图案永不抽中。", this);
         else if (pool == null || pool.Count == 0)
+            Debug.LogWarning($"[ChunkDef] {name}.{patternsName} 已配置但 {poolName} 为空：该类别不生成（池空防御）。", this);
+    }
+
+    /// <summary>图案配置检查（装饰条目版）：条目全空（无任何 prefab）视为池空。</summary>
+    void CheckDecorationPatterns(List<TerrainPattern> patterns, List<DecorationTileEntry> pool, string patternsName, string poolName)
+    {
+        if (patterns == null || patterns.Count == 0) return;
+        float sum = 0f;
+        for (int i = 0; i < patterns.Count; i++)
+            if (patterns[i] != null) sum += Mathf.Max(0f, patterns[i].weight);
+        if (sum <= 0f)
+            Debug.LogWarning($"[ChunkDef] {name}.{patternsName} 权重全为 0：该类别图案永不抽中。", this);
+        else if (pool == null || pool.Count == 0 || pool.TrueForAll(e => e == null || e.prefab == null))
             Debug.LogWarning($"[ChunkDef] {name}.{patternsName} 已配置但 {poolName} 为空：该类别不生成（池空防御）。", this);
     }
 #endif

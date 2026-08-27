@@ -29,10 +29,16 @@ public class MonsterSpawner : MonoBehaviour
     [Min(0f)] public float minSpawnDistanceToPlayer = 20f;
     [Tooltip("波次刷怪点到玩家的最大距离（米）——须在 B 缓冲带内。")]
     [Min(0f)] public float maxSpawnDistanceToPlayer = 50f;
-    [Tooltip("刷怪统一高度（世界 y）：所有怪物生成在这个高度，按地面实际高度手动调整即可。")]
-    public float spawnHeightY = 0f;
     [Tooltip("群系中心之间的最小间距（米）：不同批次刷出的怪群出生即保持距离，避免源头重叠堆积。0 = 关闭。")]
     [Min(0f)] public float minSpawnPointSeparation = 6f;
+
+    [Header("精英取点")]
+    [Tooltip("精英出生点到玩家的距离，占当前水平屏幕直径的比例。0.25 = 四分之一屏幕直径。")]
+    [Range(0.1f, 0.5f)] public float eliteSpawnScreenDiameterFraction = 0.25f;
+    [Tooltip("精英出生点在屏幕内目标半径附近的候选采样次数。")]
+    [Range(8, 64)] public int eliteSpawnSamples = 32;
+    [Tooltip("目标半径附近没有可走点时，允许收缩到目标半径的最低比例。")]
+    [Range(0.5f, 1f)] public float eliteSpawnFallbackRadiusFraction = 0.75f;
 
     [Header("出生点合法性")]
     [Tooltip("初始出生点落入岩浆、地刺或可阻挡碰撞体时，在此半径内寻找可走且合法的位置；0 表示不重定位。")]
@@ -229,8 +235,18 @@ public class MonsterSpawner : MonoBehaviour
     /// 精英怪刷出：保留生命周期追踪和波次清点，但不占全局战斗配额或连续自动怪上限。
     /// </summary>
     public MonsterActor SpawnEliteMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
-        => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure,
+    {
+        MonsterActor monster = SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure,
             countAsContinuousAutomatic: false, countsTowardCombatLimit: false);
+        if (monster == null) return null;
+
+        // Elite arrival is presentation-owned, but starting it here keeps wave, fallback and
+        // debug elite injection paths visually identical.
+        VoidWalkArrivalVisualFx arrivalFx = monster.GetComponent<VoidWalkArrivalVisualFx>();
+        if (arrivalFx == null) arrivalFx = monster.gameObject.AddComponent<VoidWalkArrivalVisualFx>();
+        arrivalFx.PlayArrival();
+        return monster;
+    }
 
     /// <summary>击杀回响刷怪：不占连续自动刷怪上限。</summary>
     public MonsterActor SpawnKillEchoMonster(GameObject prefab, Vector3 pos, bool immediateChase = true)
@@ -252,16 +268,19 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(go);
             return null;
         }
+        pos.y = monster.aliveY;
         if (!TryResolveSpawnPosition(monster, pos, out Vector3 resolvedPosition))
         {
             Debug.LogWarning($"[MonsterSpawner] 波次刷怪 '{prefab.name}' 未能在 {invalidSpawnRelocationRadius:0.##}m 内找到合法出生点，已取消。", go);
             MonsterPool.Instance.Return(monster);
             return null;
         }
-        if ((resolvedPosition - pos).sqrMagnitude > 0.0001f)
+        bool relocated = Mathf.Abs(resolvedPosition.x - pos.x) > 0.0001f
+            || Mathf.Abs(resolvedPosition.z - pos.z) > 0.0001f;
+        if (relocated)
         {
+            resolvedPosition.y = monster.aliveY;
             go.transform.position = resolvedPosition;
-            MonsterPool.SnapCapsuleBottomToGround(go);
             pos = go.transform.position;
         }
 
@@ -274,7 +293,6 @@ public class MonsterSpawner : MonoBehaviour
         RunSpawnDirector director = RunSpawnDirector.Instance;
         monster.ApplySpawnDifficultySnapshot(
             origin,
-            director != null ? director.CurrentTier : 0,
             director != null ? director.CurrentHealthMultiplier : 1f,
             director != null ? director.CurrentAttackMultiplier : 1f);
         Track(home, monster, prefab, isWaveMonster: true,
@@ -313,6 +331,60 @@ public class MonsterSpawner : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Resolves one Boss reserve corpse position against the streamed world's walkability,
+    /// hazards and solid obstacles, while also keeping it away from reserve bodies that were
+    /// already placed in this encounter.
+    /// </summary>
+    public bool TryResolveBossReserveSpawnPosition(MonsterActor monster, Vector3 requestedPosition,
+        IList<Vector3> occupiedPositions, float minimumSeparation, out Vector3 resolvedPosition)
+    {
+        resolvedPosition = requestedPosition;
+        if (IsBossReserveCandidateLegal(monster, requestedPosition, occupiedPositions, minimumSeparation,
+            forceHazardRefresh: true))
+            return true;
+
+        float searchRadius = Mathf.Max(0f, invalidSpawnRelocationRadius);
+        if (searchRadius <= 0f) return false;
+
+        int samples = Mathf.Max(8, invalidSpawnRelocationSamples);
+        float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
+        const float goldenAngle = 2.39996323f;
+        for (int i = 0; i < samples; i++)
+        {
+            float distance = searchRadius * Mathf.Sqrt((i + 0.5f) / samples);
+            float angle = startAngle + goldenAngle * i;
+            Vector3 candidate = requestedPosition + new Vector3(Mathf.Cos(angle) * distance, 0f,
+                Mathf.Sin(angle) * distance);
+            if (!IsBossReserveCandidateLegal(monster, candidate, occupiedPositions, minimumSeparation,
+                forceHazardRefresh: false))
+                continue;
+
+            resolvedPosition = candidate;
+            return true;
+        }
+        return false;
+    }
+
+    bool IsBossReserveCandidateLegal(MonsterActor monster, Vector3 candidate,
+        IList<Vector3> occupiedPositions, float minimumSeparation, bool forceHazardRefresh)
+    {
+        if (!IsRelocationTileWalkable(candidate)) return false;
+
+        Transform spawnRoot = monster != null ? monster.transform.root : null;
+        if (MonsterPathfinder.IsSpawnPositionBlocked(monster, spawnRoot, candidate, forceHazardRefresh)) return false;
+
+        float minSqr = Mathf.Max(0f, minimumSeparation) * Mathf.Max(0f, minimumSeparation);
+        if (occupiedPositions == null || minSqr <= 0f) return true;
+        for (int i = 0; i < occupiedPositions.Count; i++)
+        {
+            Vector3 delta = candidate - occupiedPositions[i];
+            delta.y = 0f;
+            if (delta.sqrMagnitude < minSqr) return false;
+        }
+        return true;
+    }
+
     bool IsRelocationTileWalkable(Vector3 worldPosition)
     {
         var system = MapStreamingSystem.Instance;
@@ -339,7 +411,6 @@ public class MonsterSpawner : MonoBehaviour
         if (system == null) return false;
 
         Vector3 player = GetPlayerPosition();
-        player.y = spawnHeightY;
         Vector3 awayFromDeath = player - lastDeathPosition;
         awayFromDeath.y = 0f;
         if (awayFromDeath.sqrMagnitude < 0.0001f)
@@ -369,7 +440,6 @@ public class MonsterSpawner : MonoBehaviour
             if (!system.Registry.TryGetValue(system.WorldToChunk(candidate), out var chunk) || chunk == null || chunk.Tiles == null)
                 continue;
             if (!IsWalkable(chunk, candidate)) continue;
-            candidate.y = spawnHeightY;
             pos = candidate;
             return true;
         }
@@ -432,6 +502,50 @@ public class MonsterSpawner : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 精英取点：在玩家周围目标屏幕直径比例的环带内取点，并要求点位落在当前镜头内。
+    /// 候选点先通过 Chunk 的可走性快照；真正刷出时 SpawnMonster 还会用怪物自身的
+    /// Collider 重新执行 MonsterPathfinder 的危险区/实体碰撞/体积检查。
+    /// </summary>
+    public bool TryGetEliteSpawnPosition(out Vector3 pos)
+    {
+        pos = default;
+        var system = MapStreamingSystem.Instance;
+        if (system == null) return false;
+
+        Vector3 player = GetPlayerPosition();
+        Camera camera = GetMainCamera();
+        float targetRadius = Mathf.Max(0.5f,
+            GetScreenDiameterWorldDistance() * Mathf.Clamp(eliteSpawnScreenDiameterFraction, 0.1f, 0.5f));
+        float minimumRadius = targetRadius * Mathf.Clamp(eliteSpawnFallbackRadiusFraction, 0.5f, 1f);
+        int samples = Mathf.Max(8, eliteSpawnSamples);
+        float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
+        const float goldenAngle = 2.39996323f;
+
+        // Try the requested quarter-screen radius first. Only shrink the radius as a
+        // fallback when terrain legality leaves no usable point on the exact ring.
+        for (int ring = 0; ring < 3; ring++)
+        {
+            float ringT = ring / 2f;
+            float radius = Mathf.Lerp(targetRadius, minimumRadius, ringT);
+            for (int i = 0; i < samples; i++)
+            {
+                float angle = startAngle + goldenAngle * i;
+                Vector3 candidate = player + new Vector3(Mathf.Cos(angle) * radius, 0f,
+                    Mathf.Sin(angle) * radius);
+                if (camera != null && !IsOnScreen(camera, candidate)) continue;
+                if (!system.Registry.TryGetValue(system.WorldToChunk(candidate), out var chunk)
+                    || chunk == null || chunk.Tiles == null)
+                    continue;
+                if (!IsWalkable(chunk, candidate)) continue;
+
+                pos = candidate;
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>在玩家周围环形带内采样一个合法刷怪点（与已刷点保持 separation 间距）。</summary>
     bool TrySampleSpawnPosition(SinType sin, float separation, out Vector3 pos)
     {
@@ -463,7 +577,6 @@ public class MonsterSpawner : MonoBehaviour
             if (!IsWalkable(chunk, c)) continue;
             if (TooCloseToRecentCenter(c, separation)) continue;
             pos = c;
-            pos.y = spawnHeightY; // 统一生成高度（世界 y，手动调到地面高度）
             RememberSpawnCenter(pos);
             return true;
         }
@@ -520,7 +633,6 @@ public class MonsterSpawner : MonoBehaviour
             return Mathf.Max(1f, maxSpawnDistanceToPlayer - minSpawnDistanceToPlayer) * 2f;
 
         Vector3 origin = GetPlayerPosition();
-        origin.y = spawnHeightY;
         Vector3 right = camera.transform.right;
         right.y = 0f;
         if (right.sqrMagnitude < 0.0001f)
@@ -596,7 +708,6 @@ public class MonsterSpawner : MonoBehaviour
             if (!IsWalkable(chunk, c)) continue;
             if (TooCloseToRecentCenter(c, minSpawnPointSeparation)) continue; // 与已刷点保持最小间距，避免源头重叠
             pos = c;
-            pos.y = spawnHeightY;
             RememberSpawnCenter(pos);
             return true;
         }

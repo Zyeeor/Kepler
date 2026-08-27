@@ -57,6 +57,8 @@ public class ChunkLayoutEditorWindow : EditorWindow
     GUIStyle axisStyle;
 
     EditLayer editLayer = EditLayer.Base;
+    bool multiCellDecorationMode;
+    Vector2Int multiCellFootprint = Vector2Int.one;
     bool showPreview = true;
     bool showDefaultGroundPreview = true;
     /// <summary>AssetPreview 异步加载中标记：有任意预览未就绪则下一帧重绘。</summary>
@@ -146,6 +148,17 @@ public class ChunkLayoutEditorWindow : EditorWindow
             editLayer = EditLayer.Base;
         if (GUILayout.Toggle(editLayer == EditLayer.Overlay, "叠加装饰物", EditorStyles.toolbarButton, GUILayout.Width(90f)))
             editLayer = EditLayer.Overlay;
+        if (editLayer == EditLayer.Overlay)
+        {
+            multiCellDecorationMode = GUILayout.Toggle(multiCellDecorationMode, "多格放置", EditorStyles.toolbarButton, GUILayout.Width(76f));
+            if (multiCellDecorationMode)
+            {
+                EditorGUILayout.LabelField("尺寸", EditorStyles.miniLabel, GUILayout.Width(28f));
+                multiCellFootprint.x = Mathf.Max(1, EditorGUILayout.IntField(multiCellFootprint.x, GUILayout.Width(28f)));
+                EditorGUILayout.LabelField("×", EditorStyles.miniLabel, GUILayout.Width(10f));
+                multiCellFootprint.y = Mathf.Max(1, EditorGUILayout.IntField(multiCellFootprint.y, GUILayout.Width(28f)));
+            }
+        }
         GUILayout.Space(8f);
         showPreview = GUILayout.Toggle(showPreview, "缩略图", EditorStyles.toolbarButton, GUILayout.Width(70f));
         showDefaultGroundPreview = GUILayout.Toggle(showDefaultGroundPreview, "默认地块预览", EditorStyles.toolbarButton, GUILayout.Width(100f));
@@ -238,7 +251,15 @@ public class ChunkLayoutEditorWindow : EditorWindow
             int cy = size - 1 - Mathf.FloorToInt((mp.y - gridRect.y) / cellSize);
             if (cx >= 0 && cy >= 0 && cx < size && cy < size)
             {
-                if (e.button == 0) Paint(cx, cy);
+                if (e.button == 0)
+                {
+                    if (multiCellDecorationMode && editLayer == EditLayer.Overlay
+                        && brush != null && TileSemantics.ResolveKind(brush) == TerrainKind.Decoration
+                        && (multiCellFootprint.x > 1 || multiCellFootprint.y > 1))
+                        PaintMultiCellDecoration(cx, cy);
+                    else
+                        Paint(cx, cy);
+                }
                 else if (e.button == 1) EraseCell(cx, cy);
                 e.Use();
             }
@@ -298,6 +319,27 @@ public class ChunkLayoutEditorWindow : EditorWindow
             }
         }
 
+        // 新式多格装饰 placement：整组预览一次并绘制 footprint 边界，避免被误看成多个单格装饰。
+        if (target.decorationPlacements != null)
+        {
+            foreach (var placement in target.decorationPlacements)
+            {
+                if (placement == null || placement.prefab == null) continue;
+                var placementSize = placement.SafeFootprintSize;
+                var first = CellRect(gridRect, placement.anchor.x, placement.anchor.y);
+                var last = CellRect(gridRect, placement.anchor.x + placementSize.x - 1, placement.anchor.y + placementSize.y - 1);
+                var placementArea = Rect.MinMaxRect(first.x, last.y, last.xMax, first.yMax);
+                if (showPreview)
+                {
+                    var preview = GetPreview(placement.prefab);
+                    if (preview != null)
+                        GUI.DrawTexture(new Rect(placementArea.x + 3f, placementArea.y + 3f, placementArea.width - 6f, placementArea.height - 6f), preview, ScaleMode.ScaleToFit);
+                }
+                DrawRectOutline(placementArea, new Color(1f, 0.35f, 0.1f, 0.95f), 2f);
+                GUI.Label(new Rect(placementArea.x + 3f, placementArea.y + 2f, 48f, 16f), $"{placementSize.x}×{placementSize.y}", cellStyle);
+            }
+        }
+
         if (hoverX >= 0)
         {
             var hr = CellRect(gridRect, hoverX, hoverY);
@@ -330,6 +372,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
         }
         var baseP = target.GetTile(hoveredCell.x, hoveredCell.y);
         var ov = target.GetOverlay(hoveredCell.x, hoveredCell.y);
+        var placement = FindPlacementAt(hoveredCell.x, hoveredCell.y);
         ResolveCell(hoveredCell.x, hoveredCell.y, out var ground, out var overlay, out var gDefault);
 
         var sb = new StringBuilder($"({hoveredCell.x}, {hoveredCell.y})\n");
@@ -344,7 +387,12 @@ public class ChunkLayoutEditorWindow : EditorWindow
         }
         else sb.Append("空");
         sb.Append("\n叠加：");
-        if (overlay != null)
+        if (placement != null)
+            sb.Append(placement.prefab != null ? placement.prefab.name : "空")
+              .Append($"\n  footprint={placement.SafeFootprintSize.x}×{placement.SafeFootprintSize.y} anchor={placement.anchor}")
+              .Append("\n  kind=").Append(placement.prefab != null ? TileSemantics.ResolveKind(placement.prefab) : TerrainKind.Normal)
+              .Append(" solidCollider=").Append(placement.prefab != null && TileSemantics.HasSolidCollider(placement.prefab));
+        else if (overlay != null)
             sb.Append(overlay.name)
               .Append("\n  kind=").Append(TileSemantics.ResolveKind(overlay))
               .Append(" solidCollider=").Append(TileSemantics.HasSolidCollider(overlay));
@@ -368,6 +416,52 @@ public class ChunkLayoutEditorWindow : EditorWindow
         EditorGUI.DrawRect(new Rect(r.x, r.y + r.height - thickness, r.width, thickness), color);
         EditorGUI.DrawRect(new Rect(r.x, r.y, thickness, r.height), color);
         EditorGUI.DrawRect(new Rect(r.x + r.width - thickness, r.y, thickness, r.height), color);
+    }
+
+    /// <summary>多格装饰放置：点击为 footprint 左下角锚点，整组占位后一次保存。</summary>
+    void PaintMultiCellDecoration(int x, int y)
+    {
+        if (target == null || brush == null) return;
+        int size = target.size;
+        var footprint = new Vector2Int(Mathf.Max(1, multiCellFootprint.x), Mathf.Max(1, multiCellFootprint.y));
+        // 与程序生成一致：边沿保留给 Chunk 连通，固定布局也提示并拒绝跨边界。
+        if (x < 1 || y < 1 || x + footprint.x > size - 1 || y + footprint.y > size - 1)
+        {
+            ShowNotification(new GUIContent("多格装饰必须完整位于内部区域，不能占用 Chunk 边沿"));
+            return;
+        }
+        for (int px = x; px < x + footprint.x; px++)
+        for (int py = y; py < y + footprint.y; py++)
+        {
+            if (target.GetOverlay(px, py) != null || FindPlacementAt(px, py) != null)
+            {
+                ShowNotification(new GUIContent("多格装饰与已有叠加物重叠"));
+                return;
+            }
+        }
+
+        Undo.RecordObject(target, "放置多格装饰物");
+        if (target.decorationPlacements == null)
+            target.decorationPlacements = new List<DecorationPlacement>();
+        target.decorationPlacements.Add(new DecorationPlacement
+        {
+            prefab = brush,
+            anchor = new Vector2Int(x, y),
+            footprintSize = footprint,
+        });
+        EditorUtility.SetDirty(target);
+        Repaint();
+    }
+
+    DecorationPlacement FindPlacementAt(int x, int y)
+    {
+        if (target == null || target.decorationPlacements == null) return null;
+        for (int i = 0; i < target.decorationPlacements.Count; i++)
+        {
+            var p = target.decorationPlacements[i];
+            if (p != null && p.Contains(x, y)) return p;
+        }
+        return null;
     }
 
     /// <summary>左键涂刷：地砖刷子→底层，装饰刷子→叠加；橡皮擦（brush==null）→擦当前编辑层。</summary>
@@ -414,6 +508,15 @@ public class ChunkLayoutEditorWindow : EditorWindow
     /// <summary>右键擦除：整格两层皆空。</summary>
     void EraseCell(int x, int y)
     {
+        var placement = FindPlacementAt(x, y);
+        if (placement != null)
+        {
+            Undo.RecordObject(target, "擦除多格装饰物");
+            target.decorationPlacements.Remove(placement);
+            EditorUtility.SetDirty(target);
+            Repaint();
+            return;
+        }
         if (target.GetTile(x, y) == null && target.GetOverlay(x, y) == null) return;
         Undo.RecordObject(target, "清空整格");
         target.SetTile(x, y, null);
@@ -426,7 +529,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
     {
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
-        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加）｜ 右键擦整格 ｜ 切到叠加层后左键橡皮擦只清叠加", MessageType.None);
+        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加）｜ 多格放置模式点击锚点放整组 ｜ 右键擦整格/整组 ｜ 多格装饰不可跨 Chunk 边沿", MessageType.None);
         if (GUILayout.Button("清空全部", GUILayout.Width(100f), GUILayout.Height(24f))) ClearAll();
         EditorGUILayout.EndHorizontal();
     }
@@ -443,6 +546,8 @@ public class ChunkLayoutEditorWindow : EditorWindow
             target.SetTile(x, y, null);
             target.SetOverlay(x, y, null);
         }
+        if (target.decorationPlacements != null)
+            target.decorationPlacements.Clear();
         EditorUtility.SetDirty(target);
         Repaint();
     }

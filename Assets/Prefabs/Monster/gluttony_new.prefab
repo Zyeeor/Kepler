@@ -48,11 +48,11 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: GL-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: GL-S02
-    unlocked: 0
+    unlocked: 1
   - effectId: GL-S03
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 5627008656671882351, guid: a5061b4f1004cb840a20d616bf5cbc45,
     type: 3}
   vfxSpawnPoint: {fileID: 3382246229044458862}
@@ -61,7 +61,7 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: -1}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 70, z: 0}
-  damage: 40
+  damage: 100
   drawHitboxes: 0
   cooldown: 1
   debugLogCooldown: 0
@@ -93,7 +93,17 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
-  range: 1
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 200}
+  range: 2
   angle: 100
   damageAmount: 40
   hitDelay: 0.5
@@ -516,9 +526,9 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: GL-M01
-    unlocked: 0
+    unlocked: 1
   - effectId: GL-A02
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 8145229131396119196, guid: fd9408ee6311a9f41ae07ab55f335fe6,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -559,6 +569,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 200}
   formDuration: 3
   scaleMultiplier: 0.5
   speedMultiplier: 2
@@ -1075,7 +1095,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8883150867078005593
 Transform:
   m_ObjectHideFlags: 0
@@ -1128,7 +1148,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 100
+    maxHealth: 10000
     moveSpeed: 4
     acceleration: 60
     deceleration: 80
@@ -1139,7 +1159,7 @@ MonoBehaviour:
   collisionDamage: 30
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Gluttony_new
+  aiConfigId: Envy_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -1158,7 +1178,9 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
-  corpsePossessionWindow: 5
+  aliveY: 0
+  corpseY: 0.8
+  corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
   abilityCostDeathGrace: 0.6
@@ -1299,9 +1321,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
-  possessionRimIntensity: 4.05
-  eliteRimColor: {r: 1, g: 0.12, b: 0.02, a: 1}
+  possessionRimColor: {r: 1, g: 1, b: 1, a: 1}
+  possessionRimIntensity: 5.77
+  corpseRimColor: {r: 0.29726228, g: 0.12156862, b: 1, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 0.4616038, g: 0.15078534, b: 1.6, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.001
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
+  eliteRimColor: {r: 0.20292106, g: 0.08844574, b: 0.654088, a: 1}
   eliteRimIntensity: 0.75
   elitePulseSpeed: 1.15
   elitePulseAmount: 0.22
@@ -1311,9 +1345,18 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.25
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 0.8333246, g: 0.3592842, b: 2.2402449, a: 1}
+  dissolveEdgeColor: {r: 0.5572395, g: 0.24025132, b: 1.4980391, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 0.55809337, g: 0.29763448, b: 0.93710685, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.06
 --- !u!1 &5807367358007265780
 GameObject:
   m_ObjectHideFlags: 0
@@ -1362,9 +1405,9 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: GL-A01
-    unlocked: 0
+    unlocked: 1
   - effectId: GL-A03
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1372,7 +1415,7 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 20
+  damage: 100
   drawHitboxes: 0
   cooldown: 2
   debugLogCooldown: 0
@@ -1404,6 +1447,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 200}
   maxAimDistance: 8
   glA03AimDistance: 12
   warnDelay: 0.5

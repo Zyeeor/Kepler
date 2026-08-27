@@ -36,9 +36,6 @@ public class MonsterPool : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    /// <summary>Playable ground plane Y. CapsuleCollider bottoms snap here on spawn.</summary>
-    public const float GroundY = 0f;
-
     public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation)
     {
         if (prefab == null) return null;
@@ -70,66 +67,20 @@ public class MonsterPool : MonoBehaviour
         if (monster != null) monster.ResetForSpawn();
 
         // Authoritative world pose AFTER reset (ResetForSpawn may touch local pose on nested actors).
+        // The actor owns its configured vertical placement; the caller only supplies X/Z.
+        if (monster != null)
+            position.y = monster.aliveY;
         instanceToSpawn.transform.SetPositionAndRotation(position, rotation);
         instanceToSpawn.SetActive(true);
 
-        // After activation (and any OnEnable local tweaks), snap CapsuleCollider bottom to ground Y.
-        SnapCapsuleBottomToGround(instanceToSpawn, GroundY);
+        // CardManager unlocks existing abilities when a card is selected, but pooled
+        // monsters may be instantiated or reused after that point. Apply the current
+        // run build after activation so ability OnEnable has already stamped its stable
+        // ability tags; this also covers Boss mode's Boss and seven reserve corpses.
+        if (CardManager.Instance != null)
+            CardManager.Instance.ApplyAllUnlocksTo(instanceToSpawn);
+
         return instanceToSpawn;
-    }
-
-    /// <summary>
-    /// Adjust root Y so the primary CapsuleCollider's world-space bottom sits on <paramref name="groundY"/>.
-    /// Top-down planar combat: only Y is corrected.
-    /// </summary>
-    public static void SnapCapsuleBottomToGround(GameObject root, float groundY = GroundY)
-    {
-        if (root == null) return;
-
-        CapsuleCollider capsule = null;
-        MonsterActor monster = root.GetComponentInChildren<MonsterActor>(true);
-        if (monster != null)
-            capsule = monster.GetComponent<CapsuleCollider>();
-        if (capsule == null)
-            capsule = root.GetComponentInChildren<CapsuleCollider>(true);
-        if (capsule == null) return;
-
-        Transform t = capsule.transform;
-        Vector3 lossy = t.lossyScale;
-        float heightScale;
-        float radiusScale;
-        switch (capsule.direction)
-        {
-            case 0: // X
-                heightScale = Mathf.Abs(lossy.x);
-                radiusScale = Mathf.Max(Mathf.Abs(lossy.y), Mathf.Abs(lossy.z));
-                break;
-            case 2: // Z
-                heightScale = Mathf.Abs(lossy.z);
-                radiusScale = Mathf.Max(Mathf.Abs(lossy.x), Mathf.Abs(lossy.y));
-                break;
-            default: // Y
-                heightScale = Mathf.Abs(lossy.y);
-                radiusScale = Mathf.Max(Mathf.Abs(lossy.x), Mathf.Abs(lossy.z));
-                break;
-        }
-
-        float scaledHeight = capsule.height * heightScale;
-        float scaledRadius = capsule.radius * radiusScale;
-        float halfExtent = Mathf.Max(scaledHeight * 0.5f, scaledRadius);
-
-        Vector3 worldCenter = t.TransformPoint(capsule.center);
-        Vector3 axis = capsule.direction == 0 ? t.right : (capsule.direction == 1 ? t.up : t.forward);
-        if (axis.sqrMagnitude < 0.0001f) axis = Vector3.up;
-        axis.Normalize();
-
-        Vector3 tipA = worldCenter + axis * halfExtent;
-        Vector3 tipB = worldCenter - axis * halfExtent;
-        float bottomY = Mathf.Min(tipA.y, tipB.y);
-
-        float deltaY = groundY - bottomY;
-        if (Mathf.Abs(deltaY) < 0.0001f) return;
-        root.transform.position += new Vector3(0f, deltaY, 0f);
     }
 
     public void Return(MonsterActor monster)

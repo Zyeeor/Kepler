@@ -24,7 +24,7 @@ public static class ChunkTileGenerator
     static readonly int[] DX = { 1, 0, -1, 0 };
     static readonly int[] DY = { 0, 1, 0, -1 };
 
-    // 形状偏移表（[形状][朝向] → 相对锚点的格子偏移；朝向随机抽取，Single/Square2 仅 1 朝向）
+    // 形状偏移表（[形状][朝向] → 相对锚点的格子偏移；朝向随机抽取，Single/Square2/Cross 仅 1 朝向）
     static readonly Vector2Int[][] shapeSingle = { new[] { new Vector2Int(0, 0) } };
     static readonly Vector2Int[][] shapeLine2 =
     {
@@ -48,6 +48,31 @@ public static class ChunkTileGenerator
         new[] { new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(1, 1) }, // ┓（缺左上）
         new[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1) }, // ┛（缺左下）
     };
+    // S 形：.SS / SS.，以及顺时针 90° 旋转
+    static readonly Vector2Int[][] shapeS =
+    {
+        new[] { new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) },
+        new[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 2) },
+    };
+    // Z 形：ZZ. / .ZZ，作为 S 形镜像，以及顺时针 90° 旋转
+    static readonly Vector2Int[][] shapeZ =
+    {
+        new[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(2, 1) },
+        new[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(0, 2) },
+    };
+    // T 形：底部横杆 + 中心凸起，四个旋转方向
+    static readonly Vector2Int[][] shapeT =
+    {
+        new[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, 1) },
+        new[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(1, 1) },
+        new[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1) },
+        new[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 2) },
+    };
+    // 十字形：中心 + 四个正交邻格
+    static readonly Vector2Int[][] shapeCross =
+    {
+        new[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1), new Vector2Int(1, 2) },
+    };
 
     /// <summary>图案抽取缓冲（主线程专用，避免每次抽取分配）。</summary>
     struct PatternCandidate
@@ -59,6 +84,12 @@ public static class ChunkTileGenerator
     static readonly List<PatternCandidate> pickBuffer = new List<PatternCandidate>(12);
     /// <summary>地面生长的继承源缓冲（主线程专用，prefab 即图案标识）。</summary>
     static readonly List<GameObject> donorBuffer = new List<GameObject>(4);
+    /// <summary>本 Chunk 已放置的逻辑装饰实例计数（主线程专用）：多格实例只计 1 个。</summary>
+    static readonly Dictionary<DecorationTileEntry, int> usedDecorationCounts = new Dictionary<DecorationTileEntry, int>();
+    /// <summary>装饰抽取候选缓冲（主线程专用）：未达 maxPerChunk 上限的条目。</summary>
+    static readonly List<DecorationTileEntry> candidateDecorationBuffer = new List<DecorationTileEntry>(8);
+    /// <summary>装饰 prefab 拍平缓冲（主线程专用，仅供池空检查）。</summary>
+    static readonly List<GameObject> decorationPrefabsBuffer = new List<GameObject>(8);
 
     /// <summary>
     /// 生成入口（Prepare 阶段唯一调用点）。
@@ -68,6 +99,7 @@ public static class ChunkTileGenerator
     public static void Generate(ChunkRuntime chunk, ChunkDef def, uint seed, ChunkTemplateAllocator allocator = null)
     {
         if (chunk == null) return;
+        chunk.WasLayoutGenerated = false;
         int n = ResolveChunkSize();
 
         // 模板分配：由全局分配器决定（确定性 + 全局约束复用）
@@ -97,6 +129,7 @@ public static class ChunkTileGenerator
     public static void GenerateFixed(ChunkRuntime chunk, FixedChunkLayout layout, ChunkDef def, uint seed)
     {
         if (chunk == null) return;
+        chunk.WasLayoutGenerated = false;
         int n = ResolveChunkSize();
         if (layout != null)
         {
@@ -113,6 +146,7 @@ public static class ChunkTileGenerator
     /// </summary>
     static void GenerateFromLayout(ChunkRuntime chunk, FixedChunkLayout layout, int n, ChunkDef def = null)
     {
+        chunk.WasLayoutGenerated = true;
         if (n != layout.size)
             Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 系统 chunkSize({n}) 与布局尺寸({layout.size}) 不一致：越界格按空处理（尺寸自适应未实现）。", layout);
 
@@ -122,6 +156,7 @@ public static class ChunkTileGenerator
             defaultGround = def.normalTiles[0];
 
         var tiles = new TileData[n, n];
+        var placements = new List<DecorationPlacement>();
         for (int x = 0; x < n; x++)
         for (int y = 0; y < n; y++)
         {
@@ -137,7 +172,7 @@ public static class ChunkTileGenerator
                 var resolved = TileSemantics.ResolveKind(basePrefab);
                 if (resolved == TerrainKind.Decoration)
                 {
-                    // 旧格式兼容：装饰物整格摆在 tiles 字段 → 底层默认地块兜底，装饰物转为叠加
+                    // 旧格式兼容：装饰物整格摆在 tiles 字段 → 底层默认地块兜底，装饰物转为单格叠加实例
                     ground = defaultGround;
                     overlay = basePrefab;
                 }
@@ -149,7 +184,7 @@ public static class ChunkTileGenerator
                 groundWalkable = ground != null && WalkableOf(ground);
             }
 
-            // 仅叠加无地砖（新格式）→ 底层默认地块兜底
+            // 仅叠加无地砖（新字段）→ 底层默认地块兜底
             if (ground == null && overlay != null)
             {
                 ground = defaultGround;
@@ -164,14 +199,89 @@ public static class ChunkTileGenerator
                 td.overlayKind = TileSemantics.ResolveKind(overlay);
                 td.overlayWalkable = !TileSemantics.HasSolidCollider(overlay);
                 td.isWalkable = (ground == null || !TileSemantics.HasSolidCollider(ground)) && td.overlayWalkable;
+                var legacyPlacement = RegisterPlacement(placements, overlay, new Vector2Int(x, y), Vector2Int.one);
+                td.overlayPlacementId = legacyPlacement.id;
             }
             tiles[x, y] = td;
         }
 
+        // 新格式：一个 placement 只生成一个多格装饰实例；旧 overlayTiles 仍按单格实例兼容。
+        ApplyFixedDecorationPlacements(layout, tiles, placements, n, defaultGround, def);
+
         var openEdges = ComputeOpenEdges(tiles, n);
         if (openEdges.Count < 2)
-            Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 布局 '{layout.name}' 开放边 {openEdges.Count} < 2：Chunk 间连通由策划负责，该 Chunk 将被出入口校验安全兜底（全 Normal）替换。", layout);
-        chunk.SetTiles(tiles, openEdges);
+            Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 布局 '{layout.name}' 开放边 {openEdges.Count} < 2：Chunk 间连通由策划保证。该 Chunk 将保留作者布局（不静默覆盖），但可能与其他 Chunk 不连通，请检查布局边沿开口。", layout);
+        chunk.SetTiles(tiles, placements, openEdges);
+    }
+
+    static DecorationPlacement RegisterPlacement(List<DecorationPlacement> placements, GameObject prefab, Vector2Int anchor, Vector2Int footprintSize)
+    {
+        int nextId = 1;
+        if (placements != null)
+            foreach (var existing in placements)
+                if (existing != null) nextId = Mathf.Max(nextId, existing.id + 1);
+        var placement = new DecorationPlacement
+        {
+            id = nextId,
+            prefab = prefab,
+            anchor = anchor,
+            footprintSize = new Vector2Int(Mathf.Max(1, footprintSize.x), Mathf.Max(1, footprintSize.y)),
+        };
+        placements.Add(placement);
+        return placement;
+    }
+
+    /// <summary>应用 FixedChunkLayout 中的新式多格装饰 placement；越界/重叠时跳过并告警。</summary>
+    static void ApplyFixedDecorationPlacements(FixedChunkLayout layout, TileData[,] tiles, List<DecorationPlacement> placements,
+                                                int n, GameObject defaultGround, ChunkDef def)
+    {
+        if (layout == null || layout.decorationPlacements == null) return;
+        var fallbackRng = new System.Random(0x5EED);
+        foreach (var source in layout.decorationPlacements)
+        {
+            if (source == null || source.prefab == null) continue;
+            var size = source.SafeFootprintSize;
+            if (!FootprintInside(source.anchor, size, n, allowBoundary: true))
+            {
+                Debug.LogWarning($"[ChunkTileGenerator] 布局 '{layout.name}' 的多格装饰 '{source.prefab.name}' 越界，跳过。", layout);
+                continue;
+            }
+
+            bool fits = true;
+            for (int x = source.anchor.x; x < source.anchor.x + size.x && fits; x++)
+            for (int y = source.anchor.y; y < source.anchor.y + size.y; y++)
+            {
+                if (tiles[x, y].overlayPrefab != null) { fits = false; break; }
+            }
+            if (!fits)
+            {
+                Debug.LogWarning($"[ChunkTileGenerator] 布局 '{layout.name}' 的多格装饰 '{source.prefab.name}' 与已有叠加层重叠，跳过。", layout);
+                continue;
+            }
+
+            var placement = RegisterPlacement(placements, source.prefab, source.anchor, size);
+            for (int x = source.anchor.x; x < source.anchor.x + size.x; x++)
+            for (int y = source.anchor.y; y < source.anchor.y + size.y; y++)
+            {
+                var t = tiles[x, y];
+                if (t.prefab == null && defaultGround != null)
+                {
+                    t.prefab = defaultGround;
+                    t.kind = TerrainKind.Normal;
+                    t.isWalkable = WalkableOf(defaultGround);
+                }
+                AddOverlay(tiles, x, y, source.prefab, fallbackRng, def, placement.id);
+            }
+        }
+    }
+
+    static bool FootprintInside(Vector2Int anchor, Vector2Int size, int n, bool allowBoundary)
+    {
+        int min = allowBoundary ? 0 : 1;
+        int maxExclusive = allowBoundary ? n : n - 1;
+        return anchor.x >= min && anchor.y >= min
+            && anchor.x + size.x <= maxExclusive
+            && anchor.y + size.y <= maxExclusive;
     }
 
     /// <summary>按实际边沿可走性计算开放边：某边存在 ≥1 可走 Tile 即视为该边开放。</summary>
@@ -207,6 +317,7 @@ public static class ChunkTileGenerator
 
         var tiles = new TileData[n, n];
         var assigned = new bool[n, n];
+        var placements = new List<DecorationPlacement>();
         int max = n - 1;
 
         // 边沿一圈：随机取 normalTiles（Normal 可走），保证 Chunk 间连通
@@ -220,7 +331,7 @@ public static class ChunkTileGenerator
         }
 
         // 特殊地形图案（伤害区/阻挡物，内部区域，防重叠）
-        PlacePatterns(def, rng, tiles, assigned, n);
+        PlacePatterns(def, rng, tiles, assigned, n, placements);
 
         // 地面结构化（道路带 → 花纹区块 → 填充，全部剩余格 Normal）
         PlaceStructuredGround(def, rng, tiles, assigned, n);
@@ -236,7 +347,7 @@ public static class ChunkTileGenerator
         }
 
         // 边沿全 Normal 可走 → 四边恒开
-        chunk.SetTiles(tiles, new List<ChunkDirection>(ChunkCoord.AllDirections));
+        chunk.SetTiles(tiles, placements, new List<ChunkDirection>(ChunkCoord.AllDirections));
     }
 
     /// <summary>
@@ -244,9 +355,11 @@ public static class ChunkTileGenerator
     /// (类别, 形状)；单图案尝试 MaxPlaceTries 次随机锚点+方向，覆盖格须全部未分配且不在边沿；
     /// 放不下就放弃（不硬凑）。防重叠：assigned 占用标记，先放先占，逐格严格检查。
     /// </summary>
-    static void PlacePatterns(ChunkDef def, System.Random rng, TileData[,] tiles, bool[,] assigned, int n)
+    static void PlacePatterns(ChunkDef def, System.Random rng, TileData[,] tiles, bool[,] assigned, int n, List<DecorationPlacement> placements)
     {
         if (def == null) return;
+        // 装饰物计数复位：按各条目 maxPerChunk 限数（-1 不限制）
+        usedDecorationCounts.Clear();
         int target = Mathf.Max(0, def.minPatternsPerChunk);
         int maxCount = Mathf.Max(target, def.maxPatternsPerChunk);
         while (target < maxCount && rng.NextDouble() < PatternContinueChance) target++;
@@ -254,13 +367,55 @@ public static class ChunkTileGenerator
         for (int p = 0; p < target; p++)
         {
             if (!TryPickPattern(def, rng, out TerrainKind poolKind, out PatternShape shape)) break;
+            if (poolKind == TerrainKind.Decoration)
+            {
+                var entry = PickDecoration(def, rng, ShapeCellCount(shape));
+                if (entry == null) continue;
+                var size = SafeFootprintSize(entry.footprintSize);
+                if (size.x > 1 || size.y > 1)
+                {
+                    // 多格 prefab 是一个逻辑实例：footprint 负责占格，decorationPattern.shape 不再重复铺多个实例。
+                    TryPlaceMultiCellDecoration(entry, rng, tiles, assigned, n, def, placements);
+                }
+                else
+                {
+                    // 1×1 条目保留旧行为：Line2/Line3/Square2/LShape 仍表示多个单格装饰实例。
+                    TryPlaceShape(shape, rng, tiles, assigned, n, entry.prefab, TerrainKind.Decoration, def, placements, entry);
+                }
+                continue;
+            }
+
             var prefab = PickFromPool(PoolOf(def, poolKind), rng);
             if (prefab == null) continue;
-            // kind 由 prefab 语义自动推导（触发逻辑/碰撞体），不依赖手配字段；池类别仅决定抽取来源
             var kind = TileSemantics.ResolveKind(prefab);
-            TryPlaceShape(shape, rng, tiles, assigned, n, prefab, kind, def);
+            TryPlaceShape(shape, rng, tiles, assigned, n, prefab, kind, def, placements);
         }
     }
+
+    /// <summary>
+    /// 装饰物条目抽取：maxPerChunk 限制逻辑实例数量，-1 不限制。
+    /// 单格条目沿用 Line/Square/L 旧群组语义，需要一次预留该形状的实例数；多格条目一次只预留 1 个实例。
+    /// </summary>
+    static DecorationTileEntry PickDecoration(ChunkDef def, System.Random rng, int legacyInstancesNeeded)
+    {
+        candidateDecorationBuffer.Clear();
+        if (def == null || def.decorationTiles == null) return null;
+        for (int i = 0; i < def.decorationTiles.Count; i++)
+        {
+            var e = def.decorationTiles[i];
+            if (e == null || e.prefab == null) continue;
+            int used = usedDecorationCounts.TryGetValue(e, out int c) ? c : 0;
+            var footprint = SafeFootprintSize(e.footprintSize);
+            int needed = (footprint.x > 1 || footprint.y > 1) ? 1 : Mathf.Max(1, legacyInstancesNeeded);
+            if (e.maxPerChunk < 0 || used + needed <= e.maxPerChunk)
+                candidateDecorationBuffer.Add(e);
+        }
+        if (candidateDecorationBuffer.Count == 0) return null;
+        return candidateDecorationBuffer[rng.Next(candidateDecorationBuffer.Count)];
+    }
+
+    static Vector2Int SafeFootprintSize(Vector2Int size)
+        => new Vector2Int(Mathf.Max(1, size.x), Mathf.Max(1, size.y));
 
     /// <summary>各类 patterns 拍平合并加权抽取（权重 ≤0 或对应池为空的条目不参与）。</summary>
     static bool TryPickPattern(ChunkDef def, System.Random rng, out TerrainKind kind, out PatternShape shape)
@@ -270,7 +425,7 @@ public static class ChunkTileGenerator
 
         pickBuffer.Clear();
         CollectPatterns(def.triggerPatterns, def.triggerTiles, TerrainKind.Trigger);
-        CollectPatterns(def.decorationPatterns, def.decorationTiles, TerrainKind.Decoration);
+        CollectPatterns(def.decorationPatterns, PoolOf(def, TerrainKind.Decoration), TerrainKind.Decoration);
         if (pickBuffer.Count == 0) return false;
 
         float total = 0f;
@@ -304,22 +459,62 @@ public static class ChunkTileGenerator
         }
     }
 
-    /// <summary>类别对应的 prefab 池。</summary>
+    /// <summary>类别对应的 prefab 池（装饰类返回拍平缓冲，仅供池空检查；实际抽取走 PickDecoration）。</summary>
     static List<GameObject> PoolOf(ChunkDef def, TerrainKind kind)
     {
         switch (kind)
         {
             case TerrainKind.Trigger: return def.triggerTiles;
-            case TerrainKind.Decoration: return def.decorationTiles;
+            case TerrainKind.Decoration:
+                decorationPrefabsBuffer.Clear();
+                if (def.decorationTiles != null)
+                    foreach (var e in def.decorationTiles)
+                        if (e != null && e.prefab != null) decorationPrefabsBuffer.Add(e.prefab);
+                return decorationPrefabsBuffer;
             default: return def.normalTiles;
         }
     }
 
+    /// <summary>尝试放置一个真正的多格装饰实例：一个 prefab、一个 placement、一次 maxPerChunk 计数。</summary>
+    static bool TryPlaceMultiCellDecoration(DecorationTileEntry entry, System.Random rng, TileData[,] tiles,
+                                             bool[,] assigned, int n, ChunkDef def, List<DecorationPlacement> placements)
+    {
+        if (entry == null || entry.prefab == null) return false;
+        var size = SafeFootprintSize(entry.footprintSize);
+        if (!FootprintInside(Vector2Int.one, size, n, allowBoundary: false)) return false;
+
+        for (int t = 0; t < MaxPlaceTries; t++)
+        {
+            int ax = rng.Next(1, n - size.x);
+            int ay = rng.Next(1, n - size.y);
+            bool fits = true;
+            for (int x = ax; x < ax + size.x && fits; x++)
+            for (int y = ay; y < ay + size.y; y++)
+            {
+                if (assigned[x, y]) { fits = false; break; }
+            }
+            if (!fits) continue;
+
+            var placement = RegisterPlacement(placements, entry.prefab, new Vector2Int(ax, ay), size);
+            for (int x = ax; x < ax + size.x; x++)
+            for (int y = ay; y < ay + size.y; y++)
+            {
+                AddOverlay(tiles, x, y, entry.prefab, rng, def, placement.id);
+                assigned[x, y] = true;
+            }
+            usedDecorationCounts[entry] = usedDecorationCounts.TryGetValue(entry, out int used) ? used + 1 : 1;
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// 尝试整块放置一个形状：随机内部锚点 + 随机朝向，覆盖格须全部在内部且未分配；
-    /// 成功则整块分配同一 prefab；MaxPlaceTries 次失败返回 false（调用方放弃）。
+    /// 非装饰图案整块替换底层；1×1 装饰图案按格生成单实例 placement。
     /// </summary>
-    static bool TryPlaceShape(PatternShape shape, System.Random rng, TileData[,] tiles, bool[,] assigned, int n, GameObject prefab, TerrainKind kind, ChunkDef def)
+    static bool TryPlaceShape(PatternShape shape, System.Random rng, TileData[,] tiles, bool[,] assigned, int n,
+                              GameObject prefab, TerrainKind kind, ChunkDef def,
+                              List<DecorationPlacement> placements, DecorationTileEntry decorationEntry = null)
     {
         var rotations = ShapeRotations(shape);
         for (int t = 0; t < MaxPlaceTries; t++)
@@ -342,13 +537,16 @@ public static class ChunkTileGenerator
 
             if (kind == TerrainKind.Decoration)
             {
-                // 叠加在底层之上（底层恒非装饰）：保留已铺底层（或兜底 Normal），叠加装饰物并标记占用
+                // 1×1 条目的旧图案模式：图案中的每个格子是一个独立逻辑实例。
                 for (int i = 0; i < offsets.Length; i++)
                 {
                     int x = ax + offsets[i].x, y = ay + offsets[i].y;
-                    AddOverlay(tiles, x, y, prefab, rng, def);
+                    var placement = RegisterPlacement(placements, prefab, new Vector2Int(x, y), Vector2Int.one);
+                    AddOverlay(tiles, x, y, prefab, rng, def, placement.id);
                     assigned[x, y] = true;
                 }
+                if (decorationEntry != null)
+                    usedDecorationCounts[decorationEntry] = usedDecorationCounts.TryGetValue(decorationEntry, out int used) ? used + offsets.Length : offsets.Length;
                 return true;
             }
 
@@ -369,7 +567,7 @@ public static class ChunkTileGenerator
     /// 在已铺底层之上叠加 StructureLayer（装饰物/神龛）：保留底层地砖（若底层未铺则兜底 Normal），
     /// 叠加 overlayPrefab 并重算合并可走性（= 底层可走 && 叠加物无 solid Collider，对齐 MapStreaming_Design §10.1）。
     /// </summary>
-    static void AddOverlay(TileData[,] tiles, int x, int y, GameObject overlay, System.Random rng, ChunkDef def)
+    static void AddOverlay(TileData[,] tiles, int x, int y, GameObject overlay, System.Random rng, ChunkDef def, int placementId = -1)
     {
         var t = tiles[x, y];
         if (t.prefab == null)
@@ -381,11 +579,29 @@ public static class ChunkTileGenerator
         t.overlayPrefab = overlay;
         t.overlayKind = TileSemantics.ResolveKind(overlay);
         t.overlayWalkable = !TileSemantics.HasSolidCollider(overlay);
+        t.overlayPlacementId = placementId;
         t.isWalkable = !TileSemantics.HasSolidCollider(t.prefab) && t.overlayWalkable;
         tiles[x, y] = t;
     }
 
-    /// <summary>形状朝向表（Single/Square2 仅 1 朝向，Line2/Line3 横纵 2 朝向，LShape 4 朝向）。</summary>
+    /// <summary>形状占格数（装饰条目 maxPerChunk 预检用，与 ShapeRotations 各形状的偏移数一致）。</summary>
+    static int ShapeCellCount(PatternShape shape)
+    {
+        switch (shape)
+        {
+            case PatternShape.Line2: return 2;
+            case PatternShape.Line3: return 3;
+            case PatternShape.Square2: return 4;
+            case PatternShape.LShape: return 3;
+            case PatternShape.SShape: return 4;
+            case PatternShape.ZShape: return 4;
+            case PatternShape.TShape: return 4;
+            case PatternShape.Cross: return 5;
+            default: return 1;
+        }
+    }
+
+    /// <summary>形状朝向表（S/Z 2 朝向，T 4 朝向，Cross 固定；其余沿用原有朝向数）。</summary>
     static Vector2Int[][] ShapeRotations(PatternShape shape)
     {
         switch (shape)
@@ -394,6 +610,10 @@ public static class ChunkTileGenerator
             case PatternShape.Line3: return shapeLine3;
             case PatternShape.Square2: return shapeSquare2;
             case PatternShape.LShape: return shapeL;
+            case PatternShape.SShape: return shapeS;
+            case PatternShape.ZShape: return shapeZ;
+            case PatternShape.TShape: return shapeT;
+            case PatternShape.Cross: return shapeCross;
             default: return shapeSingle;
         }
     }
@@ -579,20 +799,42 @@ public static class ChunkTileGenerator
     // ── 神龛放置（出生点 Chunk Tile） ──
 
     /// <summary>
-    /// 在指定 Chunk 内放置神龛 Tile（kind=Decoration，走 Tile 可视化与碰撞链路）。
-    /// preferred：玩家出生点 tile 下标（可选）——在该格 3×3 邻域内按确定性顺序
-    /// （中心→上→下→左→右→四对角）取第一个 Normal 可走格放置，保证神龛 tile 贴近出生点；
-    /// 邻域无可用格时回退旧逻辑（内部区域随机 Normal 格，确定性种子）。
+    /// 出生格净空：清除指定格的叠加层（装饰物 / 危险地形 overlay），保留底层地砖并重算可走性。
+    /// 用于玩家初始位置——避免开局被生成在带 solid Collider 的装饰物（柱子/墙）里。
+    /// 越界或该格无叠加层时静默跳过。调用时机须早于 PlaceShrine（否则神龛邻域搜索会把出生格当作已占用）。
     /// </summary>
+    public static void ClearOverlay(ChunkRuntime chunk, Vector2Int? cell)
+    {
+        if (chunk == null || chunk.Tiles == null || !cell.HasValue) return;
+        var tiles = chunk.Tiles;
+        int n = tiles.GetLength(0);
+        int x = cell.Value.x, y = cell.Value.y;
+        if (x < 0 || y < 0 || x >= n || y >= n) return;
+        var t = tiles[x, y];
+        if (t.overlayPrefab == null) return;
+        if (t.overlayPlacementId > 0)
+        {
+            RemovePlacement(chunk, t.overlayPlacementId);
+            return;
+        }
+        t.overlayPrefab = null;
+        t.overlayKind = TerrainKind.Normal;
+        t.overlayWalkable = true;
+        t.isWalkable = !TileSemantics.HasSolidCollider(t.prefab);
+        tiles[x, y] = t;
+    }
+
     /// <summary>
     /// 在指定 Chunk 内放置神龛 Tile（kind=Decoration，走 Tile 可视化与碰撞链路）。
     /// preferred：玩家出生点 tile 下标（可选）——在该格 3×3 邻域内按确定性顺序
     /// （中心→上→下→左→右→四对角）取第一个 Normal 可走格放置，保证神龛 tile 贴近出生点；
-    /// 邻域无可用格时回退旧逻辑（内部区域随机 Normal 格，确定性种子）。
-    /// 放置后再清一次神龛 3×3 邻域（除中心）的其它装饰物 overlay，保证"单个神龛周围八格无别的装饰物"
-    /// （跨 Chunk 不相邻已由 MapStreamingSystem.PlanShrines 的切比雪夫间隔约束保障）。
+    /// 邻域无可用格时回退内部区域随机 Normal 格；内部也无合格格则不放置（不落到装饰物 / 危险地形上）。
+    /// avoid：禁止落点的 tile 下标（可选，通常为玩家初始位置）——搜索与回退均排除该格，
+    /// 用于避免神龛与玩家初始位置重叠（出生点 Chunk 神龛贴出生点但错开一格）。
+    /// 放置后再清一次神龛 3×3 邻域（除中心）的其它装饰物 / 危险地形 overlay（Decoration 与 Trigger），
+    /// 保证"单个神龛周围八格无别的装饰物或地刺/岩浆"（跨 Chunk 不相邻由 PlanShrines 切比雪夫间隔约束）。
     /// </summary>
-    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed, Vector2Int? preferred = null)
+    public static void PlaceShrine(ChunkRuntime chunk, GameObject shrinePrefab, uint seed, Vector2Int? preferred = null, Vector2Int? avoid = null)
     {
         if (chunk == null || chunk.Tiles == null || shrinePrefab == null) return;
         var tiles = chunk.Tiles;
@@ -604,6 +846,7 @@ public static class ChunkTileGenerator
         Vector2Int? placed = null;
 
         // ① preferred 3×3 邻域优先（确定性顺序，同 seed 稳定）：叠加在底层地砖之上（保留底层）
+        //    avoid（玩家初始格）从候选中排除，避免神龛压在玩家身上
         if (preferred.HasValue)
         {
             var p = preferred.Value;
@@ -618,6 +861,7 @@ public static class ChunkTileGenerator
             {
                 int x = p.x + off.x, y = p.y + off.y;
                 if (x < 1 || x >= n - 1 || y < 1 || y >= n - 1) continue;
+                if (avoid.HasValue && x == avoid.Value.x && y == avoid.Value.y) continue;
                 var t = tiles[x, y];
                 if (t.kind == TerrainKind.Normal && t.isWalkable && t.overlayPrefab == null)
                 {
@@ -625,6 +869,8 @@ public static class ChunkTileGenerator
                     t.overlayKind = kind;
                     t.overlayWalkable = overlayWalkable;
                     t.isWalkable = !TileSemantics.HasSolidCollider(t.prefab) && overlayWalkable;
+                    var shrinePlacement = RegisterPlacement(chunk.DecorationPlacements, shrinePrefab, new Vector2Int(x, y), Vector2Int.one);
+                    t.overlayPlacementId = shrinePlacement.id;
                     tiles[x, y] = t;
                     placed = new Vector2Int(x, y);
                     break;
@@ -632,25 +878,26 @@ public static class ChunkTileGenerator
             }
         }
 
-        // ② 回退：内部区域随机 Normal 且未叠加的格
+        // ② 回退：内部区域随机 Normal 且未叠加的格（同样排除 avoid）
+        //    无合格格时宁可本 Chunk 不落神龛，也不放到非 Normal / 已叠加的格上（避免神龛压住装饰物或地刺/岩浆）
         if (placed == null)
         {
             var normalCandidates = new List<Vector2Int>();
-            var anyInternal = new List<Vector2Int>();
             for (int x = 1; x < n - 1; x++)
             for (int y = 1; y < n - 1; y++)
             {
+                if (avoid.HasValue && x == avoid.Value.x && y == avoid.Value.y) continue;
                 var t = tiles[x, y];
-                anyInternal.Add(new Vector2Int(x, y));
                 if (t.kind == TerrainKind.Normal && t.isWalkable && t.overlayPrefab == null)
                     normalCandidates.Add(new Vector2Int(x, y));
             }
+            if (normalCandidates.Count == 0)
+            {
+                Debug.LogWarning($"[ChunkTileGenerator] {chunk.Coord} 内部无『Normal 可走且未叠加』的格子：本 Chunk 不放置神龛。");
+                return;
+            }
 
-            var pool = normalCandidates.Count > 0 ? normalCandidates : anyInternal;
-            if (pool.Count == 0) return;
-
-            int idx = rng.Next(pool.Count);
-            var cell = pool[idx];
+            var cell = normalCandidates[rng.Next(normalCandidates.Count)];
             var tt = tiles[cell.x, cell.y];
             if (tt.prefab == null)
             {
@@ -661,37 +908,66 @@ public static class ChunkTileGenerator
             tt.overlayKind = kind;
             tt.overlayWalkable = overlayWalkable;
             tt.isWalkable = !TileSemantics.HasSolidCollider(tt.prefab) && overlayWalkable;
+            var shrinePlacement = RegisterPlacement(chunk.DecorationPlacements, shrinePrefab, cell, Vector2Int.one);
+            tt.overlayPlacementId = shrinePlacement.id;
             tiles[cell.x, cell.y] = tt;
             placed = cell;
         }
 
         // ③ 保障：神龛周围八格（3×3 除中心）无别的装饰物 overlay
         if (placed.HasValue)
-            ClearNeighborsDecorations(tiles, placed.Value.x, placed.Value.y, n);
+            ClearNeighborsDecorations(chunk, placed.Value.x, placed.Value.y, n);
     }
 
     /// <summary>
-    /// 神龛保障：清除 (cx,cy) 的 3×3 邻域（除中心）内所有其它装饰物 overlay（仅 Decoration 类，保留底层地砖）。
-    /// 即保证"单个神龛周围八个格子没有别的装饰物"。越界邻域格（跨入相邻 Chunk）不处理——
+    /// 神龛保障：清除 (cx,cy) 的 3×3 邻域（除中心）内所有其它装饰物 / 危险地形 overlay（Decoration 与 Trigger 类，保留底层地砖）。
+    /// 即保证"单个神龛周围八个格子没有别的装饰物或地刺/岩浆"。越界邻域格（跨入相邻 Chunk）不处理——
     /// 神龛选位恒在内部（1..n-2），其 3×3 完全落在同一 Chunk 内；跨 Chunk 神龛间隔由 PlanShrines 约束。
     /// </summary>
-    static void ClearNeighborsDecorations(TileData[,] tiles, int cx, int cy, int n)
+    static void ClearNeighborsDecorations(ChunkRuntime chunk, int cx, int cy, int n)
     {
+        var tiles = chunk.Tiles;
         for (int x = cx - 1; x <= cx + 1; x++)
         for (int y = cy - 1; y <= cy + 1; y++)
         {
             if (x == cx && y == cy) continue;
             if (x < 0 || y < 0 || x >= n || y >= n) continue;
             var t = tiles[x, y];
-            if (t.overlayKind == TerrainKind.Decoration)
+            if (t.overlayKind != TerrainKind.Decoration && t.overlayKind != TerrainKind.Trigger) continue;
+            if (t.overlayPlacementId > 0)
             {
-                t.overlayPrefab = null;
-                t.overlayKind = TerrainKind.Normal;
-                t.overlayWalkable = true;
-                t.isWalkable = !TileSemantics.HasSolidCollider(t.prefab);
-                tiles[x, y] = t;
+                RemovePlacement(chunk, t.overlayPlacementId);
+                continue;
             }
+            t.overlayPrefab = null;
+            t.overlayKind = TerrainKind.Normal;
+            t.overlayWalkable = true;
+            t.overlayPlacementId = -1;
+            t.isWalkable = !TileSemantics.HasSolidCollider(t.prefab);
+            tiles[x, y] = t;
         }
+    }
+
+    /// <summary>删除一个多格装饰实例及其所有占用格，供出生点清空/神龛邻域清理使用。</summary>
+    static void RemovePlacement(ChunkRuntime chunk, int placementId)
+    {
+        if (chunk == null || placementId <= 0 || chunk.Tiles == null) return;
+        var tiles = chunk.Tiles;
+        int n = tiles.GetLength(0);
+        for (int x = 0; x < n; x++)
+        for (int y = 0; y < n; y++)
+        {
+            var t = tiles[x, y];
+            if (t.overlayPlacementId != placementId) continue;
+            t.overlayPrefab = null;
+            t.overlayKind = TerrainKind.Normal;
+            t.overlayWalkable = true;
+            t.overlayPlacementId = -1;
+            t.isWalkable = !TileSemantics.HasSolidCollider(t.prefab);
+            tiles[x, y] = t;
+        }
+        if (chunk.DecorationPlacements != null)
+            chunk.DecorationPlacements.RemoveAll(p => p != null && p.id == placementId);
     }
 
 }

@@ -21,8 +21,6 @@ public class MonsterPossessionCheat : MonoBehaviour
     [Header("Spawn")]
     [Tooltip("Spawn offset from the current player body / soul.")]
     public Vector3 spawnOffset = new Vector3(2f, 0f, 0f);
-    [Tooltip("刷怪统一高度（世界 y）：灵魂玩家悬浮，怪跟随会刷在空中；此值强制刷怪高度（默认 0，按地面实际高度手动调整）。")]
-    public float spawnHeightY = 0f;
     [Tooltip("If true, previously cheat-spawned possessed bodies are despawned when spawning a new one.")]
     public bool despawnPreviousCheatBody = true;
     [Tooltip("Apply permanent damage-immune Effect to cheat-possessed bodies.")]
@@ -279,7 +277,12 @@ public class MonsterPossessionCheat : MonoBehaviour
         }
 
         MonsterSpawner spawner = MonsterSpawner.EnsureInstance();
-        MonsterActor monster = spawner.SpawnEliteMonster(entry.prefab, ResolveSpawnPosition());
+        if (!spawner.TryGetEliteSpawnPosition(out Vector3 eliteSpawnPosition))
+        {
+            SetStatus("No legal on-screen Elite spawn position.");
+            return;
+        }
+        MonsterActor monster = spawner.SpawnEliteMonster(entry.prefab, eliteSpawnPosition);
         if (monster == null)
         {
             SetStatus($"Elite spawn failed for '{entry.prefab.name}'.");
@@ -445,7 +448,6 @@ public class MonsterPossessionCheat : MonoBehaviour
 
         Vector3 origin = anchor != null ? anchor.position : transform.position;
         Vector3 pos = origin + spawnOffset;
-        pos.y = spawnHeightY; // 统一高度（灵魂悬浮，怪不跟随悬浮）
         return pos;
     }
 

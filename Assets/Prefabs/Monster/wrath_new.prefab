@@ -358,9 +358,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: WR-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: WR-S03
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
     type: 3}
   vfxSpawnPoint: {fileID: 8935428301941876740}
@@ -401,6 +401,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 150}
   baseDuration: 2
   durationBonusS03: 2
   tickInterval: 0.5
@@ -853,7 +863,7 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: WR-B01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 7274247396609794175, guid: c2380a24984f28c47ac9516ed217e1a8,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -894,6 +904,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 150}
   radius: 3
   slamOffset: {x: 0, y: 0, z: 2}
   firstHitDelay: 0.1
@@ -1043,7 +1063,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 2}
+  m_AnchoredPosition: {x: 0, y: 1.77}
   m_SizeDelta: {x: 1920.0001, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &6935736334371690934
@@ -1640,7 +1660,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2606274025504633017
 Transform:
   m_ObjectHideFlags: 0
@@ -1691,7 +1711,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 150
+    maxHealth: 10000
     moveSpeed: 4
     acceleration: 0
     deceleration: 0
@@ -1702,7 +1722,7 @@ MonoBehaviour:
   collisionDamage: 30
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Wrath
+  aiConfigId: Envy_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -1721,7 +1741,9 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
-  corpsePossessionWindow: 5
+  aliveY: 0.45
+  corpseY: 0.45
+  corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
   abilityCostDeathGrace: 0.6
@@ -1813,9 +1835,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimColor: {r: 1, g: 1, b: 1, a: 1}
   possessionRimIntensity: 4.05
-  eliteRimColor: {r: 1, g: 0.04, b: 0.01, a: 1}
+  corpseRimColor: {r: 0.9622642, g: 0.3056247, b: 0.3078008, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 1.7196482, g: 0.30911222, b: 0.2541617, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.001
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
+  eliteRimColor: {r: 0.66666657, g: 0.07798294, b: 0.052410755, a: 1}
   eliteRimIntensity: 1
   elitePulseSpeed: 3.2
   elitePulseAmount: 0.32
@@ -1825,9 +1859,18 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.25
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 2.2402449, g: 0.4525355, b: 0.36359987, a: 1}
+  dissolveEdgeColor: {r: 1.4980391, g: 0.30260795, b: 0.24313718, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 1, g: 0.38679236, b: 0.38679236, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.06
 --- !u!136 &2748365033977391353
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -3464,8 +3507,8 @@ Transform:
   - {fileID: 8373903585237438738}
   - {fileID: 5859184531357053984}
   - {fileID: 9215280353030291576}
-  - {fileID: 1942324244154291201}
   - {fileID: 9100000000000000002}
+  - {fileID: 1942324244154291201}
   m_Father: {fileID: 2606274025504633017}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6495004726857562608
@@ -3671,6 +3714,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   auraRadius: 2
   auraDps: 5
   tickInterval: 0.5
@@ -4931,9 +4984,9 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: WR-M01
-    unlocked: 0
+    unlocked: 1
   - effectId: WR-M02
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -4973,6 +5026,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 150}
   grappleDistance: 8
   rangeMultiplierWithM02: 1.5
   hookSpeed: 32

@@ -633,7 +633,8 @@ public class MapStreamingSystem : MonoBehaviour
     /// <summary>
     /// Prepare（进 C）：生成 TileData 网格 + 出入口校验（≥2 可通行邻接边）。
     /// 邻接未知视为未校验但暂不报错（邻居后续生成时被边界签名强制约束，签名机制本身留 TODO）。
-    /// 校验失败重摇最多 3 次，仍失败走全 Normal 安全兜底。
+    /// 程序化随机路径校验失败重摇最多 3 次，仍失败走全 Normal 安全兜底；
+    /// 手摆/模板布局路径开放边不达标时保留作者布局（不静默全 Normal 覆盖），由 GenerateFromLayout 告警提示作者修正。
     /// 注：随机路径下边沿恒 Normal 四边恒开，校验通常一次通过；模板布局下边沿可走性由策划保证（见 GenerateTilesPlaceholder）。
     /// </summary>
     void Prepare(ChunkCoord coord)
@@ -650,11 +651,17 @@ public class MapStreamingSystem : MonoBehaviour
                 chunk.TransitionTo(ChunkStreamState.Prepared);
                 return;
             }
+            // 布局（手摆/模板）路径：开放边由布局决定、与 seed 无关，重试无意义；
+            // 且绝不用全 Normal 静默覆盖作者内容——保留作者布局，交由上方告警提示（GenerateFromLayout 已报）。
+            if (chunk.WasLayoutGenerated) break;
         }
 
-        // 兜底：全部 Tile 强制 Normal（TODO Phase 2+: 替换为策划安全预制 ChunkDef；并上报 telemetry）
-        Debug.LogWarning($"[MapStreamingSystem] {coord} 出入口校验重摇 {maxRetries} 次仍失败，全部 Tile 强制 Normal 兜底。");
-        ForceFallbackOpenings(chunk);
+        // 兜底：仅程序化随机路径在重摇耗尽后全部 Tile 强制 Normal（布局路径不覆盖作者内容）。
+        // TODO Phase 2+: 替换为策划安全预制 ChunkDef；并上报 telemetry
+        if (!chunk.WasLayoutGenerated)
+            ForceFallbackOpenings(chunk);
+        else
+            Debug.LogWarning($"[MapStreamingSystem] {coord} 为手摆/模板布局且开放边 <2：保留作者布局（不静默覆盖），但可能与相邻 Chunk 不连通，请检查布局边沿开口。");
         chunk.TransitionTo(ChunkStreamState.Prepared);
     }
 
@@ -791,7 +798,8 @@ public class MapStreamingSystem : MonoBehaviour
     /// <summary>
     /// Tile 生成薄封装（逻辑迁移至 ChunkTileGenerator，职责分离）：
     /// 单一「随机 + 模板融合」模式，模板分配经全局 ChunkTemplateAllocator 协调（确定性 + 全局约束复用）。
-    /// 返回 Chunk 实际开放边（随机路径边沿全 Normal 四边恒开；模板按布局边沿可走性，连通由策划负责）。
+    /// 返回 Chunk 实际开放边（随机路径边沿全 Normal 四边恒开；手摆/模板按布局边沿可走性，连通由策划负责）。
+    /// 注意：布局路径开放边不达标时保留作者布局、不静默全 Normal 覆盖（见 Prepare / GenerateFromLayout）。
     /// TODO(Phase 1 后续): 生成器须满足边界签名（Hash(coord, dir, seed) 决定边沿开口模式）。
     /// </summary>
     List<ChunkDirection> GenerateTilesPlaceholder(ChunkRuntime chunk, uint seed)
@@ -806,6 +814,11 @@ public class MapStreamingSystem : MonoBehaviour
             ChunkTileGenerator.Generate(chunk, chunk.Def, seed, templateAllocator);
         }
 
+        // 出生格净空：清掉落在玩家初始位置上的叠加物（装饰物 / 危险地形），避免开局卡在柱子里。
+        // 必须早于神龛放置——否则神龛 3×3 邻域搜索会把出生格当作「已占用」而错过最佳落点。
+        if (chunk.Coord == shrineSpawnChunk && shrinePreferredTile.HasValue)
+            ChunkTileGenerator.ClearOverlay(chunk, shrinePreferredTile);
+
         // 神龛放置：作为普通 Decoration Tile 生成。
         // 出生点 Chunk 仅在新手教程局（GameManager.ForceTutorial=true）用 firstShrinePrefab（固定 Pride 躯体，作为 TUT-01 初始载体）；
         // 非教程局或该字段为空时，出生点也用普通 shrinePrefab（随机躯体）。其余 Chunk 一律用普通 shrinePrefab。
@@ -816,7 +829,9 @@ public class MapStreamingSystem : MonoBehaviour
                 ? firstShrinePrefab
                 : shrinePrefab;
             if (prefab != null)
+                // 出生点 Chunk：preferred=玩家初始 tile（贴出生点），avoid=同 tile（避免神龛压在玩家身上）
                 ChunkTileGenerator.PlaceShrine(chunk, prefab, seed,
+                    chunk.Coord == shrineSpawnChunk ? shrinePreferredTile : null,
                     chunk.Coord == shrineSpawnChunk ? shrinePreferredTile : null);
         }
 

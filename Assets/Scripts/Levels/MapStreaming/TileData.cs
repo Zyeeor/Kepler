@@ -25,9 +25,12 @@ public struct TileData
     public TerrainKind overlayKind;
     /// <summary>叠加物自身逻辑可走性（= 无 solid Collider），不含底层。</summary>
     public bool overlayWalkable;
+    /// <summary>叠加装饰实例 owner id；同一多格装饰覆盖的 Tile 共享该 id，-1 表示旧式/无 owner。</summary>
+    public int overlayPlacementId;
 
     public TileData(int localX, int localY, UnityEngine.GameObject prefab, bool isWalkable, TerrainKind kind,
-                    UnityEngine.GameObject overlayPrefab = null, TerrainKind overlayKind = TerrainKind.Normal, bool overlayWalkable = true)
+                    UnityEngine.GameObject overlayPrefab = null, TerrainKind overlayKind = TerrainKind.Normal, bool overlayWalkable = true,
+                    int overlayPlacementId = -1)
     {
         this.localX = localX;
         this.localY = localY;
@@ -37,13 +40,14 @@ public struct TileData
         this.overlayPrefab = overlayPrefab;
         this.overlayKind = overlayKind;
         this.overlayWalkable = overlayWalkable;
+        this.overlayPlacementId = overlayPlacementId;
     }
 
     public override string ToString()
     {
         var s = $"Tile({localX}, {localY}) base={kind} walkable={isWalkable} prefab={(prefab != null ? prefab.name : "null")}";
         if (overlayPrefab != null)
-            s += $" overlay={overlayPrefab.name}({overlayKind},walkable={overlayWalkable})";
+            s += $" overlay={overlayPrefab.name}({overlayKind},walkable={overlayWalkable},owner={overlayPlacementId})";
         return s;
     }
 }

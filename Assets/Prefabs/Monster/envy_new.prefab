@@ -510,9 +510,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: EN-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -553,6 +553,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 100}
   baseThunderDamage: 10
   searchRadius: 30
   telegraphDuration: 0.6
@@ -1365,7 +1375,7 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: EN-M01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1405,6 +1415,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 100}
   flightDuration: 1
   flightSpeedMultiplier: 3
   flightEffect: {fileID: 11400000, guid: 3ab54dae587249618abcb3ae795b164e, type: 2}
@@ -1457,21 +1477,21 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: EN-A01
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-A03
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-A04
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-A05
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-R01
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-R02
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-R04
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 2137282384873386104}
   weaponVfxPrefab: {fileID: 0}
@@ -1512,8 +1532,18 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 100}
   maxRange: 15
-  damagePerSecond: 3
+  damagePerSecond: 10
   tickInterval: 0.01
   markStorageCap: 100
   markWriteRatio: 0.2
@@ -1631,7 +1661,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6903147954728295723
 Transform:
   m_ObjectHideFlags: 0
@@ -1670,8 +1700,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
-  maxHealth: 100
-  currentHealth: 100
+  maxHealth: 300
+  currentHealth: 300
   displayName: "\u5AC9\u5992"
   sinType: 4
   isPossessable: 1
@@ -1684,7 +1714,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 100
+    maxHealth: 10000
     moveSpeed: 4
     acceleration: 60
     deceleration: 80
@@ -1714,7 +1744,9 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
-  corpsePossessionWindow: 5
+  aliveY: 0
+  corpseY: 0.8
+  corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
   abilityCostDeathGrace: 0.6
@@ -1815,9 +1847,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73b5b2c287f94f61a8748d1db3a79086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  possessionRimColor: {r: 0.55, g: 0.2, b: 1, a: 1}
+  possessionRimColor: {r: 1, g: 1, b: 1, a: 1}
   possessionRimIntensity: 4.05
-  eliteRimColor: {r: 0.05, g: 0.75, b: 1, a: 1}
+  corpseRimColor: {r: 0.27586228, g: 0.12156862, b: 1, a: 1}
+  corpseRimIntensity: 1.35
+  corpseRimPower: 2
+  corpseSurfaceGlowIntensity: 0.1
+  corpsePulseSpeed: 1.1
+  corpsePulseAmount: 0.12
+  corpseMaterialTemplate: {fileID: 0}
+  corpseOutlineColor: {r: 0.41296154, g: 0.15078534, b: 1.6, a: 1}
+  corpseOutlineIntensity: 2.4
+  corpseOutlineWidth: 0.001
+  corpseOutlinePulseSpeed: 1.2
+  corpseOutlinePulseAmount: 0.18
+  eliteRimColor: {r: 0.19170952, g: 0, b: 1, a: 1}
   eliteRimIntensity: 0.9
   elitePulseSpeed: 2.8
   elitePulseAmount: 0.3
@@ -1827,9 +1871,18 @@ MonoBehaviour:
   hitFlashColor: {r: 1, g: 0.85, b: 0.85, a: 1}
   hitFlashDuration: 0.25
   hitFlashPeak: 0.85
-  dissolveEdgeColor: {r: 0.8333246, g: 0.3592842, b: 2.2402449, a: 1}
+  dissolveEdgeColor: {r: 0.5572395, g: 0.24025132, b: 1.4980391, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 0.37312993, g: 0.25098038, b: 1, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.06
 --- !u!1001 &2494704053077779638
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -97,6 +97,28 @@ MonoBehaviour:
     slot: 2
     icon: {fileID: 21300000, guid: 908ba0d51d990354eb967a805403fe02, type: 3}
     iconColor: {r: 0.7103478, g: 1, b: 0.61320746, a: 1}
+  monsterIdentityEntries:
+  - sin: 1
+    icon: {fileID: 21300000, guid: 988fe49e5b92a2e4abb3ad5e63932cb2, type: 3}
+    iconColor: {r: 0.68867916, g: 0.9990048, b: 1, a: 1}
+  - sin: 2
+    icon: {fileID: 21300000, guid: b42b8ca40a0085a409cc987c104f487f, type: 3}
+    iconColor: {r: 0.7103478, g: 1, b: 0.61320746, a: 1}
+  - sin: 3
+    icon: {fileID: 21300000, guid: 4bfe56bc984d9564c966ee4f06f74b1b, type: 3}
+    iconColor: {r: 0.60567784, g: 0.39308167, b: 1, a: 1}
+  - sin: 4
+    icon: {fileID: 21300000, guid: 51082e780e8ce174ebc44bacc547ed4e, type: 3}
+    iconColor: {r: 0.33647794, g: 0.35534567, b: 1, a: 1}
+  - sin: 5
+    icon: {fileID: 21300000, guid: 9d4f05e8dcb4f724fb6ad74c34df5101, type: 3}
+    iconColor: {r: 1, g: 0.38679236, b: 0.38679236, a: 1}
+  - sin: 6
+    icon: {fileID: 21300000, guid: d19204a4d9b82164ab1f113ad6e13c36, type: 3}
+    iconColor: {r: 1, g: 0.88109434, b: 0.63836473, a: 1}
+  - sin: 7
+    icon: {fileID: 21300000, guid: be76376acadc42f489809ae96edc1654, type: 3}
+    iconColor: {r: 1, g: 0.66352195, b: 0.96213686, a: 1}
   playerEntries:
   - slot: 0
     icon: {fileID: 21300000, guid: 734f256fff243754fba144cc602c9b97, type: 3}

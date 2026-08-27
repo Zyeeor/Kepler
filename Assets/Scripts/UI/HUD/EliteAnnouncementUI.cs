@@ -12,10 +12,14 @@ public sealed class EliteAnnouncementUI : MonoBehaviour
     CanvasGroup canvasGroup;
     float hideAt;
 
+    // 统一文本目录（Dual_Line §1：所有玩家可见文本必须走 Text Key，不得硬编码）
+    const string BannerKey = "elite.announce.banner";
+    const string UnknownKey = "elite.announce.unknown";
+
     public static void ShowElite(string designedMonsterName)
     {
         string name = string.IsNullOrWhiteSpace(designedMonsterName)
-            ? "未知怪物"
+            ? TextCatalog.Get(UnknownKey)
             : designedMonsterName.Trim();
         Canvas canvas = FindHudCanvas();
         if (canvas == null) canvas = CreateFallbackCanvas();
@@ -37,7 +41,7 @@ public sealed class EliteAnnouncementUI : MonoBehaviour
         if (label == null) CreateBanner();
         if (label == null || canvasGroup == null) return;
 
-        label.text = $"精英怪{designedMonsterName}出现！";
+        label.text = TextCatalog.Get(BannerKey, designedMonsterName);
         hideAt = Time.unscaledTime + displayDuration;
         canvasGroup.alpha = 1f;
     }

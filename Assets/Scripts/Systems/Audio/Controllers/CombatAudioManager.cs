@@ -32,6 +32,8 @@ public class CombatAudioManager : AudioChannelController
     int _sfxCursor;
     /// <summary>循环音效句柄表（per-id 单实例；移动音用）。</summary>
     readonly Dictionary<SfxId, AudioSource> _sfxLoops = new Dictionary<SfxId, AudioSource>();
+    /// <summary>怪物技能循环施放音（持续技能如嫉妒激光用）：源 + 音量倍率，RefreshVolume / StopAll 遍历。</summary>
+    readonly List<CastLoop> _castLoops = new List<CastLoop>();
     /// <summary>per-clip 最近播放时间（节流用）。</summary>
     readonly Dictionary<AudioClip, float> _lastSfxTime = new Dictionary<AudioClip, float>();
     /// <summary>per-SfxId 最近播放时间（SfxBank 条目级节流用）。</summary>
@@ -72,7 +74,10 @@ public class CombatAudioManager : AudioChannelController
 
     // ── 字符串名兼容层（能力基类：castAudioName / hitAudioName）──
 
-    /// <summary>播放命名音效。Instance 缺失 / 名称为空 / 解析失败均静默（设计行为）。</summary>
+    /// <summary>
+    /// 播放命名音效。Instance 缺失 / 名称为空 / 解析失败均静默（设计行为）。
+    /// 2D/3D 走 SfxBank 条目 prefer3D（音效表「3D 定位」勾选框）。
+    /// </summary>
     public static void Play(string clipName, Vector3? worldPosition = null)
     {
         if (string.IsNullOrWhiteSpace(clipName)) return;
@@ -82,7 +87,7 @@ public class CombatAudioManager : AudioChannelController
             RegisterMissingSfxName(clipName);
             return;
         }
-        Instance.Play(id, worldPosition);
+        Instance.Play(id, worldPosition, 1f);
     }
 
     static bool TryResolve(string clipName, out SfxId id)
@@ -109,17 +114,248 @@ public class CombatAudioManager : AudioChannelController
     /// <summary>
     /// 怪物技能施放音：按 owner.sinType + 技能类别查 MonsterSkillAudioConfig 播放。
     /// 配置经 Owner.monsterSkillAudioConfig 读取（统一配置入口在 AudioManager，无 Resources 旁路）。
+    /// charge01（可选）：normalized 蓄力值 0~1；当该条目的音源组 pickMode=ChargeTiered 时据此分档选音，
+    /// 其它 pickMode 忽略此参数。不传 = 非蓄力技能。
     /// 资产缺失 / 无条目 / clip 空 → 静默（设计行为，配置到位即响）。
     /// </summary>
-    public static void PlayCastAudio(MonsterActor owner, EnemyAbility.AbilityType kind, Vector3? worldPos = null)
+    public static void PlayCastAudio(MonsterActor owner, EnemyAbility.AbilityType kind, Vector3? worldPos = null, float charge01 = -1f, bool returnSegment = false)
     {
         if (owner == null || kind == EnemyAbility.AbilityType.Passive) return;
         var inst = Instance;
         if (inst == null || inst.Owner == null) return;
         var cfg = inst.Owner.monsterSkillAudioConfig;
-        if (cfg == null || !cfg.TryGet(owner.sinType, kind, out var e) || e.clip == null)
-            return;
-        inst.PlayClip(e.clip, worldPos, e.volumeScale, e.pitch, true);
+        if (cfg == null || !cfg.TryGet(owner.sinType, kind, out var e)) return;
+
+        // 敌我分轨：splitSides 开且玩家控制 → 用 possessed 组；否则用 enemy 组（splitSides 关 = 共用 enemy）
+        bool possessed = owner.IsPlayerControlled;
+        var set = e.splitSides && possessed ? e.possessed : e.enemy;
+        // 回归段（两段式位移第二段，如色欲魅影换位）：配了回归音则用回归音（与去程同 splitSides 分轨），否则回退去程音组
+        if (returnSegment)
+        {
+            var rSet = e.splitSides && possessed ? e.returnPossessed : e.returnEnemy;
+            if (rSet != null && rSet.clips != null && rSet.clips.Count > 0)
+                set = rSet;
+        }
+        if (set == null) return;
+
+        var clip = inst.PickCastClip(owner.sinType, kind, possessed, set, charge01);
+        if (clip == null) return;
+        // 空间化读音源组配置（默认敌方 3D / 附身 2D，可在编辑器单独改）
+        inst.PlayClip(clip, worldPos, set.volumeScale, set.pitch, set.spatialMode == MonsterSkillAudioConfig.SpatialMode.Positional3D);
+    }
+
+    /// <summary>
+    /// 召唤物（无人机/木灵）攻击音：按召唤者七罪类型查 MonsterSkillAudioConfig 的无人机条目播放。
+    /// 与 PlayCastAudio 同构：敌我分轨 + 空间化读音源组配置 + 候选列表按选取规则随机选音。
+    /// summonerSin=None 或无条目/clip 空 → 静默（设计行为）。
+    /// </summary>
+    public static void PlayDroneAttackAudio(SinType summonerSin, bool possessed, Vector3? worldPos = null)
+    {
+        if (summonerSin == SinType.None) return;
+        var inst = Instance;
+        if (inst == null || inst.Owner == null) return;
+        var cfg = inst.Owner.monsterSkillAudioConfig;
+        if (cfg == null || !cfg.TryGetDrone(summonerSin, out var e)) return;
+
+        // 敌我分轨：splitSides 开且玩家控制 → 用 possessed 组；否则用 enemy 组（splitSides 关 = 共用 enemy）
+        var set = e.splitSides && possessed ? e.possessed : e.enemy;
+        if (set == null) return;
+
+        var clip = inst.PickDroneClip(summonerSin, possessed, set);
+        if (clip == null) return;
+        inst.PlayClip(clip, worldPos, set.volumeScale, set.pitch, set.spatialMode == MonsterSkillAudioConfig.SpatialMode.Positional3D);
+    }
+
+    // ── 怪物技能循环施放音（持续技能如嫉妒激光：开火 Start / 熄火 Stop）──
+
+    /// <summary>怪物技能循环施放音句柄（内部：源 + 音量倍率，供音量刷新遍历）。</summary>
+    sealed class CastLoop
+    {
+        public AudioSource source;
+        public float volumeScale;
+    }
+
+    /// <summary>
+    /// 启动怪物技能循环施放音（持续技能如嫉妒激光：开火时 Start、熄火时 Stop）。
+    /// 查 MonsterSkillAudioConfig（七罪 × 技能类别），敌我分轨、空间化、音量音高与 PlayCastAudio 同构；
+    /// 仅当该音源组 loop=true 时生效，否则返回无效句柄（该技能仍走一次性 PlayCastAudio）。
+    /// 3D 模式挂 owner 下跟随；2D 模式挂本对象下无定位。资产缺失/无条目/clip 空 → 静默。
+    /// </summary>
+    public static SfxLoopHandle StartCastLoop(MonsterActor owner, EnemyAbility.AbilityType kind, Vector3? worldPos = null)
+    {
+        var inst = Instance;
+        if (inst == null || inst.Owner == null) return default;
+        return inst.StartCastLoopImpl(owner, kind, worldPos);
+    }
+
+    /// <summary>停止怪物技能循环施放音（幂等；无效句柄 no-op）。</summary>
+    public static void StopCastLoop(SfxLoopHandle handle)
+    {
+        if (handle.source == null) return;
+        var inst = Instance;
+        if (inst == null) return;
+        inst.StopCastLoopImpl(handle);
+    }
+
+    SfxLoopHandle StartCastLoopImpl(MonsterActor owner, EnemyAbility.AbilityType kind, Vector3? worldPos)
+    {
+        if (owner == null || kind == EnemyAbility.AbilityType.Passive) return default;
+        var cfg = Owner.monsterSkillAudioConfig;
+        if (cfg == null || !cfg.TryGet(owner.sinType, kind, out var e)) return default;
+
+        // 敌我分轨：splitSides 开且玩家控制 → possessed 组；否则 enemy 组
+        bool possessed = owner.IsPlayerControlled;
+        var set = e.splitSides && possessed ? e.possessed : e.enemy;
+        if (set == null || !set.loop) return default;   // 仅 loop=true 的条目做循环
+
+        var clip = PickLoopClip(owner.sinType, kind, possessed, set);
+        if (clip == null) return default;
+
+        bool is3D = set.spatialMode == MonsterSkillAudioConfig.SpatialMode.Positional3D;
+        var go = new GameObject("CastLoop_" + kind + "_" + owner.name);
+        go.transform.SetParent(is3D && owner.transform != null ? owner.transform : transform, false);
+        if (is3D && worldPos.HasValue) go.transform.position = worldPos.Value;
+
+        var src = go.AddComponent<AudioSource>();
+        src.clip = clip;
+        src.loop = true;
+        src.playOnAwake = false;
+        src.volume = Perceptual(Owner.SfxVolume) * set.volumeScale;
+        src.pitch = set.pitch;
+        src.spatialBlend = is3D ? 1f : 0f;
+        src.minDistance = sfx3DMinDistance;
+        src.maxDistance = sfx3DMaxDistance;
+        src.Play();
+
+        _castLoops.Add(new CastLoop { source = src, volumeScale = set.volumeScale });
+        return new SfxLoopHandle { source = src };
+    }
+
+    void StopCastLoopImpl(SfxLoopHandle handle)
+    {
+        if (handle.source == null) return;
+        for (int i = _castLoops.Count - 1; i >= 0; i--)
+        {
+            if (_castLoops[i].source == handle.source)
+            {
+                var go = _castLoops[i].source.gameObject;
+                _castLoops.RemoveAt(i);
+                Destroy(go);
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 从循环音源组挑一条（过滤 null；单条直取，多条按 Random/NoRepeat 随机）。
+    /// 循环音不支持蓄力分档（ChargeTiered 按随机/去重处理，循环音不应配蓄力档位）。
+    /// </summary>
+    AudioClip PickLoopClip(SinType sin, EnemyAbility.AbilityType kind, bool possessed, MonsterSkillAudioConfig.ClipSet set)
+    {
+        if (set == null || set.clips == null || set.clips.Count == 0) return null;
+        _validIdx.Clear();
+        for (int i = 0; i < set.clips.Count; i++)
+            if (set.clips[i] != null) _validIdx.Add(i);
+
+        if (_validIdx.Count == 0) return null;
+        if (_validIdx.Count == 1) return set.clips[_validIdx[0]];
+
+        var key = (sin, kind, possessed);
+        int lastPos = _castLastIndex.TryGetValue(key, out int lp) ? lp : -1;
+        int pickPos;
+        if (set.pickMode == MonsterSkillAudioConfig.ClipPickMode.NoRepeat && lastPos >= 0 && lastPos < _validIdx.Count)
+        {
+            int start = UnityEngine.Random.Range(0, _validIdx.Count - 1);
+            pickPos = start >= lastPos ? start + 1 : start;
+        }
+        else
+        {
+            pickPos = UnityEngine.Random.Range(0, _validIdx.Count);
+        }
+        _castLastIndex[key] = pickPos;
+        return set.clips[_validIdx[pickPos]];
+    }
+
+    /// <summary>施放音 no-repeat 记忆：按 (sin, kind, 是否附身) 记上次播放的有效列表位置（-1=无）。</summary>
+    readonly Dictionary<(SinType, EnemyAbility.AbilityType, bool), int> _castLastIndex = new Dictionary<(SinType, EnemyAbility.AbilityType, bool), int>();
+
+    /// <summary>无人机攻击音 no-repeat 记忆：按 (sin, 是否附身) 记上次播放的有效列表位置（-1=无）。</summary>
+    readonly Dictionary<(SinType, bool), int> _droneLastIndex = new Dictionary<(SinType, bool), int>();
+
+    /// <summary>有效 clip 索引复用缓冲（过滤 null，避免每次施放分配）。</summary>
+    readonly List<int> _validIdx = new List<int>();
+
+    /// <summary>
+    /// 从音源组按选取规则挑一条：
+    ///   - ChargeTiered：按蓄力档位二选一（clips[0]=低蓄力，clips[1]=高蓄力，阈值 heavyCastThreshold）；
+    ///   - Random / NoRepeat：过滤 null → 单条直取 → 纯随机 / 排除上次条目。
+    /// NoRepeat 按"列表条目位置"去重：同一 clip 重复放多个条目仍各自独立（重复放 = 提高权重）。
+    /// </summary>
+    AudioClip PickCastClip(SinType sin, EnemyAbility.AbilityType kind, bool possessed, MonsterSkillAudioConfig.ClipSet set, float charge01)
+    {
+        if (set == null || set.clips == null || set.clips.Count == 0) return null;
+
+        // 蓄力分档：直接按档位取 clips[0]/clips[1]（不足 2 条时退化到第一条，越界保护）
+        if (set.pickMode == MonsterSkillAudioConfig.ClipPickMode.ChargeTiered)
+        {
+            int tier = charge01 >= set.heavyCastThreshold ? 1 : 0;
+            if (set.clips.Count <= tier) tier = 0;                 // 只有一条时一律用第一条
+            return set.clips[tier] != null ? set.clips[tier]
+                 : (set.clips.Count > 1 ? set.clips[0] : null);    // 目标档位空 → 回退低蓄力
+        }
+
+        _validIdx.Clear();
+        for (int i = 0; i < set.clips.Count; i++)
+            if (set.clips[i] != null) _validIdx.Add(i);
+
+        if (_validIdx.Count == 0) return null;
+        if (_validIdx.Count == 1) return set.clips[_validIdx[0]];
+
+        var key = (sin, kind, possessed);
+        int lastPos = _castLastIndex.TryGetValue(key, out int lp) ? lp : -1;
+        int pickPos;
+        if (set.pickMode == MonsterSkillAudioConfig.ClipPickMode.NoRepeat && lastPos >= 0 && lastPos < _validIdx.Count)
+        {
+            // 从 n 项中排除上次位置：start ∈ [0, n-2]；pick = start>=lastPos ? start+1 : start → 得到 [0, n-1] 且 != lastPos
+            int start = UnityEngine.Random.Range(0, _validIdx.Count - 1);
+            pickPos = start >= lastPos ? start + 1 : start;
+        }
+        else
+        {
+            pickPos = UnityEngine.Random.Range(0, _validIdx.Count);
+        }
+        _castLastIndex[key] = pickPos;
+        return set.clips[_validIdx[pickPos]];
+    }
+
+    /// <summary>
+    /// 从无人机音源组按选取规则挑一条（Random 纯随机 / NoRepeat 排除上次条目）。
+    /// 复用 _validIdx 缓冲；NoRepeat 按"列表条目位置"去重（重复放同 clip = 加权）。
+    /// </summary>
+    AudioClip PickDroneClip(SinType sin, bool possessed, MonsterSkillAudioConfig.ClipSet set)
+    {
+        if (set == null || set.clips == null || set.clips.Count == 0) return null;
+        _validIdx.Clear();
+        for (int i = 0; i < set.clips.Count; i++)
+            if (set.clips[i] != null) _validIdx.Add(i);
+
+        if (_validIdx.Count == 0) return null;
+        if (_validIdx.Count == 1) return set.clips[_validIdx[0]];
+
+        var key = (sin, possessed);
+        int lastPos = _droneLastIndex.TryGetValue(key, out int lp) ? lp : -1;
+        int pickPos;
+        if (set.pickMode == MonsterSkillAudioConfig.ClipPickMode.NoRepeat && lastPos >= 0 && lastPos < _validIdx.Count)
+        {
+            int start = UnityEngine.Random.Range(0, _validIdx.Count - 1);
+            pickPos = start >= lastPos ? start + 1 : start;
+        }
+        else
+        {
+            pickPos = UnityEngine.Random.Range(0, _validIdx.Count);
+        }
+        _droneLastIndex[key] = pickPos;
+        return set.clips[_validIdx[pickPos]];
     }
 
     /// <summary>记录未注册的音效名（解析失败时调用；Debug 面板可见，不刷屏）。</summary>
@@ -148,6 +384,7 @@ public class CombatAudioManager : AudioChannelController
     /// <summary>
     /// 统一播放入口：查 Owner.SfxBank 条目（未配置/clip 空 → 静默 false 并计入缺失名单）。
     /// channel=Ui 分流 Owner.UiController；World 走池（可选 3D）；per-id 节流（条目 minInterval 覆盖全局）。
+    /// 2D/3D 走条目 prefer3D（音效表「3D 定位」勾选框）。
     /// </summary>
     public bool Play(SfxId id, Vector3? worldPos = null, float volumeScale = 1f)
     {
@@ -298,6 +535,13 @@ public class CombatAudioManager : AudioChannelController
             if (bank != null && bank.TryGet(kv.Key, out var entry) && entry != null) scale = entry.volumeScale;
             kv.Value.volume = MixerActive ? 1f : Perceptual(Owner.SfxVolume) * scale;
         }
+        // 怪物技能循环施放音音量同步刷新
+        for (int i = 0; i < _castLoops.Count; i++)
+        {
+            var cl = _castLoops[i];
+            if (cl.source == null) continue;
+            cl.source.volume = MixerActive ? 1f : Perceptual(Owner.SfxVolume) * cl.volumeScale;
+        }
     }
 
     public override void PauseAll()
@@ -319,5 +563,7 @@ public class CombatAudioManager : AudioChannelController
         if (sfxPool != null)
             foreach (var s in sfxPool)
                 if (s != null) s.Stop();
+        for (int i = 0; i < _castLoops.Count; i++)
+            if (_castLoops[i].source != null) _castLoops[i].source.Stop();
     }
 }

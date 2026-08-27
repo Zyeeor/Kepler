@@ -144,6 +144,12 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
     }
 
+    /// <summary>
+    /// 贪婪魔手：施放音改由 FireHand 每甩出一个魔手时播（数量感、连发节奏），
+    /// 屏蔽基类单次施放音，避免 dump 开头一声 + 每手一声重复。
+    /// </summary>
+    protected override void PlayCastSound() { }
+
     private IEnumerator DumpRoutine()
     {
         _dumping = true;
@@ -320,6 +326,11 @@ public class EnemyAbility_GreedHands : EnemyAbility
             homingSpeed,
             homingTurnRate,
             homingCurveStrength);
+
+        // 发射音：主动甩出的每个魔手播一声（连发 0.3s 间隔自然成节奏，NoRepeat 让多候选轮流）；
+        // 派生魔手（derived=true，击杀连锁）不播，避免与命中反馈叠加。
+        if (!derived)
+            CombatAudioManager.PlayCastAudio(owner, type, origin);
 
         if (debugLog)
             Debug.Log($"[GreedHands] '{(owner != null ? owner.name : "?")}' fired hand -> '{(target != null ? target.name : "<none>")}' (flank={flank}, left={left}, derived={derived})", go);

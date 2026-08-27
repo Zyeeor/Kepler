@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Run-level orchestration above MonsterSpawner. It owns the active-combat clock and Boss
@@ -11,8 +12,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     [Header("Boss")]
     [Min(1f)] public float bossCombatTime = 420f;
-    [Tooltip("仅供旧 Boss 仆从类型选择使用的成长档位间隔（秒）。")]
-    [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
     [Tooltip("横轴为战斗分钟数，纵轴为怪物基础生命值乘数。由 WaveManager 配置。")]
     public AnimationCurve monsterHealthMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 2.4f);
     [Tooltip("横轴为战斗分钟数，纵轴为怪物基础攻击力乘数。由 WaveManager 配置。")]
@@ -31,11 +30,12 @@ public sealed class RunSpawnDirector : MonoBehaviour
         SinType.Lust,
         SinType.Sloth,
     };
+    const float BossReserveHorizontalSpacing = 6f;
+    const float BossReserveRowSpacing = 6f;
     int spawnedBossCount;
     bool bossTimeReached;
 
     public float ActiveCombatSeconds { get; private set; }
-    public int CurrentTier => MonsterSpawnDifficulty.TierAt(ActiveCombatSeconds, difficultyGrowthIntervalSeconds);
     public float CurrentHealthMultiplier => EvaluateMultiplier(monsterHealthMultiplierByMinute, 1f);
     public float CurrentAttackMultiplier => EvaluateMultiplier(monsterAttackMultiplierByMinute, 1f);
     public bool BossSpawned => spawnedBossCount > 0;
@@ -66,11 +66,10 @@ public sealed class RunSpawnDirector : MonoBehaviour
             if (prefab != null && !normalPrefabs.Contains(prefab)) normalPrefabs.Add(prefab);
     }
 
-    public void ConfigureRunTiming(float nonBossSeconds, float growthIntervalSeconds,
+    public void ConfigureRunTiming(float nonBossSeconds,
         AnimationCurve healthMultiplierByMinute, AnimationCurve attackMultiplierByMinute)
     {
         bossCombatTime = Mathf.Max(1f, nonBossSeconds);
-        difficultyGrowthIntervalSeconds = Mathf.Max(0.1f, growthIntervalSeconds);
         if (healthMultiplierByMinute != null && healthMultiplierByMinute.length > 0)
             monsterHealthMultiplierByMinute = healthMultiplierByMinute;
         if (attackMultiplierByMinute != null && attackMultiplierByMinute.length > 0)
@@ -90,6 +89,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
     /// </summary>
     public MonsterActor SpawnScheduledMonster(SinType sin)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return null;
         GameObject prefab = FindNormalPrefabForSin(sin);
         MonsterSpawner spawner = MonsterSpawner.Instance;
         if (prefab == null || spawner == null) return null;
@@ -106,6 +106,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
     /// </summary>
     public bool TryReplaceInvisibleContinuousMonster(SinType targetSin)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
         MonsterSpawner spawner = MonsterSpawner.Instance;
         if (spawner == null) return false;
         GameObject prefab = FindNormalPrefabForSin(targetSin);
@@ -134,11 +135,24 @@ public sealed class RunSpawnDirector : MonoBehaviour
     {
         PruneBossBattleReserveBodies();
         if (MonsterPool.Instance == null) return 0;
+        MonsterSpawner spawner = MonsterSpawner.Instance != null
+            ? MonsterSpawner.Instance
+            : MonsterSpawner.EnsureInstance();
+        if (spawner == null) return 0;
 
         int spawned = 0;
         Vector3 center = GetBossBattleReserveCenter();
         Vector3 forward = GetBossBattleReserveForward();
         Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+        float minimumSeparation = Mathf.Min(BossReserveHorizontalSpacing, BossReserveRowSpacing);
+        List<Vector3> occupiedPositions = new List<Vector3>(BossBattleReserveOrder.Length);
+        for (int i = 0; i < bossBattleReserveBodies.Count; i++)
+        {
+            MonsterActor existing = bossBattleReserveBodies[i];
+            if (existing != null && existing.Body != MonsterActor.BodyState.Despawned)
+                occupiedPositions.Add(existing.transform.position);
+        }
+
         for (int i = 0; i < BossBattleReserveOrder.Length; i++)
         {
             SinType sin = BossBattleReserveOrder[i];
@@ -151,14 +165,15 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 continue;
             }
 
-            // Keep every fixed reserve body visible and reachable: a compact 4+3 array
-            // immediately beside the current player body, in canonical sin order.
+            // Calculate and validate each slot before planning the next one. This lets a
+            // relocated corpse become an occupied point for all later corpses.
             int row = i / 4;
             int column = i % 4;
             int columnsInRow = row == 0 ? 4 : 3;
-            float horizontal = (column - (columnsInRow - 1) * 0.5f) * 3f;
-            Vector3 position = center + forward * (3.5f + row * 3f) + right * horizontal;
-            GameObject instance = MonsterPool.Instance.Spawn(prefab, position, Quaternion.LookRotation(-forward, Vector3.up));
+            float horizontal = (column - (columnsInRow - 1) * 0.5f) * BossReserveHorizontalSpacing;
+            Vector3 requestedPosition = center + forward * (3.5f + row * BossReserveRowSpacing) + right * horizontal;
+            GameObject instance = MonsterPool.Instance.Spawn(prefab, requestedPosition,
+                Quaternion.LookRotation(-forward, Vector3.up));
             if (instance == null) continue;
 
             MonsterActor body = instance.GetComponentInChildren<MonsterActor>(true);
@@ -167,6 +182,24 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 Debug.LogWarning("[RunSpawnDirector] Reserve prefab has no MonsterActor: " + prefab.name);
                 instance.SetActive(false);
                 continue;
+            }
+
+            requestedPosition.y = body.aliveY;
+
+            if (!spawner.TryResolveBossReserveSpawnPosition(body, requestedPosition, occupiedPositions,
+                minimumSeparation, out Vector3 resolvedPosition))
+            {
+                Debug.LogWarning("[RunSpawnDirector] Boss reserve position is illegal and no nearby legal point was found. sin=" + sin,
+                    instance);
+                MonsterPool.Instance.Return(body);
+                continue;
+            }
+            bool relocated = Mathf.Abs(resolvedPosition.x - requestedPosition.x) > 0.0001f
+                || Mathf.Abs(resolvedPosition.z - requestedPosition.z) > 0.0001f;
+            if (relocated)
+            {
+                resolvedPosition.y = body.aliveY;
+                instance.transform.position = resolvedPosition;
             }
 
             body.ResolveSinIdentityFromHint(prefab.name);
@@ -179,6 +212,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
             body.SpawnAsBossBattleReserveCorpse();
             bossBattleReserveBodies.Add(body);
+            occupiedPositions.Add(body.transform.position);
             spawned++;
         }
 
@@ -217,6 +251,23 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     void Update()
     {
+        RunSession run = RunSession.Instance;
+        if (run != null && run.IsBossMode)
+        {
+            if (SceneManager.GetActiveScene().name == "MainMenu") return;
+            // Boss 模式不等待 420 秒：场景基础设施就绪后立即重试生成 Boss，
+            // 地图刷怪点尚未准备好时保持战斗时钟为 0。
+            if (!BossSpawned)
+            {
+                if (bossPrefab != null && MonsterSpawner.Instance != null)
+                    DebugSpawnBossNow();
+                if (!BossSpawned) return;
+            }
+            if (!IsActiveCombat()) return;
+            ActiveCombatSeconds += Time.unscaledDeltaTime;
+            return;
+        }
+
         if (!IsActiveCombat()) return;
         ActiveCombatSeconds += Time.unscaledDeltaTime;
         if (!bossTimeReached && ActiveCombatSeconds >= bossCombatTime)
@@ -229,6 +280,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     bool IsActiveCombat()
     {
+        if (SceneManager.GetActiveScene().name == "MainMenu") return false;
+        if (MonsterSpawner.Instance == null) return false;
         RunSession run = RunSession.Instance;
         if (run != null && run.CurrentPhase != RunPhase.Waves && run.CurrentPhase != RunPhase.Final) return false;
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver) return false;
@@ -253,7 +306,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (monster == null) return false;
         monster.ApplySpawnDifficultySnapshot(
             request.origin,
-            request.difficultyTier,
             CurrentHealthMultiplier,
             CurrentAttackMultiplier);
         if (request.origin == SpawnOrigin.KillEcho
@@ -271,7 +323,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (actor == null) return false;
         actor.ApplySpawnDifficultySnapshot(
             SpawnOrigin.Boss,
-            CurrentTier,
             CurrentHealthMultiplier,
             CurrentAttackMultiplier);
         if (actor is BossSevenfoldActor boss)
@@ -298,8 +349,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
         {
             MonsterSpawner spawner = MonsterSpawner.Instance;
             if (spawner == null || !spawner.TryGetLegacyWaveSpawnPosition(out Vector3 position)) break;
-            GameObject prefab = normalPrefabs[(CurrentTier + i) % normalPrefabs.Count];
-            if (TrySpawn(prefab, new SpawnRequest(SpawnOrigin.BossMinion, CurrentTier, Vector3.zero, 0f,
+            GameObject prefab = normalPrefabs[i % normalPrefabs.Count];
+            if (TrySpawn(prefab, new SpawnRequest(SpawnOrigin.BossMinion, Vector3.zero, 0f,
                 Time.unscaledTime + 1f), position)) spawned++;
         }
         return spawned;

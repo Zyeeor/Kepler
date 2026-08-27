@@ -34,6 +34,8 @@ public class StageBgmMap : ScriptableObject
         public AudioClip clip;
         [Tooltip("淡入淡出时长覆盖（秒）；≤0 用 BgmController.bgmFadeDuration 全局值。")]
         [Min(0f)] public float fadeOverride = 0f;
+        [Tooltip("该曲目的音量倍率（相对全局 BGM 音量）。1=默认，>1 放大、<1 减小；用于平衡不同素材响度。")]
+        [Range(0f, 2f)] public float volumeScale = 1f;
     }
 
     [Serializable]
@@ -100,5 +102,33 @@ public class StageBgmMap : ScriptableObject
                 slot = null;
                 return false;
         }
+    }
+
+    void OnEnable()
+    {
+        // 旧资产数据迁移：volumeScale 是后加字段，旧序列化数据反序列化为 0（不执行字段初始化器 =1f）。
+        // volumeScale=0 会让该槽曲目音量倍率归零 → 完全静音，几乎必为配置错误（想静音应用 action=Stop）。
+        // 幂等：补过后若磁盘尚未写回，再次加载会再补一次，无副作用。
+        NormalizeSlot(combat);
+        NormalizeSlot(choice);
+        NormalizeSlot(final);
+        NormalizeSlot(result);
+        NormalizeSlot(fail);
+        NormalizeSlot(soul);
+        NormalizeSlot(elite);
+        if (waveTiers != null)
+        {
+            for (int i = 0; i < waveTiers.Count; i++)
+            {
+                var t = waveTiers[i];
+                if (t != null) NormalizeSlot(t.slot);
+            }
+        }
+    }
+
+    static void NormalizeSlot(Slot slot)
+    {
+        if (slot != null && slot.volumeScale <= 0f)
+            slot.volumeScale = 1f;
     }
 }

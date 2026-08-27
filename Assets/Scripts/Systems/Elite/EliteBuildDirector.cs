@@ -72,9 +72,9 @@ public class EliteBuildDirector : MonoBehaviour
     [Min(0)] public int waveGap = 1;
 
     [Header("精英强化参数")]
-    [Tooltip("精英最大生命值相对当前波次普通怪的倍率。波次难度倍率仍由 MonsterSpawnDifficulty 叠加。")]
+    [Tooltip("旧波次模式与调试精英使用的生命值倍率；持续刷怪模式由 WaveManager 的条目独立配置。")]
     [Min(1f)] public float eliteHealthMultiplier = 2f;
-    [Tooltip("精英攻击伤害相对当前波次普通怪的倍率。波次难度倍率仍由 MonsterSpawnDifficulty 叠加。")]
+    [Tooltip("旧波次模式与调试精英使用的攻击力倍率；持续刷怪模式由 WaveManager 的条目独立配置。")]
     [Min(1f)] public float eliteAttackDamageMultiplier = 2f;
     [Tooltip("精英视觉尺寸相对普通怪的倍率。只缩放视觉节点，不缩放 Actor 根节点、碰撞体或导航。")]
     [Min(1f)] public float eliteVisualScaleMultiplier = 2f;
@@ -254,7 +254,6 @@ public class EliteBuildDirector : MonoBehaviour
     void HandleWaveStarted(int waveIndex, WaveConfig wave)
     {
         if (!eliteEnabled) return;
-        RefreshActiveEliteDifficulty();
         int waveNumber = waveIndex + 1;
         if (!ShouldSpawnEliteAt(waveNumber)) return;
 
@@ -265,15 +264,6 @@ public class EliteBuildDirector : MonoBehaviour
             return;
         }
         RequestElite(waveIndex, waveNumber);
-    }
-
-    void RefreshActiveEliteDifficulty()
-    {
-        RunSpawnDirector spawnDirector = RunSpawnDirector.Instance;
-        int tier = spawnDirector != null ? spawnDirector.CurrentTier : 0;
-        MonsterActor[] monsters = FindObjectsOfType<MonsterActor>();
-        for (int i = 0; i < monsters.Length; i++)
-            if (monsters[i] != null) monsters[i].RefreshEliteWaveDifficulty(tier);
     }
 
     /// <summary>
@@ -354,14 +344,14 @@ public class EliteBuildDirector : MonoBehaviour
     }
 
     /// <summary>
-    /// 定时投放的联网入口（新连续刷怪逻辑）：WaveManager.SpawnContinuousElites 每周期投放点调用。
-    /// 优先向服务器请求其他玩家的构筑快照（POST /api/elite/pick，wave = 投放序号 = cycleIndex + 1，
-    /// 即第几次投放精英怪，与后台语义一致）。来源优先级：在线真实快照 → 离线/失败/空候选时
-    /// 本地 Preset → 空快照注入（保证定时节奏必出精英）。异步响应晚到（跨周期）时丢弃本次投放。
+    /// 配置精英的联网入口：WaveManager 的每条连续投放表调用。
+    /// 精英的时间、罪印、生命和攻击力由该条配置决定；投放序号仅用于快照请求与战果归因。
     /// </summary>
     /// <returns>同步兜底路径返回是否已注入；在线路径返回请求是否已受理（注入结果异步完成）。</returns>
-    public bool RequestScheduledElite(SinType sin, int cycleIndex)
+    public bool RequestScheduledElite(SinType sin, int scheduleIndex,
+        float healthMultiplier, float attackMultiplier)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
         if (!eliteEnabled) return false;
         if (catalog == null)
             catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
@@ -379,25 +369,26 @@ public class EliteBuildDirector : MonoBehaviour
         if (offlineDetected)
         {
             // Meta §6.3：无网 → 不发注定失败的请求，直接本地兜底（Preset → 空快照）
-            return InjectScheduledFallback(sin, cycleIndex, "离线");
+            return InjectScheduledFallback(sin, scheduleIndex, healthMultiplier, attackMultiplier, "离线");
         }
 
-        RequestScheduledEliteAsync(sin, cycleIndex);
+        RequestScheduledEliteAsync(sin, scheduleIndex, healthMultiplier, attackMultiplier);
         return true; // 请求已受理；注入在异步回调完成后（WaveManager 日志计数按受理口径）
     }
 
-    async void RequestScheduledEliteAsync(SinType sin, int cycleIndex)
+    async void RequestScheduledEliteAsync(SinType sin, int scheduleIndex,
+        float healthMultiplier, float attackMultiplier)
     {
         ElitePickResp resp;
         try
         {
-            resp = await Client().Pick(DeviceIdentity.Id, cycleIndex + 1, waveGap);
+            resp = await Client().Pick(DeviceIdentity.Id, scheduleIndex + 1, waveGap);
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放请求失败（{e.Message}），改用本地兜底。");
+            Debug.LogWarning($"[EliteBuildDirector] 第 {scheduleIndex + 1} 次投放请求失败（{e.Message}），改用本地兜底。");
             OnNetworkFailure();
-            InjectScheduledFallback(sin, cycleIndex, "网络失败");
+            InjectScheduledFallback(sin, scheduleIndex, healthMultiplier, attackMultiplier, "网络失败");
             return;
         }
         OnNetworkSuccess();
@@ -405,40 +396,42 @@ public class EliteBuildDirector : MonoBehaviour
         if (resp == null || !resp.HasSnapshot)
         {
             // Meta §6.3：服务器候选库为空 → 本地兜底
-            Debug.Log($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放：服务器无精英候选（snapshot=null），改用本地兜底。");
-            InjectScheduledFallback(sin, cycleIndex, "空候选库");
+            Debug.Log($"[EliteBuildDirector] 第 {scheduleIndex + 1} 次投放：服务器无精英候选（snapshot=null），改用本地兜底。");
+            InjectScheduledFallback(sin, scheduleIndex, healthMultiplier, attackMultiplier, "空候选库");
             return;
         }
 
-        // 异步往返期间周期可能已推进（连续逻辑 CurrentWaveIndex 与 cycleIndex 同为 60s 周期序号），过期投放丢弃
-        if (!IsWaveStillCurrent(cycleIndex))
+        if (!IsScheduledSpawnStillActive())
         {
-            Debug.Log($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放响应到达时周期已推进，丢弃本次投放。");
+            Debug.Log($"[EliteBuildDirector] 第 {scheduleIndex + 1} 次投放响应到达时非 Boss 阶段已结束，丢弃本次投放。");
             return;
         }
 
-        InjectElite(boundWaveManager, resp.snapshot, cycleIndex + 1, resp.relaxed, useScreenEdgePosition: true);
+        InjectElite(boundWaveManager, resp.snapshot, scheduleIndex + 1, resp.relaxed,
+            healthMultiplier, attackMultiplier);
     }
 
     /// <summary>
     /// 定时投放兜底链：本地 Preset（Catalog.presetSnapshots，OD-CAN-001 内容 OPEN）→
     /// 空快照注入（TryInjectScheduledElite，保持定时节奏必出精英）。
     /// </summary>
-    bool InjectScheduledFallback(SinType sin, int cycleIndex, string reason)
+    bool InjectScheduledFallback(SinType sin, int scheduleIndex,
+        float healthMultiplier, float attackMultiplier, string reason)
     {
-        if (!IsWaveStillCurrent(cycleIndex))
+        if (!IsScheduledSpawnStillActive())
         {
-            Debug.Log($"[EliteBuildDirector] 第 {cycleIndex + 1} 次投放{reason}，兜底注入时周期已推进，丢弃。");
+            Debug.Log($"[EliteBuildDirector] 第 {scheduleIndex + 1} 次投放{reason}，兜底注入时非 Boss 阶段已结束，丢弃。");
             return false;
         }
         var snapshot = catalog != null ? catalog.PickPresetSnapshot() : null;
         if (snapshot != null)
         {
-            InjectElite(boundWaveManager, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
+            InjectElite(boundWaveManager, snapshot, scheduleIndex + 1, false,
+                healthMultiplier, attackMultiplier);
             return true;
         }
         // Preset 池空（内容待策划配置：OD-CAN-001）：空快照注入保底——定时节奏必出精英（无他人构筑、仅数值强化）
-        return TryInjectScheduledElite(sin, cycleIndex);
+        return TryInjectScheduledElite(sin, scheduleIndex, healthMultiplier, attackMultiplier);
     }
 
     /// <summary>
@@ -446,7 +439,8 @@ public class EliteBuildDirector : MonoBehaviour
     /// 按请求 Sin 构造空 BD 快照（bdCount=0，来源 "scheduled"）直接注入精英。
     /// The catalog still owns the actual Elite prefab mapping and runtime modifiers.
     /// </summary>
-    public bool TryInjectScheduledElite(SinType sin, int cycleIndex)
+    public bool TryInjectScheduledElite(SinType sin, int scheduleIndex,
+        float healthMultiplier, float attackMultiplier)
     {
         if (!eliteEnabled) return false;
         if (catalog == null)
@@ -472,16 +466,19 @@ public class EliteBuildDirector : MonoBehaviour
             monsterType = entry.displayName,
             bdData = new List<BdCardEntry>(),
             bdCount = 0,
-            sourceWave = cycleIndex + 1,
+            sourceWave = scheduleIndex + 1,
             gameTime = (long)(RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : 0f),
         };
 
-        return InjectElite(wm, snapshot, cycleIndex + 1, false, useScreenEdgePosition: true);
+        return InjectElite(wm, snapshot, scheduleIndex + 1, false,
+            healthMultiplier, attackMultiplier);
     }
 
     /// <summary>F9 注入：解析快照 → 刷出 → 挂载体还原历史 BD → 计入本波清点。</summary>
-    bool InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed, bool useScreenEdgePosition = false)
+    bool InjectElite(WaveManager wm, EliteSnapshotItem snapshot, int waveNumber, bool relaxed,
+        float healthMultiplier = -1f, float attackMultiplier = -1f)
     {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
         if (catalog == null)
         {
             Debug.LogWarning("[EliteBuildDirector] 未配置 EliteMonsterCatalog，无法注入精英（Resources/EliteMonsterCatalog.asset 或场景挂载指定）。");
@@ -499,13 +496,9 @@ public class EliteBuildDirector : MonoBehaviour
             Debug.LogWarning("[EliteBuildDirector] 场景中无 MonsterSpawner，本波不投放。");
             return false;
         }
-        Vector3 pos;
-        bool hasPosition = useScreenEdgePosition
-            ? spawner.TryGetWaveSpawnPosition(entry.sin, out pos)
-            : spawner.TryGetLegacyWaveSpawnPosition(out pos);
-        if (!hasPosition)
+        if (!spawner.TryGetEliteSpawnPosition(out Vector3 pos))
         {
-            Debug.LogWarning("[EliteBuildDirector] 无合法精英刷怪点，本波不投放。");
+            Debug.LogWarning("[EliteBuildDirector] 屏幕内无合法精英刷怪点，本波不投放。");
             return false;
         }
 
@@ -516,10 +509,15 @@ public class EliteBuildDirector : MonoBehaviour
             return false;
         }
 
+        // 遭遇端命名（方案 Phase 4 / ADR-3）：优先用快照自带的词缀名。
+        // monsterType 格式为 "sin|w1|w2|…"；旧格式（无 '|'）或解析失败 → 回退 catalog 名（验收项 15）。
+        // 用上传端冻结的词序列而非本地重算：否则同一只怪会因遭遇者卡池不同而改名。
+        string epithetName = ResolveEncounterName(snapshot, entry);
+
         var carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
-        carrier.Init(snapshot, entry.displayName);
-        ApplyEliteRuntimeSettings(monster);
-        AnnounceEliteSpawn(monster, entry.displayName);
+        carrier.Init(snapshot, epithetName);
+        ApplyEliteRuntimeSettings(monster, healthMultiplier, attackMultiplier);
+        AnnounceEliteSpawn(monster, epithetName);
         wm.RegisterExternalWaveMonster(monster);
         EnqueueEliteEvent("spawned", carrier, waveNumber); // 战果回传：精英成功生成（Meta §6.5）
 
@@ -533,13 +531,21 @@ public class EliteBuildDirector : MonoBehaviour
     /// Applies the shared Elite runtime presentation and combat settings. The debug key [9]
     /// uses this same entry point so testing and wave injection cannot drift apart.
     /// </summary>
-    public void ApplyEliteRuntimeSettings(MonsterActor monster)
+    public void ApplyEliteRuntimeSettings(MonsterActor monster,
+        float healthMultiplier = -1f, float attackMultiplier = -1f)
     {
         if (monster == null) return;
         monster.ApplyEliteRuntimeModifiers(
-            eliteHealthMultiplier,
-            eliteAttackDamageMultiplier,
+            healthMultiplier > 0f ? healthMultiplier : eliteHealthMultiplier,
+            attackMultiplier > 0f ? attackMultiplier : eliteAttackDamageMultiplier,
             eliteVisualScaleMultiplier);
+    }
+
+    bool IsScheduledSpawnStillActive()
+    {
+        WaveManager wm = boundWaveManager != null ? boundWaveManager : FindObjectOfType<WaveManager>();
+        return wm != null && wm.IsUsingNewSpawnLogic && wm.IsWaveActive
+            && (RunSpawnDirector.Instance == null || !RunSpawnDirector.Instance.NonBossTimeReached);
     }
 
     /// <summary>Shows the Catalog-designed monster name when an Elite appears.</summary>
@@ -673,10 +679,15 @@ public class EliteBuildDirector : MonoBehaviour
         long gameTime = (long)(GameManager.Instance != null ? GameManager.Instance.gameTimer : 0f);
         foreach (var kv in bySin)
         {
+            string sinWire = EliteMonsterCatalog.WireName(kv.Key);
             result.Add(new SnapshotEntry
             {
-                sin = EliteMonsterCatalog.WireName(kv.Key),
-                monsterType = ResolveDisplayName(kv.Key),
+                sin = sinWire,
+                // 词缀命名（方案 Phase 4 / ADR-3）：monsterType 载"sin|中性词序列"，
+                // 由**上传端**生成，遭遇端套本机模板 —— 保证同一只怪在任何人屏幕上同名。
+                // 服务器只校验非空、不解析内容，故改格式无需改服务器、无需数据迁移。
+                // 生成失败（目录缺失/无词）时回退为纯 catalog 名（旧格式，遭遇端自动降级）。
+                monsterType = ResolveMonsterType(kv.Key, kv.Value),
                 bdCount = kv.Value.Count,
                 bdData = kv.Value,
                 sourceWave = sourceWave,
@@ -685,6 +696,47 @@ public class EliteBuildDirector : MonoBehaviour
             });
         }
         return result;
+    }
+
+    /// <summary>
+    /// 编码 monsterType 载荷："sin|w1|w2|…"。
+    /// 无词缀时返回纯 catalog 名（旧格式），遭遇端按"无词缀"降级（验收项 15）。
+    /// </summary>
+    string ResolveMonsterType(SinType sin, List<BdCardEntry> bdData)
+    {
+        string sinWire = EliteMonsterCatalog.WireName(sin);
+        var catalog = CardEpithetCatalog.Instance;
+        if (catalog == null || bdData == null || bdData.Count == 0)
+            return ResolveDisplayName(sin);
+
+        var ids = new List<string>(bdData.Count);
+        foreach (var c in bdData)
+            if (c != null && !string.IsNullOrEmpty(c.cardId)) ids.Add(c.cardId);
+
+        var words = CardEpithetGenerator.Generate(ids, catalog);
+        return CardEpithetGenerator.EncodeForWire(sinWire, words);
+    }
+
+    /// <summary>
+    /// 遭遇端解析精英名字（方案 Phase 4 / ADR-3）。
+    /// 快照带词缀序列时用当前显示线套模板；否则回退 catalog 名（旧格式快照 / 定时投放 / 无词缀）。
+    /// 本机词表未知的中性词会**原样显示**（中性词本身是可读中文），不丢字不报错（验收项 16）。
+    /// </summary>
+    static string ResolveEncounterName(EliteSnapshotItem snapshot, EliteMonsterCatalog.Entry entry)
+    {
+        string fallback = entry != null && !string.IsNullOrEmpty(entry.displayName)
+            ? entry.displayName
+            : (snapshot != null ? snapshot.sin : "");
+        if (snapshot == null || string.IsNullOrEmpty(snapshot.monsterType)) return fallback;
+
+        // 旧格式：纯 catalog 名，无分隔符 → 无词缀
+        if (!CardEpithetGenerator.TryDecodeFromWire(snapshot.monsterType, out string sinWire, out string[] words))
+            return fallback;
+
+        if (words == null || words.Length == 0) return fallback;   // 无词缀（bdCount=0 的定时投放精英）
+
+        string name = CardEpithetGenerator.Format(sinWire, words, words.Length, CardEpithetCatalog.Instance);
+        return string.IsNullOrEmpty(name) ? fallback : name;
     }
 
     string ResolveDisplayName(SinType sin)

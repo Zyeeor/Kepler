@@ -16,8 +16,8 @@ MonoBehaviour:
   - cardName: "\u5341\u5B57\u5723\u88C1"
     textKey: 
     effectId: PR-A02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Sword Qi becomes a cross-shaped slash with one shared hit instance.
+    image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
+    description: "\u98DE\u884C\u65A9\u51FB\u5316\u4E3A\u5341\u5B57\u5251\u6C14"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -39,11 +39,11 @@ MonoBehaviour:
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
     hideBorderLayer: 0
     extraBorderSprites: []
-  - cardName: "\u738B\u51A0\u52BF"
+  - cardName: "\u738B\u51A0\u519B\u52BF"
     textKey: 
     effectId: PR-A01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Fires three Sword Qi blades in a fixed spread.
+    image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
+    description: "\u4E00\u6B21\u653B\u51FB\u4F1A\u5C04\u51FA\u4E09\u9053\u6563\u5F00\u7684\u5251\u6C14"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -68,8 +68,8 @@ MonoBehaviour:
   - cardName: "\u738B\u547D\u8FDC\u5F81"
     textKey: 
     effectId: PR-A04
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Increases the legal range of Sword Qi.
+    image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
+    description: "\u5251\u6C14\u80FD\u591F\u65A9\u5411\u66F4\u8FDC\u5904\u7684\u654C\u4EBA"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -93,8 +93,8 @@ MonoBehaviour:
   - cardName: "\u738B\u5EA7\u4E4B\u6B65"
     textKey: 
     effectId: PR-M01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Increases dash distance and front strike damage.
+    image: {fileID: 21300000, guid: 67941a70a4511494bbe8c49356ead912, type: 3}
+    description: "\u50B2\u6162\u7684\u7A81\u8FDB\u66F4\u8FDC\uFF0C\u65A9\u51FB\u4E5F\u66F4\u5F3A"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.ChargeStrike
@@ -120,8 +120,8 @@ MonoBehaviour:
   - cardName: "\u5F81\u670D\u8005\u4E4B\u5F84"
     textKey: 
     effectId: PR-X01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Each blink creates one linear Sword Qi slash along its path.
+    image: {fileID: 21300000, guid: ba2061ded0814584fb2b6f514d6463d0, type: 3}
+    description: "\u7A7F\u68AD\u65F6\u4F1A\u6CBF\u7740\u7ECF\u8FC7\u7684\u65B9\u5411\u9644\u52A0\u6C14\u5203"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.BlinkChain
@@ -145,8 +145,8 @@ MonoBehaviour:
   - cardName: "\u738B\u6743\u5DE1\u730E"
     textKey: 
     effectId: PR-S01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: Blink Chain performs two additional strikes.
+    image: {fileID: 21300000, guid: ba2061ded0814584fb2b6f514d6463d0, type: 3}
+    description: "\u7A7F\u68AD\u65A9\u53EF\u4EE5\u989D\u5916\u7A7F\u68AD2\u6B21"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.BlinkChain
@@ -172,7 +172,7 @@ MonoBehaviour:
   - cardName: "\u8FDF\u6765\u7684\u5730\u9E23"
     textKey: 
     effectId: SL-M02
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: 908ba0d51d990354eb967a805403fe02, type: 3}
     description: Creates an immediate ground blast after a legal landing.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -196,7 +196,7 @@ MonoBehaviour:
   - cardName: "\u5723\u9AB8\u5206\u88C2"
     textKey: 
     effectId: SL-A03
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: 9fa591414c9b95d43ac787300e11ff47, type: 3}
     description: After the cannon blast, fires charged-time-scaled scatter fragments.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -220,7 +220,7 @@ MonoBehaviour:
   - cardName: "\u9057\u4E0B\u7684\u5B88\u671B\u8005"
     textKey: 
     effectId: SL-M01
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: 908ba0d51d990354eb967a805403fe02, type: 3}
     description: Places a short-lived mine at the takeoff point before jumping.
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -244,7 +244,7 @@ MonoBehaviour:
   - cardName: "\u540C\u6B32\u76F8\u566C"
     textKey: 
     effectId: LU-S05
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: bdd5479329318524bad21bd5aac98072, type: 3}
     description: "\u540C\u6B21 Pull \u4E2D Linked \u76EE\u6807\u4E92\u649E\u7206\u70B8\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -274,7 +274,7 @@ MonoBehaviour:
   - cardName: "\u540C\u6B32\u4E4B\u5F71"
     textKey: 
     effectId: LU-M05
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 956227002388f704ca76450f961f6995, type: 3}
     description: "\u6709\u6548 Anchor \u5EF6\u8FDF\u6A21\u4EFF\u672C\u4F53 Attack\uFF0C\u4F24\u5BB350%\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -303,7 +303,7 @@ MonoBehaviour:
   - cardName: "\u80CC\u79BB\u4E4B\u7F5A"
     textKey: 
     effectId: LU-M03
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 61cde80152db1124385fc72f12acc76b, type: 3}
     description: "\u6362\u4F4D\u6210\u529F\u540E\uFF0C\u65E7 Anchor \u4F4D\u7F6E\u5EF6\u8FDF\u7206\u70B8\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -329,7 +329,7 @@ MonoBehaviour:
   - cardName: "\u6B32\u75D5\u6B96\u7206"
     textKey: 
     effectId: LU-A03
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 956227002388f704ca76450f961f6995, type: 3}
     description: "Linked \u76EE\u6807\u6B7B\u4EA1\u6D88\u8D39\u7206\u70B8\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -360,7 +360,7 @@ MonoBehaviour:
   - cardName: "\u65E0\u5BB3\u4E4B\u62E5"
     textKey: 
     effectId: LU-S06
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: bdd5479329318524bad21bd5aac98072, type: 3}
     description: "\u7275\u5F15\u6765\u6E90\u4F24\u5BB3\u9694\u79BB\uFF08Pull + grace\uFF09\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -387,7 +387,7 @@ MonoBehaviour:
   - cardName: "\u8272\u6B32\u6F6E\u6C50"
     textKey: 
     effectId: LU-A04
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 956227002388f704ca76450f961f6995, type: 3}
     description: "Attack \u66FF\u6362\u4E3A\u73AF\u5F62\u8FF7\u6C14\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -422,7 +422,7 @@ MonoBehaviour:
   - cardName: "\u6B32\u6F6E\u4E0D\u606F"
     textKey: 
     effectId: LU-TG01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: bdd5479329318524bad21bd5aac98072, type: 3}
     description: "\u79FB\u901F +15%\uFF1B\u4E09\u69FD CD \xD70.70\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -451,7 +451,7 @@ MonoBehaviour:
   - cardName: "\u4E07\u773C\u540C\u89C6"
     textKey: 
     effectId: EN-A01
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    image: {fileID: 21300000, guid: 13b4f1cd873534840b389aec84e92da1, type: 3}
     description: "\u6BCF\u96943\u79D2\uFF0C\u6FC0\u5149\u4F1A\u77ED\u6682\u540C\u65F6\u7167\u5411\u56DB\u4E2A\u76EE\u6807\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -475,7 +475,7 @@ MonoBehaviour:
   - cardName: "\u7A7F\u955C\u5723\u5149"
     textKey: 
     effectId: EN-A03
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    image: {fileID: 21300000, guid: 13b4f1cd873534840b389aec84e92da1, type: 3}
     description: "\u6FC0\u5149\u4F1A\u5728\u77ED\u6682\u9636\u6BB5\u83B7\u5F97\u7A7F\u900F\u80FD\u529B\uFF0C\u53EF\u4EE5\u7EE7\u7EED\u547D\u4E2D\u540E\u65B9\u76EE\u6807\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -503,7 +503,7 @@ MonoBehaviour:
   - cardName: "\u5992\u7130\u6E10\u70BC"
     textKey: 
     effectId: EN-A05
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    image: {fileID: 21300000, guid: 13b4f1cd873534840b389aec84e92da1, type: 3}
     description: "\u6FC0\u5149\u7EF4\u6301\u8D8A\u4E45\uFF0C\u4F24\u5BB3\u8D8A\u9AD8\uFF0C\u6700\u9AD8\u8FBE\u5230\u6BCF\u79D250\u70B9\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -532,7 +532,7 @@ MonoBehaviour:
   - cardName: "\u955C\u75D5\u5DE1\u730E"
     textKey: 
     effectId: EN-M01
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    image: {fileID: 21300000, guid: 1cd3b61d4a5885540b35d23f59185a7e, type: 3}
     description: "\u98DE\u884C\u7ECF\u8FC7\u7684\u654C\u4EBA\u4F1A\u7559\u4E0B\u5370\u8BB0\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -556,7 +556,7 @@ MonoBehaviour:
   - cardName: "\u65E0\u5E95\u4E4B\u955C"
     textKey: 
     effectId: EN-R01
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    image: {fileID: 21300000, guid: 13b4f1cd873534840b389aec84e92da1, type: 3}
     description: "\u76EE\u6807\u8EAB\u4E0A\u7684\u5370\u8BB0\u80FD\u50A8\u5B58\u66F4\u591A\u4F24\u5BB3\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -582,7 +582,7 @@ MonoBehaviour:
   - cardName: "\u96F7\u9706\u4F5C\u8BC1"
     textKey: 
     effectId: EN-S01
-    image: {fileID: 21300000, guid: c9377829e23124341aee19138534482c, type: 3}
+    image: {fileID: 21300000, guid: efcc1b76995d4a84b98c7a2daed685a6, type: 3}
     description: "\u96F7\u66B4\u547D\u4E2D\u540E\uFF0C\u4F1A\u5728\u8BE5\u4F4D\u7F6E1\u79D2\u540E\u7EE7\u7EED\u964D\u4E0B\u96F7\u9706\uFF0C\u968F\u540E\u518D\u964D\u4E0B\u7B2C\u4E09\u6B21\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -612,7 +612,7 @@ MonoBehaviour:
   - cardName: "\u9ED1\u6CB9\u5723\u8DEF"
     textKey: 
     effectId: GR-M01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: b93b81afc2442f841b6dc8c8a1cc985b, type: 3}
     description: "\u9ED1\u6CB9\u66F4\u957F\u66F4\u5BBD\uFF1B\u654C\u4EBA\u8E0F\u5165\u51CF\u901F\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -636,7 +636,7 @@ MonoBehaviour:
   - cardName: "\u5723\u8DEF\u6069\u8D50"
     textKey: 
     effectId: GR-M02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: b93b81afc2442f841b6dc8c8a1cc985b, type: 3}
     description: "\u7AD9\u5728\u81EA\u8EAB\u666E\u901A\u9ED1\u6CB9\u4E0A\u514D\u75AB\u5730\u5F62\u4F24\u5BB3\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -660,7 +660,7 @@ MonoBehaviour:
   - cardName: "\u4E07\u624B\u5723\u5E93"
     textKey: 
     effectId: GR-A01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 6c699c691cb38a94d8c65b15e539be6d, type: 3}
     description: "\u63D0\u9AD8\u9B54\u624B\u5E93\u5B58/\u5355\u6B21\u91CA\u653E\u4E0A\u9650\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -684,7 +684,7 @@ MonoBehaviour:
   - cardName: "\u672A\u6536\u4E4B\u8D21"
     textKey: 
     effectId: GR-A02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 6c699c691cb38a94d8c65b15e539be6d, type: 3}
     description: "\u9B54\u624B\u81F4\u547D\u540E\u518D\u7D22\u654C\u4E00\u6B21\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -708,7 +708,7 @@ MonoBehaviour:
   - cardName: "\u4EA1\u8005\u9057\u4EA7"
     textKey: 
     effectId: GR-A03
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 6c699c691cb38a94d8c65b15e539be6d, type: 3}
     description: "\u9B54\u624B\u51FB\u6740\u540E\u751F\u62101-2\u53EA\u65B0\u624B\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -732,7 +732,7 @@ MonoBehaviour:
   - cardName: "\u8FC2\u56DE\u7EB3\u8D21"
     textKey: 
     effectId: GR-A07
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 6c699c691cb38a94d8c65b15e539be6d, type: 3}
     description: "\u9B54\u624B\u4FA7\u7FFC\u5F27\u7EBF\u518D\u6536\u675F\u8FFD\u51FB\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -756,7 +756,7 @@ MonoBehaviour:
   - cardName: "\u5723\u5E93\u7EB3\u8D21"
     textKey: 
     effectId: GR-S01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 4866ab7f70508124ab9c4a6a04a33993, type: 3}
     description: "Guard\u6BCF60\u70B9\u5438\u6536\u8F6C1\u624B\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -780,7 +780,7 @@ MonoBehaviour:
   - cardName: "\u8D2A\u795E\u5E87\u62A4"
     textKey: 
     effectId: GR-S04
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 4866ab7f70508124ab9c4a6a04a33993, type: 3}
     description: "Guard\u6301\u7EED3\u79D2\uFF0C\u53EF\u63D0\u524D\u7ED3\u675F\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -804,7 +804,7 @@ MonoBehaviour:
   - cardName: "\u711A\u9014\u8A93\u7EA6"
     textKey: 
     effectId: WR-M01
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    image: {fileID: 21300000, guid: 919e3ad1be669034aad70ff8229562ea, type: 3}
     description: "\u94A9\u7D22\u8DEF\u5F84\u4E00\u6B21\u4F24\u5BB3"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -829,7 +829,7 @@ MonoBehaviour:
   - cardName: "\u672B\u65E5\u9501\u94FE"
     textKey: 
     effectId: WR-M02
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    image: {fileID: 21300000, guid: 919e3ad1be669034aad70ff8229562ea, type: 3}
     description: "\u94A9\u7D22\u8DDD\u79BB\u63D0\u5347\u5E76\u5728\u843D\u70B9\u51B2\u51FB"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -858,7 +858,7 @@ MonoBehaviour:
   - cardName: "\u6B89\u8EAB\u52A0\u5195"
     textKey: 
     effectId: WR-B01
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    image: {fileID: 21300000, guid: 3f6f20b898bbdc341936d35be3f6e275, type: 3}
     description: "\u7F3A\u5931\u8010\u4E45\u63D0\u9AD8\u4F24\u5BB3/\u8303\u56F4\u5E76\u7F29\u77EDAttack
       CD"
     abilityPrefab: {fileID: 0}
@@ -885,7 +885,7 @@ MonoBehaviour:
   - cardName: "\u4EE5\u8EAB\u4E3A\u85AA"
     textKey: 
     effectId: WR-B02
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    image: {fileID: 21300000, guid: dda68d3ba31b95a44a71b115cee5ceae, type: 3}
     description: "\u5E38\u9A7B\u8D34\u8EAB\u71C3\u70E7\u5149\u73AF"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -909,7 +909,7 @@ MonoBehaviour:
   - cardName: "\u98CE\u66B4\u9501\u94FE"
     textKey: 
     effectId: WR-S01
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    image: {fileID: 21300000, guid: dda68d3ba31b95a44a71b115cee5ceae, type: 3}
     description: "\u9F99\u5377\u98CE\u671F\u95F4\u79FB\u901F+300%"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -934,7 +934,7 @@ MonoBehaviour:
   - cardName: "\u7EC8\u672B\u98D3\u98CE"
     textKey: 
     effectId: WR-S03
-    image: {fileID: 21300000, guid: d17e5c5f75e269d408cceb79d27a84ef, type: 3}
+    image: {fileID: 21300000, guid: dda68d3ba31b95a44a71b115cee5ceae, type: 3}
     description: "\u9F99\u5377\u98CE\u65F6\u957F+2\u79D2"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -959,7 +959,7 @@ MonoBehaviour:
   - cardName: "\u7FA4\u53E3\u5723\u5BB4"
     textKey: 
     effectId: GL-A01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: fe8146fd991fa8c4e8cb9e85d689a464, type: 3}
     description: "\u83B7\u5F97\u8FC7\u9971\u540E\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u4F1A\u6210\u5BF9\u964D\u4E0B\uFF1B\u7B2C\u4E8C\u4E2A\u5DE8\u53E3\u7A0D\u540E\u51FA\u73B0\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -983,7 +983,7 @@ MonoBehaviour:
   - cardName: "\u730E\u6B65\u5723\u9910"
     textKey: 
     effectId: GL-A02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 2912df7e19995f54086c19543e7c5097, type: 3}
     description: "\u5C0F\u732B\u5316\u4F4D\u79FB\u540E\uFF0C\u4E0B\u4E00\u6B21\u6DF1\u6E0A\u5DE8\u53E3\u8303\u56F4\u6269\u5927100%\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1009,7 +1009,7 @@ MonoBehaviour:
   - cardName: "\u8FDC\u65B9\u5723\u9910"
     textKey: 
     effectId: GL-A03
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: fe8146fd991fa8c4e8cb9e85d689a464, type: 3}
     description: "\u6DF1\u6E0A\u5DE8\u53E3\u53EF\u5728\u66F4\u8FDC\u4F4D\u7F6E\u751F\u6210\uFF1B\u4ECD\u4E0D\u8FFD\u8E2A\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1035,7 +1035,7 @@ MonoBehaviour:
   - cardName: "\u9965\u795E\u730E\u6B65"
     textKey: 
     effectId: GL-M01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 2912df7e19995f54086c19543e7c5097, type: 3}
     description: "\u5C0F\u732B\u5F62\u6001\u79FB\u52A8\u66F4\u5FEB\u3001\u8F6C\u5411\u66F4\u7075\u6D3B\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1061,7 +1061,7 @@ MonoBehaviour:
   - cardName: "\u9C9C\u8840\u5723\u9910"
     textKey: 
     effectId: GL-S01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 7bd00c2ddd429a443a6c4d5b5bd6cca3, type: 3}
     description: "\u6BCF\u5177\u8EAF\u4F53\u7B2C\u4E00\u6B21\u6210\u529F\u541E\u566C\u654C\u4EBA\u65F6\u6062\u590D50\u70B9\u8010\u4E45\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1089,7 +1089,7 @@ MonoBehaviour:
   - cardName: "\u6700\u540E\u4E00\u9910"
     textKey: 
     effectId: GL-S02
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 7bd00c2ddd429a443a6c4d5b5bd6cca3, type: 3}
     description: "\u541E\u566C\u547D\u4E2D\u4F4E\u8010\u4E45\u654C\u4EBA\u65F6\u5904\u51B3\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1115,7 +1115,7 @@ MonoBehaviour:
   - cardName: "\u4E07\u7269\u7686\u98DF"
     textKey: 
     effectId: GL-S03
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
+    image: {fileID: 21300000, guid: 7bd00c2ddd429a443a6c4d5b5bd6cca3, type: 3}
     description: "\u541E\u566C\u524D\u65B9\u6247\u5F62\u5185\u5168\u90E8\u5408\u6CD5\u98DE\u884C\u653B\u51FB\u5E76\u83B7\u5F97\u8FC7\u9971\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1140,8 +1140,8 @@ MonoBehaviour:
   - cardName: "\u5F02\u7AEF\u5664\u58F0"
     textKey: 
     effectId: PR-A03
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: "\u5251\u6C14\u4E0E\u7A81\u8FDB\u524D\u7AEF\u53EF\u5207\u65AD\u8FCE\u9762\u98DE\u884C\u653B\u51FB\uFF1B\u7A81\u8FDB\u7ED3\u675F\u540E\u524D\u65B9\u5207\u65AD\u533A\u4FDD\u75591\u79D2\u3002"
+    image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
+    description: "\u98DE\u884C\u65A9\u51FB\u4E0E\u7A81\u8FDB\u524D\u7AEF\u7684\u65A9\u51FB\uFF0C\u53EF\u4EE5\u65A9\u788E\u4E0E\u5176\u63A5\u89E6\u7684\u8FCE\u9762\u98DE\u884C\u653B\u51FB\uFF1B\u7A81\u8FDB\u7ED3\u675F\u540E\uFF0C\u524D\u65B9\u5207\u65AD\u533A\u77ED\u6682\u4FDD\u75591\u79D2\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.Cut
@@ -1164,8 +1164,8 @@ MonoBehaviour:
   - cardName: "\u738B\u6743\u75BE\u4EE4"
     textKey: 
     effectId: PR-TG01
-    image: {fileID: 21300000, guid: 8dc76ab9788c0e54583b6a1307a91413, type: 3}
-    description: "\u63D0\u9AD8\u50B2\u6162\u4F4D\u79FB\u63A8\u8FDB\u901F\u5EA6\u4E0E\u5251\u6C14\u5C55\u5F00\u3001\u5EF6\u4F38\u901F\u5EA6\u3002"
+    image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
+    description: "\u50B2\u6162\u7684\u4F4D\u79FB\u66F4\u8FC5\u6377\uFF0C\u666E\u901A\u653B\u51FB\u7684\u5C55\u5F00\u4E0E\u5EF6\u4F38\u4E5F\u66F4\u5FEB"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.ExecutionSpeed
@@ -1193,7 +1193,7 @@ MonoBehaviour:
   - cardName: "\u4F17\u4EC6\u9F50\u9E23"
     textKey: 
     effectId: SL-A04
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: 9fa591414c9b95d43ac787300e11ff47, type: 3}
     description: "\u91CD\u70AE\u66FF\u6362\u4E3A\u56FA\u5B9A\u6247\u5F62\u591A\u53D1\uFF1B\u4F24\u5BB3\u5E73\u644A\u4E14\u6BCF\u679A\u6700\u4F4E3\u70B9\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1221,7 +1221,7 @@ MonoBehaviour:
   - cardName: "\u5DE8\u50CF\u8DF5\u8E0F"
     textKey: 
     effectId: SL-A05
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: 9fa591414c9b95d43ac787300e11ff47, type: 3}
     description: "\u8FBE\u5230\u6307\u5B9A\u70AE\u4F53\u6863\u4F4D\u540E\uFF0C\u6BCF\u53D1\u91CD\u70AE\u53EF\u538B\u788E\u4E00\u679A\u8F83\u5C0F\u7684\u8FCE\u9762\u98DE\u884C\u653B\u51FB\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1245,7 +1245,7 @@ MonoBehaviour:
   - cardName: "\u6C89\u7720\u4F8D\u4ECE"
     textKey: 
     effectId: SL-S01
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: b47c312ff502e474f93fbb627ef2a65f, type: 3}
     description: "\u7279\u6B8A\u6280\u80FD\u989D\u5916\u751F\u6210\u4E24\u53F0\u6728\u7075\uFF1B\u8D85\u8FC7\u540C\u6E90\u4E0A\u9650\u66FF\u6362\u6700\u65E7\u6728\u7075\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1271,7 +1271,7 @@ MonoBehaviour:
   - cardName: "\u4F8D\u4ECE\u5723\u6B66"
     textKey: 
     effectId: SL-S03
-    image: {fileID: 21300000, guid: e41ac478d1776be4e8b584056fda581c, type: 3}
+    image: {fileID: 21300000, guid: b47c312ff502e474f93fbb627ef2a65f, type: 3}
     description: "\u6728\u7075\u653B\u51FB\u66F4\u5FEB\uFF0C\u5E76\u6301\u7EED\u8FFD\u51FB\u6700\u8FD1\u7684\u5408\u6CD5\u654C\u4EBA\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
@@ -1305,3 +1305,5 @@ MonoBehaviour:
   - GR-S02
   - GR-S03
   - GR-TG01
+  cardPrefab: {fileID: 2800742191005174462, guid: 228748b3cfc377548a419b4e00df7920,
+    type: 3}

@@ -10,6 +10,20 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class TerrainEffectTile : MonoBehaviour
 {
+    // A list keeps the read-only traversal allocation-free (HashSet's interface enumerator
+    // boxes its struct enumerator). OnEnable is idempotent so duplicate callbacks cannot
+    // duplicate a tile in the registry.
+    private static readonly List<TerrainEffectTile> EnabledTiles = new List<TerrainEffectTile>();
+    public static IReadOnlyList<TerrainEffectTile> EnabledInstances => EnabledTiles;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetEnabledTiles()
+    {
+        // Enter Play Mode with domain reload disabled can retain the previous run's static
+        // list while scene objects are recreated. Clear it before the next load.
+        EnabledTiles.Clear();
+    }
+
     public enum TerrainEffectKind
     {
         SpeedBoost,
@@ -39,6 +53,16 @@ public class TerrainEffectTile : MonoBehaviour
     public bool autoCalibrateToVisual = true;
     [Tooltip("校准时检测盒最小站立高度（世界单位）。薄片贴地视觉（岩浆面片）用此保证覆盖玩家。")]
     public float minStandingHeight = 2.0f;
+    [Range(0.1f, 1.5f)]
+    [Tooltip("自动按视觉包围盒校准后，水平 XZ 触发范围的缩放。1 = 覆盖完整视觉范围；0.75 = 向内收缩 25%。仅未启用相机投影判定时作为最终世界范围。")]
+    public float detectionXZScale = 1.0f;
+    [Tooltip("使用当前游戏相机的屏幕投影进行最终判定。适合正交、固定视角的岩浆等平面地形；关闭时使用 3D OverlapBox。")]
+    public bool useCameraProjectedDetection = false;
+    [Tooltip("相机投影判定使用的游戏相机。留空自动取 Camera.main。")]
+    public Camera detectionCamera;
+    [Range(0f, 0.4f)]
+    [Tooltip("相机投影后的视觉矩形内缩比例。0 = 完整可见范围；0.05 = 四边各向内收缩 5%。")]
+    public float cameraDetectionInset = 0.05f;
 
     [Header("Speed / Slow")]
     [Tooltip("Move speed multiplier while standing on this tile. SpeedBoost default 1.5, Slow default 0.5.")]
@@ -69,9 +93,12 @@ public class TerrainEffectTile : MonoBehaviour
     private readonly HashSet<int> _frameOccupants = new HashSet<int>();
     private readonly Dictionary<int, CombatAbilityComponent> _combatById = new Dictionary<int, CombatAbilityComponent>();
     private readonly Dictionary<int, float> _lavaNextPulseAt = new Dictionary<int, float>();
+    private readonly List<int> _exited = new List<int>();
     private Collider[] _overlapBuffer;
     private BoxCollider _volumeCollider;
     private float _nextSpikeAt;
+    private Bounds _visualBoundsWorld;
+    private bool _hasVisualBounds;
 
     void Awake()
     {
@@ -87,6 +114,14 @@ public class TerrainEffectTile : MonoBehaviour
         // localScale/localPosition（bounds 对齐），Awake 时 transform 仍是 prefab 原始值。
         if (autoCalibrateToVisual)
             CalibrateDetectionToVisual();
+        else if (useCameraProjectedDetection)
+            CacheVisualBounds();
+    }
+
+    void OnEnable()
+    {
+        if (!EnabledTiles.Contains(this))
+            EnabledTiles.Add(this);
     }
 
     /// <summary>
@@ -96,14 +131,26 @@ public class TerrainEffectTile : MonoBehaviour
     ///   - XZ 尺寸 = 视觉 bounds 跨度（根 local，含 lossyScale 换算），保证覆盖整个视觉面。
     /// 校准后同步 BoxCollider（编辑器 Gizmo 亦准确）。
     /// </summary>
-    public void CalibrateDetectionToVisual()
+    private bool CacheVisualBounds()
     {
         var renderers = GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0) return;
+        if (renderers.Length == 0)
+        {
+            _hasVisualBounds = false;
+            return false;
+        }
 
         Bounds b = renderers[0].bounds;
         for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
+        _visualBoundsWorld = b;
+        _hasVisualBounds = true;
+        return true;
+    }
 
+    public void CalibrateDetectionToVisual()
+    {
+        if (!CacheVisualBounds()) return;
+        Bounds b = _visualBoundsWorld;
         Vector3 lossy = transform.lossyScale;
         float worldHeight = Mathf.Max(minStandingHeight, b.size.y);
         // 盒中心：XZ 取视觉中心；Y 取视觉底面 + 半高（贴地站立盒）
@@ -113,10 +160,11 @@ public class TerrainEffectTile : MonoBehaviour
             b.center.z);
 
         detectionCenter = transform.InverseTransformPoint(worldCenter);
+        float xzScale = Mathf.Clamp(detectionXZScale, 0.1f, 1.5f);
         detectionSize = new Vector3(
-            b.size.x / Mathf.Max(0.0001f, Mathf.Abs(lossy.x)),
+            b.size.x / Mathf.Max(0.0001f, Mathf.Abs(lossy.x)) * xzScale,
             worldHeight / Mathf.Max(0.0001f, Mathf.Abs(lossy.y)),
-            b.size.z / Mathf.Max(0.0001f, Mathf.Abs(lossy.z)));
+            b.size.z / Mathf.Max(0.0001f, Mathf.Abs(lossy.z)) * xzScale);
 
         EnsureDetectionVolume();
     }
@@ -128,6 +176,8 @@ public class TerrainEffectTile : MonoBehaviour
         lavaEffectDuration = Mathf.Max(0.1f, lavaEffectDuration);
         spikeInterval = Mathf.Max(0.05f, spikeInterval);
         spikeHazardLifetime = Mathf.Max(0.05f, spikeHazardLifetime);
+        detectionXZScale = Mathf.Clamp(detectionXZScale, 0.1f, 1.5f);
+        cameraDetectionInset = Mathf.Clamp(cameraDetectionInset, 0f, 0.4f);
         detectionSize = new Vector3(
             Mathf.Max(0.1f, detectionSize.x),
             Mathf.Max(0.1f, detectionSize.y),
@@ -140,12 +190,14 @@ public class TerrainEffectTile : MonoBehaviour
 
     void OnDisable()
     {
-        if (_occupants.Count == 0) return;
+        EnabledTiles.Remove(this);
 
-        List<int> exited = new List<int>(_occupants);
-        for (int i = 0; i < exited.Count; i++)
+        _exited.Clear();
+        foreach (int id in _occupants)
+            _exited.Add(id);
+        for (int i = 0; i < _exited.Count; i++)
         {
-            int id = exited[i];
+            int id = _exited[i];
             _combatById.TryGetValue(id, out CombatAbilityComponent combat);
             HandleExit(combat, id);
         }
@@ -153,6 +205,7 @@ public class TerrainEffectTile : MonoBehaviour
         _combatById.Clear();
         _lavaNextPulseAt.Clear();
         _frameOccupants.Clear();
+        _exited.Clear();
     }
 
     void FixedUpdate()
@@ -211,14 +264,31 @@ public class TerrainEffectTile : MonoBehaviour
         if (_overlapBuffer == null || _overlapBuffer.Length != overlapBufferSize)
             _overlapBuffer = new Collider[Mathf.Max(8, overlapBufferSize)];
 
-        Vector3 worldCenter = transform.TransformPoint(detectionCenter);
+        bool cameraProjected = TryGetCameraProjectedRect(out Rect projectedRect, out Camera projectedCamera);
+        Vector3 worldCenter;
+        Vector3 halfExtents;
         Vector3 lossy = transform.lossyScale;
-        Vector3 halfExtents = new Vector3(
-            detectionSize.x * 0.5f * Mathf.Abs(lossy.x),
-            detectionSize.y * 0.5f * Mathf.Abs(lossy.y),
-            detectionSize.z * 0.5f * Mathf.Abs(lossy.z));
+        if (cameraProjected)
+        {
+            // 相机模式用完整视觉 XZ bounds 做宽阶段筛选，最终是否触发由屏幕空间脚底点决定。
+            // Y 仍沿用站立检测高度，避免岩浆是薄片（visual bounds 高度接近 0）时宽阶段漏掉玩家。
+            Vector3 calibratedCenter = transform.TransformPoint(detectionCenter);
+            worldCenter = new Vector3(_visualBoundsWorld.center.x, calibratedCenter.y, _visualBoundsWorld.center.z);
+            halfExtents = new Vector3(
+                _visualBoundsWorld.extents.x,
+                detectionSize.y * 0.5f * Mathf.Abs(lossy.y),
+                _visualBoundsWorld.extents.z);
+        }
+        else
+        {
+            worldCenter = transform.TransformPoint(detectionCenter);
+            halfExtents = new Vector3(
+                detectionSize.x * 0.5f * Mathf.Abs(lossy.x),
+                detectionSize.y * 0.5f * Mathf.Abs(lossy.y),
+                detectionSize.z * 0.5f * Mathf.Abs(lossy.z));
+        }
 
-        // World-aligned box: chunk tiles are grid-placed; art may be yaw-rotated 45°.
+        // World-aligned box 只作宽阶段候选筛选；相机模式的最终判定在下方进行。
         int count = Physics.OverlapBoxNonAlloc(
             worldCenter,
             halfExtents,
@@ -228,12 +298,14 @@ public class TerrainEffectTile : MonoBehaviour
             QueryTriggerInteraction.Ignore);
 
         _frameOccupants.Clear();
+        _exited.Clear();
         for (int i = 0; i < count; i++)
         {
             Collider hit = _overlapBuffer[i];
             if (hit == null) continue;
             if (hit.transform == transform || hit.transform.IsChildOf(transform)) continue;
             if (!TryResolveTarget(hit, out CombatAbilityComponent combat, out int id)) continue;
+            if (cameraProjected && !IsFootPointInside(projectedCamera, projectedRect, hit)) continue;
 
             _frameOccupants.Add(id);
             _combatById[id] = combat;
@@ -246,25 +318,76 @@ public class TerrainEffectTile : MonoBehaviour
 
         if (_occupants.Count == 0) return;
 
-        List<int> exited = null;
         foreach (int id in _occupants)
         {
             if (_frameOccupants.Contains(id)) continue;
-            if (exited == null) exited = new List<int>();
-            exited.Add(id);
+            _exited.Add(id);
         }
 
-        if (exited == null) return;
+        if (_exited.Count == 0) return;
 
-        for (int i = 0; i < exited.Count; i++)
+        for (int i = 0; i < _exited.Count; i++)
         {
-            int id = exited[i];
+            int id = _exited[i];
             _combatById.TryGetValue(id, out CombatAbilityComponent combat);
             HandleExit(combat, id);
             _occupants.Remove(id);
             _combatById.Remove(id);
             _lavaNextPulseAt.Remove(id);
         }
+        _exited.Clear();
+    }
+
+    /// <summary>
+    /// 将视觉 bounds 的地面四角投影到当前游戏相机，得到屏幕空间触发矩形。
+    /// 正交相机下映射稳定；相机跟随移动时每次 FixedUpdate 重算，仍与当前画面一致。
+    /// </summary>
+    private bool TryGetCameraProjectedRect(out Rect screenRect, out Camera camera)
+    {
+        screenRect = default;
+        camera = detectionCamera != null ? detectionCamera : Camera.main;
+        if (camera == null) return false;
+        if (!_hasVisualBounds && !CacheVisualBounds()) return false;
+
+        Bounds b = _visualBoundsWorld;
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+        // 只投影视觉底面四角：玩家脚底与地面判定，不把模型高度投影进触发范围。
+        for (int ix = 0; ix < 2; ix++)
+        for (int iz = 0; iz < 2; iz++)
+        {
+            Vector3 world = new Vector3(
+                ix == 0 ? b.min.x : b.max.x,
+                b.min.y,
+                iz == 0 ? b.min.z : b.max.z);
+            Vector3 screen = camera.WorldToScreenPoint(world);
+            if (screen.z <= 0f) return false;
+            minX = Mathf.Min(minX, screen.x);
+            minY = Mathf.Min(minY, screen.y);
+            maxX = Mathf.Max(maxX, screen.x);
+            maxY = Mathf.Max(maxY, screen.y);
+        }
+
+        float width = maxX - minX;
+        float height = maxY - minY;
+        if (width <= 0.01f || height <= 0.01f) return false;
+        float inset = Mathf.Clamp(cameraDetectionInset, 0f, 0.4f);
+        float insetX = width * inset;
+        float insetY = height * inset;
+        screenRect = Rect.MinMaxRect(minX + insetX, minY + insetY, maxX - insetX, maxY - insetY);
+        return screenRect.width > 0.01f && screenRect.height > 0.01f;
+    }
+
+    /// <summary>以命中 Collider 的脚底中心投影点做最终判定，避免角色身体/头部造成视觉偏差。</summary>
+    private static bool IsFootPointInside(Camera camera, Rect screenRect, Collider hit)
+    {
+        if (camera == null || hit == null) return false;
+        Bounds bounds = hit.bounds;
+        Vector3 foot = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+        Vector3 screen = camera.WorldToScreenPoint(foot);
+        return screen.z > 0f && screenRect.Contains(new Vector2(screen.x, screen.y));
     }
 
     private void HandleEnter(CombatAbilityComponent combat, int id)
@@ -374,6 +497,8 @@ public class TerrainEffectTile : MonoBehaviour
 
         combat = other.GetComponentInParent<CombatAbilityComponent>();
         if (combat == null) return false;
+        MonsterActor monster = combat.GetComponent<MonsterActor>();
+        if (monster != null && monster.IsCorpse) return false;
         id = combat.GetInstanceID();
         return true;
     }
