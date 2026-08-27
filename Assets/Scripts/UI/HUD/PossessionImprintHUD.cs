@@ -11,20 +11,6 @@ public sealed class PossessionImprintHUD : MonoBehaviour
     public PossessionImprintTooltip tooltip;
     public PossessionImprintTutorialPrompt tutorialPrompt;
 
-    [Header("Imprint Gain Meteor")]
-    [Tooltip("流星飞行速度，单位为 Canvas 像素/秒。")]
-    public float meteorSpeed = 1200f;
-    [Tooltip("流星主体与拖尾的高度。")]
-    public float meteorWidth = 42f;
-    [Tooltip("流星拖尾长度，占起点到终点路径的比例。")]
-    [Range(0.08f, 0.75f)] public float meteorTailLength = 0.34f;
-    [Tooltip("流星发光强度。")]
-    [Min(0f)] public float meteorGlow = 1.8f;
-    [Tooltip("罪印流星颜色；支持 HDR 颜色。")]
-    [ColorUsage(true, true)] public Color meteorColor = new Color(0.25f, 0.85f, 1f, 1f);
-    [Tooltip("留空时按名称查找 UI/PossessionImprintMeteor。")]
-    public Shader meteorShader;
-
     PossessionImprintManager manager;
     readonly List<Action> pendingArrivals = new List<Action>();
     readonly List<GameObject> activeMeteors = new List<GameObject>();
@@ -36,6 +22,11 @@ public sealed class PossessionImprintHUD : MonoBehaviour
     static readonly int MeteorColorId = Shader.PropertyToID("_MeteorColor");
     static readonly int TailLengthId = Shader.PropertyToID("_TailLength");
     static readonly int GlowId = Shader.PropertyToID("_Glow");
+    const float DefaultMeteorSpeed = 1200f;
+    const float DefaultMeteorWidth = 42f;
+    const float DefaultMeteorTailLength = 0.34f;
+    const float DefaultMeteorGlow = 1.8f;
+    static readonly Color DefaultMeteorColor = new Color(0.25f, 0.85f, 1f, 1f);
 
     void Awake()
     {
@@ -151,6 +142,14 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         Canvas canvas = GetComponent<Canvas>();
         if (canvas == null) canvas = GetComponentInParent<Canvas>();
         Camera sourceCamera = ResolveSourceCamera(canvas);
+        ActorVisualFx actorVisualFx = body != null ? body.GetComponent<ActorVisualFx>() : null;
+        if (actorVisualFx == null && body != null)
+            actorVisualFx = body.GetComponentInParent<ActorVisualFx>();
+        float meteorSpeed = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorSpeed : DefaultMeteorSpeed;
+        float meteorWidth = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorWidth : DefaultMeteorWidth;
+        float meteorTailLength = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorTailLength : DefaultMeteorTailLength;
+        float meteorGlow = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorGlow : DefaultMeteorGlow;
+        Color meteorColor = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorColor : DefaultMeteorColor;
         Debug.Log($"[PossessionImprintHUD] Projection inputs: sin={sin}, body={(body != null ? body.name : "NULL")}, bodyActive={(body != null && body.isActiveAndEnabled)}, bodyWorld={(body != null ? body.transform.position.ToString() : "NA")}, targetIcon={(targetIcon != null ? targetIcon.name : "NULL")}, targetActive={(targetIcon != null && targetIcon.isActiveAndEnabled)}, canvas={(canvas != null ? canvas.name : "NULL")}, canvasMode={(canvas != null ? canvas.renderMode.ToString() : "NA")}, sourceCamera={(sourceCamera != null ? sourceCamera.name : "NULL")}, sourceCameraPos={(sourceCamera != null ? sourceCamera.transform.position.ToString() : "NA")}, sourceCameraPixel={(sourceCamera != null ? sourceCamera.pixelWidth + "x" + sourceCamera.pixelHeight : "NA")}.");
         if (targetIcon == null || body == null || canvas == null || sourceCamera == null || meteorWidth <= 0f)
         {
@@ -214,7 +213,7 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         endLocal -= childAnchorOrigin;
         Debug.Log($"[PossessionImprintHUD] Flight coordinates resolved: sin={sin}, body='{body.name}', flightCanvas='{flightCanvasRect.name}', flightCanvasMode={canvas.renderMode}, flightCanvasRect={flightCanvasRect.rect}, childAnchorOrigin={childAnchorOrigin}, flightCanvasScale={flightCanvasRect.lossyScale}, startLocal={startLocal}, endLocal={endLocal}, distance={Vector2.Distance(startLocal, endLocal):F2}.");
 
-        Shader shader = meteorShader;
+        Shader shader = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorShader : null;
         if (shader == null) shader = Shader.Find("UI/PossessionImprintMeteor");
         if (shader == null) shader = Resources.Load<Shader>("MonsterTelegraph/PossessionImprintMeteor");
         bool hasMeteorShader = shader != null;
@@ -270,8 +269,8 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         }
         meteorImage.material = meteorMaterial;
 
-        Debug.Log($"[PossessionImprintHUD] Meteor spawned: object='{meteorObject.name}', sin={sin}, body='{body.name}', shader='{shader.name}', shaderFallback={!hasMeteorShader}, speed={meteorSpeed:F2}, width={meteorWidth:F2}, tail={meteorTailLength:F2}, glow={meteorGlow:F2}, color={meteorColor}, duration={distance / Mathf.Max(1f, meteorSpeed):F3}s.");
-        StartCoroutine(AnimateMeteor(meteorObject, meteorMaterial, distance, hasMeteorShader, onArrived));
+        Debug.Log($"[PossessionImprintHUD] Meteor spawned: object='{meteorObject.name}', sin={sin}, body='{body.name}', styleSource={(actorVisualFx != null ? actorVisualFx.name : "HUD defaults")}, shader='{shader.name}', shaderFallback={!hasMeteorShader}, speed={meteorSpeed:F2}, width={meteorWidth:F2}, tail={meteorTailLength:F2}, glow={meteorGlow:F2}, color={meteorColor}, duration={distance / Mathf.Max(1f, meteorSpeed):F3}s.");
+        StartCoroutine(AnimateMeteor(meteorObject, meteorMaterial, distance, meteorSpeed, hasMeteorShader, onArrived));
     }
 
     RectTransform EnsureMeteorCanvas(Canvas targetCanvas)
@@ -380,7 +379,7 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         return bodyBounds.center + Vector3.up * bodyBounds.extents.y * 0.2f;
     }
 
-    IEnumerator AnimateMeteor(GameObject meteorObject, Material meteorMaterial, float distance, bool hasMeteorShader, Action onArrived)
+    IEnumerator AnimateMeteor(GameObject meteorObject, Material meteorMaterial, float distance, float meteorSpeed, bool hasMeteorShader, Action onArrived)
     {
         float duration = distance / Mathf.Max(1f, meteorSpeed);
         float elapsed = 0f;
