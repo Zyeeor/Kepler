@@ -35,6 +35,8 @@ public class ChunkRuntime
     public ChunkDef Def { get; private set; }
     /// <summary>完整 Tile 网格 [chunkSize, chunkSize]，Prepared 阶段生成。</summary>
     public TileData[,] Tiles { get; private set; }
+    /// <summary>本 Chunk 的逻辑装饰物实例列表；多格装饰物在此只出现一次。</summary>
+    public List<DecorationPlacement> DecorationPlacements { get; private set; } = new List<DecorationPlacement>();
     /// <summary>可通行的邻接边（自身边沿有开口的方向）。</summary>
     public List<ChunkDirection> OpenEdges { get; private set; } = new List<ChunkDirection>();
     /// <summary>本次生成是否来自手摆/模板布局（而非程序化随机）。Prepare 据此区分：布局路径开放边不达标时保留作者内容、不静默全 Normal 覆盖。</summary>
@@ -52,10 +54,17 @@ public class ChunkRuntime
         Seed = seed;
     }
 
-    /// <summary>写入生成完成的 Tile 网格与出入口。</summary>
+    /// <summary>写入生成完成的 Tile 网格与出入口（旧调用兼容，无多格装饰实例列表）。</summary>
     public void SetTiles(TileData[,] tiles, List<ChunkDirection> openEdges)
     {
+        SetTiles(tiles, null, openEdges);
+    }
+
+    /// <summary>写入生成完成的 Tile 网格、单实例装饰列表与出入口。</summary>
+    public void SetTiles(TileData[,] tiles, List<DecorationPlacement> decorationPlacements, List<ChunkDirection> openEdges)
+    {
         Tiles = tiles;
+        DecorationPlacements = decorationPlacements ?? new List<DecorationPlacement>();
         OpenEdges = openEdges ?? new List<ChunkDirection>();
     }
 

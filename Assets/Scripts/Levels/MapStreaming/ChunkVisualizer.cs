@@ -171,13 +171,29 @@ public class ChunkVisualizer : MonoBehaviour
                 WarnOnce($"tile-null-{t.kind}", $"[ChunkVisualizer] {t.kind} 底层 Tile 无 prefab 且未回退 Normal（配置异常），跳过视觉。");
             }
 
-            // 叠加层：StructureLayer（装饰物/神龛），保留原始尺寸（可超出单格边界），立在底层之上
-            if (t.overlayPrefab != null)
+            // 旧式无 owner 的叠加层仍按单格兼容；新式多格 placement 在循环结束后只实例化一次。
+            if (t.overlayPrefab != null && t.overlayPlacementId <= 0)
             {
                 Vector3 target = origin + new Vector3((x + 0.5f) * ts, 0f, (y + 0.5f) * ts);
                 PlaceBlock(t.overlayPrefab, root, target, ts, ts, true, $"Overlay_{t.overlayKind}_{x}_{y}");
                 instanceCount++;
-                // 覆盖格数不重复计（叠加物与底层同格）
+            }
+        }
+
+        // 多格装饰物按逻辑 placement 一次生成，避免同一个 prefab 在每个占用格重复 Instantiate。
+        if (chunk.DecorationPlacements != null)
+        {
+            foreach (var placement in chunk.DecorationPlacements)
+            {
+                if (placement == null || placement.prefab == null) continue;
+                var size = placement.SafeFootprintSize;
+                Vector3 target = origin + new Vector3(
+                    (placement.anchor.x + size.x * 0.5f) * ts,
+                    0f,
+                    (placement.anchor.y + size.y * 0.5f) * ts);
+                PlaceBlock(placement.prefab, root, target, size.x * ts, size.y * ts, true,
+                    $"Decoration_{placement.id}_{placement.prefab.name}");
+                instanceCount++;
             }
         }
     }
@@ -339,14 +355,30 @@ public class ChunkVisualizer : MonoBehaviour
                     var c1 = origin + new Vector3((x + 0.5f) * ts, 0.5f, (y + 0.5f) * ts);
                     Gizmos.DrawWireCube(c1, new Vector3(ts, 1f, ts));
                 }
-                // 叠加层 / 手摆整格 Decoration（红）
-                bool drawDeco = (t.overlayPrefab != null && t.overlayKind == TerrainKind.Decoration)
-                                || (t.overlayPrefab == null && t.kind == TerrainKind.Decoration);
+                // 无 owner 的旧式叠加层 / 手摆整格 Decoration（红）；多格 placement 在循环后画整块。
+                bool drawDeco = t.overlayPlacementId <= 0
+                                && ((t.overlayPrefab != null && t.overlayKind == TerrainKind.Decoration)
+                                || (t.overlayPrefab == null && t.kind == TerrainKind.Decoration));
                 if (drawDeco)
                 {
                     Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.85f);
                     var c2 = origin + new Vector3((x + 0.5f) * ts, 0.5f, (y + 0.5f) * ts);
                     Gizmos.DrawWireCube(c2, new Vector3(ts, 1f, ts));
+                }
+            }
+
+            if (chunk.DecorationPlacements != null)
+            {
+                Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.85f);
+                foreach (var placement in chunk.DecorationPlacements)
+                {
+                    if (placement == null || placement.prefab == null) continue;
+                    var size = placement.SafeFootprintSize;
+                    var c = origin + new Vector3(
+                        (placement.anchor.x + size.x * 0.5f) * ts,
+                        0.5f,
+                        (placement.anchor.y + size.y * 0.5f) * ts);
+                    Gizmos.DrawWireCube(c, new Vector3(size.x * ts, 1f, size.y * ts));
                 }
             }
         }
