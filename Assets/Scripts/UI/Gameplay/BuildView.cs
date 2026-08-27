@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
@@ -49,6 +50,14 @@ public class BuildView : MonoBehaviour
     public Vector2 stackOffset = new Vector2(12f, 0f);
     [Tooltip("左上角两种模式（迷你一排 / 堆叠）要隐藏的卡面子物体名：卡面预制体里溢出卡框的装饰图层（如 Image (1)）缩小后会变成碍眼的色块，这里按需裁掉。留空则不裁剪；扇形放大模式不受影响。")]
     public List<string> miniHiddenChildren = new List<string> { "Image (1)" };
+    [Tooltip("堆叠模式最左边那张卡的对齐位置（屏幕空间 RectTransform）。留空则回退到 miniAnchor 位置。")]
+    public RectTransform stackAnchor;
+
+    [Header("模式切换动效")]
+    [Tooltip("单张卡过渡到目标位置与缩放的时长（秒）。")]
+    public float transitionDuration = 0.2f;
+    [Tooltip("相邻两张卡之间的过渡延迟（秒），实现逐张依次飞入/飞出。")]
+    public float transitionStagger = 0.05f;
 
     [Header("Debug Toggles（调试开关）")]
     [Tooltip("没有卡的时候是否显示提示文本（如“尚未获得任何卡片”）。关闭则无卡时什么都不显示。")]
@@ -69,6 +78,10 @@ public class BuildView : MonoBehaviour
     TMP_Text miniEmptyHint;
 
     readonly List<GameObject> cardInstances = new List<GameObject>();
+    struct CardPose { public Vector3 worldPos; public Vector3 localScale; }
+    readonly List<CardPose> lastPoses = new List<CardPose>();
+    readonly List<CardPose> targetPoses = new List<CardPose>();
+    Coroutine transitionRoutine;
     int mode = 0;                         // 0=迷你一排 1=扇形放大 2=收回
     bool paused = false;
     bool initialized = false;
@@ -280,8 +293,116 @@ public class BuildView : MonoBehaviour
 
     void SetMode(int m)
     {
+        CaptureCardPoses();
         mode = m;
         ApplyMode();
+        PlayTransition();
+    }
+
+    void CaptureCardPoses()
+    {
+        lastPoses.Clear();
+        foreach (var go in cardInstances)
+        {
+            if (go == null) continue;
+            var rt = go.GetComponent<RectTransform>();
+            var face = ResolveCardFace(go);
+            lastPoses.Add(new CardPose
+            {
+                worldPos = rt != null ? rt.position : Vector3.zero,
+                localScale = face != null ? face.localScale : Vector3.one
+            });
+        }
+    }
+
+    RectTransform ResolveCardFace(GameObject instance)
+    {
+        if (instance == null) return null;
+        var rt = instance.GetComponent<RectTransform>();
+        if (rt == null) return null;
+        if (instance.GetComponent<CoreChoiceCard>() != null) return rt;
+        if (rt.childCount > 0) return rt.GetChild(0) as RectTransform;
+        return rt;
+    }
+
+    void PlayTransition()
+    {
+        if (transitionRoutine != null) StopCoroutine(transitionRoutine);
+        if (transitionDuration <= 0f) return; // 无动画：保持目标布局，不闪跳
+        CaptureTargetPoses();
+        ApplyStartPoses(); // 同步把卡对齐到源姿态，避免切换当帧先显示目标再跳回起点
+        transitionRoutine = StartCoroutine(TransitionRoutine());
+    }
+
+    void CaptureTargetPoses()
+    {
+        targetPoses.Clear();
+        foreach (var go in cardInstances)
+        {
+            if (go == null) continue;
+            var rt = go.GetComponent<RectTransform>();
+            var face = ResolveCardFace(go);
+            targetPoses.Add(new CardPose
+            {
+                worldPos = rt != null ? rt.position : Vector3.zero,
+                localScale = face != null ? face.localScale : Vector3.one
+            });
+        }
+    }
+
+    void ApplyStartPoses()
+    {
+        int count = Mathf.Min(cardInstances.Count, lastPoses.Count);
+        for (int i = 0; i < count; i++)
+        {
+            var go = cardInstances[i];
+            if (go == null) continue;
+            var rt = go.GetComponent<RectTransform>();
+            var face = ResolveCardFace(go);
+            if (rt != null) rt.position = lastPoses[i].worldPos;
+            if (face != null) face.localScale = lastPoses[i].localScale;
+        }
+    }
+
+    IEnumerator TransitionRoutine()
+    {
+        for (int i = 0; i < cardInstances.Count; i++)
+        {
+            var root = cardInstances[i];
+            if (root == null) continue;
+            var rootRT = root.GetComponent<RectTransform>();
+            var face = ResolveCardFace(root);
+            if (rootRT == null) continue;
+
+            Vector3 targetPos = i < targetPoses.Count ? targetPoses[i].worldPos : rootRT.position;
+            Vector3 targetScale = i < targetPoses.Count ? targetPoses[i].localScale : (face != null ? face.localScale : Vector3.one);
+            Vector3 startPos = rootRT.position; // ApplyStartPoses 已对齐到源
+            Vector3 startScale = face != null ? face.localScale : Vector3.one;
+
+            float t = 0f;
+            while (t < transitionDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                // SmoothStep 三次缓动：起手加速、收尾减速（ease-in-out）。
+                float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / transitionDuration));
+                rootRT.position = Vector3.Lerp(startPos, targetPos, u);
+                if (face != null) face.localScale = Vector3.Lerp(startScale, targetScale, u);
+                yield return null;
+            }
+            rootRT.position = targetPos;
+            if (face != null) face.localScale = targetScale;
+
+            if (i + 1 < cardInstances.Count && transitionStagger > 0f)
+            {
+                float waited = 0f;
+                while (waited < transitionStagger)
+                {
+                    waited += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+            }
+        }
+        transitionRoutine = null;
     }
 
     void ApplyMode()
@@ -349,6 +470,22 @@ public class BuildView : MonoBehaviour
         miniCardH = bh * miniScale;
     }
 
+    /// <summary>堆叠模式把 MiniBar 对齐到 stackAnchor（最左卡落在该 Transform 位置）；其余情况恢复 miniAnchor 默认定位。</summary>
+    void PositionMiniBar(bool stacked)
+    {
+        if (miniBar == null) return;
+        var mb = miniBar.GetComponent<RectTransform>();
+        if (mb == null) return;
+        if (stacked && stackAnchor != null)
+        {
+            mb.position = stackAnchor.position;
+            return;
+        }
+        mb.anchorMin = mb.anchorMax = new Vector2(0f, 1f);
+        mb.pivot = new Vector2(0f, 1f);
+        mb.anchoredPosition = miniAnchor;
+    }
+
     /// <summary>第 idx 张卡在两种左上角模式下的锚点偏移：横排模式按卡宽+间距递进，堆叠模式按 stackOffset 递进。</summary>
     Vector2 MiniSlotPos(int idx, bool stacked)
     {
@@ -361,6 +498,7 @@ public class BuildView : MonoBehaviour
     void ApplyMiniLayout(bool stacked = false)
     {
         if (miniCardParent == null) return;
+        PositionMiniBar(stacked);
         if (miniBar != null)
         {
             var mb = miniBar.GetComponent<RectTransform>();
