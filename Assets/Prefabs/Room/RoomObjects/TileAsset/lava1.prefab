@@ -58,6 +58,10 @@ MonoBehaviour:
   overlapBufferSize: 32
   autoCalibrateToVisual: 1
   minStandingHeight: 2
+  detectionXZScale: 0.75
+  useCameraProjectedDetection: 1
+  detectionCamera: {fileID: 0}
+  cameraDetectionInset: 0.05
   moveSpeedMultiplier: 1
   spikeHazardPrefab: {fileID: 0}
   spikeInterval: 2
