@@ -23,6 +23,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 56a040c9b6b01f248b23e87d659512fe, type: 3}
@@ -31,6 +32,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 1
     kind: 1
     splitSides: 1
@@ -41,6 +43,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 1892b9efb08a1fe4598121a0f6f63dbd, type: 3}
@@ -49,6 +52,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 1
     kind: 2
     splitSides: 1
@@ -59,6 +63,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 0eef28e917fd98243927d95f333d9489, type: 3}
@@ -67,6 +72,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 7
     kind: 3
     splitSides: 0
@@ -77,6 +83,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips: []
       pickMode: 1
@@ -84,6 +91,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 7
     kind: 1
     splitSides: 0
@@ -94,6 +102,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips: []
       pickMode: 1
@@ -101,6 +110,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 7
     kind: 2
     splitSides: 0
@@ -111,6 +121,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips: []
       pickMode: 1
@@ -118,9 +129,10 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 5
     kind: 3
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -128,16 +140,19 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 2612523a501e5104dad9cdee239f31d5, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 5
     kind: 1
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -145,16 +160,19 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 1528a678fd4a45642af0e1167c2f19f1, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 5
     kind: 2
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -162,16 +180,19 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 1039b70bea88e224680d61f59bb64bd0, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 1
   - sin: 6
     kind: 3
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -179,16 +200,19 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 0abf28854d1f782448d3ea8b91350454, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 6
     kind: 1
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -196,30 +220,37 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 7875a1f5008c8f04486dcfd66459b266, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 6
     kind: 2
-    splitSides: 0
+    splitSides: 1
     enemy:
-      clips: []
+      clips:
+      - {fileID: 0}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 58f536aeec28ab24385a5ffc50d5986b, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 3
     kind: 3
     splitSides: 1
@@ -230,6 +261,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 5a3f05f9fe6e0f341bf77974bb8aa60c, type: 3}
@@ -239,6 +271,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 3
     kind: 1
     splitSides: 1
@@ -249,6 +282,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 2dacf5cd5180cde4a9f9687eb7cd9dd5, type: 3}
@@ -257,6 +291,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 3
     kind: 2
     splitSides: 1
@@ -267,6 +302,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 32ca859c128bebc46ad6c6cfc4dbbdc6, type: 3}
@@ -275,6 +311,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 4
     kind: 3
     splitSides: 1
@@ -285,17 +322,19 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
-      - {fileID: 8300000, guid: dbb11402777a62f49ae86e4ffd2a492f, type: 3}
+      - {fileID: 8300000, guid: 704252fdab9dacc47bd19ac7be6dc24f, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 4
     kind: 1
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -303,16 +342,19 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 211b852534182d3428dbccf623a13712, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 1
   - sin: 4
     kind: 2
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -320,13 +362,16 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 29843617e3dede24394ef319a64526aa, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 2
     kind: 3
     splitSides: 1
@@ -337,6 +382,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 207e0ae99fcf239439a244bd4491f7aa, type: 3}
@@ -345,6 +391,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 2
     kind: 1
     splitSides: 1
@@ -356,6 +403,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 8dc2ffae142961542a9ae885edceb1f0, type: 3}
@@ -365,6 +413,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   - sin: 2
     kind: 2
     splitSides: 1
@@ -375,6 +424,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: 0d00bbc73a83814408da1fe8f44ee656, type: 3}
@@ -383,6 +433,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0
   droneEntries:
   - sin: 2
     splitSides: 1
@@ -393,6 +444,7 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 0
       heavyCastThreshold: 0.5
+      loop: 0
     possessed:
       clips:
       - {fileID: 8300000, guid: d1bd60ce24f9cd74aa63ee12ad8d335d, type: 3}
@@ -403,3 +455,4 @@ MonoBehaviour:
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
+      loop: 0

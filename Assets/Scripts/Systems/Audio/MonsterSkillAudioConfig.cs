@@ -52,6 +52,8 @@ public class MonsterSkillAudioConfig : ScriptableObject
         public SpatialMode spatialMode = SpatialMode.Positional3D;
         [Tooltip("蓄力分档阈值（normalized charge 0~1）：仅 pickMode=ChargeTiered 生效。charge01 >= 阈值 → 播 clips[1]（高蓄力），否则播 clips[0]（低蓄力）。")]
         [Range(0f, 1f)] public float heavyCastThreshold = 0.5f;
+        [Tooltip("循环音效：true = 持续技能（如嫉妒激光，按住持续施放）用，由调用方 Start/Stop 控制启停；false = 一次性施放音（默认）。普通一次性技能保持 false。")]
+        public bool loop = false;
     }
 
     [Serializable]

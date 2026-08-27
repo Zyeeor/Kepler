@@ -1,0 +1,264 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13cf056a4c6c5d642be679d6ff43f70a, type: 3}
+  m_Name: CardEpithetCatalog
+  m_EditorClassIdentifier: 
+  entries:
+  - effectId: EN-A01
+    epithetTextKey: 
+    axis: 4
+    slot: 2
+    weight: 80
+  - effectId: EN-A03
+    epithetTextKey: 
+    axis: 5
+    slot: 2
+    weight: 80
+  - effectId: EN-A05
+    epithetTextKey: 
+    axis: 10
+    slot: 2
+    weight: 80
+  - effectId: EN-M01
+    epithetTextKey: 
+    axis: 6
+    slot: 1
+    weight: 65
+  - effectId: EN-R01
+    epithetTextKey: 
+    axis: 6
+    slot: 4
+    weight: 55
+  - effectId: EN-S01
+    epithetTextKey: 
+    axis: 7
+    slot: 3
+    weight: 65
+  - effectId: GL-A01
+    epithetTextKey: 
+    axis: 4
+    slot: 2
+    weight: 80
+  - effectId: GL-A02
+    epithetTextKey: 
+    axis: 3
+    slot: 2
+    weight: 65
+  - effectId: GL-A03
+    epithetTextKey: 
+    axis: 2
+    slot: 2
+    weight: 80
+  - effectId: GL-M01
+    epithetTextKey: 
+    axis: 1
+    slot: 1
+    weight: 55
+  - effectId: GL-S01
+    epithetTextKey: 
+    axis: 9
+    slot: 3
+    weight: 55
+  - effectId: GL-S02
+    epithetTextKey: 
+    axis: 10
+    slot: 3
+    weight: 80
+  - effectId: GL-S03
+    epithetTextKey: 
+    axis: 8
+    slot: 3
+    weight: 80
+  - effectId: GR-A01
+    epithetTextKey: 
+    axis: 4
+    slot: 2
+    weight: 55
+  - effectId: GR-A02
+    epithetTextKey: 
+    axis: 7
+    slot: 2
+    weight: 65
+  - effectId: GR-A03
+    epithetTextKey: 
+    axis: 4
+    slot: 2
+    weight: 80
+  - effectId: GR-A07
+    epithetTextKey: 
+    axis: 5
+    slot: 2
+    weight: 55
+  - effectId: GR-M01
+    epithetTextKey: 
+    axis: 6
+    slot: 1
+    weight: 65
+  - effectId: GR-M02
+    epithetTextKey: 
+    axis: 9
+    slot: 1
+    weight: 55
+  - effectId: GR-S01
+    epithetTextKey: 
+    axis: 7
+    slot: 3
+    weight: 55
+  - effectId: GR-S04
+    epithetTextKey: 
+    axis: 9
+    slot: 3
+    weight: 80
+  - effectId: LU-A03
+    epithetTextKey: 
+    axis: 7
+    slot: 2
+    weight: 80
+  - effectId: LU-A04
+    epithetTextKey: 
+    axis: 5
+    slot: 2
+    weight: 80
+  - effectId: LU-M03
+    epithetTextKey: 
+    axis: 7
+    slot: 1
+    weight: 65
+  - effectId: LU-M05
+    epithetTextKey: 
+    axis: 5
+    slot: 1
+    weight: 80
+  - effectId: LU-S05
+    epithetTextKey: 
+    axis: 8
+    slot: 3
+    weight: 65
+  - effectId: LU-S06
+    epithetTextKey: 
+    axis: 9
+    slot: 3
+    weight: 80
+  - effectId: LU-TG01
+    epithetTextKey: 
+    axis: 1
+    slot: 4
+    weight: 1000
+  - effectId: PR-A01
+    epithetTextKey: 
+    axis: 4
+    slot: 2
+    weight: 80
+  - effectId: PR-A02
+    epithetTextKey: 
+    axis: 5
+    slot: 2
+    weight: 80
+  - effectId: PR-A03
+    epithetTextKey: 
+    axis: 8
+    slot: 2
+    weight: 80
+  - effectId: PR-A04
+    epithetTextKey: 
+    axis: 2
+    slot: 2
+    weight: 35
+  - effectId: PR-M01
+    epithetTextKey: 
+    axis: 10
+    slot: 1
+    weight: 55
+  - effectId: PR-S01
+    epithetTextKey: 
+    axis: 4
+    slot: 3
+    weight: 65
+  - effectId: PR-TG01
+    epithetTextKey: 
+    axis: 1
+    slot: 4
+    weight: 1000
+  - effectId: PR-X01
+    epithetTextKey: 
+    axis: 7
+    slot: 3
+    weight: 65
+  - effectId: SL-A03
+    epithetTextKey: 
+    axis: 4
+    slot: 2
+    weight: 65
+  - effectId: SL-A04
+    epithetTextKey: 
+    axis: 5
+    slot: 2
+    weight: 80
+  - effectId: SL-A05
+    epithetTextKey: 
+    axis: 8
+    slot: 2
+    weight: 80
+  - effectId: SL-M01
+    epithetTextKey: 
+    axis: 7
+    slot: 1
+    weight: 65
+  - effectId: SL-M02
+    epithetTextKey: 
+    axis: 10
+    slot: 1
+    weight: 55
+  - effectId: SL-S01
+    epithetTextKey: 
+    axis: 4
+    slot: 3
+    weight: 65
+  - effectId: SL-S03
+    epithetTextKey: 
+    axis: 1
+    slot: 3
+    weight: 65
+  - effectId: WR-B01
+    epithetTextKey: 
+    axis: 9
+    slot: 4
+    weight: 80
+  - effectId: WR-B02
+    epithetTextKey: 
+    axis: 5
+    slot: 4
+    weight: 65
+  - effectId: WR-M01
+    epithetTextKey: 
+    axis: 7
+    slot: 1
+    weight: 65
+  - effectId: WR-M02
+    epithetTextKey: 
+    axis: 2
+    slot: 1
+    weight: 55
+  - effectId: WR-S01
+    epithetTextKey: 
+    axis: 1
+    slot: 3
+    weight: 55
+  - effectId: WR-S03
+    epithetTextKey: 
+    axis: 3
+    slot: 3
+    weight: 35
+  maxEpithetCount: 4
+  connector: "\u4E4B"
+  axisOrder: 
+  epithetRev: 1

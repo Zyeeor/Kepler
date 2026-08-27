@@ -509,10 +509,15 @@ public class EliteBuildDirector : MonoBehaviour
             return false;
         }
 
+        // 遭遇端命名（方案 Phase 4 / ADR-3）：优先用快照自带的词缀名。
+        // monsterType 格式为 "sin|w1|w2|…"；旧格式（无 '|'）或解析失败 → 回退 catalog 名（验收项 15）。
+        // 用上传端冻结的词序列而非本地重算：否则同一只怪会因遭遇者卡池不同而改名。
+        string epithetName = ResolveEncounterName(snapshot, entry);
+
         var carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
-        carrier.Init(snapshot, entry.displayName);
+        carrier.Init(snapshot, epithetName);
         ApplyEliteRuntimeSettings(monster, healthMultiplier, attackMultiplier);
-        AnnounceEliteSpawn(monster, entry.displayName);
+        AnnounceEliteSpawn(monster, epithetName);
         wm.RegisterExternalWaveMonster(monster);
         EnqueueEliteEvent("spawned", carrier, waveNumber); // 战果回传：精英成功生成（Meta §6.5）
 
@@ -674,10 +679,15 @@ public class EliteBuildDirector : MonoBehaviour
         long gameTime = (long)(GameManager.Instance != null ? GameManager.Instance.gameTimer : 0f);
         foreach (var kv in bySin)
         {
+            string sinWire = EliteMonsterCatalog.WireName(kv.Key);
             result.Add(new SnapshotEntry
             {
-                sin = EliteMonsterCatalog.WireName(kv.Key),
-                monsterType = ResolveDisplayName(kv.Key),
+                sin = sinWire,
+                // 词缀命名（方案 Phase 4 / ADR-3）：monsterType 载"sin|中性词序列"，
+                // 由**上传端**生成，遭遇端套本机模板 —— 保证同一只怪在任何人屏幕上同名。
+                // 服务器只校验非空、不解析内容，故改格式无需改服务器、无需数据迁移。
+                // 生成失败（目录缺失/无词）时回退为纯 catalog 名（旧格式，遭遇端自动降级）。
+                monsterType = ResolveMonsterType(kv.Key, kv.Value),
                 bdCount = kv.Value.Count,
                 bdData = kv.Value,
                 sourceWave = sourceWave,
@@ -686,6 +696,47 @@ public class EliteBuildDirector : MonoBehaviour
             });
         }
         return result;
+    }
+
+    /// <summary>
+    /// 编码 monsterType 载荷："sin|w1|w2|…"。
+    /// 无词缀时返回纯 catalog 名（旧格式），遭遇端按"无词缀"降级（验收项 15）。
+    /// </summary>
+    string ResolveMonsterType(SinType sin, List<BdCardEntry> bdData)
+    {
+        string sinWire = EliteMonsterCatalog.WireName(sin);
+        var catalog = CardEpithetCatalog.Instance;
+        if (catalog == null || bdData == null || bdData.Count == 0)
+            return ResolveDisplayName(sin);
+
+        var ids = new List<string>(bdData.Count);
+        foreach (var c in bdData)
+            if (c != null && !string.IsNullOrEmpty(c.cardId)) ids.Add(c.cardId);
+
+        var words = CardEpithetGenerator.Generate(ids, catalog);
+        return CardEpithetGenerator.EncodeForWire(sinWire, words);
+    }
+
+    /// <summary>
+    /// 遭遇端解析精英名字（方案 Phase 4 / ADR-3）。
+    /// 快照带词缀序列时用当前显示线套模板；否则回退 catalog 名（旧格式快照 / 定时投放 / 无词缀）。
+    /// 本机词表未知的中性词会**原样显示**（中性词本身是可读中文），不丢字不报错（验收项 16）。
+    /// </summary>
+    static string ResolveEncounterName(EliteSnapshotItem snapshot, EliteMonsterCatalog.Entry entry)
+    {
+        string fallback = entry != null && !string.IsNullOrEmpty(entry.displayName)
+            ? entry.displayName
+            : (snapshot != null ? snapshot.sin : "");
+        if (snapshot == null || string.IsNullOrEmpty(snapshot.monsterType)) return fallback;
+
+        // 旧格式：纯 catalog 名，无分隔符 → 无词缀
+        if (!CardEpithetGenerator.TryDecodeFromWire(snapshot.monsterType, out string sinWire, out string[] words))
+            return fallback;
+
+        if (words == null || words.Length == 0) return fallback;   // 无词缀（bdCount=0 的定时投放精英）
+
+        string name = CardEpithetGenerator.Format(sinWire, words, words.Length, CardEpithetCatalog.Instance);
+        return string.IsNullOrEmpty(name) ? fallback : name;
     }
 
     string ResolveDisplayName(SinType sin)

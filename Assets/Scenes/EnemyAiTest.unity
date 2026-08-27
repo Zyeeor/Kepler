@@ -14452,7 +14452,7 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
-  bootToMainMenu: 0
+  bootToMainMenu: 1
   useFormalFlow: 0
 --- !u!4 &1807762708
 Transform:

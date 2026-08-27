@@ -1305,3 +1305,5 @@ MonoBehaviour:
   - GR-S02
   - GR-S03
   - GR-TG01
+  cardPrefab: {fileID: 2800742191005174462, guid: 228748b3cfc377548a419b4e00df7920,
+    type: 3}

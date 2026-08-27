@@ -32,6 +32,8 @@ public class CombatAudioManager : AudioChannelController
     int _sfxCursor;
     /// <summary>循环音效句柄表（per-id 单实例；移动音用）。</summary>
     readonly Dictionary<SfxId, AudioSource> _sfxLoops = new Dictionary<SfxId, AudioSource>();
+    /// <summary>怪物技能循环施放音（持续技能如嫉妒激光用）：源 + 音量倍率，RefreshVolume / StopAll 遍历。</summary>
+    readonly List<CastLoop> _castLoops = new List<CastLoop>();
     /// <summary>per-clip 最近播放时间（节流用）。</summary>
     readonly Dictionary<AudioClip, float> _lastSfxTime = new Dictionary<AudioClip, float>();
     /// <summary>per-SfxId 最近播放时间（SfxBank 条目级节流用）。</summary>
@@ -155,6 +157,116 @@ public class CombatAudioManager : AudioChannelController
         var clip = inst.PickDroneClip(summonerSin, possessed, set);
         if (clip == null) return;
         inst.PlayClip(clip, worldPos, set.volumeScale, set.pitch, set.spatialMode == MonsterSkillAudioConfig.SpatialMode.Positional3D);
+    }
+
+    // ── 怪物技能循环施放音（持续技能如嫉妒激光：开火 Start / 熄火 Stop）──
+
+    /// <summary>怪物技能循环施放音句柄（内部：源 + 音量倍率，供音量刷新遍历）。</summary>
+    sealed class CastLoop
+    {
+        public AudioSource source;
+        public float volumeScale;
+    }
+
+    /// <summary>
+    /// 启动怪物技能循环施放音（持续技能如嫉妒激光：开火时 Start、熄火时 Stop）。
+    /// 查 MonsterSkillAudioConfig（七罪 × 技能类别），敌我分轨、空间化、音量音高与 PlayCastAudio 同构；
+    /// 仅当该音源组 loop=true 时生效，否则返回无效句柄（该技能仍走一次性 PlayCastAudio）。
+    /// 3D 模式挂 owner 下跟随；2D 模式挂本对象下无定位。资产缺失/无条目/clip 空 → 静默。
+    /// </summary>
+    public static SfxLoopHandle StartCastLoop(MonsterActor owner, EnemyAbility.AbilityType kind, Vector3? worldPos = null)
+    {
+        var inst = Instance;
+        if (inst == null || inst.Owner == null) return default;
+        return inst.StartCastLoopImpl(owner, kind, worldPos);
+    }
+
+    /// <summary>停止怪物技能循环施放音（幂等；无效句柄 no-op）。</summary>
+    public static void StopCastLoop(SfxLoopHandle handle)
+    {
+        if (handle.source == null) return;
+        var inst = Instance;
+        if (inst == null) return;
+        inst.StopCastLoopImpl(handle);
+    }
+
+    SfxLoopHandle StartCastLoopImpl(MonsterActor owner, EnemyAbility.AbilityType kind, Vector3? worldPos)
+    {
+        if (owner == null || kind == EnemyAbility.AbilityType.Passive) return default;
+        var cfg = Owner.monsterSkillAudioConfig;
+        if (cfg == null || !cfg.TryGet(owner.sinType, kind, out var e)) return default;
+
+        // 敌我分轨：splitSides 开且玩家控制 → possessed 组；否则 enemy 组
+        bool possessed = owner.IsPlayerControlled;
+        var set = e.splitSides && possessed ? e.possessed : e.enemy;
+        if (set == null || !set.loop) return default;   // 仅 loop=true 的条目做循环
+
+        var clip = PickLoopClip(owner.sinType, kind, possessed, set);
+        if (clip == null) return default;
+
+        bool is3D = set.spatialMode == MonsterSkillAudioConfig.SpatialMode.Positional3D;
+        var go = new GameObject("CastLoop_" + kind + "_" + owner.name);
+        go.transform.SetParent(is3D && owner.transform != null ? owner.transform : transform, false);
+        if (is3D && worldPos.HasValue) go.transform.position = worldPos.Value;
+
+        var src = go.AddComponent<AudioSource>();
+        src.clip = clip;
+        src.loop = true;
+        src.playOnAwake = false;
+        src.volume = Perceptual(Owner.SfxVolume) * set.volumeScale;
+        src.pitch = set.pitch;
+        src.spatialBlend = is3D ? 1f : 0f;
+        src.minDistance = sfx3DMinDistance;
+        src.maxDistance = sfx3DMaxDistance;
+        src.Play();
+
+        _castLoops.Add(new CastLoop { source = src, volumeScale = set.volumeScale });
+        return new SfxLoopHandle { source = src };
+    }
+
+    void StopCastLoopImpl(SfxLoopHandle handle)
+    {
+        if (handle.source == null) return;
+        for (int i = _castLoops.Count - 1; i >= 0; i--)
+        {
+            if (_castLoops[i].source == handle.source)
+            {
+                var go = _castLoops[i].source.gameObject;
+                _castLoops.RemoveAt(i);
+                Destroy(go);
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 从循环音源组挑一条（过滤 null；单条直取，多条按 Random/NoRepeat 随机）。
+    /// 循环音不支持蓄力分档（ChargeTiered 按随机/去重处理，循环音不应配蓄力档位）。
+    /// </summary>
+    AudioClip PickLoopClip(SinType sin, EnemyAbility.AbilityType kind, bool possessed, MonsterSkillAudioConfig.ClipSet set)
+    {
+        if (set == null || set.clips == null || set.clips.Count == 0) return null;
+        _validIdx.Clear();
+        for (int i = 0; i < set.clips.Count; i++)
+            if (set.clips[i] != null) _validIdx.Add(i);
+
+        if (_validIdx.Count == 0) return null;
+        if (_validIdx.Count == 1) return set.clips[_validIdx[0]];
+
+        var key = (sin, kind, possessed);
+        int lastPos = _castLastIndex.TryGetValue(key, out int lp) ? lp : -1;
+        int pickPos;
+        if (set.pickMode == MonsterSkillAudioConfig.ClipPickMode.NoRepeat && lastPos >= 0 && lastPos < _validIdx.Count)
+        {
+            int start = UnityEngine.Random.Range(0, _validIdx.Count - 1);
+            pickPos = start >= lastPos ? start + 1 : start;
+        }
+        else
+        {
+            pickPos = UnityEngine.Random.Range(0, _validIdx.Count);
+        }
+        _castLastIndex[key] = pickPos;
+        return set.clips[_validIdx[pickPos]];
     }
 
     /// <summary>施放音 no-repeat 记忆：按 (sin, kind, 是否附身) 记上次播放的有效列表位置（-1=无）。</summary>
@@ -416,6 +528,13 @@ public class CombatAudioManager : AudioChannelController
             if (bank != null && bank.TryGet(kv.Key, out var entry) && entry != null) scale = entry.volumeScale;
             kv.Value.volume = MixerActive ? 1f : Perceptual(Owner.SfxVolume) * scale;
         }
+        // 怪物技能循环施放音音量同步刷新
+        for (int i = 0; i < _castLoops.Count; i++)
+        {
+            var cl = _castLoops[i];
+            if (cl.source == null) continue;
+            cl.source.volume = MixerActive ? 1f : Perceptual(Owner.SfxVolume) * cl.volumeScale;
+        }
     }
 
     public override void PauseAll()
@@ -437,5 +556,7 @@ public class CombatAudioManager : AudioChannelController
         if (sfxPool != null)
             foreach (var s in sfxPool)
                 if (s != null) s.Stop();
+        for (int i = 0; i < _castLoops.Count; i++)
+            if (_castLoops[i].source != null) _castLoops[i].source.Stop();
     }
 }
