@@ -151,7 +151,6 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         confirmButton?.onClick.AddListener(() =>
         {
             Debug.Log($"[CoreChoiceCard] Select clicked: index={Index}, card='{cardText?.text}', rerolled={IsRerolled}");
-            if (IsRerolled) return;
             onSelect?.Invoke(Index);
         });
 
@@ -191,7 +190,8 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public void OnPointerClick(PointerEventData eventData)
     {
         Debug.Log($"[CoreChoiceCard] PointerClick: index={Index}, object='{name}', button={eventData.button}, position={eventData.position}");
-        if (eventData.button != PointerEventData.InputButton.Left || IsRerolled) return;
+        // 刷新次数用尽只锁刷新入口，不锁选取（刷新过的卡仍须可选）
+        if (eventData.button != PointerEventData.InputButton.Left) return;
 
         GameObject clickedObject = eventData.pointerPress != null
             ? eventData.pointerPress
@@ -214,7 +214,7 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         }
         else if (IsRerolled)
         {
-            if (confirmButton != null) confirmButton.interactable = false;
+            // 刷新锁定只影响刷新按钮与标记，不禁用确认按钮（卡仍可选）
             if (rerollButton != null) rerollButton.interactable = false;
             if (confirmedMark != null) confirmedMark.SetActive(false);
             if (rerolledMark != null) rerolledMark.SetActive(true);
@@ -244,21 +244,16 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     }
 
     /// <summary>
-    /// 由 CoreChoiceUI 在每次刷新后调用：locked=true（该槽位已刷满 maxRerollsPerCard 次）
-    /// 锁定卡片（禁用刷新/选择）；locked=false 恢复可交互。
+    /// 由 CoreChoiceUI 在每次刷新后调用：locked=true（该槽位已刷满 maxRerollsPerCard 次，或无候选可刷）
+    /// 只锁定刷新入口（刷新按钮置灰 + 显示"已刷新"标记）；
+    /// 选择入口（确认按钮 / 卡体点击）保持可用——刷新次数用尽不代表该卡不可选。
     /// </summary>
     public void ApplyRerollLock(bool locked)
     {
         IsRerolled = locked;
-        if (locked)
-        {
-            RefreshUI();
-        }
-        else
-        {
-            if (confirmButton != null) confirmButton.interactable = true;
-            if (rerollButton != null) rerollButton.interactable = true;
-        }
+        if (rerollButton != null) rerollButton.interactable = !locked;
+        if (rerolledMark != null) rerolledMark.SetActive(locked);
+        if (confirmButton != null) confirmButton.interactable = true;
     }
 
     // ── 技能图标颜色：卡片主图（cardImage/image(1)）沿用 MonsterSkillIconConfig 对应槽位配置的颜色 ──
