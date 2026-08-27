@@ -21,7 +21,7 @@ public sealed class PossessionImprintIcon : MonoBehaviour, IPointerEnterHandler,
     {
         if (tooltip == null) return;
         int stacks = PossessionImprintManager.Instance != null
-            ? PossessionImprintManager.Instance.GetStacks(sin)
+            ? PossessionImprintManager.Instance.GetDisplayedStacks(sin)
             : 0;
         tooltip.Show(sin, stacks);
     }
