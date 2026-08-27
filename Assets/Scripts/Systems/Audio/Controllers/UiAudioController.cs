@@ -68,7 +68,12 @@ public class UiAudioController : AudioChannelController
     /// <summary>播放 UI 音效（独立一路）。</summary>
     public void PlayClip(AudioClip clip, float volumeScale = 1f)
     {
-        if (clip == null || uiSource == null) return;
+        if (clip == null || uiSource == null)
+        {
+            Debug.Log($"[CardSfx] PlayClip FAIL: clip={(clip == null ? "NULL" : clip.name)}, uiSource={(uiSource == null ? "NULL" : "ok")}");
+            return;
+        }
+        Debug.Log($"[CardSfx] PlayClip({clip.name}) volumeScale={volumeScale}, uiSource.volume={Perceptual(Owner.UiVolume):F3}");
         uiSource.volume = MixerActive ? 1f : Perceptual(Owner.UiVolume);
         uiSource.PlayOneShot(clip, volumeScale);
     }

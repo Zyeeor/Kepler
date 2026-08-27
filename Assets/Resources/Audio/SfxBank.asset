@@ -42,28 +42,28 @@ MonoBehaviour:
     channel: 0
     prefer3D: 1
   - id: 5
-    clip: {fileID: 8300000, guid: bcf49cd290fd15443be82478919f7c69, type: 3}
+    clip: {fileID: 8300000, guid: 9c07ad893d689e74a8117c3d77bfc7e1, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 1
     prefer3D: 1
   - id: 6
-    clip: {fileID: 8300000, guid: 89479c37eebdc9d4ba131348aa184b84, type: 3}
+    clip: {fileID: 8300000, guid: cacb90524c211e4449fdbe2a87712881, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 1
     prefer3D: 1
   - id: 7
-    clip: {fileID: 8300000, guid: f1afbe252b4aa3142902a2cbe6abf1cb, type: 3}
+    clip: {fileID: 8300000, guid: 409d73a976600e9448f166a4bb5a2cc7, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 1
     prefer3D: 1
   - id: 8
-    clip: {fileID: 8300000, guid: 1dca4c19cd179a84da480a49e9b2504f, type: 3}
+    clip: {fileID: 8300000, guid: c10c5cbc25dfaaf4dafaabc2a9c2f7f4, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1
