@@ -15,10 +15,9 @@ MonoBehaviour:
   entries:
   - sin: 1
     kind: 3
-    splitSides: 0
+    splitSides: 1
     enemy:
-      clips:
-      - {fileID: 8300000, guid: c435d09e6a5a35d4c9148a8120b142ee, type: 3}
+      clips: []
       pickMode: 0
       volumeScale: 1
       pitch: 1
@@ -34,17 +33,17 @@ MonoBehaviour:
       heavyCastThreshold: 0.5
   - sin: 1
     kind: 1
-    splitSides: 0
+    splitSides: 1
     enemy:
-      clips:
-      - {fileID: 8300000, guid: 1892b9efb08a1fe4598121a0f6f63dbd, type: 3}
+      clips: []
       pickMode: 1
       volumeScale: 2
       pitch: 1
       spatialMode: 1
       heavyCastThreshold: 0.5
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 1892b9efb08a1fe4598121a0f6f63dbd, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
@@ -223,7 +222,7 @@ MonoBehaviour:
       heavyCastThreshold: 0.5
   - sin: 3
     kind: 3
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -232,7 +231,9 @@ MonoBehaviour:
       spatialMode: 0
       heavyCastThreshold: 0.5
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 5a3f05f9fe6e0f341bf77974bb8aa60c, type: 3}
+      - {fileID: 8300000, guid: 889b71e500caedb428aaf39fa9ade6f2, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
@@ -240,7 +241,7 @@ MonoBehaviour:
       heavyCastThreshold: 0.5
   - sin: 3
     kind: 1
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -249,7 +250,8 @@ MonoBehaviour:
       spatialMode: 0
       heavyCastThreshold: 0.5
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 2dacf5cd5180cde4a9f9687eb7cd9dd5, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
@@ -257,7 +259,7 @@ MonoBehaviour:
       heavyCastThreshold: 0.5
   - sin: 3
     kind: 2
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -266,7 +268,8 @@ MonoBehaviour:
       spatialMode: 0
       heavyCastThreshold: 0.5
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 32ca859c128bebc46ad6c6cfc4dbbdc6, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1
@@ -274,7 +277,7 @@ MonoBehaviour:
       heavyCastThreshold: 0.5
   - sin: 4
     kind: 3
-    splitSides: 0
+    splitSides: 1
     enemy:
       clips: []
       pickMode: 1
@@ -283,7 +286,8 @@ MonoBehaviour:
       spatialMode: 0
       heavyCastThreshold: 0.5
     possessed:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: dbb11402777a62f49ae86e4ffd2a492f, type: 3}
       pickMode: 1
       volumeScale: 1
       pitch: 1

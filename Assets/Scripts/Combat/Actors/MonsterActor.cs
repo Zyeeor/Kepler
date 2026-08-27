@@ -394,6 +394,40 @@ public class MonsterActor : Actor
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
     public bool IsAbilityLocomotionLocked { get; set; }
+    private EnemyAbility activeAbilityTelegraph;
+    private bool locomotionLockBeforeTelegraph;
+
+    /// <summary>Ability currently reserving this monster during an AI cast wind-up.</summary>
+    public EnemyAbility ActiveAbilityTelegraph => activeAbilityTelegraph;
+    public bool IsAbilityTelegraphing => activeAbilityTelegraph != null;
+
+    /// <summary>
+    /// Reserves the actor for one AI cast. This is deliberately actor-local instead of a
+    /// gameplay tag: it blocks every other ability without changing the authored tag graph.
+    /// </summary>
+    public bool TryBeginAbilityTelegraph(EnemyAbility ability)
+    {
+        if (ability == null || isPossessed || isDowned || Body != BodyState.Active)
+            return false;
+        if (activeAbilityTelegraph != null && activeAbilityTelegraph != ability)
+            return false;
+
+        if (activeAbilityTelegraph == null)
+        {
+            activeAbilityTelegraph = ability;
+            locomotionLockBeforeTelegraph = IsAbilityLocomotionLocked;
+        }
+        IsAbilityLocomotionLocked = true;
+        return true;
+    }
+
+    public void EndAbilityTelegraph(EnemyAbility ability)
+    {
+        if (activeAbilityTelegraph != ability) return;
+        activeAbilityTelegraph = null;
+        IsAbilityLocomotionLocked = locomotionLockBeforeTelegraph;
+        locomotionLockBeforeTelegraph = false;
+    }
 
     /// <summary>True after the Elite runtime profile is applied or while its build carrier exists.</summary>
     public bool IsElite => eliteRuntimeApplied || EliteBuildCarrier.Get(this) != null;
@@ -1596,6 +1630,8 @@ public class MonsterActor : Actor
     }
 
     public void OnPossessed(){
+        if (activeAbilityTelegraph != null)
+            activeAbilityTelegraph.CancelEnemyTelegraph();
         float reservedHealth = currentHealth;
         float reservedMaxHealth = maxHealth;
         float reservedHealthRatio = reservedMaxHealth > 0f
@@ -2012,6 +2048,8 @@ public class MonsterActor : Actor
         ClearAbilityCostDeathState();
         IsAbilityFacingLocked = false;
         IsAbilityLocomotionLocked = false;
+        activeAbilityTelegraph = null;
+        locomotionLockBeforeTelegraph = false;
         SetAbilityComponentsEnabled(true);
         CancelAbilityRuntimeState();
         ApplyStatBlock(enemyStats, refillVitals: true);
@@ -2059,6 +2097,8 @@ public class MonsterActor : Actor
         StopCorpseGroundAlignment();
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
+        activeAbilityTelegraph = null;
+        locomotionLockBeforeTelegraph = false;
         BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
@@ -2068,6 +2108,8 @@ public class MonsterActor : Actor
         possessVelocity = Vector3.zero;
         aiVelocity = Vector3.zero;
         aiCurrentTurnSpeed = 0f;
+        IsAbilityFacingLocked = false;
+        IsAbilityLocomotionLocked = false;
         wasKilledByPlayer = false;
         ResetEliteRuntimeState();
         if (corpseRoutine != null)

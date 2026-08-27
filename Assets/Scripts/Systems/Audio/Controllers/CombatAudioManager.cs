@@ -274,6 +274,8 @@ public class CombatAudioManager : AudioChannelController
         var bank = Owner != null ? Owner.sfxBank : null;
         if (bank == null || !bank.TryGet(id, out var entry) || entry.clip == null)
         {
+            if (id == SfxId.CardOpen || id == SfxId.CardSelect || id == SfxId.CardReroll)
+                Debug.Log($"[CardSfx] Play({id}) FAIL: bank={(bank == null ? "NULL" : "ok")}, entry={(bank != null && bank.TryGet(id, out var e0) ? (e0.clip == null ? "clip-NULL" : e0.clip.name) : "no-entry")}");
             RegisterMissingSfxId(id);
             return false;
         }
@@ -286,6 +288,8 @@ public class CombatAudioManager : AudioChannelController
 
         if (entry.channel == SfxBank.Channel.Ui)
         {
+            if (id == SfxId.CardOpen || id == SfxId.CardSelect || id == SfxId.CardReroll)
+                Debug.Log($"[CardSfx] Play({id}) → UI channel, uiController={(Owner != null && Owner.uiController != null ? "ok" : "NULL")}, clip={entry.clip.name}");
             if (Owner != null && Owner.uiController != null)
                 Owner.uiController.PlayClip(entry.clip, entry.volumeScale * volumeScale);
             return true;

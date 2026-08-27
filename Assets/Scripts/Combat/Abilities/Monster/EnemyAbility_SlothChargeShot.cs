@@ -112,6 +112,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     /// 附身代价致死时先把这一发打出去，再结算死亡。
     /// </summary>
     public override bool IsActivationInProgress => isCharging || isFiringRoutineActive || bossPatternRoutine != null;
+    protected override bool UsesDeferredEnemyActivation => !(owner is BossSevenfoldActor);
 
     void Update()
     {
@@ -136,6 +137,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         {
             if (!isCharging)
             {
+                if (!TryPrepareDeferredEnemyActivation()) return;
+                ConsumeDeferredEnemyActivation();
                 if (!TryBeginActivationEffect()) return;
                 isCharging = true;
                 chargeTimer = 0f;
