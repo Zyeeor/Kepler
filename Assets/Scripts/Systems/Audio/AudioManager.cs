@@ -164,22 +164,6 @@ public class AudioManager : MonoBehaviour
         return sfxController.Play(id, worldPos, volumeScale);
     }
 
-    /// <summary>
-    /// 带字段 override 的统一播放。**专用于 UI 通道的场景序列化字段迁移**（CoreChoiceUI 卡音）：
-    /// overrideClip 非空 → 走 UI 路播字段音（旧行为）；为空 → 走 fallbackId 的 bank 条目。
-    /// 注意：不适用于 World 通道音效迁移（override 分支忽略 worldPos/3D/pitch），
-    /// World 音效字段迁移请直接用 Play(SfxId) + 条目配置。
-    /// </summary>
-    public bool PlayWithOverride(AudioClip overrideClip, SfxId fallbackId, Vector3? worldPos = null)
-    {
-        if (overrideClip != null)
-        {
-            uiController?.PlayClip(overrideClip);
-            return true;
-        }
-        return Play(fallbackId, worldPos);
-    }
-
     // ── 门面：循环音效租借（转发 CombatAudioManager）──
 
     public CombatAudioManager.SfxLoopHandle StartSfxLoop(SfxId id, Transform parent)

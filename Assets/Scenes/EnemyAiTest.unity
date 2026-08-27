@@ -4083,9 +4083,9 @@ MonoBehaviour:
   cardParent: {fileID: 1170007485}
   confirmAllButton: {fileID: 1361398536}
   titleText: {fileID: 342066982}
-  cardOpenSfx: {fileID: 8300000, guid: 89479c37eebdc9d4ba131348aa184b84, type: 3}
-  cardSelectSfx: {fileID: 8300000, guid: f1afbe252b4aa3142902a2cbe6abf1cb, type: 3}
-  cardRerollSfx: {fileID: 8300000, guid: 1dca4c19cd179a84da480a49e9b2504f, type: 3}
+  cardOpenSfx: {fileID: 0}
+  cardSelectSfx: {fileID: 0}
+  cardRerollSfx: {fileID: 0}
 --- !u!114 &786004063
 MonoBehaviour:
   m_ObjectHideFlags: 0

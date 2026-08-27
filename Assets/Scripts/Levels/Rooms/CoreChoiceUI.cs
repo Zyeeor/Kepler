@@ -29,13 +29,7 @@ public class CoreChoiceUI : MonoBehaviour
     public Button confirmAllButton;
     public TextMeshProUGUI titleText;
 
-    [Header("Audio（可配置 Clip，null 跳过）")]
-    [Tooltip("弹卡音：弹窗打开时播放。")]
-    public AudioClip cardOpenSfx;
-    [Tooltip("选卡确认音。")]
-    public AudioClip cardSelectSfx;
-    [Tooltip("重抽音。")]
-    public AudioClip cardRerollSfx;
+    // 卡音统一走 SfxBank → AudioManager.Play(SfxId.CardOpen/Select/Reroll)；不再持有字段 override 入口。
 
     // State
     private CoreChoiceCard[] cards;
@@ -146,8 +140,7 @@ public class CoreChoiceUI : MonoBehaviour
         Debug.Log($"[CoreChoiceUI] Show called: doublePick={doublePick}, panelRoot={(panelRoot != null ? panelRoot.name : "NULL")}, cardPrefab={(cardPrefab != null ? cardPrefab.name : "NULL")}, cardParent={(cardParent != null ? cardParent.name : "NULL")}");
         if (panelRoot != null) panelRoot.SetActive(true);
         else Debug.LogError("[CoreChoiceUI] panelRoot is NULL — drag the UI Panel into this field!");
-        Debug.Log($"[CardSfx] Show: AudioManager.Instance={(AudioManager.Instance == null ? "NULL" : "ok")}, cardOpenSfx={(cardOpenSfx == null ? "NULL" : cardOpenSfx.name)}");
-        AudioManager.Instance?.PlayWithOverride(cardOpenSfx, SfxId.CardOpen); // 字段非空优先，空走 SfxBank 条目
+        AudioManager.Instance?.Play(SfxId.CardOpen);
 
         // continue 按钮在 panelRoot 外，始终显示（供 toggle 显隐选卡界面）
         if (confirmAllButton != null)
@@ -215,8 +208,7 @@ public class CoreChoiceUI : MonoBehaviour
         // 点卡即选即生效（双选中更符合直觉）；解锁该卡
         if (CardManager.Instance != null)
             CardManager.Instance.SelectCard(index);
-        Debug.Log($"[CardSfx] Select: AudioManager.Instance={(AudioManager.Instance == null ? "NULL" : "ok")}, cardSelectSfx={(cardSelectSfx == null ? "NULL" : cardSelectSfx.name)}");
-        AudioManager.Instance?.PlayWithOverride(cardSelectSfx, SfxId.CardSelect);
+        AudioManager.Instance?.Play(SfxId.CardSelect);
 
         picksRemaining--;
         if (picksRemaining > 0 && doublePick)
@@ -262,8 +254,7 @@ public class CoreChoiceUI : MonoBehaviour
             bool locked = CardManager.Instance != null && !CardManager.Instance.HasRerollCandidates(index);
             cards[index].ApplyRerollLock(locked);
             if (selectedIndex == index) selectedIndex = -1;
-            Debug.Log($"[CardSfx] Reroll: AudioManager.Instance={(AudioManager.Instance == null ? "NULL" : "ok")}, cardRerollSfx={(cardRerollSfx == null ? "NULL" : cardRerollSfx.name)}");
-            AudioManager.Instance?.PlayWithOverride(cardRerollSfx, SfxId.CardReroll);
+            AudioManager.Instance?.Play(SfxId.CardReroll);
             Debug.Log($"[CoreChoiceUI] Card rerolled: index={index}, name={newCard.cardName}, locked={locked}");
         }
         else
