@@ -292,7 +292,6 @@ public class MonsterSpawner : MonoBehaviour
         RunSpawnDirector director = RunSpawnDirector.Instance;
         monster.ApplySpawnDifficultySnapshot(
             origin,
-            director != null ? director.CurrentTier : 0,
             director != null ? director.CurrentHealthMultiplier : 1f,
             director != null ? director.CurrentAttackMultiplier : 1f);
         Track(home, monster, prefab, isWaveMonster: true,
