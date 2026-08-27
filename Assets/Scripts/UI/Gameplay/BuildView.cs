@@ -10,9 +10,9 @@ using System.Collections.Generic;
 /// 所有显示配置（扇形参数、左上角迷你卡条参数、卡牌预制体等）直接在本组件的 Inspector 上编辑。
 ///
 /// 交互：点按“构筑”按钮循环三态：
-///   0 左上角一排（迷你图标，常驻 HUD，不暂停）
+///   0 左上角一排（迷你图标横向排开，常驻 HUD，不暂停）
 ///   1 半屏扇形放大（CardArcLayout 弧形排布，暂停查看）
-///   2 收回不显示
+///   2 左上角堆叠（沿用迷你卡的尺寸与位置，全部卡片叠在一起，只露出堆叠边缘）
 /// 卡片复用 CoreChoiceCard 预制体渲染为只读模式（隐藏文本/按钮）。
 ///
 /// 构筑按钮为场景内静态对象：设计者在 UICanvas 下摆放一个命名为 BuildButton 的 Button（或把引用拖到 buildButton 字段），
@@ -34,7 +34,7 @@ public class BuildView : MonoBehaviour
     public float maxSpreadDeg = 100f;      // 全部卡片的最大总张角（度），限制扇形展开的最大宽度
     public float perCardDeg = 16f;         // 相邻两张卡之间的夹角（度），即扇形上卡片的“间隔”
     public float baseYOffset = 360f;       // 扇形整体相对屏幕中心的竖直上移量（像素），调整扇形高低
-    public float scaleMultiplier = 1.6f;   // 扇形模式卡片相对原始卡面的放大倍率
+    public float scaleMultiplier = 1.2f;   // 扇形模式卡片相对原始卡面的放大倍率
 
     [Header("迷你卡条（模式 0：左上角一排，默认常驻 HUD）")]
     [Tooltip("控制默认左上角常驻的迷你卡条。")]
@@ -42,7 +42,13 @@ public class BuildView : MonoBehaviour
     float miniCardW = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
     float miniCardH = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
     public float miniSpacing = 60f;       // ★ 迷你卡之间的间隔（像素）。想让模式0卡片排得更松/更紧，调这个值
-    public Vector2 miniAnchor = new Vector2(60f, -80f); // 迷你卡条距屏幕左上角的偏移（X 右移，Y 上移）
+    public Vector2 miniAnchor = new Vector2(76f, -32f); // 迷你卡条距屏幕左上角的偏移（X 右移，Y 上移）；默认让卡条落在构筑按钮右侧并与其垂直居中
+
+    [Header("堆叠模式（模式 2：左上角缩小态基础上把所有卡叠在一起）")]
+    [Tooltip("堆叠模式下每张卡相对前一张的像素偏移。默认只做水平错位、上下对齐（y=0），让叠层横向铺开；y 非 0 会形成斜向堆叠。0,0 = 完全重合只看到最上面一张。")]
+    public Vector2 stackOffset = new Vector2(12f, 0f);
+    [Tooltip("左上角两种模式（迷你一排 / 堆叠）要隐藏的卡面子物体名：卡面预制体里溢出卡框的装饰图层（如 Image (1)）缩小后会变成碍眼的色块，这里按需裁掉。留空则不裁剪；扇形放大模式不受影响。")]
+    public List<string> miniHiddenChildren = new List<string> { "Image (1)" };
 
     [Header("Debug Toggles（调试开关）")]
     [Tooltip("没有卡的时候是否显示提示文本（如“尚未获得任何卡片”）。关闭则无卡时什么都不显示。")]
@@ -74,7 +80,7 @@ public class BuildView : MonoBehaviour
 
     const int ModeMini = 0;
     const int ModeFan = 1;
-    const int ModeHidden = 2;
+    const int ModeStack = 2;
 
     void Start()
     {
@@ -122,7 +128,7 @@ public class BuildView : MonoBehaviour
 
     void OnCardsChanged(CardData card)
     {
-        if (mode == ModeMini) RefreshMini();
+        if (mode == ModeMini || mode == ModeStack) RefreshMini(IsStackMode);
     }
 
     /// <summary>附身状态变化（附身 / 离开附身 / 更换附身）时实时刷新当前模式的构筑。
@@ -136,7 +142,7 @@ public class BuildView : MonoBehaviour
             trackedStateInited = true;
             trackedBody = pm.CurrentBody;
             trackedState = pm.State;
-            if (mode == ModeMini) RefreshMini();
+            if (mode == ModeMini || mode == ModeStack) RefreshMini(IsStackMode);
             else if (mode == ModeFan) PopulateFan();
         }
     }
@@ -263,11 +269,14 @@ public class BuildView : MonoBehaviour
     }
 
     // ───────────────────────── 模式切换 ─────────────────────────
-    /// <summary>点按构筑按钮：循环切换三态（迷你一排 → 扇形放大 → 收回）。</summary>
+    /// <summary>点按构筑按钮：循环切换三态（迷你一排 → 扇形放大 → 左上角堆叠）。</summary>
     public void CycleMode()
     {
         SetMode((mode + 1) % 3);
     }
+
+    /// <summary>当前是否处于「左上角堆叠」模式（迷你卡叠在一起，与 Mini 共用容器）。</summary>
+    bool IsStackMode => mode == ModeStack;
 
     void SetMode(int m)
     {
@@ -281,16 +290,21 @@ public class BuildView : MonoBehaviour
         {
             case ModeMini: ShowMiniRow(); break;
             case ModeFan: ShowFan(); break;
-            default: Retract(); break;
+            default: ShowStack(); break;
         }
     }
 
-    void ShowMiniRow()
+    void ShowMiniRow() => ShowMini(false);
+
+    void ShowStack() => ShowMini(true);
+
+    /// <summary>两种左上角模式共用同一套迷你卡渲染：stacked=false 横向排开，true 叠在一起。</summary>
+    void ShowMini(bool stacked)
     {
         PopPause();
         if (panelRoot != null) panelRoot.SetActive(false);
         if (miniBar != null) miniBar.SetActive(true);
-        RefreshMini();
+        RefreshMini(stacked);
     }
 
     void ShowFan()
@@ -300,14 +314,6 @@ public class BuildView : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(true);
         PopulateFan();
         PushPause();
-    }
-
-    void Retract()
-    {
-        PopPause();
-        if (panelRoot != null) panelRoot.SetActive(false);
-        if (miniBar != null) miniBar.SetActive(false);
-        ClearCards();
     }
 
     void PushPause()
@@ -343,8 +349,16 @@ public class BuildView : MonoBehaviour
         miniCardH = bh * miniScale;
     }
 
+    /// <summary>第 idx 张卡在两种左上角模式下的锚点偏移：横排模式按卡宽+间距递进，堆叠模式按 stackOffset 递进。</summary>
+    Vector2 MiniSlotPos(int idx, bool stacked)
+    {
+        return stacked
+            ? new Vector2(idx * stackOffset.x, idx * stackOffset.y)
+            : new Vector2(idx * (miniCardW + miniSpacing), 0f);
+    }
+
     // 手动排布迷你卡槽：左对齐、卡间仅保留 miniSpacing 间隙，不依赖布局组重建时序
-    void ApplyMiniLayout()
+    void ApplyMiniLayout(bool stacked = false)
     {
         if (miniCardParent == null) return;
         if (miniBar != null)
@@ -361,7 +375,7 @@ public class BuildView : MonoBehaviour
             rt.sizeDelta = new Vector2(miniCardW, miniCardH);
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 0.5f);
             rt.pivot = new Vector2(0f, 0.5f);
-            rt.anchoredPosition = new Vector2(idx * (miniCardW + miniSpacing), 0f);
+            rt.anchoredPosition = MiniSlotPos(idx, stacked);
             idx++;
         }
     }
@@ -371,14 +385,14 @@ public class BuildView : MonoBehaviour
     {
         if (!Application.isPlaying) return;
         ComputeCardSize();
-        ApplyMiniLayout();
+        ApplyMiniLayout(IsStackMode);
     }
 
-    void RefreshMini()
+    void RefreshMini(bool stacked = false)
     {
         ClearCards();
         ComputeCardSize();
-        ApplyMiniLayout();
+        ApplyMiniLayout(stacked);
         var result = Gather();
         bool has = result.cards.Count > 0;
         if (miniEmptyHint != null) miniEmptyHint.gameObject.SetActive(!has && showEmptyHint);
@@ -399,7 +413,7 @@ public class BuildView : MonoBehaviour
             srt.sizeDelta = new Vector2(miniCardW, miniCardH);
             srt.anchorMin = srt.anchorMax = new Vector2(0f, 0.5f);
             srt.pivot = new Vector2(0f, 0.5f);
-            srt.anchoredPosition = new Vector2(i * (miniCardW + miniSpacing), 0f);
+            srt.anchoredPosition = MiniSlotPos(i, stacked);
 
             var data = result.cards[i];
             var go = Instantiate(prefab, slot.transform);
@@ -422,11 +436,29 @@ public class BuildView : MonoBehaviour
             if (card.descriptionText != null) card.descriptionText.gameObject.SetActive(false);
             var choiceCard = go.GetComponent<ChoiceCard>();
             if (choiceCard != null) Destroy(choiceCard);
+            HideCardChildren(go);
             // 迷你图标纯展示，关闭射线拦截避免遮挡世界点击
             var imgs = go.GetComponentsInChildren<Image>(true);
             foreach (var img in imgs) img.raycastTarget = false;
 
             cardInstances.Add(slot);
+        }
+    }
+
+    /// <summary>
+    /// 左上角两种模式（迷你一排 / 堆叠）的卡面裁剪：按名隐藏卡面预制体里指定的子物体。
+    /// 这些图层（如 Image (1)）在原始卡面尺寸下是卡外光效，缩小后会糊成一团碍眼的色块。
+    /// 仅在实例化后立即调用；扇形放大模式保持完整卡面，不做裁剪。
+    /// </summary>
+    void HideCardChildren(GameObject go)
+    {
+        if (miniHiddenChildren == null || miniHiddenChildren.Count == 0) return;
+        for (int i = 0; i < miniHiddenChildren.Count; i++)
+        {
+            var name = miniHiddenChildren[i];
+            if (string.IsNullOrEmpty(name)) continue;
+            var t = FindDescendant(go.transform, name);
+            if (t != null) t.gameObject.SetActive(false);
         }
     }
 
@@ -594,5 +626,5 @@ public class BuildView : MonoBehaviour
 
     // ───────────────────────── 兼容旧调用（若有） ─────────────────────────
     public void Show() => SetMode(ModeFan);
-    public void Hide() => SetMode(ModeHidden);
+    public void Hide() => SetMode(ModeStack);
 }
