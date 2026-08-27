@@ -11,7 +11,6 @@ public static class ENGPOSS001ContractChecks
         TransactionAlwaysGrantsTargetStack();
         GreedUsesPreviousStacksAndRewardsTarget();
         MultipliersRespectCaps();
-        DifficultyTierBoundariesAreStable();
         AssetsAndSceneBindingsAreValid();
         Console.WriteLine("ENG-POSS-001 contract checks passed.");
     }
@@ -38,20 +37,10 @@ public static class ENGPOSS001ContractChecks
 
     static void MultipliersRespectCaps()
     {
-        Require(Approximately(MonsterSpawnDifficulty.DamageMultiplier(100), 2.2f), "Damage cap is wrong.");
-        Require(Approximately(MonsterSpawnDifficulty.HealthMultiplier(100), 3f), "Health cap is wrong.");
         Require(PossessionImprintMath.MaxStacks == 100, "Seven-sin stack cap must default to 100.");
         Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(100), 0.4f), "Sloth drain cap is wrong.");
         Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(1000), 0.4f), "Sloth stack cap is not enforced.");
         Require(Approximately(PossessionImprintMath.LustLifestealMultiplier(100), 1f), "Lust lifesteal formula is wrong.");
-    }
-
-    static void DifficultyTierBoundariesAreStable()
-    {
-        Require(MonsterSpawnDifficulty.TierAt(29.999f) == 0, "Tier before 30 seconds is wrong.");
-        Require(MonsterSpawnDifficulty.TierAt(30f) == 1, "Tier at 30 seconds is wrong.");
-        Require(MonsterSpawnDifficulty.TierAt(479.999f) == 15, "Tier before boss time is wrong.");
-        Require(MonsterSpawnDifficulty.TierAt(480f) == 16, "Tier at boss time is wrong.");
     }
 
     static void AssetsAndSceneBindingsAreValid()

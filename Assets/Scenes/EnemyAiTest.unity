@@ -1313,13 +1313,39 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  continuousSpawnOrder:
+  - sin: 1
+    eliteSpawnTimeSeconds: 90
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 2
+    eliteSpawnTimeSeconds: 165
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 3
+    eliteSpawnTimeSeconds: 225
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 4
+    eliteSpawnTimeSeconds: 270
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 5
+    eliteSpawnTimeSeconds: 300
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 6
+    eliteSpawnTimeSeconds: 330
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 7
+    eliteSpawnTimeSeconds: 360
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
   continuousSpawnMaxCountsByMinute: 0300000006000000090000000c0000000f0000001200000015000000
-  spawnCycleSeconds: 60
-  eliteSpawnOffsetSeconds: 40
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -1369,7 +1395,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  difficultyGrowthIntervalSeconds: 30
   waveMode: 1
   waves:
   - weightedTable:
@@ -15452,13 +15477,39 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  continuousSpawnOrder: 01000000020000000300000004000000050000000600000007000000
+  continuousSpawnOrder:
+  - sin: 1
+    eliteSpawnTimeSeconds: 30
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 2
+    eliteSpawnTimeSeconds: 90
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 3
+    eliteSpawnTimeSeconds: 150
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 4
+    eliteSpawnTimeSeconds: 210
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 5
+    eliteSpawnTimeSeconds: 270
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 6
+    eliteSpawnTimeSeconds: 330
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
+  - sin: 7
+    eliteSpawnTimeSeconds: 390
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 2
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
   continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
-  spawnCycleSeconds: 60
-  eliteSpawnOffsetSeconds: 40
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -15508,7 +15559,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  difficultyGrowthIntervalSeconds: 30
   waveMode: 0
   waves: []
   gracePeriod: 2
