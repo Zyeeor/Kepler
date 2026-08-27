@@ -95,6 +95,20 @@ public class ActorVisualFx : MonoBehaviour
     [Tooltip("Template for dissolve-only temporary materials. Original materials are restored if fade is cancelled.")]
     public Material fxMaterialTemplate;
 
+    [Header("Possession Imprint Meteor")]
+    [Tooltip("Imprint meteor flight speed, in Canvas pixels per second. Configure per monster prefab.")]
+    [Min(1f)] public float possessionImprintMeteorSpeed = 1200f;
+    [Tooltip("Imprint meteor body and trail height, in Canvas pixels.")]
+    [Min(1f)] public float possessionImprintMeteorWidth = 42f;
+    [Tooltip("Imprint meteor trail length as a fraction of the flight path.")]
+    [Range(0.08f, 0.75f)] public float possessionImprintMeteorTailLength = 0.34f;
+    [Tooltip("Imprint meteor shader glow intensity.")]
+    [Min(0f)] public float possessionImprintMeteorGlow = 1.8f;
+    [Tooltip("HDR color used by this monster's imprint meteor.")]
+    [ColorUsage(true, true)] public Color possessionImprintMeteorColor = new Color(0.25f, 0.85f, 1f, 1f);
+    [Tooltip("Optional per-monster imprint meteor shader. Leave empty to use UI/PossessionImprintMeteor.")]
+    public Shader possessionImprintMeteorShader;
+
     private Renderer[] _renderers;
     private MaterialPropertyBlock _block;
     private readonly Dictionary<int, Color> _baseColors = new Dictionary<int, Color>();

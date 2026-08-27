@@ -96,10 +96,9 @@ public class PlayerHealth : MonoBehaviour
     public void BindActor(IActor actor)
     {
         _trackedActor = actor;
-        // Soul 危险面板在附身中与 Body 生存力无关，立即关闭避免误导。
-        if (dangerPanel != null && dangerPanel.activeSelf) dangerPanel.SetActive(false);
         UpdateHealthUI();
     }
+
 
     /// <summary>解绑，恢复 Soul 池为唯一数据源。由 PossessionHUD.Hide / 切身 / Body Fatal 等调用。</summary>
     public void UnbindActor()
@@ -121,8 +120,9 @@ public class PlayerHealth : MonoBehaviour
         if (Mathf.Abs(healthSlider.value - cur) > 0.001f) healthSlider.value = cur;
         if (sliderFillImage != null && healthGradient != null)
             sliderFillImage.color = healthGradient.Evaluate(max > 0f ? cur / max : 0f);
-        if (dangerPanel != null && dangerPanel.activeSelf) dangerPanel.SetActive(false);
+        UpdateDangerPanel(max > 0f ? cur / max : 0f);
     }
+
 
     private void ResolveHealthSlider()
     {
@@ -212,9 +212,9 @@ public class PlayerHealth : MonoBehaviour
         if (_trackedActor != null)
         {
             SyncBoundActorToUI();
-            if (dangerPanel != null && dangerPanel.activeSelf) dangerPanel.SetActive(false);
             return;
         }
+
 
         float ratio = maxHealth > 0 ? currentHealth / maxHealth : 0;
 
@@ -226,18 +226,21 @@ public class PlayerHealth : MonoBehaviour
         if (sliderFillImage != null && healthGradient != null)
             sliderFillImage.color = healthGradient.Evaluate(ratio);
 
-        // Danger panel alpha based on health ratio
-        if (dangerPanel != null)
+        UpdateDangerPanel(ratio);
+    }
+
+    private void UpdateDangerPanel(float ratio)
+    {
+        if (dangerPanel == null) return;
+        bool show = ratio <= dangerThreshold;
+        dangerPanel.SetActive(show);
+        if (show && dangerPanelGroup != null)
         {
-            bool show = ratio <= dangerThreshold;
-            dangerPanel.SetActive(show);
-            if (show && dangerPanelGroup != null)
-            {
-                float alpha = 1f - (ratio / dangerThreshold);
-                dangerPanelGroup.alpha = alpha;
-            }
+            float alpha = Mathf.Clamp01(1f - (ratio / Mathf.Max(0.0001f, dangerThreshold)));
+            dangerPanelGroup.alpha = alpha;
         }
     }
+
 
     private float SoulMoveSpeed
     {

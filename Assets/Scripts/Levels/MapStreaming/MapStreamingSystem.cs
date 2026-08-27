@@ -814,6 +814,11 @@ public class MapStreamingSystem : MonoBehaviour
             ChunkTileGenerator.Generate(chunk, chunk.Def, seed, templateAllocator);
         }
 
+        // 出生格净空：清掉落在玩家初始位置上的叠加物（装饰物 / 危险地形），避免开局卡在柱子里。
+        // 必须早于神龛放置——否则神龛 3×3 邻域搜索会把出生格当作「已占用」而错过最佳落点。
+        if (chunk.Coord == shrineSpawnChunk && shrinePreferredTile.HasValue)
+            ChunkTileGenerator.ClearOverlay(chunk, shrinePreferredTile);
+
         // 神龛放置：作为普通 Decoration Tile 生成。
         // 出生点 Chunk 仅在新手教程局（GameManager.ForceTutorial=true）用 firstShrinePrefab（固定 Pride 躯体，作为 TUT-01 初始载体）；
         // 非教程局或该字段为空时，出生点也用普通 shrinePrefab（随机躯体）。其余 Chunk 一律用普通 shrinePrefab。

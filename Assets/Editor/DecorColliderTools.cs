@@ -48,8 +48,8 @@ public static class DecorColliderTools
         int converted = 0, skipped = 0;
         foreach (var entry in def.decorationTiles)
         {
-            if (entry == null) continue;
-            string path = AssetDatabase.GetAssetPath(entry);
+            if (entry == null || entry.prefab == null) continue;
+            string path = AssetDatabase.GetAssetPath(entry.prefab);
             GameObject root = PrefabUtility.LoadPrefabContents(path);
             if (root == null)
             {
