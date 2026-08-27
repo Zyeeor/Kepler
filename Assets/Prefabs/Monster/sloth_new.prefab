@@ -229,11 +229,11 @@ MonoBehaviour:
   - effectId: Sloth.Scatter
     unlocked: 0
   - effectId: SL-A03
-    unlocked: 0
+    unlocked: 1
   - effectId: SL-A04
-    unlocked: 0
+    unlocked: 1
   - effectId: SL-A05
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -366,7 +366,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1338306576578461038
 Transform:
   m_ObjectHideFlags: 0
@@ -538,7 +538,7 @@ MonoBehaviour:
     collisionDamage: 0
     attackSpeed: 1
   possessedStats:
-    maxHealth: 140
+    maxHealth: 10000
     moveSpeed: 4
     acceleration: 0
     deceleration: 0
@@ -1053,7 +1053,7 @@ RectTransform:
   m_Father: {fileID: 3499328068789318101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1147,9 +1147,9 @@ MonoBehaviour:
   - effectId: Sloth.DroneDeathBlast
     unlocked: 0
   - effectId: SL-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: SL-S03
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1606,9 +1606,9 @@ MonoBehaviour:
   - effectId: Sloth.LandingMine
     unlocked: 0
   - effectId: SL-M01
-    unlocked: 0
+    unlocked: 1
   - effectId: SL-M02
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 7274247396609794175, guid: 0513ef01dbf0c8c4aa7467ffab2fc104,
     type: 3}
   vfxSpawnPoint: {fileID: 7761242723630428616}

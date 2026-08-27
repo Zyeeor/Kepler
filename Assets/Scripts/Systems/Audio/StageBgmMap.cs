@@ -103,4 +103,32 @@ public class StageBgmMap : ScriptableObject
                 return false;
         }
     }
+
+    void OnEnable()
+    {
+        // 旧资产数据迁移：volumeScale 是后加字段，旧序列化数据反序列化为 0（不执行字段初始化器 =1f）。
+        // volumeScale=0 会让该槽曲目音量倍率归零 → 完全静音，几乎必为配置错误（想静音应用 action=Stop）。
+        // 幂等：补过后若磁盘尚未写回，再次加载会再补一次，无副作用。
+        NormalizeSlot(combat);
+        NormalizeSlot(choice);
+        NormalizeSlot(final);
+        NormalizeSlot(result);
+        NormalizeSlot(fail);
+        NormalizeSlot(soul);
+        NormalizeSlot(elite);
+        if (waveTiers != null)
+        {
+            for (int i = 0; i < waveTiers.Count; i++)
+            {
+                var t = waveTiers[i];
+                if (t != null) NormalizeSlot(t.slot);
+            }
+        }
+    }
+
+    static void NormalizeSlot(Slot slot)
+    {
+        if (slot != null && slot.volumeScale <= 0f)
+            slot.volumeScale = 1f;
+    }
 }

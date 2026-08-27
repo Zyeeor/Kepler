@@ -48,9 +48,9 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: GR-M01
-    unlocked: 0
+    unlocked: 1
   - effectId: GR-M02
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -412,7 +412,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4202068629033295698
 Transform:
   m_ObjectHideFlags: 0
@@ -478,7 +478,7 @@ MonoBehaviour:
   sinType: 6
   isPossessable: 1
   enemyStats:
-    maxHealth: 200
+    maxHealth: 100
     moveSpeed: 8
     acceleration: 0
     deceleration: 0
@@ -486,7 +486,7 @@ MonoBehaviour:
     collisionDamage: 10
     attackSpeed: 1
   possessedStats:
-    maxHealth: 200
+    maxHealth: 10000
     moveSpeed: 8
     acceleration: 0
     deceleration: 0
@@ -754,13 +754,13 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: GR-A01
-    unlocked: 0
+    unlocked: 1
   - effectId: GR-A02
-    unlocked: 0
+    unlocked: 1
   - effectId: GR-A03
-    unlocked: 0
+    unlocked: 1
   - effectId: GR-A07
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -882,9 +882,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: GR-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: GR-S04
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

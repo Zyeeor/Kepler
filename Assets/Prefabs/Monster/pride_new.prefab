@@ -308,23 +308,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: "\u5251\u6C14"
   type: 1
-  upgrades:
-  - effectId: Pride.Pierce
-    unlocked: 0
-  - effectId: Pride02
-    unlocked: 0
-  - effectId: Pride01
-    unlocked: 0
-  - effectId: PR-A01
-    unlocked: 0
-  - effectId: PR-A02
-    unlocked: 0
-  - effectId: PR-A03
-    unlocked: 0
-  - effectId: PR-A04
-    unlocked: 0
-  - effectId: PR-TG01
-    unlocked: 0
+  upgrades: []
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -825,7 +809,7 @@ MonoBehaviour:
     collisionDamage: 0
     attackSpeed: 1
   possessedStats:
-    maxHealth: 80
+    maxHealth: 10000
     moveSpeed: 10
     acceleration: 100
     deceleration: 120
@@ -1107,11 +1091,11 @@ MonoBehaviour:
   - effectId: Pride.ChargeEmpowered
     unlocked: 0
   - effectId: PR-M01
-    unlocked: 0
+    unlocked: 1
   - effectId: PR-A03
-    unlocked: 0
+    unlocked: 1
   - effectId: PR-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -2064,9 +2048,9 @@ MonoBehaviour:
   - effectId: Pride.BlinkCountPlusTwo
     unlocked: 0
   - effectId: PR-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: PR-X01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

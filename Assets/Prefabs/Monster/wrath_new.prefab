@@ -358,9 +358,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: WR-S01
-    unlocked: 0
+    unlocked: 1
   - effectId: WR-S03
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 2060418090655630911, guid: c7780e120b94846408c7b3a6750b6670,
     type: 3}
   vfxSpawnPoint: {fileID: 8935428301941876740}
@@ -863,7 +863,7 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: WR-B01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 7274247396609794175, guid: c2380a24984f28c47ac9516ed217e1a8,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -1660,7 +1660,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2606274025504633017
 Transform:
   m_ObjectHideFlags: 0
@@ -1711,7 +1711,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 150
+    maxHealth: 10000
     moveSpeed: 4
     acceleration: 0
     deceleration: 0
@@ -4975,9 +4975,9 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: WR-M01
-    unlocked: 0
+    unlocked: 1
   - effectId: WR-M02
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

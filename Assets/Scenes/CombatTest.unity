@@ -9335,9 +9335,9 @@ MonoBehaviour:
   spawnSectorOrder: 01000000020000000300000004000000050000000600000007000000
   screenEdgeSpawnOffset: 2
   upkeepInterval: 0.25
-  showGizmos: 1
-  logSpawns: 1
-  showDebugHud: 1
+  showGizmos: 0
+  logSpawns: 0
+  showDebugHud: 0
 --- !u!114 &753820584
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9371,8 +9371,8 @@ MonoBehaviour:
   regionCellSize: 2
   regionNeighborWeight: 2
   tickInterval: 0.2
-  showGizmos: 1
-  logStateChanges: 1
+  showGizmos: 0
+  logStateChanges: 0
 --- !u!4 &753820585
 Transform:
   m_ObjectHideFlags: 0

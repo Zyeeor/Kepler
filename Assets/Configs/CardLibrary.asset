@@ -17,7 +17,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-A02
     image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
-    description: Sword Qi becomes a cross-shaped slash with one shared hit instance.
+    description: "\u98DE\u884C\u65A9\u51FB\u5316\u4E3A\u5341\u5B57\u5251\u6C14"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -39,11 +39,11 @@ MonoBehaviour:
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
     hideBorderLayer: 0
     extraBorderSprites: []
-  - cardName: "\u738B\u51A0\u52BF"
+  - cardName: "\u738B\u51A0\u519B\u52BF"
     textKey: 
     effectId: PR-A01
     image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
-    description: Fires three Sword Qi blades in a fixed spread.
+    description: "\u4E00\u6B21\u653B\u51FB\u4F1A\u5C04\u51FA\u4E09\u9053\u6563\u5F00\u7684\u5251\u6C14"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -69,7 +69,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-A04
     image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
-    description: Increases the legal range of Sword Qi.
+    description: "\u5251\u6C14\u80FD\u591F\u65A9\u5411\u66F4\u8FDC\u5904\u7684\u654C\u4EBA"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.SwordQi
@@ -94,7 +94,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-M01
     image: {fileID: 21300000, guid: 67941a70a4511494bbe8c49356ead912, type: 3}
-    description: Increases dash distance and front strike damage.
+    description: "\u50B2\u6162\u7684\u7A81\u8FDB\u66F4\u8FDC\uFF0C\u65A9\u51FB\u4E5F\u66F4\u5F3A"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.ChargeStrike
@@ -121,7 +121,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-X01
     image: {fileID: 21300000, guid: ba2061ded0814584fb2b6f514d6463d0, type: 3}
-    description: Each blink creates one linear Sword Qi slash along its path.
+    description: "\u7A7F\u68AD\u65F6\u4F1A\u6CBF\u7740\u7ECF\u8FC7\u7684\u65B9\u5411\u9644\u52A0\u6C14\u5203"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.BlinkChain
@@ -146,7 +146,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-S01
     image: {fileID: 21300000, guid: ba2061ded0814584fb2b6f514d6463d0, type: 3}
-    description: Blink Chain performs two additional strikes.
+    description: "\u7A7F\u68AD\u65A9\u53EF\u4EE5\u989D\u5916\u7A7F\u68AD2\u6B21"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.BlinkChain
@@ -1141,7 +1141,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-A03
     image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
-    description: "\u5251\u6C14\u4E0E\u7A81\u8FDB\u524D\u7AEF\u53EF\u5207\u65AD\u8FCE\u9762\u98DE\u884C\u653B\u51FB\uFF1B\u7A81\u8FDB\u7ED3\u675F\u540E\u524D\u65B9\u5207\u65AD\u533A\u4FDD\u75591\u79D2\u3002"
+    description: "\u98DE\u884C\u65A9\u51FB\u4E0E\u7A81\u8FDB\u524D\u7AEF\u7684\u65A9\u51FB\uFF0C\u53EF\u4EE5\u65A9\u788E\u4E0E\u5176\u63A5\u89E6\u7684\u8FCE\u9762\u98DE\u884C\u653B\u51FB\uFF1B\u7A81\u8FDB\u7ED3\u675F\u540E\uFF0C\u524D\u65B9\u5207\u65AD\u533A\u77ED\u6682\u4FDD\u75591\u79D2\u3002"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.Cut
@@ -1165,7 +1165,7 @@ MonoBehaviour:
     textKey: 
     effectId: PR-TG01
     image: {fileID: 21300000, guid: 44c9d4bad47ec6247803aeff3aa9eedd, type: 3}
-    description: "\u63D0\u9AD8\u50B2\u6162\u4F4D\u79FB\u63A8\u8FDB\u901F\u5EA6\u4E0E\u5251\u6C14\u5C55\u5F00\u3001\u5EF6\u4F38\u901F\u5EA6\u3002"
+    description: "\u50B2\u6162\u7684\u4F4D\u79FB\u66F4\u8FC5\u6377\uFF0C\u666E\u901A\u653B\u51FB\u7684\u5C55\u5F00\u4E0E\u5EF6\u4F38\u4E5F\u66F4\u5FEB"
     abilityPrefab: {fileID: 0}
     targetAbilityTags:
     - Ability.Monster.Pride.ExecutionSpeed

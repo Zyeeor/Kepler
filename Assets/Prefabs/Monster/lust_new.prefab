@@ -134,7 +134,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 100
+    maxHealth: 10000
     moveSpeed: 6
     acceleration: 60
     deceleration: 80
@@ -709,11 +709,11 @@ MonoBehaviour:
   type: 0
   upgrades:
   - effectId: LU-S05
-    unlocked: 0
+    unlocked: 1
   - effectId: LU-S06
-    unlocked: 0
+    unlocked: 1
   - effectId: LU-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -900,13 +900,13 @@ MonoBehaviour:
   type: 0
   upgrades:
   - effectId: LU-M05
-    unlocked: 0
+    unlocked: 1
   - effectId: LU-A03
     unlocked: 0
   - effectId: LU-A04
     unlocked: 0
   - effectId: LU-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1061,9 +1061,9 @@ MonoBehaviour:
   type: 0
   upgrades:
   - effectId: LU-M03
-    unlocked: 0
+    unlocked: 1
   - effectId: LU-TG01
-    unlocked: 0
+    unlocked: 1
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

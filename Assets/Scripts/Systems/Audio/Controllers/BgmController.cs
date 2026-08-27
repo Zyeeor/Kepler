@@ -244,13 +244,11 @@ public class BgmController : AudioChannelController
         {
             ApplySlotToBase(tier.slot, $"第 {waveNumber} 波");
         }
-        else if (map != null && map.waveTiers.Count == 0 && map.combat != null && map.combat.action == BgmAction.Play && map.combat.clip != null)
+        else if (map != null && map.waveTiers.Count == 0 && map.combat != null)
         {
-            // 旧行为兜底：未使用逐波配置时，所有波次共用 combat 槽（Play 且 clip 非空才生效）
-            _baseAction = BgmAction.Play;
-            _baseClip = map.combat.clip;
-            _baseFade = map.combat.fadeOverride;
-            _baseExplicit = true;
+            // 旧行为兜底：未使用逐波配置时，所有波次共用 combat 槽。
+            // 走 ApplySlotToBase 完整支持三态（含 Stop 关战斗 BGM），并正确带 volumeScale。
+            ApplySlotToBase(map.combat, "Waves（combat 兜底）");
         }
         else
         {
