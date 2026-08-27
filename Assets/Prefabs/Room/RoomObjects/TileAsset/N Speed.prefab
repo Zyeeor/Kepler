@@ -167,8 +167,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b79dbbb676cc46c4973a0312e174cb49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  kind: 2
-  effect: {fileID: 0}
+  kind: 0
+  effect: {fileID: 11400000, guid: c0bb8cf1c20042488083cfd5ae16686b, type: 2}
   detectionCenter: {x: 0, y: 1, z: 0}
   detectionSize: {x: 1.25, y: 2.5, z: 1.25}
   detectionMask:
@@ -177,7 +177,7 @@ MonoBehaviour:
   overlapBufferSize: 32
   autoCalibrateToVisual: 1
   minStandingHeight: 2
-  moveSpeedMultiplier: 1
+  moveSpeedMultiplier: 1.5
   spikeHazardPrefab: {fileID: 0}
   spikeInterval: 2
   spikeHazardLifetime: 0.4
