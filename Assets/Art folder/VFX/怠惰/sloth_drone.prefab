@@ -87,6 +87,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 80}
   projectilePrefab: {fileID: 1455237202425575238, guid: f521ce0cedbf59d4db85b8a31772ea43,
     type: 3}
   projectileSpeed: 16
@@ -562,10 +572,11 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
+  aliveY: 0
+  corpseY: 0
   corpsePossessionWindow: 5
   corpseFadeDuration: 3
   hitStateDuration: 0.12
-  corpseGroundYOffset: 0
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
   healthSlider: {fileID: 0}

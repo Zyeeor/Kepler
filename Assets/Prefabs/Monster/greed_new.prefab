@@ -98,8 +98,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 200}
   pathLength: 4
   pathLengthWithCard: 7
   oilWidth: 1.5
@@ -497,7 +497,7 @@ MonoBehaviour:
   collisionDamage: 10
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Greed
+  aiConfigId: Envy_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -808,8 +808,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 200}
   maxDaggers: 6
   cardInventoryMax: 10
   initialPossessedHands: 2
@@ -932,12 +932,12 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 200}
   baseDuration: 1
   extendedDuration: 3
-  absorbPerHand: 100
-  absorbPerHandWithCard: 60
+  absorbPerHand: 40
+  absorbPerHandWithCard: 20
   guardEffect: {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
   leftGuardHandVfxPrefab: {fileID: 8690902010666443938, guid: eca1500cd06dd67489d6ded7d66cc49b,
     type: 3}

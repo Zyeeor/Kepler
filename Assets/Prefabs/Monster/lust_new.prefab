@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8728399952093741182
 RectTransform:
   m_ObjectHideFlags: 0
@@ -176,13 +176,13 @@ MonoBehaviour:
   showHealthBar: 1
   basicAbilities:
   - ability: {fileID: 4906122484495260960}
-    hpCost: 1
+    hpCost: 2
   skillAbilities:
   - ability: {fileID: 1215811978824066421}
-    hpCost: 30
+    hpCost: 5
   mobilityAbilities:
   - ability: {fileID: 1105355259635401983}
-    hpCost: 20
+    hpCost: 5
   passiveAbilities: []
   currentTenacity: 0
   targetPlayer: {fileID: 0}
@@ -530,7 +530,7 @@ RectTransform:
   m_Father: {fileID: 3098779798062130778}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -762,8 +762,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 150}
   pullWindow: 0.6
   pullMaxDistance: 6
   pullDamage: 25
@@ -955,8 +955,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 150}
   segmentDamage: 20
   mistWidth: 1
   mistSpeed: 14
@@ -968,11 +968,11 @@ MonoBehaviour:
   linkMarkVfx: {fileID: 0}
   ringInnerRadius: 0.5
   ringOuterRadius: 4
-  ringExpandDuration: 0.8
+  ringExpandDuration: 1
   ringWidth: 0.8
   ringMistVfx: {fileID: 1249446925191943152, guid: c7f82e74b5bf9f7409258d7cbbac6a01,
     type: 3}
-  mirrorDelay: 0.1
+  mirrorDelay: 0
   mirrorDamageMul: 0.5
   a03Delay: 0.1
   a03Damage: 30
@@ -1112,8 +1112,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 150}
   dashDistance: 4
   dashDuration: 0.18
   anchorLifetime: 8

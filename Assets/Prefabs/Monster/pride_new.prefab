@@ -26,15 +26,15 @@ RectTransform:
   m_GameObject: {fileID: 78237507205154716}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.027}
-  m_LocalScale: {x: 0.003857143, y: 0.003857143, z: 0.38571423}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.015, y: 0.015, z: 1.4999996}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 841813506141981622}
   m_Father: {fileID: 7412448530314288575}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.022, y: 0.646}
+  m_AnchoredPosition: {x: 0.022, y: 2.73}
   m_SizeDelta: {x: 200, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &3477510478469400424
@@ -375,8 +375,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 150}
   maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
@@ -714,7 +714,7 @@ RectTransform:
   m_Father: {fileID: 757044815442281024}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -836,7 +836,7 @@ MonoBehaviour:
   collisionDamage: 0
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Pride_new
+  aiConfigId: Envy_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -855,15 +855,15 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
-  aliveY: -0.175
+  aliveY: 1
   corpseY: 0.7
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
   abilityCostDeathGrace: 0.6
   abilityCostDeathHoldCap: 3
-  healthSlider: {fileID: 0}
-  healthCanvas: {fileID: 0}
+  healthSlider: {fileID: 2366067500682811267}
+  healthCanvas: {fileID: 3477510478469400424}
   showHealthBar: 1
   basicAbilities:
   - ability: {fileID: 4056031187171438780}
@@ -1162,8 +1162,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 150}
   chargeDistance: 5
   chargeSpeed: 60
   hitRadius: 0.8
@@ -2115,8 +2115,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 150}
   searchRange: 8
   blinkCount: 4
   blinkInterval: 0.25
