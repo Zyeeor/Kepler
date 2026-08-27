@@ -56,6 +56,7 @@ public class MonsterSkillAudioConfigEditor : UnityEditor.Editor
             "· 选取规则：纯随机 / 不连续重复（按条目去重，重复放同音可加权）/ 蓄力分档（按蓄力程度二选一，用于蓄力类普攻）；\n" +
             "· 敌我分轨：打开后敌方（AI）与附身（玩家控制）各配一组独立音源/音量/音高；\n" +
             "· 空间化：每组音源可选 2D（恒定音量）/ 3D（随距离衰减），默认敌方 3D、附身 2D；\n" +
+            "· 循环音效：勾选后为持续技能（按住持续施放，如嫉妒激光）的循环音，由调用方 Start/Stop 控制启停；\n" +
             "· 无人机：召唤物（如怠惰木灵）的攻击音，逻辑与技能条目相同（敌我分轨/空间化/随机多音源）。\n" +
             "留空 = 静默（正常设计）。能力预制体上的 castAudioName 字段非空时优先（单能力覆盖）。",
             MessageType.Info);
@@ -280,6 +281,10 @@ public class MonsterSkillAudioConfigEditor : UnityEditor.Editor
         var spatialProp = clipSetProp.FindPropertyRelative("spatialMode");
         EditorGUILayout.PropertyField(spatialProp, new GUIContent("空间化"));
 
+        // 循环音效：true = 持续技能（按住持续施放，如嫉妒激光）由调用方 Start/Stop 控制
+        var loopProp = clipSetProp.FindPropertyRelative("loop");
+        EditorGUILayout.PropertyField(loopProp, new GUIContent("循环音效"));
+
         // 音量：滑轨（占主宽度） + 百分比数值框（0~100%，100% = 满音量）+ "%" 后缀
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.PrefixLabel("音量");
@@ -326,5 +331,6 @@ public class MonsterSkillAudioConfigEditor : UnityEditor.Editor
         clipSetProp.FindPropertyRelative("pitch").floatValue = 1f;
         clipSetProp.FindPropertyRelative("spatialMode").intValue = (int)defaultSpatial;
         clipSetProp.FindPropertyRelative("heavyCastThreshold").floatValue = 0.5f;
+        clipSetProp.FindPropertyRelative("loop").boolValue = false;
     }
 }

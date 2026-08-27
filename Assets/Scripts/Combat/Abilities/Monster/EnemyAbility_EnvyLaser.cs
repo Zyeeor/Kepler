@@ -51,6 +51,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     public float hitImpactDuration = 0.3f;
 
     private bool _isFiring;
+    private CombatAudioManager.SfxLoopHandle _castLoop;
     private float _damageTimer;
     private float _fireDuration;
     private float _hpCostTimer;
@@ -108,6 +109,9 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
                 Animator[] animators = owner.GetComponentsInChildren<Animator>(false);
                 for (int i = 0; i < animators.Length; i++)
                     animators[i].SetTrigger("Basic");
+
+                // 持续激光循环音：开火 Start（音频配置中心 Envy→普攻 条目 loop=true 时生效，否则静默）
+                _castLoop = CombatAudioManager.StartCastLoop(owner, type, owner.transform.position);
             }
 
             UpdateLaser();
@@ -426,6 +430,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private void StopLaser()
     {
         _isFiring = false;
+        CombatAudioManager.StopCastLoop(_castLoop);
+        _castLoop = default;
         EndActivationEffect();
 
         float grace = markGraceDuration;

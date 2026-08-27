@@ -7528,7 +7528,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catalog: {fileID: 11400000, guid: d995378018fcd4aafa703c3e16e084e6, type: 2}
   spawnOffset: {x: 3, y: 0, z: 0}
-  spawnHeightY: 0
   logAIConfigOnSpawn: 0
   showHint: 0
   showDebugRanges: 0
@@ -8723,7 +8722,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 300, y: 20.000002}
+  m_AnchoredPosition: {x: 300.00006, y: 19.999945}
   m_SizeDelta: {x: 160, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &678916214
@@ -9326,7 +9325,6 @@ MonoBehaviour:
   continuousSpawnMaxCount: 10
   minSpawnDistanceToPlayer: 20
   maxSpawnDistanceToPlayer: 50
-  spawnHeightY: 0
   minSpawnPointSeparation: 6
   eliteSpawnScreenDiameterFraction: 0.25
   eliteSpawnSamples: 32
@@ -9429,9 +9427,6 @@ MonoBehaviour:
   cardParent: {fileID: 1170007485}
   confirmAllButton: {fileID: 1361398536}
   titleText: {fileID: 342066982}
-  cardOpenSfx: {fileID: 0}
-  cardSelectSfx: {fileID: 0}
-  cardRerollSfx: {fileID: 0}
 --- !u!114 &786004063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19680,7 +19675,7 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 0
-  bootToMainMenu: 0
+  bootToMainMenu: 1
   useFormalFlow: 0
 --- !u!4 &1807762708
 Transform:
@@ -19797,7 +19792,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catalog: {fileID: 11400000, guid: d995378018fcd4aafa703c3e16e084e6, type: 2}
   spawnOffset: {x: 2, y: 0, z: 0}
-  spawnHeightY: 0
   despawnPreviousCheatBody: 1
   immortalCheatBodies: 1
   damageImmuneEffect: {fileID: 0}
