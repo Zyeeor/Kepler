@@ -401,6 +401,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   baseDuration: 2
   durationBonusS03: 2
   tickInterval: 0.5
@@ -894,6 +904,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   radius: 3
   slamOffset: {x: 0, y: 0, z: 2}
   firstHitDelay: 0.1
@@ -1721,6 +1741,8 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
+  aliveY: 0.45
+  corpseY: 0.45
   corpsePossessionWindow: 10
   corpseFadeDuration: 3
   hitStateDuration: 0.12
@@ -3683,6 +3705,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   auraRadius: 2
   auraDps: 5
   tickInterval: 0.5
@@ -4985,6 +5017,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   grappleDistance: 8
   rangeMultiplierWithM02: 1.5
   hookSpeed: 32

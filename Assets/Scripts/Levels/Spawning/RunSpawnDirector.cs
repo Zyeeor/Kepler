@@ -142,7 +142,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
         int spawned = 0;
         Vector3 center = GetBossBattleReserveCenter();
-        center.y = spawner.spawnHeightY;
         Vector3 forward = GetBossBattleReserveForward();
         Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
         float minimumSeparation = Mathf.Min(BossReserveHorizontalSpacing, BossReserveRowSpacing);
@@ -185,6 +184,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 continue;
             }
 
+            requestedPosition.y = body.aliveY;
+
             if (!spawner.TryResolveBossReserveSpawnPosition(body, requestedPosition, occupiedPositions,
                 minimumSeparation, out Vector3 resolvedPosition))
             {
@@ -193,10 +194,12 @@ public sealed class RunSpawnDirector : MonoBehaviour
                 MonsterPool.Instance.Return(body);
                 continue;
             }
-            if ((resolvedPosition - requestedPosition).sqrMagnitude > 0.0001f)
+            bool relocated = Mathf.Abs(resolvedPosition.x - requestedPosition.x) > 0.0001f
+                || Mathf.Abs(resolvedPosition.z - requestedPosition.z) > 0.0001f;
+            if (relocated)
             {
+                resolvedPosition.y = body.aliveY;
                 instance.transform.position = resolvedPosition;
-                MonsterPool.SnapCapsuleBottomToGround(instance);
             }
 
             body.ResolveSinIdentityFromHint(prefab.name);

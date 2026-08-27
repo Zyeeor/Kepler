@@ -257,12 +257,16 @@ public class MonsterActor : Actor
     [Tooltip("流送 AI 激活开关：false 时 AI 完全休眠（不产出指令，仅 0.5s 低频维持索敌目标缓存）。由 MonsterSpawner 按 Chunk 状态机驱动；附身中的怪永不休眠。默认 true，非流送场景（调试刷怪等）行为不变。")]
     public bool aiActiveOverride = true;
 
+    [Header("Vertical Placement")]
+    [Tooltip("怪物存活状态使用的世界 Y。生成和附身完成后直接采用此值，不进行 Collider 贴地计算。")]
+    public float aliveY = 0f;
+    [Tooltip("怪物尸体状态使用的世界 Y。死亡转为尸体后直接采用此值，不进行 Collider 贴地计算。")]
+    public float corpseY = 0f;
+
     [Header("Corpse Lifecycle")]
     [Min(0f)] public float corpsePossessionWindow = 5f;
     [Min(0f)] public float corpseFadeDuration = 3f;
     [Min(0f)] public float hitStateDuration = 0.12f;
-    [Tooltip("尸体 Collider 包围盒最低点相对地面的目标高度偏移。")]
-    public float corpseGroundYOffset = 0f;
 
     [Header("Ability HP Cost Death")]
     [Tooltip("附身技能烧血把耐久扣到 0 时，延迟死亡结算的最长宽限秒数。窗口内让该次技能跑完伤害判定（如砸地的延迟命中），随后立即死亡。充能/持续类技能会等到本次释放结束。")]
@@ -287,7 +291,6 @@ public class MonsterActor : Actor
     private bool isPossessionReserved;
     private bool bossDamageContext;
     private Coroutine corpseRoutine;
-    private Coroutine corpseGroundAlignmentRoutine;
     private Renderer[] bodyRenderers;
     private BoxCollider corpsePossessionCollider;
     private MaterialPropertyBlock corpseFadeBlock;
@@ -295,7 +298,6 @@ public class MonsterActor : Actor
     private const string CorpseColliderObjectName = "__PossessionCorpseCollider";
     private const float CorpseColliderPadding = 0.35f;
     private const float MinimumCorpseColliderSize = 1.25f;
-    private const float CorpseGroundAlignmentDuration = 0.5f;
     private Vector3 initialLocalPosition;
     private Quaternion initialLocalRotation;
     private AIController aiController;
@@ -1637,7 +1639,6 @@ public class MonsterActor : Actor
         float reservedHealthRatio = reservedMaxHealth > 0f
             ? Mathf.Clamp01(reservedHealth / reservedMaxHealth)
             : 1f;
-        StopCorpseGroundAlignment();
         bool preserveEliteHealth = IsElite && reservedHealth > 0f;
         if (corpseRoutine != null)
         {
@@ -1697,6 +1698,10 @@ public class MonsterActor : Actor
             collider.enabled = true;
         }
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = false;
+
+        Transform activeRoot = transform.root != null ? transform.root : transform;
+        activeRoot.position = new Vector3(activeRoot.position.x, aliveY, activeRoot.position.z);
+
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(false);
         UpdateHealthUI();
 
@@ -1766,6 +1771,8 @@ public class MonsterActor : Actor
         {
             isDowned = true;
             Body = BodyState.Downed;
+            Transform nonPossessableRoot = transform.root != null ? transform.root : transform;
+            nonPossessableRoot.position = new Vector3(nonPossessableRoot.position.x, corpseY, nonPossessableRoot.position.z);
             BeginDisappearing();
             return;
         }
@@ -1778,6 +1785,8 @@ public class MonsterActor : Actor
         possessionWindowEndsAt = Time.time + corpsePossessionWindow;
         isPossessionReserved = false;
         transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
+        Transform corpseRoot = transform.root != null ? transform.root : transform;
+        corpseRoot.position = new Vector3(corpseRoot.position.x, corpseY, corpseRoot.position.z);
         foreach (Collider collider in GetComponentsInChildren<Collider>(true))
         {
             if (IsUnderForeignSoul(collider.transform)) continue;
@@ -1785,7 +1794,6 @@ public class MonsterActor : Actor
         }
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
-        StartCorpseGroundAlignment();
         // Preserve the authored look in runtime FX material instances; dissolve FX handles fading later.
         if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
@@ -1827,10 +1835,11 @@ public class MonsterActor : Actor
         possessionWindowEndsAt = float.PositiveInfinity; // 永久等待附身，不自动消散
         isPossessionReserved = false;
         transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
+        Transform corpseRoot = transform.root != null ? transform.root : transform;
+        corpseRoot.position = new Vector3(corpseRoot.position.x, corpseY, corpseRoot.position.z);
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;
         EnableCorpsePossessionCollider();
         if (corpsePossessionCollider != null) corpsePossessionCollider.enabled = true;
-        StartCorpseGroundAlignment();
         if (visualFx != null) visualFx.SetCorpseHighlight(true);
         if (healthCanvas != null) healthCanvas.gameObject.SetActive(true);
         UpdateHealthUI();
@@ -1880,7 +1889,6 @@ public class MonsterActor : Actor
 
     public virtual void BeginDisappearing(){
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
-        StopCorpseGroundAlignment();
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
         if (visualFx != null)
@@ -1920,79 +1928,6 @@ public class MonsterActor : Actor
         if (Body == BodyState.Downed) BeginDisappearing();
     }
 
-    private void StartCorpseGroundAlignment()
-    {
-        StopCorpseGroundAlignment();
-        corpseGroundAlignmentRoutine = StartCoroutine(CorpseGroundAlignmentRoutine());
-    }
-
-    private void StopCorpseGroundAlignment()
-    {
-        if (corpseGroundAlignmentRoutine == null) return;
-        StopCoroutine(corpseGroundAlignmentRoutine);
-        corpseGroundAlignmentRoutine = null;
-    }
-
-    private System.Collections.IEnumerator CorpseGroundAlignmentRoutine()
-    {
-        Transform groundTransform = transform.root != null ? transform.root : transform;
-        if (!TryGetEnabledColliderBounds(out Bounds colliderBounds))
-        {
-            corpseGroundAlignmentRoutine = null;
-            yield break;
-        }
-
-        float startY = groundTransform.position.y;
-        float targetGroundY = MonsterPool.GroundY + corpseGroundYOffset;
-        float deltaY = targetGroundY - colliderBounds.min.y;
-        if (Mathf.Abs(deltaY) <= 0.0001f)
-        {
-            corpseGroundAlignmentRoutine = null;
-            yield break;
-        }
-
-        float elapsed = 0f;
-        while (elapsed < CorpseGroundAlignmentDuration && Body == BodyState.Downed && !isPossessed)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / CorpseGroundAlignmentDuration);
-            Vector3 position = groundTransform.position;
-            position.y = startY + deltaY * t;
-            groundTransform.position = position;
-            yield return null;
-        }
-
-        if (Body == BodyState.Downed && !isPossessed)
-        {
-            Vector3 position = groundTransform.position;
-            position.y = startY + deltaY;
-            groundTransform.position = position;
-        }
-        corpseGroundAlignmentRoutine = null;
-    }
-
-    private bool TryGetEnabledColliderBounds(out Bounds bounds)
-    {
-        bounds = default(Bounds);
-        bool hasBounds = false;
-        Collider[] colliders = GetComponentsInChildren<Collider>(true);
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            Collider collider = colliders[i];
-            if (collider == null || !collider.enabled || IsUnderForeignSoul(collider.transform)) continue;
-            if (!hasBounds)
-            {
-                bounds = collider.bounds;
-                hasBounds = true;
-            }
-            else
-            {
-                bounds.Encapsulate(collider.bounds);
-            }
-        }
-        return hasBounds;
-    }
-
     private System.Collections.IEnumerator FadeAndReturnRoutine(){
         float elapsed = 0f;
         while (elapsed < corpseFadeDuration)
@@ -2010,7 +1945,6 @@ public class MonsterActor : Actor
 
     public void ResetForSpawn(){
         SetPossessedAnimatorsUnscaled(false);
-        StopCorpseGroundAlignment();
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -2090,7 +2024,6 @@ public class MonsterActor : Actor
 
     public void ResetForPool(){
         SetPossessedAnimatorsUnscaled(false);
-        StopCorpseGroundAlignment();
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();
         activeAbilityTelegraph = null;
