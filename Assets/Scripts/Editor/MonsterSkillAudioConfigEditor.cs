@@ -118,6 +118,8 @@ public class MonsterSkillAudioConfigEditor : UnityEditor.Editor
                         DrawClipSet(e.FindPropertyRelative("enemy"), splitProp.boolValue ? "敌方（AI）" : "音源组");
                         if (splitProp.boolValue)
                             DrawClipSet(e.FindPropertyRelative("possessed"), "附身（玩家控制）");
+                        if (kind == EnemyAbility.AbilityType.Mobility)
+                            DrawClipSet(e.FindPropertyRelative("returnSet"), "回归音（换位/第二段，可选，留空回退去程）");
                         if (GUILayout.Button("删除此条目"))
                             removeIndex = idx;
                         EditorGUI.indentLevel--;
@@ -137,6 +139,7 @@ public class MonsterSkillAudioConfigEditor : UnityEditor.Editor
                         // 显式初始化音源组字段（Unity 新增数组元素可能跳过字段初始化器，音高等 float 会落 0 导致静音）
                         InitClipSetDefaults(e.FindPropertyRelative("enemy"), MonsterSkillAudioConfig.SpatialMode.Positional3D);
                         InitClipSetDefaults(e.FindPropertyRelative("possessed"), MonsterSkillAudioConfig.SpatialMode.Flat2D);
+                        InitClipSetDefaults(e.FindPropertyRelative("returnSet"), MonsterSkillAudioConfig.SpatialMode.Positional3D);
                     }
                     EditorGUILayout.EndHorizontal();
                 }

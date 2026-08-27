@@ -69,12 +69,15 @@ public class MonsterSkillAudioConfig : ScriptableObject
         public ClipSet enemy = new ClipSet();
         [Tooltip("附身（玩家控制）音源组；splitSides=false 时忽略。")]
         public ClipSet possessed = new ClipSet();
+        [Tooltip("回归音（可选）：两段式位移技能的第二段（如色欲魅影换位的瞬移回归）。clips 为空 = 回归段回退到去程音组。")]
+        public ClipSet returnSet = new ClipSet();
 
         public Entry()
         {
             // 默认空间化：敌方（AI）3D 距离衰减，附身（玩家控制）2D 恒定音量；均可在编辑器里单独改
             enemy.spatialMode = SpatialMode.Positional3D;
             possessed.spatialMode = SpatialMode.Flat2D;
+            returnSet.spatialMode = SpatialMode.Positional3D;
         }
     }
 
@@ -144,6 +147,21 @@ public class MonsterSkillAudioConfig : ScriptableObject
             }
         }
         return _droneCache.TryGetValue(sin, out entry);
+    }
+
+    void OnEnable()
+    {
+        // 旧资产数据迁移：returnSet 是后加字段，旧序列化数据里不存在。
+        // [Serializable] 类反序列化不调用构造函数/字段初始化器，故旧条目 returnSet 为 null，这里补默认实例。
+        // 幂等：补过后磁盘数据可能仍未写回（需用户改动后保存），再次加载会再补一次，无副作用。
+        if (entries != null)
+        {
+            foreach (var e in entries)
+            {
+                if (e != null && e.returnSet == null)
+                    e.returnSet = new ClipSet { spatialMode = SpatialMode.Positional3D };
+            }
+        }
     }
 
     void OnValidate()

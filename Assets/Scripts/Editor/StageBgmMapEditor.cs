@@ -30,6 +30,7 @@ public class StageBgmMapEditor : UnityEditor.Editor
         EditorGUILayout.HelpBox(
             "阶段 BGM 映射。仲裁：终态(结算/失败) > 覆盖槽(soul/elite) > 阶段槽(含逐波) > 场景曲。\n" +
             "每槽 action 三态：Inherit 保持当前 / Play 播放 clip（clip 空回退 Inherit）/ Stop 淡出停止。\n" +
+            "每槽可单独调音量（0~200%，相对全局 BGM 音量，用于平衡不同素材响度）。\n" +
             "逐波 BGM：某波配了条目 → 进波按 action 处理；未配 → 保持当前曲。列表空 = 所有波共用 combat 槽。",
             MessageType.Info);
 
@@ -75,14 +76,22 @@ public class StageBgmMapEditor : UnityEditor.Editor
         serializedObject.ApplyModifiedProperties();
     }
 
-    /// <summary>绘制一个 BGM 槽位：action 三态 + clip + 淡入淡出覆盖。</summary>
+    /// <summary>绘制一个 BGM 槽位：action 三态 + clip + 音量（0~200%）+ 淡入淡出覆盖。</summary>
     void DrawSlot(SerializedProperty slotProp)
     {
         var actionProp = slotProp.FindPropertyRelative("action");
         var clipProp = slotProp.FindPropertyRelative("clip");
         var fadeProp = slotProp.FindPropertyRelative("fadeOverride");
+        var volumeProp = slotProp.FindPropertyRelative("volumeScale");
         EditorGUILayout.PropertyField(actionProp, GUIContent.none, GUILayout.Width(80));
         EditorGUILayout.PropertyField(clipProp, GUIContent.none);
+        // 音量：滑轨（0~2 = 0%~200%）+ 百分比数值框（与怪物技能音音量一致，100% 为默认满音量）
+        EditorGUILayout.Slider(volumeProp, 0f, 2f, GUIContent.none, GUILayout.Width(70));
+        int pct = Mathf.RoundToInt(volumeProp.floatValue * 100f);
+        int newPct = EditorGUILayout.IntField(pct, GUILayout.Width(44));
+        if (newPct != pct)
+            volumeProp.floatValue = Mathf.Clamp(newPct, 0, 200) / 100f;
+        EditorGUILayout.LabelField("%", GUILayout.Width(16));
         EditorGUILayout.PropertyField(fadeProp, new GUIContent("淡入淡出"), GUILayout.Width(80));
     }
 }

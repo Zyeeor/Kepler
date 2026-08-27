@@ -34,6 +34,8 @@ public class StageBgmMap : ScriptableObject
         public AudioClip clip;
         [Tooltip("淡入淡出时长覆盖（秒）；≤0 用 BgmController.bgmFadeDuration 全局值。")]
         [Min(0f)] public float fadeOverride = 0f;
+        [Tooltip("该曲目的音量倍率（相对全局 BGM 音量）。1=默认，>1 放大、<1 减小；用于平衡不同素材响度。")]
+        [Range(0f, 2f)] public float volumeScale = 1f;
     }
 
     [Serializable]

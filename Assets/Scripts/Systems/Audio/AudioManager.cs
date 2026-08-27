@@ -140,8 +140,8 @@ public class AudioManager : MonoBehaviour
     public void SetWaveBgm(int waveNumber) => bgmController?.SetWaveBgm(waveNumber);
 
     /// <summary>Override 层压栈（token 去重幂等）。</summary>
-    public void PushOverrideBgm(string token, AudioClip clip, float fadeOverride = 0f) =>
-        bgmController?.PushOverrideBgm(token, clip, fadeOverride);
+    public void PushOverrideBgm(string token, AudioClip clip, float fadeOverride = 0f, float volumeScale = 1f) =>
+        bgmController?.PushOverrideBgm(token, clip, fadeOverride, volumeScale);
 
     /// <summary>Override 层出栈（token 不存在时 no-op）。</summary>
     public void PopOverrideBgm(string token) => bgmController?.PopOverrideBgm(token);

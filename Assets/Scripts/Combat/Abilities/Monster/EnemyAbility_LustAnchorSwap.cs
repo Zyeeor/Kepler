@@ -53,6 +53,10 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
         StartCoroutine(AnchorRoutine());
     }
 
+    // 两段式位移：去程（冲刺留锚）/ 回归（瞬移换位）分别在 AnchorRoutine 内按 hadAnchor 播放，
+    // 屏蔽基类统一的一次性施放音（否则两段会共用一个音）。
+    protected override void PlayCastSound() { }
+
     private IEnumerator AnchorRoutine()
     {
         if (owner == null)
@@ -84,6 +88,8 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
         bool hadAnchor = _state != null && _state.HasValidAnchor;
         if (!hadAnchor)
         {
+            // 去程：冲刺留锚 → 播去程音（配置中心 Lust 位移 → 敌方/附身组）
+            CombatAudioManager.PlayCastAudio(owner, type, owner.transform.position);
             Vector3 start = owner.transform.position;
             Vector3 end = start + direction * dashDistance;
             yield return MoveOwner(start, end, dashDuration);
@@ -98,6 +104,8 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
         }
         else
         {
+            // 回归：瞬移换位 → 播回归音（配置中心 Lust 位移 → 回归音组，未配置则回退去程音）
+            CombatAudioManager.PlayCastAudio(owner, type, owner.transform.position, -1f, true);
             LustAnchorMarker anchor = _state.ActiveAnchor;
             Vector3 ownerPos = owner.transform.position;
             Vector3 anchorPos = anchor != null ? anchor.transform.position : ownerPos;

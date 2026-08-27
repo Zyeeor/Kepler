@@ -244,6 +244,6 @@ public class AudioEventBinder : MonoBehaviour
     static void PushBgmOverride(AudioManager am, string token, StageBgmMap.Slot slot)
     {
         if (slot == null || slot.clip == null) return;
-        am.PushOverrideBgm(token, slot.clip, slot.fadeOverride);
+        am.PushOverrideBgm(token, slot.clip, slot.fadeOverride, slot.volumeScale);
     }
 }
