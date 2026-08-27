@@ -12,8 +12,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     [Header("Boss")]
     [Min(1f)] public float bossCombatTime = 420f;
-    [Tooltip("仅供旧 Boss 仆从类型选择使用的成长档位间隔（秒）。")]
-    [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
     [Tooltip("横轴为战斗分钟数，纵轴为怪物基础生命值乘数。由 WaveManager 配置。")]
     public AnimationCurve monsterHealthMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 2.4f);
     [Tooltip("横轴为战斗分钟数，纵轴为怪物基础攻击力乘数。由 WaveManager 配置。")]
@@ -38,7 +36,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
     bool bossTimeReached;
 
     public float ActiveCombatSeconds { get; private set; }
-    public int CurrentTier => MonsterSpawnDifficulty.TierAt(ActiveCombatSeconds, difficultyGrowthIntervalSeconds);
     public float CurrentHealthMultiplier => EvaluateMultiplier(monsterHealthMultiplierByMinute, 1f);
     public float CurrentAttackMultiplier => EvaluateMultiplier(monsterAttackMultiplierByMinute, 1f);
     public bool BossSpawned => spawnedBossCount > 0;
@@ -69,11 +66,10 @@ public sealed class RunSpawnDirector : MonoBehaviour
             if (prefab != null && !normalPrefabs.Contains(prefab)) normalPrefabs.Add(prefab);
     }
 
-    public void ConfigureRunTiming(float nonBossSeconds, float growthIntervalSeconds,
+    public void ConfigureRunTiming(float nonBossSeconds,
         AnimationCurve healthMultiplierByMinute, AnimationCurve attackMultiplierByMinute)
     {
         bossCombatTime = Mathf.Max(1f, nonBossSeconds);
-        difficultyGrowthIntervalSeconds = Mathf.Max(0.1f, growthIntervalSeconds);
         if (healthMultiplierByMinute != null && healthMultiplierByMinute.length > 0)
             monsterHealthMultiplierByMinute = healthMultiplierByMinute;
         if (attackMultiplierByMinute != null && attackMultiplierByMinute.length > 0)
@@ -307,7 +303,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (monster == null) return false;
         monster.ApplySpawnDifficultySnapshot(
             request.origin,
-            request.difficultyTier,
             CurrentHealthMultiplier,
             CurrentAttackMultiplier);
         if (request.origin == SpawnOrigin.KillEcho
@@ -325,7 +320,6 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (actor == null) return false;
         actor.ApplySpawnDifficultySnapshot(
             SpawnOrigin.Boss,
-            CurrentTier,
             CurrentHealthMultiplier,
             CurrentAttackMultiplier);
         if (actor is BossSevenfoldActor boss)
@@ -352,8 +346,8 @@ public sealed class RunSpawnDirector : MonoBehaviour
         {
             MonsterSpawner spawner = MonsterSpawner.Instance;
             if (spawner == null || !spawner.TryGetLegacyWaveSpawnPosition(out Vector3 position)) break;
-            GameObject prefab = normalPrefabs[(CurrentTier + i) % normalPrefabs.Count];
-            if (TrySpawn(prefab, new SpawnRequest(SpawnOrigin.BossMinion, CurrentTier, Vector3.zero, 0f,
+            GameObject prefab = normalPrefabs[i % normalPrefabs.Count];
+            if (TrySpawn(prefab, new SpawnRequest(SpawnOrigin.BossMinion, Vector3.zero, 0f,
                 Time.unscaledTime + 1f), position)) spawned++;
         }
         return spawned;

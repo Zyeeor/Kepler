@@ -2073,17 +2073,8 @@ public class MonsterActor : Actor
         }
     }
 
-    /// <summary>Applies or refreshes a run spawn snapshot while preserving current health ratio.</summary>
-    public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier)
-    {
-        ApplySpawnDifficultySnapshot(
-            origin,
-            tier,
-            MonsterSpawnDifficulty.HealthMultiplier(tier),
-            MonsterSpawnDifficulty.DamageMultiplier(tier));
-    }
-
-    public void ApplySpawnDifficultySnapshot(SpawnOrigin origin, int tier,
+    /// <summary>Applies a spawn-time curve snapshot while preserving current health ratio.</summary>
+    public void ApplySpawnDifficultySnapshot(SpawnOrigin origin,
         float healthMultiplier, float damageMultiplier)
     {
         float previousMaxHealth = maxHealth;
@@ -2091,7 +2082,6 @@ public class MonsterActor : Actor
             ? Mathf.Clamp01(currentHealth / previousMaxHealth)
             : 1f;
         spawnOrigin = origin;
-        spawnDifficultyTier = Mathf.Max(0, tier);
         baseSpawnMaxHealth = enemyStats.HasConfiguredHealth ? enemyStats.maxHealth : maxHealth;
         spawnHealthMultiplier = Mathf.Max(0.01f, healthMultiplier) * eliteHealthMultiplier;
         spawnDamageMultiplier = Mathf.Max(0.01f, damageMultiplier) * eliteAttackDamageMultiplier;
@@ -2116,8 +2106,8 @@ public class MonsterActor : Actor
 
         float baseHealthMultiplier = spawnHealthMultiplier / Mathf.Max(0.01f, eliteHealthMultiplier);
         float baseDamageMultiplier = spawnDamageMultiplier / Mathf.Max(0.01f, eliteAttackDamageMultiplier);
-        eliteHealthMultiplier = Mathf.Max(1f, healthMultiplier);
-        eliteAttackDamageMultiplier = Mathf.Max(1f, attackDamageMultiplier);
+        eliteHealthMultiplier = Mathf.Max(0.01f, healthMultiplier);
+        eliteAttackDamageMultiplier = Mathf.Max(0.01f, attackDamageMultiplier);
         eliteVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
         eliteRuntimeApplied = true;
 
@@ -2136,19 +2126,6 @@ public class MonsterActor : Actor
             visualFx.ConfigureEliteStyle(sinType);
             visualFx.SetEliteHighlight(true);
         }
-        UpdateHealthUI();
-    }
-
-    /// <summary>Refreshes an active Elite when the run difficulty tier advances.</summary>
-    public void RefreshEliteWaveDifficulty(int tier)
-    {
-        if (!IsElite || isPossessed || isDowned || Body != BodyState.Active) return;
-        RunSpawnDirector director = RunSpawnDirector.Instance;
-        ApplySpawnDifficultySnapshot(
-            spawnOrigin,
-            tier,
-            director != null ? director.CurrentHealthMultiplier : MonsterSpawnDifficulty.HealthMultiplier(tier),
-            director != null ? director.CurrentAttackMultiplier : MonsterSpawnDifficulty.DamageMultiplier(tier));
         UpdateHealthUI();
     }
 

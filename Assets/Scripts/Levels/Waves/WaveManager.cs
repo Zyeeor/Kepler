@@ -66,17 +66,8 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Header("新逻辑：普通怪生成")]
     [Tooltip("横轴为 0～7 分钟的战斗时间，纵轴为平均每秒生成的普通怪数量。代码按当前速率换算为每 1/速率 秒生成 1 只；0 表示暂停普通怪生成。")]
     public AnimationCurve normalSpawnRateByMinute = AnimationCurve.Linear(0f, 1f / 3f, 7f, 7f / 3f);
-    [Tooltip("普通怪与精英使用的罪印轮换顺序。普通怪每种各生成一次后循环。")]
-    public List<SinType> continuousSpawnOrder = new List<SinType>
-    {
-        SinType.Pride,
-        SinType.Sloth,
-        SinType.Gluttony,
-        SinType.Envy,
-        SinType.Wrath,
-        SinType.Greed,
-        SinType.Lust,
-    };
+    [Tooltip("普通怪按此表的罪印顺序轮换；每条也定义该罪印精英的投放时间与独立生命/攻击系数。")]
+    public List<ContinuousSpawnEntry> continuousSpawnOrder = DefaultContinuousSpawnOrder();
 
     [Header("新逻辑：移动定向替换")]
     [Tooltip("开启后，玩家每累计移动一段距离，就尝试把场外不可见的其他罪印普通怪一换一替换为移动方向对应的罪印。")]
@@ -90,11 +81,6 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Tooltip("同时存在的普通自动怪上限。数组 7 项依次对应第 0～1、1～2、…、6～7 分钟；精英不占用此上限。")]
     public List<int> continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30, 30, 30, 30, 30 };
 
-    [Header("新逻辑：精英")]
-    [Tooltip("精英生成周期（秒）。默认每分钟一次。")]
-    [Min(0.1f)] public float spawnCycleSeconds = 60f;
-    [Tooltip("每个周期的第几秒生成 1 只精英。默认每分钟第 30 秒。")]
-    [Min(0f)] public float eliteSpawnOffsetSeconds = 30f;
     [Header("新逻辑：数值成长")]
     [Tooltip("Boss 前非 Boss 战斗时长（秒）。默认 7 分钟，倒计时从该值开始。")]
     [Min(1f)] public float nonBossDurationSeconds = 420f;
@@ -102,8 +88,6 @@ public class WaveManager : SceneSingleton<WaveManager>
     public AnimationCurve monsterHealthMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 2.4f);
     [Tooltip("横轴为 0～7 分钟的战斗时间，纵轴为新生成怪物基础攻击力乘数。攻击力 = 基础攻击力 × 此曲线值。")]
     public AnimationCurve monsterAttackMultiplierByMinute = AnimationCurve.Linear(0f, 1f, 7f, 1.84f);
-    [Tooltip("旧 Boss 仆从类型选择使用的成长档位间隔（秒）；不控制生命值或攻击力倍率。")]
-    [Min(0.1f)] public float difficultyGrowthIntervalSeconds = 30f;
 
     [Header("波次配置")]
     [Tooltip("整体波次模式：CountKill=全部波为数量波；Timed=全部波为时间波。")]
@@ -154,25 +138,33 @@ public class WaveManager : SceneSingleton<WaveManager>
             while (continuousSpawnMaxCountsByMinute.Count < 7)
                 continuousSpawnMaxCountsByMinute.Add(fallback);
         }
-        spawnCycleSeconds = 60f;
-        eliteSpawnOffsetSeconds = 30f;
         nonBossDurationSeconds = 420f;
-        difficultyGrowthIntervalSeconds = 30f;
-        if (continuousSpawnOrder == null || continuousSpawnOrder.Count == 0)
+        if (!HasValidContinuousSpawnOrder())
             continuousSpawnOrder = DefaultContinuousSpawnOrder();
     }
 
-    static List<SinType> DefaultContinuousSpawnOrder()
+    bool HasValidContinuousSpawnOrder()
     {
-        return new List<SinType>
+        if (continuousSpawnOrder == null || continuousSpawnOrder.Count == 0) return false;
+        for (int i = 0; i < continuousSpawnOrder.Count; i++)
         {
-            SinType.Pride,
-            SinType.Sloth,
-            SinType.Gluttony,
-            SinType.Envy,
-            SinType.Wrath,
-            SinType.Greed,
-            SinType.Lust,
+            ContinuousSpawnEntry entry = continuousSpawnOrder[i];
+            if (entry == null || entry.sin == SinType.None) return false;
+        }
+        return true;
+    }
+
+    static List<ContinuousSpawnEntry> DefaultContinuousSpawnOrder()
+    {
+        return new List<ContinuousSpawnEntry>
+        {
+            new ContinuousSpawnEntry(SinType.Pride, 30f, 2f, 2f),
+            new ContinuousSpawnEntry(SinType.Sloth, 90f, 2f, 2f),
+            new ContinuousSpawnEntry(SinType.Gluttony, 150f, 2f, 2f),
+            new ContinuousSpawnEntry(SinType.Envy, 210f, 2f, 2f),
+            new ContinuousSpawnEntry(SinType.Wrath, 270f, 2f, 2f),
+            new ContinuousSpawnEntry(SinType.Greed, 330f, 2f, 2f),
+            new ContinuousSpawnEntry(SinType.Lust, 390f, 2f, 2f),
         };
     }
 
@@ -373,7 +365,6 @@ public class WaveManager : SceneSingleton<WaveManager>
         if (director == null) return;
         director.ConfigureRunTiming(
             nonBossDurationSeconds,
-            difficultyGrowthIntervalSeconds,
             monsterHealthMultiplierByMinute,
             monsterAttackMultiplierByMinute);
     }
@@ -636,7 +627,7 @@ public class WaveManager : SceneSingleton<WaveManager>
 
     // ── 数量波：刷满 totalCount 不再补，清场过波 ──
 
-    // ── 新模式：速率曲线普通怪 + 周期精英 ──
+    // ── 新模式：速率曲线普通怪 + 配置精英 ──
 
     IEnumerator RunContinuousWaves()
     {
@@ -651,7 +642,7 @@ public class WaveManager : SceneSingleton<WaveManager>
         PrepareWaveRandom(0);
         float combatTime = director.ActiveCombatSeconds;
         float nextNormalTime = NextNormalSpawnTime(combatTime);
-        float nextEliteTime = NextCycleEventTimeAfter(combatTime, eliteSpawnOffsetSeconds);
+        bool[] eliteSpawned = new bool[continuousSpawnOrder.Count];
         int normalOrderIndex = 0;
         MonsterSpawner movementSpawner = MonsterSpawner.Instance;
         Vector3 previousPlayerPosition = movementSpawner != null ? movementSpawner.CurrentPlayerPosition : Vector3.zero;
@@ -666,7 +657,7 @@ public class WaveManager : SceneSingleton<WaveManager>
                 int continuousMaxCount = GetContinuousSpawnMaxCount(combatTime);
                 movementSpawner.ConfigureContinuousSpawnMaxCount(continuousMaxCount);
             }
-            CurrentWaveIndex = Mathf.Max(0, Mathf.FloorToInt(combatTime / Mathf.Max(0.1f, spawnCycleSeconds)));
+            CurrentWaveIndex = 0;
             TimeWaveRemaining = Mathf.Max(0f, nonBossDurationSeconds - combatTime);
             PruneWaveAlive();
             if (directionalReplacementEnabled && movementSpawner != null)
@@ -711,8 +702,8 @@ public class WaveManager : SceneSingleton<WaveManager>
                 MonsterActor monster = null;
                 if (rate > 0f)
                 {
-                    SinType sin = continuousSpawnOrder[normalOrderIndex % continuousSpawnOrder.Count];
-                    monster = director.SpawnScheduledMonster(sin);
+                    ContinuousSpawnEntry entry = continuousSpawnOrder[normalOrderIndex % continuousSpawnOrder.Count];
+                    monster = entry != null ? director.SpawnScheduledMonster(entry.sin) : null;
                     if (monster != null)
                     {
                         // Only a real spawn advances the rotation, so failed legal-position
@@ -725,12 +716,15 @@ public class WaveManager : SceneSingleton<WaveManager>
                 nextNormalTime = NextNormalSpawnTime(nextNormalTime);
             }
 
-            while (combatTime >= nextEliteTime && nextEliteTime < nonBossDurationSeconds)
+            for (int i = 0; i < continuousSpawnOrder.Count; i++)
             {
-                int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(nextEliteTime / Mathf.Max(0.1f, spawnCycleSeconds)));
-                int spawned = SpawnContinuousElites(cycleIndex);
-                Debug.Log($"[WaveManager] 定时精英：周期 {cycleIndex + 1}，t={nextEliteTime:F1}s，生成 {spawned}/1 只。");
-                nextEliteTime += Mathf.Max(0.1f, spawnCycleSeconds);
+                if (eliteSpawned[i]) continue;
+                ContinuousSpawnEntry entry = continuousSpawnOrder[i];
+                if (entry == null || combatTime < Mathf.Max(0f, entry.eliteSpawnTimeSeconds)) continue;
+
+                int spawned = SpawnContinuousElite(entry, i);
+                eliteSpawned[i] = true;
+                Debug.Log($"[WaveManager] 配置精英：序号 {i + 1}，type={entry.sin}，t={entry.eliteSpawnTimeSeconds:F1}s，生成 {spawned}/1 只。");
             }
 
             EnemiesAlive = waveAlive.Count;
@@ -771,28 +765,19 @@ public class WaveManager : SceneSingleton<WaveManager>
         return Mathf.Max(1, continuousSpawnMaxCountsByMinute[index]);
     }
 
-    float NextCycleEventTimeAfter(float current, float offset)
-    {
-        float cycle = Mathf.Max(0.1f, spawnCycleSeconds);
-        float safeOffset = Mathf.Clamp(offset, 0f, Mathf.Max(0f, cycle - 0.0001f));
-        int cycleIndex = Mathf.Max(0, Mathf.FloorToInt(Mathf.Max(0f, current) / cycle));
-        float candidate = cycleIndex * cycle + safeOffset;
-        if (candidate <= current + 0.0001f)
-            candidate += cycle;
-        return candidate;
-    }
-
-    int SpawnContinuousElites(int cycleIndex)
+    int SpawnContinuousElite(ContinuousSpawnEntry entry, int scheduleIndex)
     {
         EliteBuildDirector eliteDirector = EliteBuildDirector.Instance != null
             ? EliteBuildDirector.Instance
             : EliteBuildDirector.EnsureInstance();
         if (eliteDirector == null) return 0;
 
-        // 联网投放：优先向服务器请求他人构筑快照（wave = 投放序号 = cycleIndex + 1），
-        // 离线/失败/空候选走本地兜底（Preset → 空快照，定时节奏必出精英）。
-        SinType sin = continuousSpawnOrder[cycleIndex % continuousSpawnOrder.Count];
-        return eliteDirector.RequestScheduledElite(sin, cycleIndex) ? 1 : 0;
+        // 联网投放：投放序号仅用于快照请求与战果归因；时间、罪印和数值由当前条目决定。
+        return eliteDirector.RequestScheduledElite(
+            entry.sin,
+            scheduleIndex,
+            Mathf.Max(0.01f, entry.eliteHealthMultiplier),
+            Mathf.Max(0.01f, entry.eliteAttackMultiplier)) ? 1 : 0;
     }
 
     IEnumerator RunCountKillWave(WaveConfig wave)
