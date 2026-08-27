@@ -561,8 +561,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 100}
   baseThunderDamage: 10
   searchRadius: 30
   telegraphDuration: 0.6
@@ -1423,8 +1423,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 100}
   flightDuration: 1
   flightSpeedMultiplier: 3
   flightEffect: {fileID: 11400000, guid: 3ab54dae587249618abcb3ae795b164e, type: 2}
@@ -1540,8 +1540,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 100}
   maxRange: 15
   damagePerSecond: 3
   tickInterval: 0.01

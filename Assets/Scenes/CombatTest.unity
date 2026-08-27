@@ -9429,9 +9429,6 @@ MonoBehaviour:
   cardParent: {fileID: 1170007485}
   confirmAllButton: {fileID: 1361398536}
   titleText: {fileID: 342066982}
-  cardOpenSfx: {fileID: 0}
-  cardSelectSfx: {fileID: 0}
-  cardRerollSfx: {fileID: 0}
 --- !u!114 &786004063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18774,7 +18771,7 @@ PrefabInstance:
     - target: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -21258,16 +21255,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: sloth_new
-      objectReference: {fileID: 0}
-    - target: {fileID: 1827098444623938932, guid: ccfe57e3a23d2b24584ac09f7333c19c,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6746858586608930193, guid: ccfe57e3a23d2b24584ac09f7333c19c,
-        type: 3}
-      propertyPath: aiConfigId
-      value: Envy_new
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

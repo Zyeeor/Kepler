@@ -101,8 +101,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 200}
   range: 1
   angle: 100
   damageAmount: 40
@@ -577,8 +577,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 200}
   formDuration: 3
   scaleMultiplier: 0.5
   speedMultiplier: 2
@@ -1446,8 +1446,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 200}
   maxAimDistance: 8
   glA03AimDistance: 12
   warnDelay: 0.5
