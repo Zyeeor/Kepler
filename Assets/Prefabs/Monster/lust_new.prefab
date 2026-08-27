@@ -82,7 +82,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4673453431339555007
 Transform:
   m_ObjectHideFlags: 0
@@ -321,6 +321,15 @@ MonoBehaviour:
   dissolveEdgeColor: {r: 1.4980392, g: 0.47843134, b: 1.3870909, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 1, g: 0.66352195, b: 0.96213686, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.06
 --- !u!114 &5667508307776216601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -530,7 +539,7 @@ RectTransform:
   m_Father: {fileID: 3098779798062130778}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}

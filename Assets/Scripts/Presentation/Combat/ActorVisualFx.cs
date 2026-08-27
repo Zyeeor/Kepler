@@ -108,6 +108,13 @@ public class ActorVisualFx : MonoBehaviour
     [ColorUsage(true, true)] public Color possessionImprintMeteorColor = new Color(0.25f, 0.85f, 1f, 1f);
     [Tooltip("Optional per-monster imprint meteor shader. Leave empty to use UI/PossessionImprintMeteor.")]
     public Shader possessionImprintMeteorShader;
+    [Tooltip("Number of meteors launched toward the imprint icon per gain.")]
+    [Min(1)] public int possessionImprintMeteorCount = 3;
+    [Tooltip("Parabola arc height as a fraction of the flight path length. 0 = straight line.")]
+    [Range(0f, 0.8f)] public float possessionImprintMeteorArc = 0.35f;
+    [Tooltip("Delay between successive meteors (seconds).")]
+    [Min(0f)] public float possessionImprintMeteorStagger = 0.06f;
+
 
     private Renderer[] _renderers;
     private MaterialPropertyBlock _block;

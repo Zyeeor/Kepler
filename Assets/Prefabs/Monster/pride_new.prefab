@@ -308,7 +308,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: "\u5251\u6C14"
   type: 1
-  upgrades: []
+  upgrades:
+  - effectId: PR-A01
+    unlocked: 0
+  - effectId: PR-A02
+    unlocked: 0
+  - effectId: PR-A04
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -759,7 +765,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5432388710610514242
 Transform:
   m_ObjectHideFlags: 0
@@ -958,6 +964,15 @@ MonoBehaviour:
   dissolveEdgeColor: {r: 0.9593764, g: 1.6639657, b: 1.6855345, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 0.25, g: 0.85, b: 1, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.01
 --- !u!1 &5464347350175569591
 GameObject:
   m_ObjectHideFlags: 0
@@ -1725,7 +1740,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityName: Mv speed
   type: 0
-  upgrades: []
+  upgrades:
+  - effectId: PR-S01
+    unlocked: 0
+  - effectId: PR-X01
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

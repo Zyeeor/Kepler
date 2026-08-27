@@ -588,6 +588,15 @@ MonoBehaviour:
   dissolveEdgeColor: {r: 1.4980391, g: 1.0554366, b: 0.17023171, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 1, g: 0.88109434, b: 0.63836473, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.06
 --- !u!1 &4160834089309182554
 GameObject:
   m_ObjectHideFlags: 0

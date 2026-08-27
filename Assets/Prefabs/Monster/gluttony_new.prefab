@@ -1095,7 +1095,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8883150867078005593
 Transform:
   m_ObjectHideFlags: 0
@@ -1148,7 +1148,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 1000
+    maxHealth: 10000
     moveSpeed: 4
     acceleration: 60
     deceleration: 80
@@ -1348,6 +1348,15 @@ MonoBehaviour:
   dissolveEdgeColor: {r: 0.5572395, g: 0.24025132, b: 1.4980391, a: 1}
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
+  possessionImprintMeteorSpeed: 2000
+  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorTailLength: 0.327
+  possessionImprintMeteorGlow: 1.8
+  possessionImprintMeteorColor: {r: 0.55809337, g: 0.29763448, b: 0.93710685, a: 1}
+  possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 1
+  possessionImprintMeteorArc: 0.107
+  possessionImprintMeteorStagger: 0.06
 --- !u!1 &5807367358007265780
 GameObject:
   m_ObjectHideFlags: 0

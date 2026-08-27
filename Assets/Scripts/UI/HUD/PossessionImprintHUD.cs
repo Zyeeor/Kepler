@@ -26,6 +26,9 @@ public sealed class PossessionImprintHUD : MonoBehaviour
     const float DefaultMeteorWidth = 42f;
     const float DefaultMeteorTailLength = 0.34f;
     const float DefaultMeteorGlow = 1.8f;
+    const int DefaultMeteorCount = 3;
+    const float DefaultMeteorArc = 0.35f;
+    const float DefaultMeteorStagger = 0.06f;
     static readonly Color DefaultMeteorColor = new Color(0.25f, 0.85f, 1f, 1f);
 
     void Awake()
@@ -150,6 +153,9 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         float meteorTailLength = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorTailLength : DefaultMeteorTailLength;
         float meteorGlow = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorGlow : DefaultMeteorGlow;
         Color meteorColor = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorColor : DefaultMeteorColor;
+        int meteorCount = Mathf.Clamp(actorVisualFx != null ? actorVisualFx.possessionImprintMeteorCount : DefaultMeteorCount, 1, 8);
+        float meteorArc = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorArc : DefaultMeteorArc;
+        float meteorStagger = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorStagger : DefaultMeteorStagger;
         Debug.Log($"[PossessionImprintHUD] Projection inputs: sin={sin}, body={(body != null ? body.name : "NULL")}, bodyActive={(body != null && body.isActiveAndEnabled)}, bodyWorld={(body != null ? body.transform.position.ToString() : "NA")}, targetIcon={(targetIcon != null ? targetIcon.name : "NULL")}, targetActive={(targetIcon != null && targetIcon.isActiveAndEnabled)}, canvas={(canvas != null ? canvas.name : "NULL")}, canvasMode={(canvas != null ? canvas.renderMode.ToString() : "NA")}, sourceCamera={(sourceCamera != null ? sourceCamera.name : "NULL")}, sourceCameraPos={(sourceCamera != null ? sourceCamera.transform.position.ToString() : "NA")}, sourceCameraPixel={(sourceCamera != null ? sourceCamera.pixelWidth + "x" + sourceCamera.pixelHeight : "NA")}.");
         if (targetIcon == null || body == null || canvas == null || sourceCamera == null || meteorWidth <= 0f)
         {
@@ -229,48 +235,57 @@ public sealed class PossessionImprintHUD : MonoBehaviour
             yield break;
         }
 
-        GameObject meteorObject = new GameObject("PossessionImprintMeteor", typeof(RectTransform), typeof(RawImage));
-        meteorObject.transform.SetParent(flightCanvasRect, false);
-        meteorObject.transform.SetAsLastSibling();
-        activeMeteors.Add(meteorObject);
-        RectTransform meteorRect = meteorObject.transform as RectTransform;
         Vector2 path = endLocal - startLocal;
         float distance = path.magnitude;
         if (distance <= 0.01f)
         {
             Debug.Log($"[PossessionImprintHUD] Zero-distance flight completes immediately: sin={sin}, body='{body.name}', startLocal={startLocal}, endLocal={endLocal}.");
-            activeMeteors.Remove(meteorObject);
-            Destroy(meteorObject);
             onArrived?.Invoke();
             yield break;
         }
 
-        meteorRect.anchorMin = Vector2.zero;
-        meteorRect.anchorMax = Vector2.zero;
-        meteorRect.pivot = new Vector2(0.5f, 0.5f);
-        meteorRect.anchoredPosition = (startLocal + endLocal) * 0.5f;
-        meteorRect.sizeDelta = new Vector2(distance, meteorWidth);
-        meteorRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(path.y, path.x) * Mathf.Rad2Deg);
+        Vector2 flightDir = path / distance;
+        Vector2 perpendicular = new Vector2(-flightDir.y, flightDir.x);
+        float arcHeight = distance * Mathf.Clamp(meteorArc, 0f, 0.8f);
+        float tailPx = distance * Mathf.Clamp(meteorTailLength, 0.08f, 0.75f);
 
-        RawImage meteorImage = meteorObject.GetComponent<RawImage>();
-        meteorImage.texture = Texture2D.whiteTexture;
-        meteorImage.raycastTarget = false;
-        Material meteorMaterial = new Material(shader);
-        if (hasMeteorShader)
+        for (int i = 0; i < meteorCount; i++)
         {
-            meteorMaterial.SetColor(MeteorColorId, meteorColor);
-            meteorMaterial.SetFloat(TailLengthId, meteorTailLength);
-            meteorMaterial.SetFloat(GlowId, meteorGlow);
-            meteorMaterial.SetFloat(ProgressId, 0f);
-        }
-        else
-        {
-            meteorImage.color = meteorColor;
-        }
-        meteorImage.material = meteorMaterial;
+            GameObject meteorObject = new GameObject("PossessionImprintMeteor", typeof(RectTransform), typeof(RawImage));
+            meteorObject.transform.SetParent(flightCanvasRect, false);
+            meteorObject.transform.SetAsLastSibling();
+            activeMeteors.Add(meteorObject);
 
-        Debug.Log($"[PossessionImprintHUD] Meteor spawned: object='{meteorObject.name}', sin={sin}, body='{body.name}', styleSource={(actorVisualFx != null ? actorVisualFx.name : "HUD defaults")}, shader='{shader.name}', shaderFallback={!hasMeteorShader}, speed={meteorSpeed:F2}, width={meteorWidth:F2}, tail={meteorTailLength:F2}, glow={meteorGlow:F2}, color={meteorColor}, duration={distance / Mathf.Max(1f, meteorSpeed):F3}s.");
-        StartCoroutine(AnimateMeteor(meteorObject, meteorMaterial, distance, meteorSpeed, hasMeteorShader, onArrived));
+            RectTransform meteorRect = meteorObject.transform as RectTransform;
+            meteorRect.anchorMin = Vector2.zero;
+            meteorRect.anchorMax = Vector2.zero;
+            meteorRect.pivot = new Vector2(0.5f, 0.5f);
+            meteorRect.anchoredPosition = startLocal;
+            meteorRect.sizeDelta = new Vector2(tailPx, meteorWidth);
+            meteorRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(path.y, path.x) * Mathf.Rad2Deg);
+
+            RawImage meteorImage = meteorObject.GetComponent<RawImage>();
+            meteorImage.texture = Texture2D.whiteTexture;
+            meteorImage.raycastTarget = false;
+            Material meteorMaterial = new Material(shader);
+            if (hasMeteorShader)
+            {
+                meteorMaterial.SetColor(MeteorColorId, meteorColor);
+                meteorMaterial.SetFloat(TailLengthId, 1f); // 尾巴占满短矩形（矩形长度已按 tailLength 缩短）
+                meteorMaterial.SetFloat(GlowId, meteorGlow);
+                meteorMaterial.SetFloat(ProgressId, 1f);   // 头部固定在矩形末端，由 C# 沿抛物线移动
+            }
+            else
+            {
+                meteorImage.color = meteorColor;
+            }
+            meteorImage.material = meteorMaterial;
+
+            Action arrived = i == meteorCount - 1 ? onArrived : null;
+            StartCoroutine(AnimateMeteorParabola(meteorObject, meteorRect, meteorMaterial, startLocal, endLocal, path, perpendicular, arcHeight, distance, meteorSpeed, i * meteorStagger, arrived));
+        }
+
+        Debug.Log($"[PossessionImprintHUD] Meteors spawned: count={meteorCount}, sin={sin}, body='{body.name}', arc={arcHeight:F1}, tailPx={tailPx:F1}, stagger={meteorStagger:F2}, duration={distance / Mathf.Max(1f, meteorSpeed):F3}s.");
     }
 
     RectTransform EnsureMeteorCanvas(Canvas targetCanvas)
@@ -379,20 +394,37 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         return bodyBounds.center + Vector3.up * bodyBounds.extents.y * 0.2f;
     }
 
-    IEnumerator AnimateMeteor(GameObject meteorObject, Material meteorMaterial, float distance, float meteorSpeed, bool hasMeteorShader, Action onArrived)
+    IEnumerator AnimateMeteorParabola(GameObject meteorObject, RectTransform meteorRect, Material meteorMaterial, Vector2 startLocal, Vector2 endLocal, Vector2 path, Vector2 perpendicular, float arcHeight, float distance, float meteorSpeed, float startDelay, Action onArrived)
     {
+        if (startDelay > 0f)
+        {
+            float waited = 0f;
+            while (waited < startDelay && meteorObject != null)
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+        }
+
         float duration = distance / Mathf.Max(1f, meteorSpeed);
         float elapsed = 0f;
         while (elapsed < duration && meteorObject != null && meteorMaterial != null)
         {
             elapsed += Time.unscaledDeltaTime;
-            if (hasMeteorShader)
-                meteorMaterial.SetFloat(ProgressId, Mathf.Clamp01(elapsed / Mathf.Max(0.01f, duration)));
+            float u = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, duration));
+
+            // 抛物线：沿 path 前进，同时按 4u(1-u) 上抛，形成弧线
+            meteorRect.anchoredPosition = Vector2.Lerp(startLocal, endLocal, u)
+                + perpendicular * (arcHeight * 4f * u * (1f - u));
+
+            // 切线（速度方向）对齐陨石朝向，让头部始终指向前进方向
+            Vector2 tangent = path + perpendicular * (arcHeight * 4f * (1f - 2f * u));
+            if (tangent.sqrMagnitude > 0.0001f)
+                meteorRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(tangent.y, tangent.x) * Mathf.Rad2Deg);
             yield return null;
         }
 
-        if (meteorMaterial != null && hasMeteorShader) meteorMaterial.SetFloat(ProgressId, 1f);
-        Debug.Log($"[PossessionImprintHUD] Meteor arrived: object={(meteorObject != null ? meteorObject.name : "DESTROYED")}, distance={distance:F2}, elapsed={elapsed:F3}, duration={duration:F3}.");
+        if (meteorObject != null) meteorRect.anchoredPosition = endLocal;
         onArrived?.Invoke();
         if (meteorObject != null)
         {
