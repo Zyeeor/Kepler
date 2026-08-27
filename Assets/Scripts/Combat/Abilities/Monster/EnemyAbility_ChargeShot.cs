@@ -88,6 +88,7 @@ public class EnemyAbility_ChargeShot : EnemyAbility
     /// 附身代价致死时先把这一发打出去，再结算死亡。
     /// </summary>
     public override bool IsActivationInProgress => isCharging || isFiringRoutineActive;
+    protected override bool UsesDeferredEnemyActivation => true;
 
     void Update()
     {
@@ -104,6 +105,8 @@ public class EnemyAbility_ChargeShot : EnemyAbility
         {
             if (!isCharging)
             {
+                if (!TryPrepareDeferredEnemyActivation()) return;
+                ConsumeDeferredEnemyActivation();
                 if (!TryBeginActivationEffect()) return;
                 isCharging = true;
                 chargeTimer = 0f;

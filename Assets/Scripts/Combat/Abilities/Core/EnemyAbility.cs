@@ -128,6 +128,31 @@ public abstract class EnemyAbility : MonoBehaviour
         postProcessOnHit = false
     };
 
+    [Header("Enemy Cast Telegraph")]
+    [Tooltip("AI-controlled casts show a readable wind-up. Possessed casts always skip it.")]
+    public bool enemyTelegraphEnabled = true;
+    [Min(0f)]
+    [Tooltip("Seconds between the AI cast decision and the actual ability release.")]
+    public float enemyCastLeadTime = 0.45f;
+    [Tooltip("Enable the shader ground indicator for this ability. Area abilities can override its center/radius in code.")]
+    public bool enemyIndicatorEnabled = true;
+    [Min(0f)]
+    public float enemyIndicatorRadius;
+    [ColorUsage(true, true)]
+    public Color enemyIndicatorColor = new Color(1f, 0.04f, 0.015f, 1f);
+    [Min(0f)]
+    public float enemyIndicatorIntensity = 1.1f;
+    [Min(0f)]
+    public float enemyIndicatorHeight = 0.05f;
+    public Vector3 enemyIndicatorOffset = Vector3.zero;
+
+    [Header("Enemy Cast HUD")]
+    [Min(8f)]
+    [Tooltip("Cast HUD frame size in the same Canvas reference units as the lower-left ability HUD.")]
+    public float enemyCastHudSize = 64f;
+    [Tooltip("Screen-space offset from the monster center in Canvas reference units. X is right, Y is up.")]
+    public Vector2 enemyCastHudScreenOffset = new Vector2(48f, 44f);
+
     /// <summary>Actual cooldown after attack speed modifier is applied.</summary>
     public float EffectiveCooldown
     {
@@ -227,6 +252,27 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Ensures screen shake / hit-stop / post-FX fire at most once per Trigger.</summary>
     private bool _hitFeedbackFiredThisAttack;
     private bool _hitAudioFiredThisAttack;
+    private Coroutine _enemyTelegraphRoutine;
+    private MonsterAbilityTelegraph _enemyTelegraphVisual;
+    private bool _enemyTelegraphReady;
+
+    /// <summary>
+    /// Self-driven abilities (continuous beams / hold-to-charge shots) use this to defer
+    /// their first activation from Update() until the shared enemy telegraph has completed.
+    /// </summary>
+    protected virtual bool UsesDeferredEnemyActivation { get { return false; } }
+
+    private bool ShouldUseEnemyTelegraph
+    {
+        get
+        {
+            return owner != null && !owner.isPossessed && enemyTelegraphEnabled
+                && enemyCastLeadTime > 0.0001f;
+        }
+    }
+
+    public bool IsEnemyTelegraphing => _enemyTelegraphRoutine != null;
+
     protected virtual void Awake()
     {
         owner = GetComponentInParent<Enemy>();
@@ -288,12 +334,14 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected virtual void OnDisable()
     {
+        CancelEnemyTelegraph();
         EndActivationEffect();
         CancelInvoke();
     }
 
     public virtual void ResetForOwnerReuse()
     {
+        CancelEnemyTelegraph();
         EndActivationEffect();
         CancelInvoke();
         currentCooldown = 0f;
@@ -310,6 +358,8 @@ public abstract class EnemyAbility : MonoBehaviour
     {
         if (currentCooldown > 0f || owner == null || owner.isDowned)
             return false;
+        if (owner.IsAbilityTelegraphing && owner.ActiveAbilityTelegraph != this)
+            return false;
         // 附身 HP 代价致死宽限期：只允许把已经开始的那次释放跑完，不得再起新技能。
         if (owner.IsAbilityCostDeathPending && !IsActivationInProgress)
             return false;
@@ -322,12 +372,145 @@ public abstract class EnemyAbility : MonoBehaviour
     /// <summary>Trigger the ability. Called by Enemy AI / Player when possessing.</summary>
     public virtual void Trigger()
     {
+        if (owner != null && owner.IsAbilityTelegraphing && owner.ActiveAbilityTelegraph != this)
+            return;
+        if (ShouldUseEnemyTelegraph && !_enemyTelegraphReady)
+        {
+            BeginEnemyTelegraph();
+            return;
+        }
+
+        ExecuteTriggerImmediately(activationAlreadyStarted: false);
+    }
+
+    /// <summary>
+    /// Lets self-driven abilities start the same AI wind-up when their Update path reaches
+    /// its firing condition before the AI button pulse does.
+    /// </summary>
+    protected bool TryPrepareDeferredEnemyActivation()
+    {
+        if (!UsesDeferredEnemyActivation || !ShouldUseEnemyTelegraph || _enemyTelegraphReady)
+            return true;
+        if (owner != null && owner.IsAbilityTelegraphing && owner.ActiveAbilityTelegraph != this)
+            return false;
+        if (_enemyTelegraphRoutine != null)
+            return false;
+
+        BeginEnemyTelegraph();
+        return false;
+    }
+
+    /// <summary>Marks the deferred activation as consumed after a self-driven cast starts.</summary>
+    protected void ConsumeDeferredEnemyActivation()
+    {
+        _enemyTelegraphReady = false;
+    }
+
+    /// <summary>Returns the shader indicator's world-space center and unscaled radius.</summary>
+    public bool TryGetEnemyTelegraphGeometry(out Vector3 center, out float radius)
+    {
+        center = owner != null ? owner.transform.position : transform.position;
+        radius = 0f;
+        if (!TryGetEnemyTelegraphGeometryInternal(out center, out radius) || radius <= 0f)
+            return false;
+
+        radius = ScaleAbilityRadius(radius);
+        return true;
+    }
+
+    /// <summary>
+    /// Override for area abilities with an authored hit center/radius. The base fallback is
+    /// intentionally Inspector-driven so new abilities can opt in without another code edit.
+    /// </summary>
+    protected virtual bool TryGetEnemyTelegraphGeometryInternal(out Vector3 center, out float radius)
+    {
+        center = owner != null ? owner.transform.position : transform.position;
+        radius = enemyIndicatorEnabled ? enemyIndicatorRadius : 0f;
+        if (owner != null)
+            center += owner.transform.TransformVector(enemyIndicatorOffset);
+        return radius > 0f;
+    }
+
+    private void BeginEnemyTelegraph()
+    {
+        if (_enemyTelegraphRoutine != null || owner == null) return;
         if (!TryBeginActivationEffect()) return;
 
-        currentCooldown = EffectiveCooldown;
+        currentCooldown = UsesDeferredEnemyActivation ? 0f : EffectiveCooldown;
         _hitFeedbackFiredThisAttack = false;
         _hitAudioFiredThisAttack = false;
         PlayCastSound();
+        if (debugLogCooldown)
+            Debug.Log($"[Cooldown] {abilityName} telegraph @ {Time.time:F2}s | lead={enemyCastLeadTime:F2}s effective={EffectiveCooldown:F2}s", this);
+
+        if (!owner.TryBeginAbilityTelegraph(this))
+        {
+            currentCooldown = 0f;
+            EndActivationEffect();
+            return;
+        }
+
+        bool showIndicator = TryGetEnemyTelegraphGeometry(out Vector3 center, out float radius);
+        if (_enemyTelegraphVisual == null)
+        {
+            _enemyTelegraphVisual = owner.GetComponent<MonsterAbilityTelegraph>();
+            if (_enemyTelegraphVisual == null)
+                _enemyTelegraphVisual = owner.gameObject.AddComponent<MonsterAbilityTelegraph>();
+        }
+        if (_enemyTelegraphVisual != null)
+            _enemyTelegraphVisual.Begin(this, center, radius, showIndicator);
+
+        _enemyTelegraphRoutine = StartCoroutine(EnemyTelegraphRoutine());
+    }
+
+    private IEnumerator EnemyTelegraphRoutine()
+    {
+        float duration = Mathf.Max(0.01f, enemyCastLeadTime);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (owner == null || owner.isDowned || owner.isPossessed
+                || !owner.IsAbilityTelegraphing || owner.ActiveAbilityTelegraph != this)
+            {
+                CancelEnemyTelegraph();
+                yield break;
+            }
+
+            elapsed += AbilityDeltaTime;
+            if (_enemyTelegraphVisual != null)
+                _enemyTelegraphVisual.SetProgress(elapsed / duration);
+            yield return null;
+        }
+
+        _enemyTelegraphRoutine = null;
+        if (_enemyTelegraphVisual != null) _enemyTelegraphVisual.End();
+        if (owner != null) owner.EndAbilityTelegraph(this);
+        _enemyTelegraphReady = UsesDeferredEnemyActivation;
+        ExecuteTriggerImmediately(activationAlreadyStarted: true);
+    }
+
+    public void CancelEnemyTelegraph()
+    {
+        if (_enemyTelegraphRoutine != null)
+        {
+            StopCoroutine(_enemyTelegraphRoutine);
+            _enemyTelegraphRoutine = null;
+        }
+        if (_enemyTelegraphVisual != null) _enemyTelegraphVisual.End();
+        if (owner != null) owner.EndAbilityTelegraph(this);
+        _enemyTelegraphReady = false;
+        EndActivationEffect();
+    }
+
+    private void ExecuteTriggerImmediately(bool activationAlreadyStarted)
+    {
+        if (!activationAlreadyStarted && !TryBeginActivationEffect()) return;
+
+        currentCooldown = UsesDeferredEnemyActivation ? 0f : EffectiveCooldown;
+        _hitFeedbackFiredThisAttack = false;
+        _hitAudioFiredThisAttack = false;
+        if (!activationAlreadyStarted)
+            PlayCastSound();
         if (debugLogCooldown)
             Debug.Log($"[Cooldown] {abilityName} triggered @ {Time.time:F2}s | cooldown={cooldown}s effective={EffectiveCooldown:F2}s (attackSpeed={(owner != null ? owner.attackSpeed : 1f)})");
         if (vfxDelay <= 0f)
@@ -337,6 +520,8 @@ public abstract class EnemyAbility : MonoBehaviour
         OnTrigger();
         Activated?.Invoke(this);
         OnAnyTriggered?.Invoke(this);   // Run Analytics：全局触发广播（采集器内部过滤玩家控制）
+        if (!UsesDeferredEnemyActivation)
+            _enemyTelegraphReady = false;
     }
 
     /// <summary>

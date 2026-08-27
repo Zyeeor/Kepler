@@ -26,6 +26,8 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
     public LayerMask groundMask = ~0;
 
     private GluttonyBodyState _state;
+    private Vector3 _telegraphAimPoint;
+    private bool _hasTelegraphAimSnapshot;
 
     private void OnEnable()
     {
@@ -38,6 +40,18 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
             abilityTags.Add("Ability.Monster.Gluttony.AbyssMaw");
     }
 
+    protected override bool TryGetEnemyTelegraphGeometryInternal(out Vector3 center, out float telegraphRadius)
+    {
+        center = owner != null ? owner.transform.position : transform.position;
+        telegraphRadius = blastRadius;
+        if (!enemyIndicatorEnabled || owner == null || !TryResolveAimPoint(out center))
+            return false;
+
+        _telegraphAimPoint = center;
+        _hasTelegraphAimSnapshot = true;
+        return telegraphRadius > 0f;
+    }
+
     protected override void OnTrigger()
     {
         if (owner == null) return;
@@ -47,7 +61,13 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
 
         CacheOwnerState();
         _state?.ExitSmallCatForAttack();
-        if (!TryResolveAimPoint(out Vector3 aimPoint))
+        Vector3 aimPoint;
+        if (_hasTelegraphAimSnapshot)
+        {
+            aimPoint = _telegraphAimPoint;
+            _hasTelegraphAimSnapshot = false;
+        }
+        else if (!TryResolveAimPoint(out aimPoint))
         {
             EndActivationEffect();
             return;
@@ -66,6 +86,18 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
 
         StartCoroutine(SpawnMawsRoutine(aimPoint, right, pairedMaws, consumeOverfed, radius, dmg));
+    }
+
+    protected override void OnDisable()
+    {
+        _hasTelegraphAimSnapshot = false;
+        base.OnDisable();
+    }
+
+    public override void ResetForOwnerReuse()
+    {
+        _hasTelegraphAimSnapshot = false;
+        base.ResetForOwnerReuse();
     }
 
     private IEnumerator SpawnMawsRoutine(Vector3 center, Vector3 right, bool pairedMaws, bool secondBite, float radius, float dmg)
