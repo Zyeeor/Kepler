@@ -77,6 +77,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     private bool isFiringRoutineActive;
 
     private float chargeTimer;
+    /// <summary>AI 怪物本次蓄力的目标时长（0 ~ maxChargeTime 随机），蓄到即自动出手。</summary>
+    private float aiChargeTargetTime;
     private float lastChargeTime;
     private GameObject chargeVfxInstance;
     private Coroutine recoilRoutine;
@@ -142,6 +144,10 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
                 if (!TryBeginActivationEffect()) return;
                 isCharging = true;
                 chargeTimer = 0f;
+                // AI 怪物：本次蓄力目标时长在 0 ~ maxChargeTime 之间随机（下限 0，可能立即出手），
+                // 蓄到即自动发射；玩家附身仍走按住/松开逻辑，不参与随机。
+                if (!owner.isPossessed)
+                    aiChargeTargetTime = Random.Range(0f, maxChargeTime);
                 currentCooldown = 0f;
                 owner.PayAbilityHpCost(this);
 
@@ -162,6 +168,14 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             {
                 float ct = Mathf.Clamp01(chargeTimer / Mathf.Max(0.01f, maxChargeTime));
                         chargeVfxInstance.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 2f, ct) * OwnerCombatScaleMultiplier;
+            }
+
+            // AI 怪物蓄到随机目标时长自动出手（否则会因 targetPlayer 恒存在而无限蓄力不出手）
+            if (!owner.isPossessed && chargeTimer >= aiChargeTargetTime)
+            {
+                StartCoroutine(FireShotRoutine(chargeTimer));
+                StopCharging();
+                return;
             }
         }
         else if (isCharging)
