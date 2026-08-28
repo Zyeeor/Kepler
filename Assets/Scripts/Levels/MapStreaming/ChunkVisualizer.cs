@@ -114,9 +114,44 @@ public class ChunkVisualizer : MonoBehaviour
 
         int instanceCount = 0, coveredTiles = 0;
         PlaceTileBlocks(root, chunk, ref instanceCount, ref coveredTiles);
+        GameManager.ApplyPerformanceOptimizations(root);
+        if (GameManager.StaticChunkBatchingEnabled)
+            CombineStaticChunkRenderers(root);
 
         if (logBuilds)
             Debug.Log($"[ChunkVisualizer] {coord} 视觉建成：Tile 方块实例 {instanceCount}（覆盖 {coveredTiles} 格）。");
+    }
+
+    /// <summary>
+    /// Combines only MeshRenderer-backed children of a generated chunk. Particle/trail
+    /// renderers are intentionally excluded so their dynamic path stays independent.
+    /// </summary>
+    void CombineStaticChunkRenderers(GameObject root)
+    {
+        if (root == null) return;
+
+        Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+        List<GameObject> staticObjects = new List<GameObject>();
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (!(renderer is MeshRenderer) || !renderer.enabled) continue;
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter == null || meshFilter.sharedMesh == null) continue;
+
+            Material[] materials = renderer.sharedMaterials;
+            bool hasMaterial = false;
+            for (int m = 0; m < materials.Length; m++)
+                if (materials[m] != null) { hasMaterial = true; break; }
+            if (!hasMaterial) continue;
+
+            renderer.gameObject.isStatic = true;
+            staticObjects.Add(renderer.gameObject);
+        }
+
+        if (staticObjects.Count < GameManager.StaticChunkBatchMinimumRenderers) return;
+        root.isStatic = true;
+        StaticBatchingUtility.Combine(staticObjects.ToArray(), root);
     }
 
     // ── 销毁视觉（离开 B/D） ──

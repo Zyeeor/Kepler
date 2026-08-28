@@ -1004,7 +1004,14 @@ public class MonsterActor : Actor
 
         LineRenderer line = ringObject.GetComponent<LineRenderer>();
         if (line == null) line = ringObject.AddComponent<LineRenderer>();
-        if (rangeRingMaterial == null) rangeRingMaterial = new Material(Shader.Find("Sprites/Default"));
+        if (rangeRingMaterial == null)
+        {
+            rangeRingMaterial = GameManager.SharedMaterialOptimizationEnabled
+                ? RendererShadowVisibility.GetSharedTransientLineMaterial()
+                : new Material(Shader.Find("Sprites/Default"));
+            if (rangeRingMaterial == null)
+                rangeRingMaterial = new Material(Shader.Find("Sprites/Default"));
+        }
         line.sharedMaterial = rangeRingMaterial;
         line.useWorldSpace = false; // 本地坐标：随父物体移动，无需每帧重写顶点
         line.loop = false;

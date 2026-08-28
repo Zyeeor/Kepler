@@ -189,6 +189,7 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
             Quaternion rotation = Quaternion.Euler(telegraphRotation);
             Vector3 spawnPosition = position + rotation * telegraphPositionOffset;
             GameObject telegraph = Instantiate(telegraphPrefab, spawnPosition, rotation);
+            GameManager.ApplyPerformanceOptimizations(telegraph);
             float scaleMultiplier = radius / Mathf.Max(0.01f, blastRadius);
             telegraph.transform.localScale *= scaleMultiplier;
             return telegraph;
@@ -203,11 +204,25 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         Renderer renderer = fallback.GetComponent<Renderer>();
         if (renderer != null)
         {
-            renderer.material = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color"));
-            if (renderer.material.HasProperty("_BaseColor"))
-                renderer.material.SetColor("_BaseColor", new Color(0.85f, 0.1f, 0.1f, 0.45f));
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            Color telegraphColor = new Color(0.85f, 0.1f, 0.1f, 0.45f);
+            if (GameManager.SharedMaterialOptimizationEnabled)
+            {
+                renderer.sharedMaterial = RendererShadowVisibility.GetSharedTransientLineMaterial();
+                RendererShadowVisibility.SetSharedColor(renderer, telegraphColor);
+            }
             else
-                renderer.material.color = new Color(0.85f, 0.1f, 0.1f, 0.45f);
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
+                Material material = shader != null ? new Material(shader) : null;
+                if (material != null)
+                {
+                    if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", telegraphColor);
+                    else material.color = telegraphColor;
+                }
+                renderer.sharedMaterial = material;
+            }
         }
         return fallback;
     }
@@ -217,6 +232,7 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         if (blastVfxPrefab == null && vfxPrefab == null) return;
         GameObject prefab = blastVfxPrefab != null ? blastVfxPrefab : vfxPrefab;
         GameObject vfx = Instantiate(prefab, position, Quaternion.identity);
+        GameManager.ApplyPerformanceOptimizations(vfx);
         vfx.transform.localScale *= radius / Mathf.Max(0.01f, blastRadius);
         PlayVfx(vfx);
         StopVfxLooping(vfx);
