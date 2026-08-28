@@ -72,11 +72,11 @@ public static class CardArchiveStore
     static void ApplyCardMeta(CardArchiveEntry e, string effectId)
     {
         var cm = CardManager.Instance;
-        if (cm == null) return;
-        var data = cm.FindCard(effectId);
+
+        var data = cm != null ? cm.FindCard(effectId) : CardLibrary.Instance != null ? CardLibrary.Instance.FindCard(effectId) : null;
         if (data == null) return;
-        e.cardName = data.cardName;
-        e.description = data.description;
+        e.cardName = data.ResolveCardName();
+        e.description = data.ResolveDescription();
         e.sin = data.monsterType == SinType.None ? "Universal" : data.monsterType.ToString();
     }
 
@@ -126,6 +126,7 @@ public static class CardArchiveStore
     }
 
     static int ComputeValidTotal()
+    
     {
         var cm = CardManager.Instance;
         if (cm == null || cm.cardLibrary == null || cm.cardLibrary.cards == null) return 0;
@@ -141,6 +142,8 @@ public static class CardArchiveStore
         foreach (var e in Map.Values) if (e.state == Unlocked) n++;
         return n;
     }
+
+
 }
 
 /// <summary>卡牌图鉴条目（长期持久化）。展示元数据在 Run 内补全，供主菜单无场景渲染。</summary>
@@ -231,4 +234,7 @@ public class CardArchiveTracker : MonoBehaviour
         foreach (var c in cm.currentPicks)
             if (c != null) CardArchiveStore.RecordSeen(c.effectId);
     }
+
+
+
 }

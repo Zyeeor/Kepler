@@ -14761,6 +14761,9 @@ MonoBehaviour:
   stackAnchor: {fileID: 927676052}
   transitionDuration: 0.2
   transitionStagger: 0.05
+  miniTransitionTimeCap: 0.6
+  fanTransitionTimeCap: 0.6
+  stackTransitionTimeCap: 0.6
   showEmptyHint: 1
   showInSoulState: 1
 --- !u!1 &1769012141
@@ -15406,9 +15409,9 @@ MonoBehaviour:
   gameOverPanel: {fileID: 0}
   useFixedSeed: 0
   fixedSeed: 12345
-  forceTutorial: 0
-  bootToMainMenu: 0
-  useFormalFlow: 0
+  forceTutorial: 1
+  bootToMainMenu: 1
+  useFormalFlow: 1
   enableA1ShadowOptimization: 1
   enableA2TrailOptimization: 1
   enableA3AnimatorCulling: 1

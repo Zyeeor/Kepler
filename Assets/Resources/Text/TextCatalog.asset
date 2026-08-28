@@ -357,7 +357,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.status.offline
-      text: "\u5237\u65B0\u5931\u8D25\u2014\u2014\u663E\u793A\u672C\u5730\u7F13\u5B58\uFF08\u79BB\u7EBF\u53EF\u67E5\u770B\uFF09"
+      text: "\u65E0\u6CD5\u8FDE\u63A5\u670D\u52A1\u5668\uFF0C\u5F53\u524D\u663E\u793A\u672C\u5730\u8BB0\u5F55\u3002"
       mythicText: 
       systemText: 
       carrier: 0
@@ -372,19 +372,17 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.entry.raw_line
-      text: "\u6784\u7B51\u6DF1\u5EA6 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740
-        {2}"
+      text: "\u6784\u7B51\u5361\u6570 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740 {2}"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.entry.stats_section
-      text: "\u2500\u2500 \u5F02\u6B65\u6218\u7EE9{0}\u2500\u2500"
+      text: "\u2500\u2500 \u6D41\u4F20\u6218\u7EE9{0} \u2500\u2500"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.entry.stats_line
-      text: "\u88AB\u6295\u653E {0}\uFF5C\u88AB\u51FB\u6740 {1}\uFF5C\u88AB\u9644\u8EAB
-        {2}\uFF5C\u6467\u6BC1\u8EAF\u4F53 {3}\uFF5C\u7EC8\u7ED3\u5BF9\u5C40 {4}"
+      text: "\u51FA\u6218 {0} \u6B21\uFF5C\u88AB\u6D88\u706D {1} \u6B21\uFF5C\u906D\u9644\u8EAB {2} \u6B21\uFF5C\u5BFC\u81F4\u5BF9\u5C40\u5931\u8D25 {3} \u6B21"
       mythicText: 
       systemText: 
       carrier: 0

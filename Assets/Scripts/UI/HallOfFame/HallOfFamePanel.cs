@@ -12,9 +12,8 @@ using UnityEngine.UI;
 ///   - 记录列表：本地缓存优先 + 分页（每页 5 条，上一页/下一页/页码）+ 滚动条（内容不足自动隐藏）；
 ///   - 记录详情：整条可点 → 列表内延伸展开（完整构筑 + 两区块完整字段，展开行插入该条目之后；再点收起 / 切换 / ESC / 刷新时收起）
 ///   - 排序（§5.6 四键循环，默认保存时间倒序）；标题保留词缀名 + 世代序号（Owner 拍板 2）；
-///   - 异步战绩 UI 不再展示 bodyFatal 列（Owner 拍板 1；数据字段与服务器回传/ApplyStats 不变，仅展示层移除）；
-///   - 在线用真实战绩、离线用模拟战绩展示（Owner 拍板 3）：刷新失败时按 (runId,sin) 哈希生成
-///     确定性模拟值（每次打开一致、不落盘、不写入 HallOfFameStore），并明确标注「离线模拟」；
+///   - 流传战绩不展示 bodyFatal 列（数据字段与服务器回传/ApplyStats 不变，仅展示层移除）；
+///   - 在线刷新服务器战绩；离线时保留并展示本地记录，不生成模拟数据；
 ///   - 罪别彩条：条目左侧竖条按 Sin 着色（仅身份识别，不表示稀有度；开发案 §5）。
 ///
 /// 美术接入（SystemUI @ Assets/Resources/SystemUI，参考图 Hall Of Record.png）：
@@ -65,7 +64,7 @@ public class HallOfFamePanel : MonoBehaviour
     [SerializeField] Button[] sortButtons;
 
     [Header("Sort Button Styles")]
-    [Tooltip("顺序对应：保存时间、杀怪数、造成 Run Fail 次数、BD 卡牌数量。未指定 Sprite 时沿用 Order Buttons.png。")]
+    [Tooltip("顺序对应：保存时间、杀敌次数、终结对局次数、构筑卡牌数量。未指定 Sprite 时沿用 Order Buttons.png。")]
     [SerializeField] SortButtonStyle[] sortButtonStyles =
     {
         new SortButtonStyle(), new SortButtonStyle(), new SortButtonStyle(), new SortButtonStyle()
@@ -97,9 +96,6 @@ public class HallOfFamePanel : MonoBehaviour
     // 条目内展开详情（点击条目在列表内延伸显示完整内容，替代全屏弹层；同一时刻仅展开一条）
     GameObject expandedRow;
     string expandedKey;
-
-    /// <summary>离线模拟战绩展示开关（Owner 拍板 3：不在线时用模拟数据渲染，明确标注、不落盘）。</summary>
-    bool usingMockStats;
 
     // SystemUI 美术资源（Assets/Resources/SystemUI；加载失败时回退纯色，保证功能可用）
     Sprite horBgSprite;
@@ -207,7 +203,6 @@ public class HallOfFamePanel : MonoBehaviour
     {
         if (GameManager.IsFormalFlow) return;
         debugPreviewEntries = CreateDebugPreviewEntries();
-        usingMockStats = false;
         Show();
         Debug.Log("[HallOfFame] 已启用 8 条开发预览数据（仅内存，不会写入荣誉存档）。");
     }
@@ -216,7 +211,6 @@ public class HallOfFamePanel : MonoBehaviour
     {
         if (GameManager.IsFormalFlow || debugPreviewEntries == null) return;
         debugPreviewEntries = null;
-        usingMockStats = false;
         if (IsVisible())
         {
             RenderLocal();
@@ -239,7 +233,7 @@ public class HallOfFamePanel : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (debugPreviewEntries != null) return;
 #endif
-        _ = RefreshFromServer(); // 再后台联网刷新（失败 → 离线模拟展示，Owner 拍板 3）
+        _ = RefreshFromServer(); // 再后台联网刷新（失败时保留本地缓存）
     }
 
     public void Hide()
@@ -383,7 +377,10 @@ public class HallOfFamePanel : MonoBehaviour
         generationIndex = BuildGenerationIndex(entries);
 
         if (emptyLabel != null)
+        {
+            emptyLabel.text = TextCatalog.Get("ui.hof.empty");
             emptyLabel.gameObject.SetActive(entries.Count == 0);
+        }
 
         RenderList(entries);
 
@@ -486,16 +483,14 @@ public class HallOfFamePanel : MonoBehaviour
             int fetched = resp != null && resp.stats != null ? resp.stats.Count : 0;
             int applied = resp != null && resp.stats != null
                 ? HallOfFameStore.ApplyStats(resp.stats) : 0;
-            usingMockStats = false; // 在线：真实数据（Owner 拍板 3）
             Debug.Log($"[HallOfFame] 战绩刷新完成：server 返回 {fetched} 条，本地匹配 {applied} 条，耗时 {sw.ElapsedMilliseconds}ms。");
             SetStatus(TextCatalog.Get("ui.hof.status.refreshed", NowClock(), applied));
         }
         catch (Exception e)
         {
-            // §5.7/§5.10：断网仍可查看本地荣誉记录；Owner 拍板 3：离线改用模拟战绩展示（仅显示层，不落盘）
-            usingMockStats = true;
+            // 断网仍可查看本地荣誉记录；不生成容易误导玩家的模拟战绩。
             SetStatus(TextCatalog.Get("ui.hof.status.offline"));
-            Debug.Log($"[HallOfFame] 战绩刷新失败（切换为离线模拟战绩展示）：{e.Message}");
+            Debug.Log($"[HallOfFame] 战绩刷新失败（保留本地记录）：{e.Message}");
         }
         finally
         {
@@ -562,17 +557,16 @@ public class HallOfFamePanel : MonoBehaviour
     {
         switch (sortKey)
         {
-            case SortKey.Kills: return $"击杀 {e.kills}";
-            case SortKey.RunFail: return $"Run Fail {e.runFail}";
-            case SortKey.BdCount: return $"BD {e.bdCount} 张";
+            case SortKey.Kills: return $"本局击杀 {e.kills}";
+            case SortKey.RunFail: return $"导致对局失败 {e.runFail} 次";
+            case SortKey.BdCount: return $"构筑卡数 {e.bdCount} 张";
             default: return FormatClock(e.savedAtUnix);
         }
     }
 
-    /// <summary>战绩区块标题：在线 = 异步战绩（同步时间/未同步）；离线 = 异步战绩（离线模拟）。</summary>
+    /// <summary>战绩区块标题：展示服务器回传的流传战绩及同步状态。</summary>
     string StatsSectionTitle(HallOfFameEntry e)
     {
-        if (usingMockStats) return "──── 异步战绩（离线模拟）────";
         string statsTime = e.statsUpdatedAtUnix > 0
             ? TextCatalog.Get("ui.hof.entry.synced_at", FormatClock(e.statsUpdatedAtUnix))
             : TextCatalog.Get("ui.hof.entry.not_synced");
@@ -582,17 +576,12 @@ public class HallOfFamePanel : MonoBehaviour
     /// <summary>战绩行：四计数器（Owner 拍板 1：bodyFatal 不展示；数据层照常接收存储）。</summary>
     string StatsLine(HallOfFameEntry e)
     {
-        int deployed, fatal, possessed, runFail;
-        if (usingMockStats)
-        {
-            var m = MockStatsFor(e);
-            deployed = m[0]; fatal = m[1]; possessed = m[2]; runFail = m[3];
-        }
-        else
-        {
-            deployed = e.deployed; fatal = e.fatal; possessed = e.possessed; runFail = e.runFail;
-        }
-        return $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│杀敌 {runFail}";
+        return TextCatalog.Get(
+            "ui.hof.entry.stats_line",
+            e.deployed,
+            e.fatal,
+            e.possessed,
+            e.runFail);
     }
 
     // ── 条目内展开详情（开发案 §2.1 完整字段；点击条目在列表内延伸展示，替代全屏弹层）──
@@ -686,42 +675,42 @@ public class HallOfFamePanel : MonoBehaviour
     string FormatDetail(HallOfFameEntry e)
     {
         string epithetName = EpithetName(e);
-        string sinName = SinDisplay(e.sin);
-        string cards = e.cardIds != null && e.cardIds.Count > 0 ? string.Join("、", e.cardIds) : TextCatalog.Get("ui.hof.entry.no_cards");
-        string staleMark = HasStaleCards(e) ? "  " + TextCatalog.Get("ui.hof.entry.stale_cards") : "";
+        string sinName = SinLabel(e.sin);
+        string cards = FormatCardNames(e.cardIds);
 
         return $"<size=30><b>{epithetName}</b></size>\n" +
-               $"{sinName}（{e.sin}） · {FormatClock(e.savedAtUnix)} · {PhaseText(e)}\n" +
-               "<color=#9fd4ff>──── 原始 Run 表现 ────</color>\n" +
-               $"构筑深度：{e.bdCount}\n" +
-               $"本局控制时长：{e.controlSeconds:F0} 秒\n" +
-               $"本局击杀数：{e.kills}\n" +
-               $"卡牌清单（{(e.cardIds != null ? e.cardIds.Count : 0)} 张）：{cards}{staleMark}\n" +
-               "<color=#ffd79f>──── " + (usingMockStats ? "异步战绩（离线模拟）" :
-                   (e.statsUpdatedAtUnix > 0
-                       ? TextCatalog.Get("ui.hof.entry.stats_section", TextCatalog.Get("ui.hof.entry.synced_at", FormatClock(e.statsUpdatedAtUnix)))
-                       : TextCatalog.Get("ui.hof.entry.stats_section", TextCatalog.Get("ui.hof.entry.not_synced")))).Trim('─', ' ') + " ────</color>\n" +
+               $"{sinName} · {PhaseText(e)} · {FormatClock(e.savedAtUnix)}\n" +
+               $"<color=#9fd4ff>{TextCatalog.Get("ui.hof.entry.raw_section")}</color>\n" +
+               $"构筑卡数：{e.bdCount}\n" +
+               $"控制时长：{e.controlSeconds:F0} 秒\n" +
+               $"本局击杀：{e.kills}\n" +
+               $"卡牌列表（{(e.cardIds != null ? e.cardIds.Count : 0)} 张）：{cards}\n" +
+               $"<color=#ffd79f>{StatsSectionTitle(e)}</color>\n" +
                StatsLine(e);
     }
 
-    /// <summary>离线模拟战绩（Owner 拍板 3）：按 (runId,sin) FNV-1a 哈希生成确定性数值——
-    /// 每次打开一致、不落盘、不覆盖真实战绩；仅渲染层展示并明确标注。</summary>
-    static int[] MockStatsFor(HallOfFameEntry e)
+    static string FormatCardNames(System.Collections.Generic.List<string> cardIds)
     {
-        uint h = Fnv1a(e.runId + "|" + e.sin);
-        int deployed = 2 + (int)(h % 8);                        // 2..9
-        int fatal = (int)((h >> 8) % (uint)(deployed + 1));     // 0..deployed
-        int possessed = (int)((h >> 16) % 4u);                  // 0..3
-        int runFail = (int)((h >> 24) % (uint)(fatal + 1));     // 0..fatal
-        return new[] { deployed, fatal, possessed, runFail };
-    }
+        if (cardIds == null || cardIds.Count == 0)
+            return TextCatalog.Get("ui.hof.entry.no_cards");
 
-    static uint Fnv1a(string s)
-    {
-        uint h = 2166136261;
-        if (s == null) return h;
-        foreach (var c in s) { h ^= c; h *= 16777619; }
-        return h;
+        var names = new System.Collections.Generic.List<string>(cardIds.Count);
+        var library = CardLibrary.Instance;
+        int historicalCount = 0;
+        foreach (string cardId in cardIds)
+        {
+            var card = library != null ? library.FindCard(cardId) : null;
+            string cardName = card != null ? card.ResolveCardName() : null;
+            if (string.IsNullOrWhiteSpace(cardName))
+            {
+                historicalCount++;
+                continue;
+            }
+            names.Add(cardName);
+        }
+        if (historicalCount > 0)
+            names.Add(historicalCount == 1 ? "历史版本卡牌" : $"历史版本卡牌 × {historicalCount}");
+        return string.Join("、", names);
     }
 
     // ── 同名世代标记（方案 §7.4）──
@@ -805,6 +794,22 @@ public class HallOfFamePanel : MonoBehaviour
         }
     }
 
+    static string SinLabel(string wire)
+    {
+        if (!Enum.TryParse(wire, true, out SinType sin)) return wire;
+        switch (sin)
+        {
+            case SinType.Pride: return "傲慢";
+            case SinType.Lust: return "色欲";
+            case SinType.Wrath: return "愤怒";
+            case SinType.Greed: return "贪婪";
+            case SinType.Gluttony: return "暴食";
+            case SinType.Envy: return "嫉妒";
+            case SinType.Sloth: return "怠惰";
+            default: return wire;
+        }
+    }
+
     static string SinDisplay(string wire)
     {
         if (string.IsNullOrEmpty(wire)) return wire;
@@ -865,15 +870,6 @@ public class HallOfFamePanel : MonoBehaviour
     }
 
     /// <summary>历史卡牌失效标记（§5.9）：清单中存在当前牌池不认识的 ID。CardManager 不在（主菜单）时跳过校验。</summary>
-    static bool HasStaleCards(HallOfFameEntry e)
-    {
-        var cm = CardManager.Instance;
-        if (cm == null || e.cardIds == null) return false;
-        foreach (var id in e.cardIds)
-            if (cm.FindCard(id) == null) return true;
-        return false;
-    }
-
     static string FormatClock(long unix)
     {
         if (unix <= 0) return "--";
