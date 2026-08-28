@@ -820,6 +820,20 @@ public class EliteBuildDirector : MonoBehaviour
         Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，获得双选卡机会。", this);
     }
 
+    /// <summary>
+    /// 离开战斗场景时取消尚未展示的奖励选卡，避免常驻协程跨场景等待并在下次进入时误弹。
+    /// 正在展示的选卡由 UIManager 先保存为 Choice 快照，再随场景销毁。
+    /// </summary>
+    public void CancelPendingCardRewards()
+    {
+        pendingEliteCardRewards = 0;
+        if (eliteCardRewardRoutine != null)
+        {
+            StopCoroutine(eliteCardRewardRoutine);
+            eliteCardRewardRoutine = null;
+        }
+    }
+
     IEnumerator DrainEliteCardRewards()
     {
         while (pendingEliteCardRewards > 0)

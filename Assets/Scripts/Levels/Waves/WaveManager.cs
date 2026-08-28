@@ -111,6 +111,13 @@ public class WaveManager : SceneSingleton<WaveManager>
     private bool resumePendingChoice;
     /// <summary>调试跳波标志（DebugSkipWave 置位，波循环下一帧检测后视为清场过波）。</summary>
     private bool debugSkipWave;
+    int continuousNormalOrderIndex;
+    float continuousNextNormalSpawnTime;
+    readonly List<bool> continuousEliteSpawned = new List<bool>();
+
+    public int ContinuousNormalOrderIndex => continuousNormalOrderIndex;
+    public float ContinuousNextNormalSpawnTime => continuousNextNormalSpawnTime;
+    public IReadOnlyList<bool> ContinuousEliteSpawned => continuousEliteSpawned;
 
     protected override void Awake()
     {
@@ -257,20 +264,23 @@ public class WaveManager : SceneSingleton<WaveManager>
         }
         if (!initialized) Initialize();
 
-        // 读档恢复：从会话（RunSession，主菜单[继续]时已填充）的已完成波次之后继续（跳过 grace）
+        // 读档恢复：连续刷怪模式按战斗时钟恢复；旧波次模式按已完成波次恢复（均跳过 grace）。
         var run = RunSession.Instance;
-        if (run != null && run.HasActiveRun && run.CompletedWaveIndex >= 0)
+        if (run != null && run.HasActiveRun && SaveCoordinator.ResumeRequested)
         {
-            // 选卡未完成（选卡界面退出）：即使已完成最后一波也要补弹选卡，不能直接判结束
-            if (run.CompletedWaveIndex >= ActiveWaves.Count - 1 && !run.PendingChoice)
+            bool legacyWaveResume = !UsesContinuousSpawning && run.CompletedWaveIndex >= 0;
+            // 旧波次存档已超过当前配置范围时作废；连续刷怪模式不再将 completedWaveIndex 当作波数。
+            if (legacyWaveResume && run.CompletedWaveIndex >= ActiveWaves.Count - 1 && !run.PendingChoice)
             {
                 Debug.LogWarning($"[WaveManager] 存档波次 {run.CompletedWaveIndex} 已超出配置范围（共 {ActiveWaves.Count} 波），忽略读档，新开一局。");
                 run.EndRun();
             }
             else
             {
-                resumeFromWaveIndex = run.CompletedWaveIndex;
-                resumePendingChoice = run.PendingChoice;
+                resumeFromWaveIndex = UsesContinuousSpawning ? -1 : run.CompletedWaveIndex;
+                // RunPhase is authoritative: a Waves snapshot must resume directly into
+                // combat even if an older/inconsistent pendingChoice flag remains true.
+                resumePendingChoice = run.CurrentPhase == RunPhase.Choice;
                 // 恢复玩家运行时状态（灵魂位置/HP/时间）——由会话提供，不依赖存档文件
                 var soul = FindObjectOfType<SoulActor>();
                 if (soul != null) soul.transform.position = run.SoulPosition;
@@ -282,8 +292,12 @@ public class WaveManager : SceneSingleton<WaveManager>
                 if (GameManager.Instance != null)
                     GameManager.Instance.soulTime = run.SoulTime;
                 RestoreBodies(run);
-                Debug.Log($"[WaveManager] 读档恢复：已完成 {resumeFromWaveIndex + 1} 波" + (resumePendingChoice ? "（选卡未完成，将补弹选卡）" : "") + "，继续对局。");
+                Debug.Log(UsesContinuousSpawning
+                    ? $"[WaveManager] 连续战场读档恢复：战斗时间 {run.ActiveCombatSeconds:F1}s，普通怪游标 {run.ContinuousNormalOrderIndex}。"
+                      + (resumePendingChoice ? "（选卡未完成，将补弹选卡）" : "")
+                    : $"[WaveManager] 读档恢复：已完成 {resumeFromWaveIndex + 1} 波" + (resumePendingChoice ? "（选卡未完成，将补弹选卡）" : "") + "，继续对局。");
             }
+            SaveCoordinator.ClearResumeRequest();
         }
 
         Debug.Log($"[WaveManager] 连续战场自动启动：地图已就绪（等待 {waited:F1}s），波次 {ActiveWaves.Count} 个。");
@@ -573,8 +587,8 @@ public class WaveManager : SceneSingleton<WaveManager>
         // 保证"波次中间移动位置后退出重进，回到波次开始的地方"。
         if (RunSession.Instance != null)
         {
-            RunSession.Instance.SaveProgress(waveIndex, pendingChoice: false);
             RunSession.Instance.TransitionTo(RunPhase.Waves); // RunFlow：选卡完成 → 回波次阶段
+            RunSession.Instance.SaveProgress(waveIndex, pendingChoice: false);
         }
     }
         Debug.Log("[WaveManager] ALL WAVES COMPLETE");
@@ -641,9 +655,22 @@ public class WaveManager : SceneSingleton<WaveManager>
         IsWaveActive = true;
         PrepareWaveRandom(0);
         float combatTime = director.ActiveCombatSeconds;
-        float nextNormalTime = NextNormalSpawnTime(combatTime);
-        bool[] eliteSpawned = new bool[continuousSpawnOrder.Count];
-        int normalOrderIndex = 0;
+        RunSession run = RunSession.Instance;
+        continuousNormalOrderIndex = run != null ? Mathf.Max(0, run.ContinuousNormalOrderIndex) : 0;
+        float restoredNextNormalTime = run != null ? run.ContinuousNextNormalSpawnTime : 0f;
+        float nextNormalTime = restoredNextNormalTime > 0f && restoredNextNormalTime >= combatTime - 0.001f
+            ? restoredNextNormalTime
+            : NextNormalSpawnTime(combatTime);
+        continuousNextNormalSpawnTime = nextNormalTime;
+        continuousEliteSpawned.Clear();
+        for (int i = 0; i < continuousSpawnOrder.Count; i++)
+        {
+            ContinuousSpawnEntry entry = continuousSpawnOrder[i];
+            bool alreadyScheduled = entry != null && combatTime >= Mathf.Max(0f, entry.eliteSpawnTimeSeconds);
+            if (run != null && i < run.ContinuousEliteSpawned.Count)
+                alreadyScheduled = run.ContinuousEliteSpawned[i];
+            continuousEliteSpawned.Add(alreadyScheduled);
+        }
         MonsterSpawner movementSpawner = MonsterSpawner.Instance;
         Vector3 previousPlayerPosition = movementSpawner != null ? movementSpawner.CurrentPlayerPosition : Vector3.zero;
         float movementDistanceSinceReplacement = 0f;
@@ -702,28 +729,29 @@ public class WaveManager : SceneSingleton<WaveManager>
                 MonsterActor monster = null;
                 if (rate > 0f)
                 {
-                    ContinuousSpawnEntry entry = continuousSpawnOrder[normalOrderIndex % continuousSpawnOrder.Count];
+                    ContinuousSpawnEntry entry = continuousSpawnOrder[continuousNormalOrderIndex % continuousSpawnOrder.Count];
                     monster = entry != null ? director.SpawnScheduledMonster(entry.sin) : null;
                     if (monster != null)
                     {
                         // Only a real spawn advances the rotation, so failed legal-position
                         // checks and a full normal cap cannot bias the type distribution.
-                        normalOrderIndex++;
+                        continuousNormalOrderIndex++;
                         waveAlive.Add(monster);
                     }
                 }
                 Debug.Log($"[WaveManager] 普通怪速率生成：t={nextNormalTime:F1}s，rate={rate:F3}/s，生成 {(monster != null ? 1 : 0)}，在场 {waveAlive.Count}。");
                 nextNormalTime = NextNormalSpawnTime(nextNormalTime);
             }
+            continuousNextNormalSpawnTime = nextNormalTime;
 
             for (int i = 0; i < continuousSpawnOrder.Count; i++)
             {
-                if (eliteSpawned[i]) continue;
+                if (continuousEliteSpawned[i]) continue;
                 ContinuousSpawnEntry entry = continuousSpawnOrder[i];
                 if (entry == null || combatTime < Mathf.Max(0f, entry.eliteSpawnTimeSeconds)) continue;
 
                 int spawned = SpawnContinuousElite(entry, i);
-                eliteSpawned[i] = true;
+                continuousEliteSpawned[i] = true;
                 Debug.Log($"[WaveManager] 配置精英：序号 {i + 1}，type={entry.sin}，t={entry.eliteSpawnTimeSeconds:F1}s，生成 {spawned}/1 只。");
             }
 
@@ -954,14 +982,147 @@ public class WaveManager : SceneSingleton<WaveManager>
     // ── 读档恢复 ──
 
     /// <summary>
-    /// 恢复附身怪与可附身尸体（读档）：按存档快照从波表解析 prefab → 直接刷出。
-    /// 尸体不经过 spawner 追踪（不算战斗怪，淡出即回池）；附身怪刷出后应用已解锁能力并直接附身。
+    /// 恢复场上怪物：新版本使用统一怪物快照；旧版本仍使用 possessedBody/corpses
+    /// 兼容恢复。恢复发生在 WaveRoutine 启动前，连续战斗因此不会把场上怪物当成新局。
     /// </summary>
     void RestoreBodies(RunSession run)
     {
         if (run == null) return;
+        if (run.MonsterSnapshots != null && run.MonsterSnapshots.Count > 0)
+        {
+            RestoreMonsterSnapshots(run);
+            return;
+        }
 
-        // 1) 可附身尸体
+        RestoreLegacyBodies(run);
+    }
+
+    void RestoreMonsterSnapshots(RunSession run)
+    {
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        if (spawner == null) return;
+
+        if (UsesContinuousSpawning)
+            spawner.ConfigureContinuousSpawnMaxCount(GetContinuousSpawnMaxCount(run.ActiveCombatSeconds));
+
+        bool possessedRestored = false;
+        for (int i = 0; i < run.MonsterSnapshots.Count; i++)
+        {
+            var snap = run.MonsterSnapshots[i];
+            if (snap == null || string.IsNullOrEmpty(snap.prefabId)) continue;
+
+            GameObject prefab = snap.isElite ? ResolveEliteSnapshotPrefab(snap) : ResolveWavePrefab(snap.prefabId);
+            if (prefab == null) prefab = ResolveWavePrefab(snap.prefabId);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[WaveManager] 怪物快照 prefab '{snap.prefabId}' 无法解析，跳过恢复。");
+                continue;
+            }
+
+            var monster = spawner.SpawnRestoredMonster(prefab, snap.position,
+                snap.spawnOrigin, snap.isContinuousAutomatic && !snap.isElite,
+                snap.countsTowardCombatLimit);
+            if (monster == null)
+            {
+                Debug.LogWarning($"[WaveManager] 怪物快照 '{snap.prefabId}' 生成失败，跳过恢复。");
+                continue;
+            }
+
+            if (snap.rotation != default(Quaternion))
+                monster.transform.rotation = snap.rotation;
+            RestoreEliteSnapshot(monster, snap);
+
+            if (snap.isDowned)
+            {
+                monster.ApplyStreamSnapshot(0f, false, true);
+                continue;
+            }
+
+            monster.ApplyStreamSnapshot(snap.health, snap.isWeakened, false);
+            if (snap.tenacity > 0f)
+                monster.currentTenacity = Mathf.Min(snap.tenacity, monster.maxTenacity);
+
+            if (snap.isPossessed)
+            {
+                if (!possessedRestored && PossessionManager.Instance != null
+                    && PossessionManager.Instance.DebugForcePossess(monster))
+                {
+                    // OnPossessed initializes the player-controlled stat block. Apply the
+                    // saved HP once more so the snapshot does not silently refill the body.
+                    monster.ApplyStreamSnapshot(snap.health, false, false);
+                    possessedRestored = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"[WaveManager] 附身怪快照 '{snap.prefabId}' 无法接管，保留为普通怪。");
+                    waveAlive.Add(monster);
+                }
+                continue;
+            }
+
+            waveAlive.Add(monster);
+        }
+
+        EnemiesAlive = waveAlive.Count;
+        Debug.Log($"[WaveManager] 场上怪物快照恢复完成：{run.MonsterSnapshots.Count} 条，当前战斗怪 {waveAlive.Count} 只。");
+    }
+
+    void RestoreEliteSnapshot(MonsterActor monster, SaveData.MonsterSnapshotSave snap)
+    {
+        if (monster == null || snap == null || !snap.isElite) return;
+
+        if (snap.eliteCardIds != null && snap.eliteCardIds.Count > 0)
+        {
+            var carrier = monster.gameObject.GetComponent<EliteBuildCarrier>();
+            if (carrier == null) carrier = monster.gameObject.AddComponent<EliteBuildCarrier>();
+
+            var snapshot = new EliteSnapshotItem
+            {
+                snapshotId = snap.eliteSnapshotId,
+                sourcePlayerId = snap.eliteSourcePlayerId,
+                runId = snap.eliteRunId,
+                sin = !string.IsNullOrEmpty(snap.eliteSin)
+                    ? snap.eliteSin
+                    : EliteMonsterCatalog.WireName(snap.sin),
+                monsterType = snap.displayName,
+                bdCount = snap.eliteCardIds.Count,
+                bdData = new List<BdCardEntry>(),
+                sourceWave = snap.eliteSourceWave,
+            };
+            for (int i = 0; i < snap.eliteCardIds.Count; i++)
+                snapshot.bdData.Add(new BdCardEntry { cardId = snap.eliteCardIds[i], stack = 1 });
+            carrier.Init(snapshot, string.Empty);
+        }
+
+        if (snap.hasEliteRuntimeModifiers)
+        {
+            monster.ApplyEliteRuntimeModifiers(
+                Mathf.Max(0.01f, snap.eliteHealthMultiplier),
+                Mathf.Max(0.01f, snap.eliteAttackDamageMultiplier),
+                Mathf.Max(1f, snap.eliteVisualScaleMultiplier));
+        }
+
+        if (!string.IsNullOrEmpty(snap.displayName))
+            monster.displayName = snap.displayName;
+    }
+
+    GameObject ResolveEliteSnapshotPrefab(SaveData.MonsterSnapshotSave snap)
+    {
+        if (snap == null) return null;
+        EliteMonsterCatalog catalog = EliteBuildDirector.Instance != null
+            ? EliteBuildDirector.Instance.catalog
+            : Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
+        if (catalog == null) return null;
+
+        EliteMonsterCatalog.Entry entry = snap.sin != SinType.None
+            ? catalog.Find(snap.sin)
+            : catalog.FindByWireName(snap.eliteSin);
+        return entry != null ? entry.prefab : null;
+    }
+
+    void RestoreLegacyBodies(RunSession run)
+    {
+        // 旧档尸体仍按原路径恢复，避免 v7 及更早存档因为没有 monsterSnapshots 而失效。
         foreach (var snap in run.Corpses)
         {
             var prefab = ResolveWavePrefab(snap.prefabId);
@@ -971,32 +1132,32 @@ public class WaveManager : SceneSingleton<WaveManager>
             var monster = go.GetComponentInChildren<MonsterActor>(true);
             if (monster != null)
             {
-                monster.ApplyStreamSnapshot(0f, false, true); // downed：复用 Die() 重建尸体姿态/窗口
+                monster.ApplyStreamSnapshot(0f, false, true);
                 Debug.Log($"[WaveManager] 恢复尸体 '{snap.prefabId}' @ {snap.position}");
             }
         }
 
-        // 2) 玩家附身的怪（最后刷并附身，确保尸体已就位）
-        if (run.PossessedBody != null)
+        // 旧档附身怪最后恢复并接管。
+        if (run.PossessedBody == null) return;
+        var possessedPrefab = ResolveWavePrefab(run.PossessedBody.prefabId);
+        if (possessedPrefab == null)
         {
-            var prefab = ResolveWavePrefab(run.PossessedBody.prefabId);
-            if (prefab == null)
-            {
-                Debug.LogWarning($"[WaveManager] 附身怪 prefab '{run.PossessedBody.prefabId}' 无法解析，恢复为灵魂态。");
-                return;
-            }
-            var go = MonsterPool.Instance.Spawn(prefab, run.PossessedBody.position, Quaternion.identity);
-            if (go == null) return;
-            var monster = go.GetComponentInChildren<MonsterActor>(true);
-            if (monster == null) return;
-
-            monster.ApplyStreamSnapshot(run.PossessedBody.health, false, false); // 恢复血量（≥1，非倒地）
-            if (CardManager.Instance != null) CardManager.Instance.ApplyAllUnlocksTo(go);
-            if (PossessionManager.Instance != null && PossessionManager.Instance.DebugForcePossess(monster))
-                Debug.Log($"[WaveManager] 附身恢复：'{run.PossessedBody.prefabId}' @ {run.PossessedBody.position} HP={run.PossessedBody.health}");
-            else
-                Debug.LogWarning("[WaveManager] 附身恢复失败，已刷出怪但保持灵魂态。");
+            Debug.LogWarning($"[WaveManager] 附身怪 prefab '{run.PossessedBody.prefabId}' 无法解析，恢复为灵魂态。");
+            return;
         }
+        var possessedGo = MonsterPool.Instance.Spawn(possessedPrefab, run.PossessedBody.position, Quaternion.identity);
+        if (possessedGo == null) return;
+        var possessed = possessedGo.GetComponentInChildren<MonsterActor>(true);
+        if (possessed == null) return;
+
+        possessed.ApplyStreamSnapshot(run.PossessedBody.health, false, false);
+        if (PossessionManager.Instance != null && PossessionManager.Instance.DebugForcePossess(possessed))
+        {
+            possessed.ApplyStreamSnapshot(run.PossessedBody.health, false, false);
+            Debug.Log($"[WaveManager] 附身恢复：'{run.PossessedBody.prefabId}' @ {run.PossessedBody.position} HP={run.PossessedBody.health}");
+        }
+        else
+            Debug.LogWarning("[WaveManager] 附身恢复失败，已刷出怪但保持灵魂态。");
     }
 
     /// <summary>按 prefab 名在全部波的权重表内解析怪物 prefab（存档 prefabId 匹配）。</summary>
@@ -1013,6 +1174,19 @@ public class WaveManager : SceneSingleton<WaveManager>
                 foreach (var me in def.monsters)
                     if (me != null && me.prefab != null && me.prefab.name == prefabId)
                         return me.prefab;
+            }
+        }
+
+        // 连续刷怪模式的普通怪来源是 RunSpawnDirector.normalPrefabs，
+        // 不一定出现在旧 WaveConfig 权重表中；继续游戏仍需能按 prefabId 重建它。
+        var director = RunSpawnDirector.Instance;
+        if (director != null && director.normalPrefabs != null)
+        {
+            for (int i = 0; i < director.normalPrefabs.Count; i++)
+            {
+                var prefab = director.normalPrefabs[i];
+                if (prefab != null && prefab.name == prefabId)
+                    return prefab;
             }
         }
         return null;

@@ -433,6 +433,11 @@ public class MonsterActor : Actor
 
     /// <summary>True after the Elite runtime profile is applied or while its build carrier exists.</summary>
     public bool IsElite => eliteRuntimeApplied || EliteBuildCarrier.Get(this) != null;
+    /// <summary>Runtime Elite multipliers captured by the run snapshot.</summary>
+    public float EliteHealthMultiplier => eliteHealthMultiplier;
+    public float EliteAttackDamageMultiplier => eliteAttackDamageMultiplier;
+    public float EliteVisualScaleMultiplier => eliteVisualScaleMultiplier;
+    public bool HasEliteRuntimeModifiers => eliteRuntimeApplied;
 
     /// <summary>追击目标（Actor.Update 填充 ActorContext.PlayerTarget；AIController 使用）。</summary>
     protected override Transform PlayerTarget => targetPlayer;
