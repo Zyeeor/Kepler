@@ -1,134 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &158773337436714203
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4466312539000090670}
-  - component: {fileID: 1509723406374056473}
-  m_Layer: 0
-  m_Name: Greed_Attack_EnemyAbility_GreedHands
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4466312539000090670
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 158773337436714203}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2012042516080350293}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1509723406374056473
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 158773337436714203}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65fc0f038760e4a7fafcf35cff50b343, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  abilityName: "\u5FF5\u529B\u9B54\u624B"
-  abilityDescription: 
-  type: 1
-  upgrades:
-  - effectId: GR-A01
-    unlocked: 0
-  - effectId: GR-A02
-    unlocked: 0
-  - effectId: GR-A03
-    unlocked: 0
-  - effectId: GR-A07
-    unlocked: 0
-  vfxPrefab: {fileID: 0}
-  vfxSpawnPoint: {fileID: 0}
-  weaponVfxPrefab: {fileID: 0}
-  weaponVfxSpawnPoint: {fileID: 0}
-  vfxPositionOffset: {x: 0, y: 0, z: 0}
-  vfxDelay: 0
-  vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 15
-  drawHitboxes: 0
-  cooldown: 0
-  debugLogCooldown: 0
-  abilityTags:
-  - Ability.Monster.Greed.Hands
-  appliedEffectTags: []
-  requiredTags: []
-  activationEffect: {fileID: 0}
-  castAudioName: 
-  hitAudioName: 
-  hitFeedback:
-    postProcessOnHit: 0
-    postProcessEffectName: 
-    postProcessDuration: 0
-    overridePostProcessParams: 0
-    stepFactor: 0.5
-    mainAlpha: 1
-    blurFactor: 0
-    lineUVScale: 0
-    chromatic: 0
-    frequency: 0
-    amplitude: 0
-    vignettePower: 1.5
-    vignetteScale: 1.5
-    shakeOnHit: 1
-    shakeForce: 0
-    shakeDuration: 0
-    hitStopOnHit: 1
-    hitStopDuration: 0
-    hitStopScale: 0
-    useGlobalTimeScale: 0
-  enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
-  enemyIndicatorEnabled: 1
-  enemyIndicatorRadius: 0
-  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
-  enemyIndicatorIntensity: 1.1
-  enemyIndicatorHeight: 0.05
-  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  maxDaggers: 6
-  cardInventoryMax: 10
-  initialPossessedHands: 2
-  regenInterval: 1
-  daggerPrefab: {fileID: 8044316912354738735, guid: 06fd062bc6d8bf746ac0a5d44d3cd5e3,
-    type: 3}
-  orbitCircleCenterOffset: {fileID: 0}
-  handSpawnVfxPrefab: {fileID: 0}
-  orbitRadius: 1.4
-  orbitSpeed: 200
-  heightOffset: 1.1
-  detectRange: 10
-  launchInterval: 0.2
-  aimTurnSpeed: 720
-  homingSpeed: 20
-  homingTurnRate: 720
-  homingCurveStrength: 0.757
-  handDamage: 15
-  damageMultiplier: 1
-  impactVfxPrefab: {fileID: 1035977224672214417, guid: 1e69e3e21e6d86c45898d16044d351fa,
-    type: 3}
-  impactVfxDuration: 1
-  animTrigger: Basic
-  debugLog: 1
 --- !u!1 &519724699553909217
 GameObject:
   m_ObjectHideFlags: 0
@@ -314,7 +185,7 @@ MonoBehaviour:
   stormModelTransformOffset: {x: 0, y: 0, z: 0}
   stormModelScale: {x: 1, y: 1, z: 1}
   stormModelClockwiseSpinSpeed: 360
---- !u!1 &1378740239629381371
+--- !u!1 &1124721007574153160
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -322,49 +193,168 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7256818534216795383}
-  - component: {fileID: 3671079818124278199}
+  - component: {fileID: 5085802331206695937}
+  - component: {fileID: 1466483320980997563}
   m_Layer: 0
-  m_Name: Greed_Special_EnemyAbility_GreedGuard
+  m_Name: skill_soulpull (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7256818534216795383
+--- !u!4 &5085802331206695937
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378740239629381371}
+  m_GameObject: {fileID: 1124721007574153160}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -6.61}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2012042516080350293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3671079818124278199
+--- !u!114 &1466483320980997563
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378740239629381371}
+  m_GameObject: {fileID: 1124721007574153160}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4518346b973be45c28ab7dbd8b0ca515, type: 3}
+  m_Script: {fileID: 11500000, guid: eb8e34f9441540a9867e69cf2c0a208d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u5927\u624BGuard"
+  abilityName: "\u7075\u9B42\u7275\u5F15"
+  abilityDescription: 
+  type: 0
+  upgrades:
+  - effectId: LU-S05
+    unlocked: 0
+  - effectId: LU-S06
+    unlocked: 0
+  - effectId: LU-TG01
+    unlocked: 0
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 25
+  drawHitboxes: 0
+  cooldown: 6
+  debugLogCooldown: 0
+  abilityTags:
+  - Ability.Monster.Lust
+  - Ability.Monster.Lust.SoulPull
+  appliedEffectTags: []
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 150}
+  pullWindow: 0.6
+  pullMaxDistance: 6
+  pullDamage: 25
+  aimTurnSpeed: 720
+  tetherVfx: {fileID: 2570147859077135225, guid: e51e3d7eacb6cce459292f6fedf1f156,
+    type: 3}
+  tetherVfxLength: 5
+  impactVfx: {fileID: 0}
+  telegraphVfx: {fileID: 0}
+  s05CollisionDistance: 0.75
+  s05BlastDamage: 25
+  s05BlastRadius: 2
+  s05BlastVfx: {fileID: 7359114929232555418, guid: 9a171ea7b11eb654faefbe331490f1ce,
+    type: 3}
+  s06Grace: 0.15
+--- !u!1 &2214001539742934202
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3376636991468325181}
+  - component: {fileID: 5203390421837409229}
+  m_Layer: 0
+  m_Name: skill_drone (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3376636991468325181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2214001539742934202}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -3.53, y: -1.04, z: 3.3394976}
+  m_LocalScale: {x: 8.571427, y: 8.571427, z: 8.571427}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2012042516080350293}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5203390421837409229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2214001539742934202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c186fdde8e7164aa7bdb2c0ddb539aa0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: "\u53EC\u5524\u6728\u7075"
   abilityDescription: 
   type: 2
   upgrades:
-  - effectId: GR-S01
+  - effectId: SL-S01
     unlocked: 0
-  - effectId: GR-S04
+  - effectId: SL-S03
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
@@ -375,10 +365,10 @@ MonoBehaviour:
   vfxRotationOffset: {x: 0, y: 0, z: 0}
   damage: 0
   drawHitboxes: 0
-  cooldown: 4
+  cooldown: 5
   debugLogCooldown: 0
   abilityTags:
-  - Ability.Monster.Greed.Guard
+  - Ability.Monster.Sloth.Drone
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -413,302 +403,25 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  baseDuration: 1
-  extendedDuration: 3
-  absorbPerHand: 100
-  absorbPerHandWithCard: 60
-  guardEffect: {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
-  leftGuardHandVfxPrefab: {fileID: 0}
-  rightGuardHandVfxPrefab: {fileID: 0}
-  absorbVfxPrefab: {fileID: 0}
-  convertVfxPrefab: {fileID: 0}
-  convertVfxDuration: 0.8
-  guardHandCenter: {fileID: 0}
-  guardHandSideOffset: 0.55
-  guardHandForwardOffset: 0.6
-  guardHandHeightOffset: 0.8
-  guardHandOrbitSweepAngle: 180
-  guardHandOrbitDuration: 0.75
-  guardHandScaleUpDuration: 0.25
-  guardHandInitialScale: 0.2
---- !u!1 &1717812195661719768
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8011721452233751301}
-  - component: {fileID: 6852886228353462884}
-  m_Layer: 0
-  m_Name: Sloth_Attack_EnemyAbility_SlothChargeShot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8011721452233751301
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1717812195661719768}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2012042516080350293}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6852886228353462884
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1717812195661719768}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7703087bc8aac4ad585d2e2c112da87e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  abilityName: Ability
-  abilityDescription: 
-  type: 1
-  upgrades:
-  - effectId: Sloth.Scatter
-    unlocked: 0
-  vfxPrefab: {fileID: 0}
-  vfxSpawnPoint: {fileID: 0}
-  weaponVfxPrefab: {fileID: 0}
-  weaponVfxSpawnPoint: {fileID: 0}
-  vfxPositionOffset: {x: 0, y: 0, z: 0}
-  vfxDelay: 0
-  vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 2
-  drawHitboxes: 0
-  cooldown: 0
-  debugLogCooldown: 0
-  abilityTags:
-  - Ability.Monster.Sloth.ChargeShot
-  appliedEffectTags:
-  - Effect.Combat.SlothBlastHit
-  requiredTags: []
-  activationEffect: {fileID: 0}
-  castAudioName: 
-  hitAudioName: 
-  hitFeedback:
-    postProcessOnHit: 1
-    postProcessEffectName: BlackFlash
-    postProcessDuration: 0
-    overridePostProcessParams: 0
-    stepFactor: 0.5
-    mainAlpha: 1
-    blurFactor: 0
-    lineUVScale: 0
-    chromatic: 0
-    frequency: 0
-    amplitude: 0
-    vignettePower: 1.5
-    vignetteScale: 1.5
-    shakeOnHit: 1
-    shakeForce: 0
-    shakeDuration: 0
-    hitStopOnHit: 1
-    hitStopDuration: 0
-    hitStopScale: 0
-    useGlobalTimeScale: 0
-  enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
-  enemyIndicatorEnabled: 1
-  enemyIndicatorRadius: 0
-  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
-  enemyIndicatorIntensity: 1.1
-  enemyIndicatorHeight: 0.05
-  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 40, y: 230}
+  dronePrefab: {fileID: 6114247635342975564, guid: 7cb74f0d689f64bfbb41a3d25ad27b0b,
     type: 3}
-  projectileSpawnPoint: {fileID: 7937874198874001404}
-  projectileWidth: 1.5
-  projectileHeight: 2
-  projectileSpeed: 20
-  maxRange: 15
-  bossProjectileScaleMultiplier: 1.5
-  bossPatternCooldown: 6
-  impactVfxPrefab: {fileID: 246936507347790118, guid: 6d995a367a9261d47917272ca396605a,
+  droneLifetime: 4
+  tossHeight: 1
+  tossDuration: 0.35
+  deathBlastDamage: 20
+  deathBlastTriggerDistance: 1.5
+  deathBlastRadius: 3
+  deathBlastDiveSpeed: 14
+  deathBlastVfx: {fileID: 8026296608122095936, guid: 7add8d30c3249bf45a56ee5a5a60bf23,
     type: 3}
-  impactVfxDuration: 1
-  shootFeedback:
-    postProcessOnHit: 0
-    postProcessEffectName: 
-    postProcessDuration: 0
-    overridePostProcessParams: 0
-    stepFactor: 0.5
-    mainAlpha: 1
-    blurFactor: 0
-    lineUVScale: 0
-    chromatic: 0
-    frequency: 0
-    amplitude: 0
-    vignettePower: 1.5
-    vignetteScale: 1.5
-    shakeOnHit: 0
-    shakeForce: 0
-    shakeDuration: 0
-    hitStopOnHit: 0
-    hitStopDuration: 0
-    hitStopScale: 0
-    useGlobalTimeScale: 0
-  recoilTarget: {fileID: 824517378410054671, guid: ccfe57e3a23d2b24584ac09f7333c19c,
-    type: 3}
-  maxRecoilOffset: {x: 0, y: 0, z: -0.4}
-  recoilKickDuration: 0.05
-  recoilReturnDuration: 0.15
-  maxChargeTime: 2
-  minChargeScale: 1
-  maxChargeScale: 10
-  minBlastRadius: 1.2
-  maxBlastRadius: 5
-  minDamage: 2
-  maxDamage: 80
-  chargeVfxPrefab: {fileID: 1100476293146402088, guid: 72a573e456fc3ea4bb462abdf3c97657,
-    type: 3}
-  chargeVfxSpawnPoint: {fileID: 8691192556076581140}
-  chargeVfxPositionOffset: {x: 0, y: 0, z: 0}
-  targetMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  aimTurnSpeed: 720
-  scatterBulletMult: 2
-  scatterBulletScale: 0.5
-  scatterBulletSpeed: 15
-  scatterBulletRange: 6
-  scatterBulletYOffset: 1
-  fanProjectileCount: 3
-  fanSpreadAngle: 24
-  crushScaleThreshold: 2
---- !u!1 &1826979565469647854
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2491825848705489091}
-  - component: {fileID: 8560772128728968672}
-  m_Layer: 0
-  m_Name: Lust_Attack_EnemyAbility_LustRoundTrip
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2491825848705489091
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1826979565469647854}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2012042516080350293}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8560772128728968672
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1826979565469647854}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bfa1f3c3fc174fd5adea25eef6256b48, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  abilityName: Ability
-  abilityDescription: 
-  type: 0
-  upgrades: []
-  vfxPrefab: {fileID: 0}
-  vfxSpawnPoint: {fileID: 0}
-  weaponVfxPrefab: {fileID: 0}
-  weaponVfxSpawnPoint: {fileID: 0}
-  vfxPositionOffset: {x: 0, y: 0, z: 0}
-  vfxDelay: 0
-  vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 20
-  drawHitboxes: 0
-  cooldown: 2
-  debugLogCooldown: 0
-  abilityTags: []
-  appliedEffectTags: []
-  requiredTags: []
-  activationEffect: {fileID: 0}
-  castAudioName: 
-  hitAudioName: 
-  hitFeedback:
-    postProcessOnHit: 0
-    postProcessEffectName: 
-    postProcessDuration: 0
-    overridePostProcessParams: 0
-    stepFactor: 0.5
-    mainAlpha: 1
-    blurFactor: 0
-    lineUVScale: 0
-    chromatic: 0
-    frequency: 0
-    amplitude: 0
-    vignettePower: 1.5
-    vignetteScale: 1.5
-    shakeOnHit: 1
-    shakeForce: 0
-    shakeDuration: 0
-    hitStopOnHit: 1
-    hitStopDuration: 0
-    hitStopScale: 0
-    useGlobalTimeScale: 0
-  enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
-  enemyIndicatorEnabled: 1
-  enemyIndicatorRadius: 0
-  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
-  enemyIndicatorIntensity: 1.1
-  enemyIndicatorHeight: 0.05
-  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  segmentDamage: 20
-  mistWidth: 1
-  mistSpeed: 14
-  mistRange: 8
-  linkDuration: 6
-  aimTurnSpeed: 720
-  mistVfxPrefab: {fileID: 0}
-  linkMarkVfx: {fileID: 0}
-  ringInnerRadius: 0.5
-  ringOuterRadius: 4
-  ringExpandDuration: 0.8
-  ringWidth: 0.8
-  ringMistVfx: {fileID: 0}
-  mirrorDelay: 0.1
-  mirrorDamageMul: 0.5
-  a03Delay: 0.1
-  a03Damage: 30
-  a03Radius: 2.5
-  a03BlastVfx: {fileID: 0}
+  deathBlastVfxDuration: 1
+  baseDroneCount: 1
+  bonusDroneCount: 2
+  maxActiveDrones: 3
+  pursuitAttackIntervalMultiplier: 0.6
+  droneAttackRange: 30
 --- !u!1 &2317680857381539700
 GameObject:
   m_ObjectHideFlags: 0
@@ -1018,11 +731,13 @@ MonoBehaviour:
     hpCost: 0
   - ability: {fileID: 3090249490463701150}
     hpCost: 0
-  - ability: {fileID: 1509723406374056473}
+  - ability: {fileID: 1464479097012284906}
     hpCost: 0
-  - ability: {fileID: 416721402622953222}
+  - ability: {fileID: 959419187462451805}
     hpCost: 0
-  - ability: {fileID: 6852886228353462884}
+  - ability: {fileID: 0}
+    hpCost: 0
+  - ability: {fileID: 5121674478295437357}
     hpCost: 0
   skillAbilities:
   - ability: {fileID: 2243166944117146688}
@@ -1031,11 +746,13 @@ MonoBehaviour:
     hpCost: 0
   - ability: {fileID: 3182074792790737343}
     hpCost: 0
-  - ability: {fileID: 3671079818124278199}
+  - ability: {fileID: 6259860437461987190}
     hpCost: 0
-  - ability: {fileID: 6285831158681926893}
+  - ability: {fileID: 2846589777570393803}
     hpCost: 0
-  - ability: {fileID: 7081441357895759757}
+  - ability: {fileID: 5203390421837409229}
+    hpCost: 0
+  - ability: {fileID: 1466483320980997563}
     hpCost: 0
   mobilityAbilities: []
   passiveAbilities: []
@@ -1128,6 +845,137 @@ MonoBehaviour:
   teleportInDuration: 0.85
   hitboxRestoreDelay: 0.6
   departureRiftLifetime: 8
+--- !u!1 &3014808205098455870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5750800747530370719}
+  - component: {fileID: 959419187462451805}
+  m_Layer: 9
+  m_Name: basic_laser (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5750800747530370719
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3014808205098455870}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -6.9, y: 0, z: 0}
+  m_LocalScale: {x: 0.5333334, y: 0.5333334, z: 0.5333334}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2012042516080350293}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &959419187462451805
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3014808205098455870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01838cd15dbf48faa4922c76f564b84d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: "\u6FC0\u5149"
+  abilityDescription: 
+  type: 1
+  upgrades:
+  - effectId: EN-A01
+    unlocked: 0
+  - effectId: EN-A03
+    unlocked: 0
+  - effectId: EN-A05
+    unlocked: 0
+  - effectId: EN-R01
+    unlocked: 0
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 15
+  drawHitboxes: 1
+  cooldown: 0
+  debugLogCooldown: 0
+  abilityTags:
+  - Ability.Monster.Envy.Laser
+  appliedEffectTags:
+  - Effect.Combat.EnvyLaserHit
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 100}
+  maxRange: 15
+  damagePerSecond: 100
+  tickInterval: 0.01
+  markStorageCap: 100
+  markWriteRatio: 0.2
+  markGraceDuration: 0
+  maxConnectDuration: 8
+  markEffect: {fileID: 11400000, guid: d35abb93af99477880e7abb901d8ffd6, type: 2}
+  laserHitEffect: {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
+  rampMaxDamagePerSecond: 50
+  rampTimeToMax: 3
+  rampWidthMultiplier: 1.5
+  multiEyeInterval: 3
+  multiEyeWindow: 1
+  multiEyeTargetCount: 4
+  piercePhaseInterval: 4
+  piercePhaseDuration: 2
+  beamPrefab: {fileID: 3961195698503531321, guid: f1ac8c8e8348b3149860656c1901b9f3,
+    type: 3}
+  beamMaterial: {fileID: 0}
+  beamPositionOffset: {x: 0, y: -0.5, z: 0}
+  beamRotationOffset: {x: 0, y: 0, z: 0}
+  hitImpactPrefab: {fileID: 7331713304514311016, guid: da80e150793fe574f92041b77ee612dd,
+    type: 3}
+  hitImpactDuration: 0.3
 --- !u!1 &3050673629828137979
 GameObject:
   m_ObjectHideFlags: 0
@@ -1245,6 +1093,127 @@ MonoBehaviour:
     type: 3}
   activationDisplayB: {fileID: 5117285898771160820, guid: 7576bcb0b248840af8e004111454a76e,
     type: 3}
+--- !u!1 &3330605807029571309
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5509720675546224666}
+  - component: {fileID: 6259860437461987190}
+  m_Layer: 0
+  m_Name: skill_guard (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5509720675546224666
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3330605807029571309}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.032031145, y: 0.16674319, z: 6.39}
+  m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2012042516080350293}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6259860437461987190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3330605807029571309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4518346b973be45c28ab7dbd8b0ca515, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: "\u5927\u624B\u9632\u5FA1"
+  abilityDescription: 
+  type: 2
+  upgrades:
+  - effectId: GR-S01
+    unlocked: 0
+  - effectId: GR-S04
+    unlocked: 0
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 0
+  drawHitboxes: 0
+  cooldown: 4
+  debugLogCooldown: 0
+  abilityTags:
+  - Ability.Monster.Greed.Guard
+  appliedEffectTags: []
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 200}
+  baseDuration: 1
+  extendedDuration: 3
+  absorbPerHand: 40
+  absorbPerHandWithCard: 20
+  guardEffect: {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
+  leftGuardHandVfxPrefab: {fileID: 8690902010666443938, guid: eca1500cd06dd67489d6ded7d66cc49b,
+    type: 3}
+  rightGuardHandVfxPrefab: {fileID: 924242520053913144, guid: 67696e5168cf0a9479f2889a5fd12580,
+    type: 3}
+  absorbVfxPrefab: {fileID: 0}
+  convertVfxPrefab: {fileID: 0}
+  convertVfxDuration: 1
+  guardHandCenter: {fileID: 0}
+  guardHandSideOffset: 0.3
+  guardHandForwardOffset: -0.4
+  guardHandHeightOffset: -0.6
+  guardHandOrbitSweepAngle: 360
+  guardHandOrbitDuration: 0.3
+  guardHandScaleUpDuration: 0.1
+  guardHandInitialScale: 0.2
 --- !u!1 &3838591960468436014
 GameObject:
   m_ObjectHideFlags: 0
@@ -1363,144 +1332,6 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!1 &4192240404545650401
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2122441795296187657}
-  - component: {fileID: 416721402622953222}
-  m_Layer: 9
-  m_Name: Envy_Attack_EnemyAbility_EnvyLaser
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2122441795296187657
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4192240404545650401}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.8000001, y: 0.8000001, z: 0.8000001}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2012042516080350293}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &416721402622953222
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4192240404545650401}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01838cd15dbf48faa4922c76f564b84d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  abilityName: "\u6FC0\u5149"
-  abilityDescription: 
-  type: 1
-  upgrades:
-  - effectId: EN-A01
-    unlocked: 0
-  - effectId: EN-A03
-    unlocked: 0
-  - effectId: EN-A04
-    unlocked: 0
-  - effectId: EN-A05
-    unlocked: 0
-  - effectId: EN-R01
-    unlocked: 0
-  - effectId: EN-R02
-    unlocked: 0
-  - effectId: EN-R04
-    unlocked: 0
-  - effectId: EN-TG01
-    unlocked: 0
-  vfxPrefab: {fileID: 0}
-  vfxSpawnPoint: {fileID: 4009025278171753085}
-  weaponVfxPrefab: {fileID: 0}
-  weaponVfxSpawnPoint: {fileID: 0}
-  vfxPositionOffset: {x: 0, y: 0, z: 0}
-  vfxDelay: 0
-  vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 2
-  drawHitboxes: 0
-  cooldown: 0
-  debugLogCooldown: 0
-  abilityTags:
-  - Ability.Monster.Envy.Laser
-  appliedEffectTags:
-  - Effect.Combat.EnvyLaserHit
-  requiredTags: []
-  activationEffect: {fileID: 0}
-  castAudioName: 
-  hitAudioName: 
-  hitFeedback:
-    postProcessOnHit: 0
-    postProcessEffectName: 
-    postProcessDuration: 0
-    overridePostProcessParams: 0
-    stepFactor: 0.5
-    mainAlpha: 1
-    blurFactor: 0
-    lineUVScale: 0
-    chromatic: 0
-    frequency: 0
-    amplitude: 0
-    vignettePower: 1.5
-    vignetteScale: 1.5
-    shakeOnHit: 1
-    shakeForce: 0
-    shakeDuration: 0
-    hitStopOnHit: 1
-    hitStopDuration: 0
-    hitStopScale: 0
-    useGlobalTimeScale: 0
-  enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
-  enemyIndicatorEnabled: 1
-  enemyIndicatorRadius: 0
-  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
-  enemyIndicatorIntensity: 1.1
-  enemyIndicatorHeight: 0.05
-  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  maxRange: 15
-  damagePerSecond: 2
-  tickInterval: 0.25
-  markStorageCap: 100
-  markWriteRatio: 0.2
-  markGraceDuration: 0
-  maxConnectDuration: 8
-  markEffect: {fileID: 11400000, guid: d35abb93af99477880e7abb901d8ffd6, type: 2}
-  laserHitEffect: {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
-  rampMaxDamagePerSecond: 50
-  rampTimeToMax: 8
-  multiEyeInterval: 3
-  multiEyeWindow: 0.6
-  multiEyeTargetCount: 4
-  piercePhaseInterval: 4
-  piercePhaseDuration: 1
-  beamPrefab: {fileID: 2540417558773106788, guid: 3fdd30d0b52b3864e92fe3606bf66eff,
-    type: 3}
-  beamMaterial: {fileID: 0}
-  beamPositionOffset: {x: 0, y: 0.3, z: 0}
-  beamRotationOffset: {x: 0, y: 0, z: 0}
-  hitImpactPrefab: {fileID: 7331713304514311016, guid: da80e150793fe574f92041b77ee612dd,
-    type: 3}
-  hitImpactDuration: 0.3
 --- !u!1 &4702550334274986246
 GameObject:
   m_ObjectHideFlags: 0
@@ -1659,6 +1490,134 @@ Transform:
   - {fileID: 1006821120372714573}
   m_Father: {fileID: 4703081459603878493}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5190684460527191551
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6701891126925392421}
+  - component: {fileID: 5121674478295437357}
+  m_Layer: 0
+  m_Name: basic_roundtrip (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6701891126925392421
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5190684460527191551}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -6.61}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2012042516080350293}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5121674478295437357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5190684460527191551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfa1f3c3fc174fd5adea25eef6256b48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityName: "\u5F80\u8FD4\u8FF7\u6C14"
+  abilityDescription: 
+  type: 0
+  upgrades:
+  - effectId: LU-M05
+    unlocked: 0
+  - effectId: LU-A03
+    unlocked: 0
+  - effectId: LU-A04
+    unlocked: 0
+  - effectId: LU-TG01
+    unlocked: 0
+  vfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
+  weaponVfxPrefab: {fileID: 0}
+  weaponVfxSpawnPoint: {fileID: 0}
+  vfxPositionOffset: {x: 0, y: 0, z: 0}
+  vfxDelay: 0
+  vfxRotationOffset: {x: 0, y: 0, z: 0}
+  damage: 20
+  drawHitboxes: 0
+  cooldown: 2
+  debugLogCooldown: 0
+  abilityTags:
+  - Ability.Monster.Lust
+  - Ability.Monster.Lust.RoundTrip
+  appliedEffectTags: []
+  requiredTags: []
+  activationEffect: {fileID: 0}
+  castAudioName: 
+  hitAudioName: 
+  hitFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 1
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 1
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 150}
+  segmentDamage: 20
+  mistWidth: 1
+  mistSpeed: 14
+  mistRange: 8
+  linkDuration: 6
+  aimTurnSpeed: 720
+  mistVfxPrefab: {fileID: 1249446925191943152, guid: c7f82e74b5bf9f7409258d7cbbac6a01,
+    type: 3}
+  linkMarkVfx: {fileID: 0}
+  ringInnerRadius: 0.5
+  ringOuterRadius: 4
+  ringExpandDuration: 1
+  ringWidth: 0.8
+  ringMistVfx: {fileID: 1249446925191943152, guid: c7f82e74b5bf9f7409258d7cbbac6a01,
+    type: 3}
+  mirrorDelay: 0
+  mirrorDamageMul: 0.5
+  a03Delay: 0.1
+  a03Damage: 30
+  a03Radius: 2.5
+  a03BlastVfx: {fileID: 7359114929232555418, guid: 9a171ea7b11eb654faefbe331490f1ce,
+    type: 3}
 --- !u!1 &5358518861119812074
 GameObject:
   m_ObjectHideFlags: 0
@@ -1807,7 +1766,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1113915769610271881}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6593893031021877922
+--- !u!1 &5441613286731865181
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1815,43 +1774,43 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6816923063503151946}
-  - component: {fileID: 6285831158681926893}
+  - component: {fileID: 1854921452921204235}
+  - component: {fileID: 2846589777570393803}
   m_Layer: 0
-  m_Name: Envy_Special_EnemyAbility_EnvyThunderstorm
+  m_Name: skill_thunderstorm (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6816923063503151946
+--- !u!4 &1854921452921204235
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6593893031021877922}
+  m_GameObject: {fileID: 5441613286731865181}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.2, y: 1.2, z: 1.2}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -6.9, y: 0, z: 0}
+  m_LocalScale: {x: 0.8000001, y: 0.8000001, z: 0.8000001}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2012042516080350293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6285831158681926893
+--- !u!114 &2846589777570393803
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6593893031021877922}
+  m_GameObject: {fileID: 5441613286731865181}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a44d06f59404695b7790269c53f7bb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u96F7\u66B4\u5151\u73B0"
+  abilityName: "\u96F7\u66B4"
   abilityDescription: 
   type: 2
   upgrades:
@@ -1907,8 +1866,8 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: 0, y: 100}
   baseThunderDamage: 10
   searchRadius: 30
   telegraphDuration: 0.6
@@ -1918,14 +1877,14 @@ MonoBehaviour:
   boltVfxPrefab: {fileID: 2325348157613586188, guid: 20b6ef1eaf21dfb4cb81e606575c3850,
     type: 3}
   boltVfxPositionOffset: {x: 0, y: 0, z: 0}
-  boltVfxRotationOffset: {x: 0, y: -90, z: 90}
+  boltVfxRotationOffset: {x: 0, y: 0, z: 0}
   boltVfxScale: {x: 1, y: 1, z: 1}
-  boltVfxDuration: 0.45
+  boltVfxDuration: 1
   hitEffectPrefab: {fileID: 6853901823333428390, guid: 4b412f68c3cf62c4b91c137a3bd3aad5,
     type: 3}
-  hitEffectDuration: 0.5
+  hitEffectDuration: 1
   telegraphPrefab: {fileID: 0}
---- !u!1 &6923414200303884361
+--- !u!1 &6329031993880258268
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1933,46 +1892,54 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1374120385625079770}
-  - component: {fileID: 1178215784804208401}
+  - component: {fileID: 4551718106280579589}
+  - component: {fileID: 1464479097012284906}
   m_Layer: 0
-  m_Name: Lust_Special_EnemyAbility_LustSoulPull
+  m_Name: basic_hands (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1374120385625079770
+--- !u!4 &4551718106280579589
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6923414200303884361}
+  m_GameObject: {fileID: 6329031993880258268}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.032031145, y: 2.4277434, z: 6.39}
+  m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2012042516080350293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1178215784804208401
+--- !u!114 &1464479097012284906
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6923414200303884361}
+  m_GameObject: {fileID: 6329031993880258268}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb8e34f9441540a9867e69cf2c0a208d, type: 3}
+  m_Script: {fileID: 11500000, guid: 65fc0f038760e4a7fafcf35cff50b343, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u5FF5\u529B\u9B54\u624B"
   abilityDescription: 
-  type: 0
-  upgrades: []
+  type: 1
+  upgrades:
+  - effectId: GR-A01
+    unlocked: 0
+  - effectId: GR-A02
+    unlocked: 0
+  - effectId: GR-A03
+    unlocked: 0
+  - effectId: GR-A07
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1980,11 +1947,12 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 25
-  drawHitboxes: 0
-  cooldown: 6
+  damage: 15
+  drawHitboxes: 1
+  cooldown: 0
   debugLogCooldown: 0
-  abilityTags: []
+  abilityTags:
+  - Ability.Monster.Greed.Hands
   appliedEffectTags: []
   requiredTags: []
   activationEffect: {fileID: 0}
@@ -2019,20 +1987,32 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  pullWindow: 0.6
-  pullMaxDistance: 6
-  pullDamage: 25
-  aimTurnSpeed: 720
-  tetherVfx: {fileID: 0}
-  impactVfx: {fileID: 0}
-  telegraphVfx: {fileID: 0}
-  s05CollisionDistance: 0.75
-  s05BlastDamage: 25
-  s05BlastRadius: 2
-  s05BlastVfx: {fileID: 0}
-  s06Grace: 0.15
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 200}
+  maxDaggers: 6
+  cardInventoryMax: 10
+  initialPossessedHands: 2
+  regenInterval: 1
+  daggerPrefab: {fileID: 86722928676623875, guid: dae508f48b41ab342b5e05b61222d99d,
+    type: 3}
+  orbitCircleCenterOffset: {fileID: 0}
+  handSpawnVfxPrefab: {fileID: 0}
+  orbitRadius: 1.5
+  orbitSpeed: 200
+  heightOffset: -10
+  detectRange: 10
+  launchInterval: 0.2
+  aimTurnSpeed: 1080
+  homingSpeed: 20
+  homingTurnRate: 1080
+  homingCurveStrength: 0.64
+  handDamage: 10
+  damageMultiplier: 1
+  impactVfxPrefab: {fileID: 1035977224672214417, guid: 1e69e3e21e6d86c45898d16044d351fa,
+    type: 3}
+  impactVfxDuration: 1
+  animTrigger: Basic
+  debugLog: 1
 --- !u!1 &7014062441780518677
 GameObject:
   m_ObjectHideFlags: 0
@@ -2103,14 +2083,14 @@ Transform:
   - {fileID: 6014554098384709156}
   - {fileID: 6401777743475481857}
   - {fileID: 7294076925052534560}
-  - {fileID: 4466312539000090670}
-  - {fileID: 7256818534216795383}
-  - {fileID: 2122441795296187657}
-  - {fileID: 6816923063503151946}
-  - {fileID: 2491825848705489091}
-  - {fileID: 1374120385625079770}
-  - {fileID: 8011721452233751301}
-  - {fileID: 3398291216010055624}
+  - {fileID: 4551718106280579589}
+  - {fileID: 5509720675546224666}
+  - {fileID: 5750800747530370719}
+  - {fileID: 1854921452921204235}
+  - {fileID: 6701891126925392421}
+  - {fileID: 5085802331206695937}
+  - {fileID: 2200414416043444599}
+  - {fileID: 3376636991468325181}
   m_Father: {fileID: 4703081459603878493}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7738837436550954119
@@ -2144,7 +2124,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4703081459603878493}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8811199614612110275
+--- !u!1 &7915187021134250150
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2152,49 +2132,53 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3398291216010055624}
-  - component: {fileID: 7081441357895759757}
+  - component: {fileID: 2200414416043444599}
+  - component: {fileID: 7221743720703450615}
   m_Layer: 0
-  m_Name: Sloth_Special_EnemyAbility_SlothDrone
+  m_Name: basic_chargeshot (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3398291216010055624
+--- !u!4 &2200414416043444599
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8811199614612110275}
+  m_GameObject: {fileID: 7915187021134250150}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -3.53, y: -1.04, z: 3.3394976}
+  m_LocalScale: {x: 8.571427, y: 8.571427, z: 8.571427}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2012042516080350293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7081441357895759757
+--- !u!114 &7221743720703450615
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8811199614612110275}
+  m_GameObject: {fileID: 7915187021134250150}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c186fdde8e7164aa7bdb2c0ddb539aa0, type: 3}
+  m_Script: {fileID: 11500000, guid: 7703087bc8aac4ad585d2e2c112da87e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u84C4\u529B\u91CD\u70AE"
   abilityDescription: 
-  type: 2
+  type: 1
   upgrades:
-  - effectId: Sloth.DroneEconomy
+  - effectId: Sloth.Scatter
     unlocked: 0
-  - effectId: Sloth.DroneDeathBlast
+  - effectId: SL-A03
+    unlocked: 0
+  - effectId: SL-A04
+    unlocked: 0
+  - effectId: SL-A05
     unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
@@ -2203,20 +2187,21 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 0
+  damage: 2
   drawHitboxes: 0
-  cooldown: 5
+  cooldown: 0
   debugLogCooldown: 0
   abilityTags:
-  - Ability.Monster.Sloth.Drone
-  appliedEffectTags: []
+  - Ability.Monster.Sloth.ChargeShot
+  appliedEffectTags:
+  - Effect.Combat.SlothBlastHit
   requiredTags: []
   activationEffect: {fileID: 0}
   castAudioName: 
   hitAudioName: 
   hitFeedback:
-    postProcessOnHit: 0
-    postProcessEffectName: 
+    postProcessOnHit: 1
+    postProcessEffectName: BlackFlash
     postProcessDuration: 0
     overridePostProcessParams: 0
     stepFactor: 0.5
@@ -2243,25 +2228,68 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
-  enemyCastHudSize: 64
-  enemyCastHudScreenOffset: {x: 48, y: 44}
-  dronePrefab: {fileID: 6114247635342975564, guid: 7cb74f0d689f64bfbb41a3d25ad27b0b,
+  enemyCastHudSize: 40
+  enemyCastHudScreenOffset: {x: -40, y: 230}
+  projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,
     type: 3}
-  droneLifetime: 4
-  tossHeight: 1
-  tossDuration: 0.35
-  deathBlastDamage: 20
-  deathBlastTriggerDistance: 1.5
-  deathBlastRadius: 3
-  deathBlastDiveSpeed: 14
-  deathBlastVfx: {fileID: 8026296608122095936, guid: 7add8d30c3249bf45a56ee5a5a60bf23,
+  projectileSpawnPoint: {fileID: 0}
+  projectileWidth: 1.5
+  projectileHeight: 2
+  projectileSpeed: 20
+  maxRange: 15
+  bossProjectileScaleMultiplier: 1.5
+  bossPatternCooldown: 6
+  impactVfxPrefab: {fileID: 246936507347790118, guid: 6d995a367a9261d47917272ca396605a,
     type: 3}
-  deathBlastVfxDuration: 1
-  baseDroneCount: 1
-  bonusDroneCount: 2
-  maxActiveDrones: 3
-  pursuitAttackIntervalMultiplier: 0.6
-  droneAttackRange: 30
+  impactVfxDuration: 1
+  shootFeedback:
+    postProcessOnHit: 0
+    postProcessEffectName: 
+    postProcessDuration: 0
+    overridePostProcessParams: 0
+    stepFactor: 0.5
+    mainAlpha: 1
+    blurFactor: 0
+    lineUVScale: 0
+    chromatic: 0
+    frequency: 0
+    amplitude: 0
+    vignettePower: 1.5
+    vignetteScale: 1.5
+    shakeOnHit: 0
+    shakeForce: 0
+    shakeDuration: 0
+    hitStopOnHit: 0
+    hitStopDuration: 0
+    hitStopScale: 0
+    useGlobalTimeScale: 0
+  recoilTarget: {fileID: 0}
+  maxRecoilOffset: {x: 0, y: 0, z: -0.4}
+  recoilKickDuration: 0.05
+  recoilReturnDuration: 0.15
+  maxChargeTime: 2
+  minChargeScale: 1
+  maxChargeScale: 10
+  minBlastRadius: 1.2
+  maxBlastRadius: 5
+  minDamage: 2
+  maxDamage: 80
+  chargeVfxPrefab: {fileID: 1100476293146402088, guid: 72a573e456fc3ea4bb462abdf3c97657,
+    type: 3}
+  chargeVfxSpawnPoint: {fileID: 0}
+  chargeVfxPositionOffset: {x: 0, y: 0, z: 0}
+  targetMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  aimTurnSpeed: 720
+  scatterBulletMult: 2
+  scatterBulletScale: 0.5
+  scatterBulletSpeed: 15
+  scatterBulletRange: 6
+  scatterBulletYOffset: 1
+  fanProjectileCount: 3
+  fanSpreadAngle: 24
+  crushScaleThreshold: 2
 --- !u!1001 &1664334519427229345
 PrefabInstance:
   m_ObjectHideFlags: 0

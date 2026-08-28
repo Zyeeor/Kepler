@@ -790,7 +790,8 @@ MonoBehaviour:
   pullMaxDistance: 6
   pullDamage: 25
   aimTurnSpeed: 720
-  tetherVfx: {fileID: 0}
+  tetherVfx: {fileID: 2570147859077135225, guid: e51e3d7eacb6cce459292f6fedf1f156,
+    type: 3}
   impactVfx: {fileID: 0}
   telegraphVfx: {fileID: 0}
   s05CollisionDistance: 0.75
