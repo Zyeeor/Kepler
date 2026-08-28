@@ -1480,11 +1480,11 @@ MonoBehaviour:
   type: 1
   upgrades:
   - effectId: EN-A01
-    unlocked: 1
+    unlocked: 0
   - effectId: EN-A03
-    unlocked: 1
+    unlocked: 0
   - effectId: EN-A05
-    unlocked: 1
+    unlocked: 0
   - effectId: EN-R01
     unlocked: 0
   vfxPrefab: {fileID: 0}

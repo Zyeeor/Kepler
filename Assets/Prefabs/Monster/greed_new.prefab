@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u94FA\u9ED1\u6CB9"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: GR-M01
@@ -104,7 +105,7 @@ MonoBehaviour:
   pathLengthWithCard: 7
   oilWidth: 1.5
   oilWidthWithCard: 2.4
-  oilLifetime: 4
+  oilLifetime: 8
   allySpeedMultiplier: 1.5
   enemySlowMultiplier: 0.5
   segmentSpacing: 1.1
@@ -412,7 +413,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4202068629033295698
 Transform:
   m_ObjectHideFlags: 0
@@ -760,16 +761,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5FF5\u529B\u9B54\u624B"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: GR-A01
-    unlocked: 1
+    unlocked: 0
   - effectId: GR-A02
-    unlocked: 1
+    unlocked: 0
   - effectId: GR-A03
-    unlocked: 1
+    unlocked: 0
   - effectId: GR-A07
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -830,12 +832,12 @@ MonoBehaviour:
   orbitRadius: 1.5
   orbitSpeed: 200
   heightOffset: -10
-  detectRange: 8
-  launchInterval: 0.3
-  aimTurnSpeed: 720
+  detectRange: 10
+  launchInterval: 0.2
+  aimTurnSpeed: 1080
   homingSpeed: 20
-  homingTurnRate: 720
-  homingCurveStrength: 0.565
+  homingTurnRate: 1080
+  homingCurveStrength: 0.64
   handDamage: 10
   damageMultiplier: 1
   impactVfxPrefab: {fileID: 1035977224672214417, guid: 1e69e3e21e6d86c45898d16044d351fa,
@@ -888,12 +890,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5927\u624BGuard"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: GR-S01
-    unlocked: 1
+    unlocked: 0
   - effectId: GR-S04
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
