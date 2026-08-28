@@ -62,11 +62,13 @@ public class EnvyMarkTarget : MonoBehaviour
 
     private void OnDisable()
     {
+        MonsterStatusMarker.HideEnvy(Host, Source);
         Unregister();
     }
 
     private void OnDestroy()
     {
+        MonsterStatusMarker.HideEnvy(Host, Source);
         Unregister();
     }
 
@@ -85,6 +87,8 @@ public class EnvyMarkTarget : MonoBehaviour
         float graceDuration,
         GameplayEffectDefinition markEffect)
     {
+        if (Source != null && Source != source)
+            MonsterStatusMarker.HideEnvy(Host, Source);
         Source = source;
         StorageCap = Mathf.Max(1f, storageCap);
         WriteRatio = Mathf.Clamp01(writeRatio);
@@ -96,6 +100,7 @@ public class EnvyMarkTarget : MonoBehaviour
 
         if (Host != null && Host.Combat != null && _markEffect != null)
             Host.Combat.ApplyEffect(_markEffect, source != null ? source.Combat : Host.Combat, null, out _);
+        MonsterStatusMarker.ShowEnvy(Host, Source);
     }
 
     public void BeginGrace()
@@ -125,6 +130,7 @@ public class EnvyMarkTarget : MonoBehaviour
 
     public void Clear()
     {
+        MonsterStatusMarker.HideEnvy(Host, Source);
         StoredDamage = 0f;
         _graceRemaining = 0f;
         _active = false;
