@@ -710,10 +710,12 @@ MonoBehaviour:
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
   monsterStatusMarkerSize: 0.8
-  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerOffset: {x: 0, y: 1}
   monsterStatusMarkerAdjacentSpacing: 0.08
   envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
   lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  envyStatusMarkerTexture: {fileID: 0}
+  lustStatusMarkerTexture: {fileID: 0}
   monsterStatusMarkerGlowIntensity: 2.2
   monsterStatusMarkerPulseSpeed: 5
 --- !u!1 &2420022869048254844
