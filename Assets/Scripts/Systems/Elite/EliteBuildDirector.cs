@@ -351,7 +351,14 @@ public class EliteBuildDirector : MonoBehaviour
     public bool RequestScheduledElite(SinType sin, int scheduleIndex,
         float healthMultiplier, float attackMultiplier)
     {
-        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
+        // 进度信号在守卫前推进：投放槽位由 WaveManager 按时间消费，注入成败与否时间深度均已到达该序号。
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun)
+        {
+            if (deployProgressRunId != run.RunId) { deployProgressRunId = run.RunId; reachedDeployCount = 0; }
+            if (scheduleIndex + 1 > reachedDeployCount) reachedDeployCount = scheduleIndex + 1;
+        }
+        if (run != null && run.IsBossMode) return false;
         if (!eliteEnabled) return false;
         if (catalog == null)
             catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
@@ -577,6 +584,16 @@ public class EliteBuildDirector : MonoBehaviour
     int pickSessionCount;
     string pickSessionRunId;
 
+    // 连续刷怪模式进度信号（波次数据缺口方案 B，Owner 2026-08-28 拍板）：
+    // reachedDeployCount = 本局已触发的定时投放序号（1-based，时间驱动；投放槽位由 WaveManager
+    // 按时间消费，注入成败不影响深度语义）。runId 变化时重置；波次模式不走定时投放入口，恒 0，
+    // 不影响 OnWaveStarted 既有口径。消费方：RunStatsCollector（到达深度合并）、
+    // 荣誉殿堂滚动写入与战果事件 wave 字段（第 N 阶段口径）。
+    /// <summary>本局已触发的定时投放序号（1-based；连续模式进度信号，波次模式恒 0）。</summary>
+    public int ReachedDeployCount => reachedDeployCount;
+    int reachedDeployCount;
+    string deployProgressRunId;
+
     void HandlePhaseChanged(RunPhase next)
     {
         var prev = lastPhase;
@@ -639,8 +656,10 @@ public class EliteBuildDirector : MonoBehaviour
         if (run == null) return;
 
         // 荣誉殿堂 §5.2：对局内持续更新构筑快照——与上传同源双写，本地无条件落盘（离线/上传失败不影响冻结源）。
-        // reachedWave 记真实波次（荣誉殿堂「到达第 N 波」展示口径）；wire 的 sourceWave = 第几次选卡，两语义分离。
-        HallOfFameStore.UpsertFromSnapshots(run.RunId, run.CompletedWaveIndex + 1, stage, snapshots);
+        // reachedWave = max(已完成波次, 已触发投放序号)（「第 N 阶段」展示口径，方案 B）；
+        // wire 的 sourceWave = 第几次选卡，两语义分离。
+        HallOfFameStore.UpsertFromSnapshots(run.RunId,
+            Mathf.Max(run.CompletedWaveIndex + 1, reachedDeployCount), stage, snapshots);
 
         try
         {
@@ -866,7 +885,7 @@ public class EliteBuildDirector : MonoBehaviour
     /// <summary>
     /// 事件入队并立即尝试上报。仅服务器来源快照回报（本地 Preset 兜底无真实主人，回报无意义）。
     /// </summary>
-    /// <param name="waveOverride">事件波次（投放事件用注入波；-1 = 取当前波）。</param>
+    /// <param name="waveOverride">事件进度（投放事件用注入投放序号；-1 = 取当前进度：波次模式 = 当前波，连续模式 = 已触发投放序号）。</param>
     void EnqueueEliteEvent(string type, EliteBuildCarrier carrier, int waveOverride = -1)
     {
         if (carrier == null || !eliteEnabled) return;
@@ -880,7 +899,7 @@ public class EliteBuildDirector : MonoBehaviour
             type = type,
             eventId = System.Guid.NewGuid().ToString("N"), // 幂等去重键：上报失败重发同一批事件时，服务端按此跳过重复计数
             wave = waveOverride > 0 ? waveOverride
-                : (boundWaveManager != null ? boundWaveManager.CurrentWaveIndex + 1 : 0),
+                : Mathf.Max(boundWaveManager != null ? boundWaveManager.CurrentWaveIndex + 1 : 0, reachedDeployCount),
             gameTime = (long)(GameManager.Instance != null ? GameManager.Instance.gameTimer : 0f),
         });
         TryFlushEliteEvents();

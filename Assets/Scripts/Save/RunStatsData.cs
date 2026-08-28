@@ -37,7 +37,7 @@ public class RunStatsData
     public bool won;
     /// <summary>结束时的 Run 阶段（Result / Failed），便于区分胜利、失败、强制退出。 </summary>
     public string endPhase;
-    /// <summary>到达的最远波次索引（0-based；-1 = 未完成任何波）。</summary>
+    /// <summary>到达的最远进度索引（0-based：波次模式 = 最远波；连续刷怪模式 = 已触发投放序号-1；-1 = 未进入任何进度信号）。</summary>
     public int reachedWaveIndex = -1;
     /// <summary>是否到达 Final 阶段。</summary>
     public bool finalReached;

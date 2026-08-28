@@ -104,7 +104,7 @@ public static class HallOfFameStore
     /// 本地无条件写入（不依赖网络），保证异常终止也有最后一波间存档点的构筑记录。
     /// </summary>
     /// <param name="runId">本局 Run ID。</param>
-    /// <param name="reachedWave">刚完成的波次（1-based 真实值；荣誉殿堂「到达第 N 波」展示口径，与上传 wire 的选卡计数 sourceWave 语义分离）。</param>
+    /// <param name="reachedWave">进度深度（1-based：波次模式 = 已完成波次，连续刷怪模式 = 已触发投放序号，调用方取 max；荣誉殿堂「第 N 阶段」展示口径，与上传 wire 的选卡计数 sourceWave 语义分离）。</param>
     /// <param name="stage">阶段标记（"wave" / "final"）。</param>
     /// <param name="snapshots">本局全部 bdCount>=1 的 Sin 快照（EliteBuildDirector.BuildSnapshots 产物）。</param>
     public static void UpsertFromSnapshots(string runId, int reachedWave, string stage, List<SnapshotEntry> snapshots)
