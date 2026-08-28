@@ -160,6 +160,10 @@ public class UIManager : SceneSingleton<UIManager>
         ApplyCatalogText(resumeButtonText, "ui.pause.resume");
         ApplyCatalogText(settingsButtonOnPauseText, "ui.pause.settings");
         ApplyCatalogText(returnToMenuButtonText, "ui.pause.return_menu");
+        // 当前 TextCatalog 仍保留旧 key，运行时补充动作结果，避免暂停面板继续显示
+        // 一个不会保存进度的旧文案。资产修改工具不可用时仍能保持实际 UI 语义正确。
+        if (returnToMenuButtonText != null && returnToMenuButtonText.text == "返回主菜单")
+            returnToMenuButtonText.text = "返回主菜单并保存";
         ApplyCatalogText(settingsButtonOnGameOverText, "ui.gameover.settings");
         ApplyCatalogText(quitButtonOnGameOverText, "ui.gameover.quit");
     }
@@ -462,6 +466,24 @@ public class UIManager : SceneSingleton<UIManager>
     private void OnReturnToMenuConfirmed()
     {
         Debug.Log("UIManager: Return to menu CONFIRMED - loading: " + homeSceneName);
+        RunSession session = RunSession.Instance;
+        if (session != null && session.HasActiveRun && !session.IsBossMode
+            && session.CurrentPhase != RunPhase.Final
+            && session.CurrentPhase != RunPhase.Result
+            && session.CurrentPhase != RunPhase.Failed)
+        {
+            WaveManager waveManager = WaveManager.Instance;
+            int saveWaveIndex = waveManager != null && waveManager.IsUsingNewSpawnLogic
+                ? -1
+                : session.CompletedWaveIndex;
+            bool pendingChoice = session.PendingChoice
+                || session.CurrentPhase == RunPhase.Choice
+                || (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting);
+            session.SaveProgress(saveWaveIndex, pendingChoice);
+        }
+        // 精英击杀奖励协程是常驻对象的一部分；离开战斗场景时必须取消尚未展示的奖励，
+        // 防止回到战斗场景后把上一次场景遗留的奖励卡误弹出来。
+        EliteBuildDirector.Instance?.CancelPendingCardRewards();
         TimeScaleManager.ResetAll();   // 回主菜单：清空全部时间请求
         SceneManager.LoadScene(homeSceneName);
     }

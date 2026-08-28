@@ -187,6 +187,18 @@ public class MonsterSpawner : MonoBehaviour
     readonly Queue<MonsterActor> corpseDissipationQueue = new Queue<MonsterActor>();
     readonly HashSet<MonsterActor> queuedDissipationCorpses = new HashSet<MonsterActor>();
 
+    /// <summary>读取一只已追踪怪物的配额来源标记，供 Run 快照持久化使用。</summary>
+    public bool TryGetTrackingInfo(MonsterActor monster, out bool isContinuousAutomatic,
+        out bool countsTowardCombatLimit)
+    {
+        isContinuousAutomatic = false;
+        countsTowardCombatLimit = true;
+        if (monster == null || !trackInfoByMonster.TryGetValue(monster, out var info)) return false;
+        isContinuousAutomatic = info.isContinuousAutomatic;
+        countsTowardCombatLimit = info.countsTowardCombatLimit;
+        return true;
+    }
+
     // 低频维护复用缓冲（避免每 0.25s 分配）
     readonly List<ChunkCoord> chunkPruneBuffer = new List<ChunkCoord>();
     readonly List<MonsterActor> invisibleReplacementCandidates = new List<MonsterActor>(32);
@@ -258,6 +270,13 @@ public class MonsterSpawner : MonoBehaviour
     /// </summary>
     public MonsterActor SpawnContinuousMonster(GameObject prefab, Vector3 pos, bool immediateChase = false)
         => SpawnMonster(prefab, pos, immediateChase, SpawnOrigin.PeriodicPressure, countAsContinuousAutomatic: true);
+
+    /// <summary>从 Run 存档恢复一只怪物，保留原刷怪来源与全局配额语义。</summary>
+    public MonsterActor SpawnRestoredMonster(GameObject prefab, Vector3 pos,
+        SpawnOrigin origin, bool countAsContinuousAutomatic, bool countsTowardCombatLimit)
+        => SpawnMonster(prefab, pos, immediateChase: false, origin: origin,
+            countAsContinuousAutomatic: countAsContinuousAutomatic,
+            countsTowardCombatLimit: countsTowardCombatLimit);
 
     /// <summary>
     /// 精英怪刷出：保留生命周期追踪和波次清点，但不占全局战斗配额或连续自动怪上限。
