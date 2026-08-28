@@ -26,7 +26,7 @@ public class MainMenuController : MonoBehaviour
     public string bossBattleSceneName = "EnemyAiTest";
     [Min(0)]
     [Tooltip("Boss 模式开局给七种罪印的层数。七种罪印统一使用该值，改动后无需修改代码。")]
-    public int bossModeInitialImprintStacks = 50;
+    public int bossModeInitialImprintStacks = 20;
 
     [Header("Soul Showcase (Main Menu)")]
     [Tooltip("主菜单原生展示灵魂 prefab（Player.prefab）。游戏启动直进主菜单时实例化，让主角一开始就在主界面（背景后可移动）。")]
