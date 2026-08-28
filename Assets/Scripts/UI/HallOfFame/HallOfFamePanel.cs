@@ -760,12 +760,33 @@ public class HallOfFamePanel : MonoBehaviour
         sbRect.pivot = new Vector2(0.5f, 0.5f);
         sbRect.offsetMin = new Vector2(-98f, 120f);
         sbRect.offsetMax = new Vector2(-90f, -245f);
-        sbGo.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
+        // 轨道槽（SystemUI/Slider-V.png _1 = track 15×642；缺失时回退纯色）
+        var sbImg = sbGo.GetComponent<Image>();
+        if (sliderTrackSprite != null)
+        {
+            sbImg.sprite = sliderTrackSprite;
+            sbImg.color = Color.white;
+            sbImg.type = Image.Type.Simple;
+        }
+        else
+        {
+            sbImg.color = new Color(1f, 1f, 1f, 0.12f);
+        }
         var handleGo = new GameObject("Handle", typeof(RectTransform), typeof(Image));
         handleGo.transform.SetParent(sbGo.transform, false);
         Stretch(handleGo.GetComponent<RectTransform>());
         var handleImg = handleGo.GetComponent<Image>();
-        handleImg.color = new Color(0.85f, 0.88f, 0.95f, 0.85f); // 提亮 handle 可见性
+        // 滑块（SystemUI/Slider-V.png _0 = handle 17×70；缺失时回退纯色）
+        if (sliderHandleSprite != null)
+        {
+            handleImg.sprite = sliderHandleSprite;
+            handleImg.color = Color.white;
+            handleImg.type = Image.Type.Simple;
+        }
+        else
+        {
+            handleImg.color = new Color(0.85f, 0.88f, 0.95f, 0.85f);
+        }
         var scrollbar = sbGo.GetComponent<Scrollbar>();
         // 必须显式赋值 handleRect：运行时创建不会自动查找子对象，缺失时滑块不跟随、拖动换算失效
         scrollbar.handleRect = handleGo.GetComponent<RectTransform>();
