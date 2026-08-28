@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u541E\u566C"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: GL-S01
@@ -523,6 +524,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5C0F\u732B\u5316"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: GL-M01
@@ -1095,7 +1097,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8883150867078005593
 Transform:
   m_ObjectHideFlags: 0
@@ -1278,10 +1280,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.8
-  m_Height: 1.6
+  m_Radius: 0.9709417
+  m_Height: 2.5825686
   m_Direction: 1
-  m_Center: {x: 0, y: 0.8, z: 0}
+  m_Center: {x: 0, y: 1.2912843, z: 0.17094177}
 --- !u!54 &5961538212497846973
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1357,6 +1359,13 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!1 &5807367358007265780
 GameObject:
   m_ObjectHideFlags: 0
@@ -1402,6 +1411,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u6DF1\u6E0A\u5DE8\u53E3"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: GL-A01
