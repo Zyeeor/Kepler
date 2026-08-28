@@ -8,6 +8,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class GluttonyBodyState : MonoBehaviour
 {
+    public const float CopiedSkillDuration = 3f;
     public const string OverfedEffectTag = "Effect.Combat.GluttonyOverfed";
     public const string OverfedStateTag = "State.Combat.Overfed";
 
@@ -19,6 +20,16 @@ public class GluttonyBodyState : MonoBehaviour
     public bool IsSmallCatActive { get; private set; }
     public bool HasCopiedSkill => _copiedSkill != null;
     public SinType CopiedSkillSourceSin { get; private set; } = SinType.None;
+    /// <summary>Radial HUD fill used by the copied skill: 0 = white, 1 = grey.</summary>
+    public float CopiedSkillFadeProgress
+    {
+        get
+        {
+            if (!HasCopiedSkill) return 0f;
+            float remaining = Mathf.Max(0f, _copiedSkillExpiresAt - Time.unscaledTime);
+            return 1f - Mathf.Clamp01(remaining / CopiedSkillDuration);
+        }
+    }
     /// <summary>Possessed move-facing turn multiplier while SmallCat + GL-M01 are active.</summary>
     public float SmallCatTurnMult { get; private set; } = 1f;
 
@@ -28,6 +39,7 @@ public class GluttonyBodyState : MonoBehaviour
     private EnemyAbility_GluttonyDevour _devour;
     private EnemyAbility _copiedSkill;
     private Coroutine _restoreCopiedSkillRoutine;
+    private float _copiedSkillExpiresAt;
 
     private void Awake()
     {
@@ -131,6 +143,7 @@ public class GluttonyBodyState : MonoBehaviour
         ClearCopiedSkill();
         GameObject copiedRoot = Instantiate(source.gameObject, _owner.transform);
         copiedRoot.name = $"CopiedSkill_{source.abilityName}";
+        copiedRoot.SetActive(true);
         _copiedSkill = copiedRoot.GetComponent<EnemyAbility>();
         if (_copiedSkill == null)
         {
@@ -145,10 +158,53 @@ public class GluttonyBodyState : MonoBehaviour
         if (_copiedSkill.upgrades != null)
             _copiedSkill.upgrades.Clear();
 
+        // A corpse's source ability is disabled as part of corpse lifecycle management.
+        // The cloned payload must be active even when the source was copied from a corpse.
+        _copiedSkill.enabled = true;
+
+        if (_copiedSkill is EnemyAbility_GreedGuard guard)
+        {
+            EnemyAbility_GreedHands sourceHands = FindFirstGreedHandsAbility(target);
+            EnemyAbility_GreedHands copiedHands = null;
+            if (sourceHands != null)
+            {
+                GameObject handsRoot = Instantiate(sourceHands.gameObject, copiedRoot.transform);
+                handsRoot.name = "CopiedGreedHands";
+                handsRoot.SetActive(true);
+                copiedHands = handsRoot.GetComponent<EnemyAbility_GreedHands>();
+                if (copiedHands != null)
+                {
+                    copiedHands.enabled = true;
+                    copiedHands.ConfigureForGluttonyCopy(_owner.transform);
+                    if (_owner.basicAbilities != null)
+                    {
+                        for (int i = _owner.basicAbilities.Count - 1; i >= 0; i--)
+                        {
+                            MonsterActor.BasicAbilityEntry entry = _owner.basicAbilities[i];
+                            if (entry != null && entry.ability == copiedHands)
+                                _owner.basicAbilities.RemoveAt(i);
+                        }
+                    }
+                }
+                else
+                    Destroy(handsRoot);
+            }
+
+            guard.ConfigureForGluttonyCopy(copiedHands);
+        }
+
+        float copiedSkillRadius = devour.GetCopiedSkillRadius();
+        if (_copiedSkill is EnemyAbility_EnvyThunderstorm envy)
+            envy.ConfigureForGluttonyCopy(copiedSkillRadius);
+        else if (_copiedSkill is EnemyAbility_LustSoulPull lust)
+            lust.ConfigureForGluttonyCopy(target.transform.position, copiedSkillRadius);
+
         _devour = devour;
         _devour.enabled = false;
         _owner.ReplaceSkillAbility(_devour, _copiedSkill);
         _copiedSkill.Activated += OnCopiedSkillActivated;
+        _copiedSkillExpiresAt = Time.unscaledTime + CopiedSkillDuration;
+        _restoreCopiedSkillRoutine = StartCoroutine(RestoreCopiedSkillAfterDelay(_copiedSkill, CopiedSkillDuration));
         return true;
     }
 
@@ -162,14 +218,30 @@ public class GluttonyBodyState : MonoBehaviour
         return null;
     }
 
-    private void OnCopiedSkillActivated(EnemyAbility ability)
+    private static EnemyAbility_GreedHands FindFirstGreedHandsAbility(Enemy target)
     {
-        if (_copiedSkill != ability || _restoreCopiedSkillRoutine != null) return;
-        _restoreCopiedSkillRoutine = StartCoroutine(RestoreCopiedSkillAfterActivation(ability));
+        foreach (MonsterActor.BasicAbilityEntry entry in target.basicAbilities)
+            if (entry != null && entry.ability is EnemyAbility_GreedHands hands) return hands;
+
+        foreach (EnemyAbility ability in target.GetComponentsInChildren<EnemyAbility>(true))
+            if (ability is EnemyAbility_GreedHands hands) return hands;
+        return null;
     }
 
-    private IEnumerator RestoreCopiedSkillAfterActivation(EnemyAbility ability)
+    private void OnCopiedSkillActivated(EnemyAbility ability)
     {
+        if (_copiedSkill != ability) return;
+        if (_restoreCopiedSkillRoutine != null)
+            StopCoroutine(_restoreCopiedSkillRoutine);
+        _restoreCopiedSkillRoutine = StartCoroutine(RestoreCopiedSkillAfterDelay(ability, 0f));
+    }
+
+    private IEnumerator RestoreCopiedSkillAfterDelay(EnemyAbility ability, float delay)
+    {
+        float expiresAt = Time.unscaledTime + Mathf.Max(0f, delay);
+        while (_copiedSkill == ability && ability != null && Time.unscaledTime < expiresAt)
+            yield return null;
+
         // Let MonsterActor finish iterating the current Skill list before swapping it back.
         yield return null;
         if (_copiedSkill != ability) yield break;
@@ -184,6 +256,7 @@ public class GluttonyBodyState : MonoBehaviour
         // Slot is restored; keep the spent copy alive briefly for any in-flight coroutine payload.
         _copiedSkill = null;
         CopiedSkillSourceSin = SinType.None;
+        _copiedSkillExpiresAt = 0f;
         _restoreCopiedSkillRoutine = null;
         if (ability != null)
             Destroy(ability.gameObject, 8f);
@@ -207,6 +280,7 @@ public class GluttonyBodyState : MonoBehaviour
         }
 
         CopiedSkillSourceSin = SinType.None;
+        _copiedSkillExpiresAt = 0f;
 
         if (_devour != null) _devour.enabled = true;
     }

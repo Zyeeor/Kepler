@@ -271,22 +271,22 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.sort.saved_time
-      text: "\u6392\u5E8F\uFF1A\u4FDD\u5B58\u65F6\u95F4"
+      text: "\u4FDD\u5B58\u65F6\u95F4"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.sort.kills
-      text: "\u6392\u5E8F\uFF1A\u672C\u5C40\u51FB\u6740"
+      text: "\u6740\u654C\u6B21\u6570"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.sort.run_fail
-      text: "\u6392\u5E8F\uFF1A\u81F4 Run Fail"
+      text: "\u5165\u4FB5\u6218\u7EE9"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.sort.bd_count
-      text: "\u6392\u5E8F\uFF1ABD \u5361\u6570"
+      text: "\u6784\u7B51\u6DF1\u5EA6"
       mythicText: 
       systemText: 
       carrier: 0

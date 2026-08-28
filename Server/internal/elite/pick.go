@@ -2,6 +2,7 @@
 package elite
 
 import (
+	"encoding/json"
 	"math"
 	"math/rand"
 
@@ -68,10 +69,11 @@ func (s *EliteService) Pick(playerID string, wave int, waveGap int) (snap *Build
 	return nil, false, nil
 }
 
-// logPickResult 记录筛选最终结果。
+// logPickResult 记录筛选最终结果（含具体投放的怪物：monsterType 与卡清单）。
 func (s *EliteService) logPickResult(path string, wave int, playerID string, snap *BuildSnapshot, candidates int) {
-	logx.Event("pick result wave=%d player=%s → sin=%s bdCount=%d sourceWave=%d by=%s (path=%s, %d candidates)",
-		wave, playerID, snap.Sin, snap.BDCount, snap.SourceWave, snap.PlayerID, path, candidates)
+	logx.Event("pick result wave=%d player=%s → sin=%s monsterType=%s bdCount=%d sourceWave=%d by=%s cards=[%s] (path=%s, %d candidates)",
+		wave, playerID, snap.Sin, snap.MonsterType, snap.BDCount, snap.SourceWave, snap.PlayerID,
+		cardIDList(json.RawMessage(snap.BDData)), path, candidates)
 }
 
 // logCandidates 打印候选列表摘要（最多前 5 条 + 尾部 1 条）。

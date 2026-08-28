@@ -523,8 +523,18 @@ public class EliteBuildDirector : MonoBehaviour
 
         OnEliteSpawned?.Invoke(monster); // 广播投放成功（音频等外部系统订阅，本系统不感知具体订阅方）
 
-        Debug.Log($"[EliteBuildDirector] W{waveNumber} 投放精英 '{monster.displayName}'（sin={snapshot.sin}, bdCount={snapshot.bdCount}, sourceWave={snapshot.sourceWave}, from={snapshot.sourcePlayerId}, relaxed={relaxed}）。");
+        Debug.Log($"[EliteBuildDirector] W{waveNumber} 投放精英 '{monster.displayName}'（sin={snapshot.sin}, bdCount={snapshot.bdCount}, sourceWave={snapshot.sourceWave}, from={snapshot.sourcePlayerId}, relaxed={relaxed}, cards=[{CardIdList(snapshot)}]）。");
         return true;
+    }
+
+    /// <summary>投放日志用：快照卡 ID 逗号列表（空快照/无卡返回空串）。</summary>
+    static string CardIdList(EliteSnapshotItem snapshot)
+    {
+        if (snapshot == null || snapshot.bdData == null || snapshot.bdData.Count == 0) return "";
+        var ids = new List<string>(snapshot.bdData.Count);
+        foreach (var c in snapshot.bdData)
+            if (c != null && !string.IsNullOrEmpty(c.cardId)) ids.Add(c.cardId);
+        return string.Join(",", ids);
     }
 
     /// <summary>

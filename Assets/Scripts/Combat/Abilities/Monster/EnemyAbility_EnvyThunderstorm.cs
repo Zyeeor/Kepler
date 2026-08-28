@@ -32,6 +32,9 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
     public float hitEffectDuration = 0.5f;
     public GameObject telegraphPrefab;
 
+    private bool _gluttonyCopyMode;
+    private float _gluttonyCopyRadius;
+
     private void OnEnable()
     {
         type = AbilityType.Skill;
@@ -44,15 +47,23 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
 
     public bool HasLegalMarkedTargets => CountLegalMarkedTargets() > 0;
 
+    /// <summary>Configures the copied payload to strike nearby legal enemies without Marks.</summary>
+    public void ConfigureForGluttonyCopy(float radius)
+    {
+        _gluttonyCopyMode = true;
+        _gluttonyCopyRadius = Mathf.Max(0f, radius);
+    }
+
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        return HasLegalMarkedTargets;
+        return _gluttonyCopyMode ? CountGluttonyCopyTargets() > 0 : HasLegalMarkedTargets;
     }
 
     protected override void OnTrigger()
     {
-        if (owner == null || CountLegalMarkedTargets() <= 0)
+        bool hasTargets = _gluttonyCopyMode ? CountGluttonyCopyTargets() > 0 : CountLegalMarkedTargets() > 0;
+        if (owner == null || !hasTargets)
         {
             EndActivationEffect();
             return;
@@ -122,6 +133,9 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
 
     private List<MarkedStrike> CollectStrikes()
     {
+        if (_gluttonyCopyMode)
+            return CollectGluttonyCopyStrikes();
+
         List<MarkedStrike> list = new List<MarkedStrike>();
         float range = GetEffectiveRange();
         IReadOnlyList<EnvyMarkTarget> marks = EnvyMarkTarget.AllActive;
@@ -144,6 +158,34 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
             });
         }
 
+        return list;
+    }
+
+    private List<MarkedStrike> CollectGluttonyCopyStrikes()
+    {
+        List<MarkedStrike> list = new List<MarkedStrike>();
+        if (owner == null) return list;
+
+        float radius = Mathf.Max(0f, _gluttonyCopyRadius);
+        float radiusSqr = radius * radius;
+        Vector3 origin = owner.transform.position;
+        CombatHitboxDebug.DrawSphere(drawHitboxes, origin, radius, -1f);
+        IReadOnlyList<Enemy> enemies = EnemyRegistry.All;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy candidate = enemies[i];
+            if (candidate == null || candidate == owner || !owner.CanDamage(candidate)) continue;
+            Vector3 offset = candidate.transform.position - origin;
+            offset.y = 0f;
+            if (offset.sqrMagnitude > radiusSqr) continue;
+            list.Add(new MarkedStrike
+            {
+                target = candidate,
+                position = candidate.transform.position + Vector3.up,
+                storedDamage = 0f,
+                baseDamage = baseThunderDamage
+            });
+        }
         return list;
     }
 
@@ -190,6 +232,24 @@ public class EnemyAbility_EnvyThunderstorm : EnemyAbility
             count++;
         }
 
+        return count;
+    }
+
+    private int CountGluttonyCopyTargets()
+    {
+        if (owner == null) return 0;
+        float radiusSqr = _gluttonyCopyRadius * _gluttonyCopyRadius;
+        Vector3 origin = owner.transform.position;
+        IReadOnlyList<Enemy> enemies = EnemyRegistry.All;
+        int count = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy candidate = enemies[i];
+            if (candidate == null || candidate == owner || !owner.CanDamage(candidate)) continue;
+            Vector3 offset = candidate.transform.position - origin;
+            offset.y = 0f;
+            if (offset.sqrMagnitude <= radiusSqr) count++;
+        }
         return count;
     }
 
