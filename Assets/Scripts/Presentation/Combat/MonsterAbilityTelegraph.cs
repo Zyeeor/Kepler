@@ -14,6 +14,7 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
     private static readonly int IndicatorColorId = Shader.PropertyToID("_IndicatorColor");
     private static readonly int IndicatorIntensityId = Shader.PropertyToID("_IndicatorIntensity");
     private static readonly int IndicatorProgressId = Shader.PropertyToID("_IndicatorProgress");
+    private static readonly int IndicatorShapeId = Shader.PropertyToID("_ShapeType");
 
     private GameObject _indicatorObject;
     private Material _indicatorMaterial;
@@ -39,7 +40,19 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
     private Vector3 _hudBaseScale = Vector3.one;
     private float _hudTemplateSize = 80f;
 
+    /// <summary>Legacy circle-only entry point (kept for compatibility).</summary>
     public void Begin(EnemyAbility ability, Vector3 indicatorCenter, float indicatorRadius, bool showIndicator)
+    {
+        Begin(ability, new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Circle,
+            center = indicatorCenter,
+            radius = indicatorRadius,
+            isValid = showIndicator && indicatorRadius > 0f
+        }, showIndicator);
+    }
+
+    public void Begin(EnemyAbility ability, EnemyTelegraphGeometry geometry, bool showIndicator)
     {
         if (ability == null) return;
 
@@ -48,15 +61,32 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
         _isShowing = true;
 
         EnsureIndicator(showIndicator);
-        if (showIndicator && _indicatorObject != null && _indicatorMaterial != null && indicatorRadius > 0f)
+        if (showIndicator && _indicatorObject != null && _indicatorMaterial != null && geometry.isValid)
         {
             _indicatorObject.SetActive(true);
-            _indicatorObject.transform.SetPositionAndRotation(
-                indicatorCenter + Vector3.up * Mathf.Max(0f, ability.enemyIndicatorHeight),
-                Quaternion.Euler(90f, 0f, 0f));
+            Vector3 pos = geometry.center + Vector3.up * Mathf.Max(0f, ability.enemyIndicatorHeight);
 
-            float diameter = indicatorRadius * 2f / IndicatorEdgeRadius;
-            _indicatorObject.transform.localScale = new Vector3(diameter, diameter, 1f);
+            if (geometry.shape == EnemyIndicatorShape.Rect)
+            {
+                // 矩形预警带：Quad 的 +X（uv.x，长度方向）指向 forward，+Y（uv.y，宽度方向）水平垂直 forward，
+                // 法线朝上（Euler(90,0,0) 平躺）。edge 在 shader 里位于 0.84，故世界尺寸 = 目标 / 0.84。
+                _indicatorObject.transform.SetPositionAndRotation(
+                    pos,
+                    Quaternion.FromToRotation(Vector3.right, geometry.forward) * Quaternion.Euler(90f, 0f, 0f));
+                _indicatorObject.transform.localScale = new Vector3(
+                    geometry.length / IndicatorEdgeRadius,
+                    geometry.width / IndicatorEdgeRadius,
+                    1f);
+                SetIndicatorFloat(IndicatorShapeId, 1f);
+            }
+            else
+            {
+                _indicatorObject.transform.SetPositionAndRotation(pos, Quaternion.Euler(90f, 0f, 0f));
+                float diameter = geometry.radius * 2f / IndicatorEdgeRadius;
+                _indicatorObject.transform.localScale = new Vector3(diameter, diameter, 1f);
+                SetIndicatorFloat(IndicatorShapeId, 0f);
+            }
+
             SetIndicatorColor(ability.enemyIndicatorColor);
             SetIndicatorFloat(IndicatorIntensityId, Mathf.Max(0f, ability.enemyIndicatorIntensity));
             SetIndicatorFloat(IndicatorProgressId, 0f);

@@ -481,6 +481,32 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         bossPatternRoutine = StartCoroutine(BossPatternRoutine(boss));
     }
 
+    /// <summary>
+    /// 地爆天星（蓄力重炮）是直线飞弹：红圈用矩形预警带（长度=maxRange、宽度=projectileWidth、朝向=owner.forward），
+    /// 与 FireShot 的实际弹道判定一致（红圈=实际范围）。受 enemyIndicatorEnabled 开关控制。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        if (owner == null || !enemyIndicatorEnabled) return default;
+
+        Vector3 forward = owner.transform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
+        forward.Normalize();
+
+        float length = ScaleAbilityRadius(maxRange);
+        float width = ScaleAbilityRadius(projectileWidth);
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Rect,
+            center = owner.transform.position,
+            forward = forward,
+            length = length,
+            width = width,
+            isValid = length > 0f && width > 0f
+        };
+    }
+
     private IEnumerator BossPatternRoutine(BossSevenfoldActor boss)
     {
         boss.SetAbilitySequenceLocked(true);

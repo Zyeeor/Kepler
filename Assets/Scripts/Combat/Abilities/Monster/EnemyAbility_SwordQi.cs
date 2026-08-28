@@ -121,6 +121,33 @@ public class EnemyAbility_SwordQi : EnemyAbility
         StartCoroutine(SwordQiRoutine());
     }
 
+    /// <summary>
+    /// 剑气是直线飞弹：红圈用「矩形预警带」表达（长度=射程、宽度=弹道宽、朝向=发射方向），
+    /// 提示玩家「这条线上有东西飞过来，横向躲开」。与圆形红圈「躲出圈外」是两套语义。
+    /// 红圈 = 实际判定：长度=maxRange(或 PR-A04 的 pride01MaxRange)、宽度=projectileWidth（判定全宽）。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        if (owner == null || !enemyIndicatorEnabled)
+            return default;
+
+        float effectiveMaxRange = ScaleAbilityRadius(IsUpgradeUnlocked("PR-A04") ? pride01MaxRange : maxRange);
+        Vector3 forward = owner.transform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
+        forward.Normalize();
+
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Rect,
+            center = owner.transform.position,
+            forward = forward,
+            length = effectiveMaxRange,
+            width = ScaleAbilityRadius(projectileWidth),
+            isValid = effectiveMaxRange > 0f && projectileWidth > 0f
+        };
+    }
+
     private void SetActivationDisplay(bool visible)
     {
         if (activationDisplay != null) activationDisplay.SetActive(visible);

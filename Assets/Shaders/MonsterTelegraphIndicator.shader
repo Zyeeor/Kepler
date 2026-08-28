@@ -6,6 +6,7 @@ Shader "Possession/MonsterTelegraphIndicator"
         _IndicatorIntensity ("Indicator Intensity", Range(0, 5)) = 1.1
         _IndicatorProgress ("Cast Progress", Range(0, 1)) = 0
         _RingWidth ("Ring Width", Range(0.01, 0.2)) = 0.045
+        _ShapeType ("Shape Type (0=Circle 1=Rect)", Float) = 0
     }
 
     SubShader
@@ -40,6 +41,7 @@ Shader "Possession/MonsterTelegraphIndicator"
                 half _IndicatorIntensity;
                 half _IndicatorProgress;
                 half _RingWidth;
+                half _ShapeType;
             CBUFFER_END
 
             Varyings Vert(Attributes input)
@@ -58,11 +60,30 @@ Shader "Possession/MonsterTelegraphIndicator"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 uvPoint = input.uv * 2.0 - 1.0;
+                float progress = saturate(_IndicatorProgress);
+
+                // ── Rect（直线预警带）：长度沿 +X，宽度沿 +Y ──
+                if (_ShapeType > 0.5)
+                {
+                    float2 box = abs(uvPoint);
+                    float edgeX = SoftBand(box.x, 0.84, _RingWidth);
+                    float edgeY = SoftBand(box.y, 0.84, _RingWidth);
+                    float edge = max(edgeX, edgeY);
+                    float inner = saturate(1.0 - max(box.x, box.y) / 0.84);
+                    float ticks = pow(saturate(cos(uvPoint.x * 15.0) * 0.5 + 0.5), 12.0);
+                    float sweepX = uvPoint.x * 0.5 + 0.5;
+                    float sweep = 1.0 - smoothstep(progress - 0.07, progress + 0.07, sweepX);
+                    float innerPattern = inner * (ticks * (0.08 + progress * 0.5) + sweep * 0.24);
+                    float brightness = lerp(0.22, 1.15, progress) * (0.84 + 0.16 * sin(_Time.y * 9.0));
+                    float alpha = saturate((edge * 1.3 + innerPattern) * brightness * _IndicatorColor.a);
+                    return half4(_IndicatorColor.rgb * _IndicatorIntensity * brightness, alpha);
+                }
+
+                // ── Circle（原有圆形逻辑） ──
                 float radius = length(uvPoint);
                 clip(0.99 - radius);
 
-                float progress = saturate(_IndicatorProgress);
-                float edge = SoftBand(radius, 0.84, _RingWidth);
+                float edgeC = SoftBand(radius, 0.84, _RingWidth);
                 float edgeGlow = exp(-abs(radius - 0.84) * 34.0) * 0.45;
                 float innerFade = saturate(1.0 - radius / 0.84);
 
@@ -70,15 +91,15 @@ Shader "Possession/MonsterTelegraphIndicator"
                 angle = frac(angle + _Time.y * 0.035);
                 float spokes = pow(saturate(cos(angle * 37.6991) * 0.5 + 0.5), 18.0);
                 float rings = SoftBand(radius, 0.38 + 0.18 * sin(_Time.y * 2.0), 0.012);
-                float sweep = 1.0 - smoothstep(progress - 0.08, progress + 0.08, angle);
-                float innerPattern = innerFade * (spokes * (0.10 + progress * 0.75)
+                float sweepC = 1.0 - smoothstep(progress - 0.08, progress + 0.08, angle);
+                float innerPatternC = innerFade * (spokes * (0.10 + progress * 0.75)
                     + rings * (0.12 + progress * 0.45)
-                    + sweep * 0.16);
+                    + sweepC * 0.16);
 
-                float brightness = lerp(0.22, 1.15, progress);
-                brightness *= 0.84 + 0.16 * sin(_Time.y * 9.0);
-                float alpha = saturate((edge * 1.25 + edgeGlow + innerPattern) * brightness * _IndicatorColor.a);
-                return half4(_IndicatorColor.rgb * _IndicatorIntensity * brightness, alpha);
+                float brightnessC = lerp(0.22, 1.15, progress);
+                brightnessC *= 0.84 + 0.16 * sin(_Time.y * 9.0);
+                float alphaC = saturate((edgeC * 1.25 + edgeGlow + innerPatternC) * brightnessC * _IndicatorColor.a);
+                return half4(_IndicatorColor.rgb * _IndicatorIntensity * brightnessC, alphaC);
             }
             ENDHLSL
         }

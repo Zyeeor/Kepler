@@ -68,6 +68,32 @@ public class EnemyAbility_FlashSlash : EnemyAbility
         StartCoroutine(FlashSlashRoutine());
     }
 
+    /// <summary>
+    /// 一刀斩是直线冲锋：红圈用矩形预警带（长度=dashDistance、宽度=slashWidth、朝向=owner.forward），
+    /// 与 FlashSlashRoutine 的实际冲锋判定一致（红圈=实际范围）。受 enemyIndicatorEnabled 开关控制。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        if (owner == null || !enemyIndicatorEnabled) return default;
+
+        Vector3 forward = owner.transform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
+        forward.Normalize();
+
+        float length = ScaleAbilityRadius(dashDistance);
+        float width = ScaleAbilityRadius(slashWidth);
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Rect,
+            center = owner.transform.position,
+            forward = forward,
+            length = length,
+            width = width,
+            isValid = length > 0f && width > 0f
+        };
+    }
+
     IEnumerator FlashSlashRoutine()
     {
         Vector3 startPos = owner.transform.position;
