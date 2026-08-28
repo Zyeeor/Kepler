@@ -359,7 +359,7 @@ Transform:
   m_GameObject: {fileID: 1626461728984977546}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.239, z: 0}
+  m_LocalPosition: {x: 0, y: 1.56, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11257,6 +11257,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 1
   vfxPrefab: {fileID: 2060418090655630911, guid: 4fb7673fa1cb7e34ea16f350b1e1fba9,
     type: 3}
@@ -11409,7 +11410,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d567da4d75b6c92408ecc3cb790ed48f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soulMaxHealth: 1000
+  soulMaxHealth: 100
   currentHealth: 100
   healthDecayPercent: 0.02
   decayInterval: 1
@@ -11586,6 +11587,18 @@ MonoBehaviour:
   possessionImprintMeteorGlow: 1.8
   possessionImprintMeteorColor: {r: 0.25, g: 0.85, b: 1, a: 1}
   possessionImprintMeteorShader: {fileID: 0}
+  possessionImprintMeteorCount: 3
+  possessionImprintMeteorArc: 0.35
+  possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  envyStatusMarkerTexture: {fileID: 0}
+  lustStatusMarkerTexture: {fileID: 0}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!114 &8337572258949966045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11802,6 +11815,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
