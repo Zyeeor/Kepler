@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,13 @@ public class GreedBlackOilZone : MonoBehaviour
     public GameObject normalVfxPrefab;
     public GameObject burningVfxPrefab;
 
+    [Header("黑油 VFX 播放节奏")]
+    [Tooltip("黑油生成 VFX 播放时长（秒）；到时暂停 ParticleSystem。前半段=生成。")]
+    public float generationVfxDuration = 2f;
+    [Tooltip("黑油消失 VFX 播放时长（秒）；在 zone 生命末段恢复 ParticleSystem 播放。后半段=消失。")]
+    public float disappearanceVfxDuration = 1f;
+
+    private Coroutine _vfxPlaybackRoutine;
     private readonly Dictionary<int, CombatAbilityComponent> _occupants = new Dictionary<int, CombatAbilityComponent>();
     private readonly HashSet<int> _frameOccupants = new HashSet<int>();
     private Collider[] _overlapBuffer;
@@ -104,6 +112,11 @@ public class GreedBlackOilZone : MonoBehaviour
 
     private void RefreshVisual()
     {
+        if (_vfxPlaybackRoutine != null)
+        {
+            StopCoroutine(_vfxPlaybackRoutine);
+            _vfxPlaybackRoutine = null;
+        }
         if (_vfxInstance != null)
         {
             Destroy(_vfxInstance);
@@ -114,6 +127,54 @@ public class GreedBlackOilZone : MonoBehaviour
         if (prefab == null) return;
         _vfxInstance = Instantiate(prefab, transform.position, Quaternion.identity, transform);
         _vfxInstance.transform.localScale *= Mathf.Max(1f, _ownerScaleMultiplier);
+
+        if (!isBurning)
+            _vfxPlaybackRoutine = StartCoroutine(VfxPlaybackRoutine());
+    }
+
+    /// <summary>黑油 VFX 节奏：生成播放 → 暂停 → 消失时恢复（同一 vfx 继续播放）。</summary>
+    private System.Collections.IEnumerator VfxPlaybackRoutine()
+    {
+        float spawnTime = _expiresAt - lifetime;
+        float generationEnd = spawnTime + Mathf.Max(0f, generationVfxDuration);
+        float resumeAt = _expiresAt - Mathf.Max(0f, disappearanceVfxDuration);
+
+        // 若生成 + 消失时长已覆盖 zone 生命，无暂停可言，保持连续播放。
+        if (generationEnd >= resumeAt) yield break;
+
+        // 生成阶段（VFX 已在 RefreshVisual 中 Play）
+        if (Time.time < generationEnd)
+            yield return new WaitForSeconds(generationEnd - Time.time);
+
+        // 暂停 ParticleSystem
+        SetParticleSystemsPaused(_vfxInstance, true);
+
+        // 等待到消失阶段
+        if (Time.time < resumeAt)
+            yield return new WaitForSeconds(resumeAt - Time.time);
+
+        // 恢复播放（后半段消失：黑油 vfx 继续播放）
+        if (_vfxInstance != null && Time.time < _expiresAt)
+            SetParticleSystemsPaused(_vfxInstance, false);
+
+        _vfxPlaybackRoutine = null;
+    }
+
+    private static void SetParticleSystemsPaused(GameObject go, bool paused)
+    {
+        if (go == null) return;
+        foreach (ParticleSystem ps in go.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            if (ps == null) continue;
+            if (paused)
+            {
+                if (ps.isPlaying) ps.Pause(true);
+            }
+            else
+            {
+                if (ps.isPaused) ps.Play(true);
+            }
+        }
     }
 
     private void ScanOccupants()
