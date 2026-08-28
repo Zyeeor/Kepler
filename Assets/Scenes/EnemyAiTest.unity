@@ -14761,6 +14761,9 @@ MonoBehaviour:
   stackAnchor: {fileID: 927676052}
   transitionDuration: 0.2
   transitionStagger: 0.05
+  miniTransitionTimeCap: 0.6
+  fanTransitionTimeCap: 0.6
+  stackTransitionTimeCap: 0.6
   showEmptyHint: 1
   showInSoulState: 1
 --- !u!1 &1769012141
