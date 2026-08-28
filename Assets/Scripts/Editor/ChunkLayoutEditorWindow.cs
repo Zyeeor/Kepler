@@ -216,7 +216,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
         EditorGUILayout.LabelField("Tile 刷子（点击即按类别落层）", EditorStyles.boldLabel);
         EditorGUILayout.LabelField("  地砖类→底层 ｜ 装饰物类→叠加层", EditorStyles.miniLabel);
         paletteScroll = EditorGUILayout.BeginScrollView(paletteScroll, GUILayout.Height(460f));
-        DrawBrushButton(null, "橡皮擦（刷空）");
+        DrawBrushButton(null, "橡皮擦（左键擦当前层）");
         EditorGUILayout.LabelField("— 地砖（底层） —", EditorStyles.miniLabel);
         for (int i = 0; i < palette.Count; i++)
             if (TileSemantics.ResolveKind(palette[i]) != TerrainKind.Decoration)
@@ -526,6 +526,11 @@ public class ChunkLayoutEditorWindow : EditorWindow
         var ov = target.GetOverlay(x, y);
         if (brush == null)
         {
+            // 多格 placement 不写入 overlayTiles，而是单独存于 decorationPlacements；
+            // 叠加层橡皮擦必须优先移除覆盖当前格的整组 placement。
+            if (editLayer == EditLayer.Overlay && RemoveDecorationPlacementsAt(x, y, "擦除多格装饰物"))
+                return;
+
             if (editLayer == EditLayer.Base)
             {
                 if (baseP == null) return;
@@ -566,18 +571,10 @@ public class ChunkLayoutEditorWindow : EditorWindow
         Repaint();
     }
 
-    /// <summary>右键擦除：整格两层皆空。</summary>
+    /// <summary>右键擦除：多格装饰移除整组；普通格清除底层与叠加层。</summary>
     void EraseCell(int x, int y)
     {
-        var placement = FindPlacementAt(x, y);
-        if (placement != null)
-        {
-            Undo.RecordObject(target, "擦除多格装饰物");
-            target.decorationPlacements.Remove(placement);
-            EditorUtility.SetDirty(target);
-            Repaint();
-            return;
-        }
+        if (RemoveDecorationPlacementsAt(x, y, "擦除多格装饰物")) return;
         if (target.GetTile(x, y) == null && target.GetOverlay(x, y) == null) return;
         Undo.RecordObject(target, "清空整格");
         target.SetTile(x, y, null);
@@ -586,11 +583,43 @@ public class ChunkLayoutEditorWindow : EditorWindow
         Repaint();
     }
 
+    /// <summary>
+    /// 移除覆盖指定格的所有多格 placement。
+    /// 正常配置下 placement 不会重叠；全部移除可以同时清理旧数据/手动改资产造成的重叠残留，避免擦除后仍有装饰幽灵。
+    /// </summary>
+    bool RemoveDecorationPlacementsAt(int x, int y, string undoName)
+    {
+        if (target == null || target.decorationPlacements == null) return false;
+
+        bool found = false;
+        for (int i = 0; i < target.decorationPlacements.Count; i++)
+        {
+            var placement = target.decorationPlacements[i];
+            if (placement != null && placement.Contains(x, y))
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+
+        Undo.RecordObject(target, undoName);
+        for (int i = target.decorationPlacements.Count - 1; i >= 0; i--)
+        {
+            var placement = target.decorationPlacements[i];
+            if (placement != null && placement.Contains(x, y))
+                target.decorationPlacements.RemoveAt(i);
+        }
+        EditorUtility.SetDirty(target);
+        Repaint();
+        return true;
+    }
+
     void DrawFooter()
     {
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
-        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加；配置了多格占位的装饰自动铺整组）｜ 多格放置模式自定义尺寸 ｜ 右键擦整格/整组 ｜ 多格装饰不可跨 Chunk 边沿", MessageType.None);
+        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加；橡皮擦左键擦当前层）｜ 配置了多格占位的装饰自动铺整组 ｜ 右键擦整格/整组 ｜ 多格装饰不可跨 Chunk 边沿", MessageType.None);
         if (GUILayout.Button("清空全部", GUILayout.Width(100f), GUILayout.Height(24f))) ClearAll();
         EditorGUILayout.EndHorizontal();
     }
