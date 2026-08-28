@@ -417,16 +417,13 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         scale.z *= dir.magnitude / Mathf.Max(0.01f, authoredLength);
         vfx.transform.localScale = scale;
 
-        // EN-A05 外显：连续连接伤害爬升时按比例加宽整条激光。
+        // EN-A05 外显：连续连接伤害爬升时按比例加宽整条激光，封顶到 rampWidthMultiplier。
+        // 用「创作宽度 × widthMult」直接赋值而非累乘：对象池复用的实例不会残留上次宽度，
+        // 到上限（ramp=1 → widthMult=rampWidthMultiplier）后不再继续变宽；断链 ramp=0 回基准。
+        // 主光束与 EN-A01 散射激光共用本路径，因此上限同样约束所有散射激光。
         float ramp = GetRampFactor();
-        if (ramp > 0f)
-        {
-            float widthMult = Mathf.Lerp(1f, GetCardParameter("RampWidthMult", rampWidthMultiplier), ramp);
-            foreach (LineRenderer lr in vfx.GetComponentsInChildren<LineRenderer>(true))
-            {
-                if (lr != null) lr.widthMultiplier *= widthMult;
-            }
-        }
+        float widthMult = Mathf.Lerp(1f, GetCardParameter("RampWidthMult", rampWidthMultiplier), ramp);
+        ApplyBeamWidth(vfx, widthMult);
 
         if (beamMaterial != null)
         {
@@ -450,6 +447,24 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             if (len > 0.001f) return len;
         }
         return 1f;
+    }
+
+    /// <summary>
+    /// 按 beamPrefab 的创作宽度 × widthMult 直接赋值（不累乘）。
+    /// 对象池复用实例不会保留上一次 ramp 后的 widthMultiplier，保证宽度严格封顶在
+    /// authoredWidth × rampWidthMultiplier，到上限后不再继续变宽。
+    /// </summary>
+    private void ApplyBeamWidth(GameObject vfx, float widthMult)
+    {
+        if (vfx == null || beamPrefab == null) return;
+        LineRenderer[] prefabLrs = beamPrefab.GetComponentsInChildren<LineRenderer>(true);
+        LineRenderer[] instanceLrs = vfx.GetComponentsInChildren<LineRenderer>(true);
+        int count = Mathf.Min(prefabLrs.Length, instanceLrs.Length);
+        for (int i = 0; i < count; i++)
+        {
+            if (prefabLrs[i] == null || instanceLrs[i] == null) continue;
+            instanceLrs[i].widthMultiplier = prefabLrs[i].widthMultiplier * widthMult;
+        }
     }
 
     private void UpdateHitVfx(Vector3 hitPos)

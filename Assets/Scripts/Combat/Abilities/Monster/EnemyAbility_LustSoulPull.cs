@@ -15,6 +15,8 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
     public float pullDamage = 25f;
     public float aimTurnSpeed = 720f;
     public GameObject tetherVfx;
+    [Tooltip("tether prefab 的创作长度（粒子锥体长度），用于按 anchor→target 距离归一化缩放。")]
+    public float tetherVfxLength = 5f;
     public GameObject impactVfx;
     public GameObject telegraphVfx;
 
@@ -178,6 +180,7 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
 
         List<PullTargetState> pulls = new List<PullTargetState>();
         List<MonsterActor> isolationSources = new List<MonsterActor>();
+        List<GameObject> tethers = new List<GameObject>();
         for (int i = 0; i < linked.Count; i++)
         {
             Enemy target = linked[i];
@@ -208,7 +211,10 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
             isolationSources.Add(target);
 
             if (tetherVfx != null)
-                Object.Instantiate(tetherVfx, from, Quaternion.identity);
+            {
+                GameObject tether = SpawnTether(anchorPos, from);
+                if (tether != null) tethers.Add(tether);
+            }
         }
 
         bool isolate = IsUpgradeUnlocked("LU-S06");
@@ -258,6 +264,10 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
                 state.enemy.SetController(NullController.Instance);
         }
 
+        // tether 激光在爆炸（impact）完成后消失
+        for (int i = 0; i < tethers.Count; i++)
+            if (tethers[i] != null) ReleaseVfx(tethers[i]);
+
         List<Enemy> consumed = new List<Enemy>();
         for (int i = 0; i < pulls.Count; i++)
             if (pulls[i].enemy != null) consumed.Add(pulls[i].enemy);
@@ -268,6 +278,24 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
             LustPullDamageGate.EndWindow(GetCardParameter("Grace", s06Grace));
 
         EndActivationEffect();
+    }
+
+    /// <summary>从 anchor（lust clone）向 target（有印记敌人）发射一条 tether 激光，返回实例。</summary>
+    private GameObject SpawnTether(Vector3 from, Vector3 to)
+    {
+        if (tetherVfx == null) return null;
+        Vector3 dir = to - from;
+        Quaternion rot = dir.sqrMagnitude > 0.01f
+            ? Quaternion.LookRotation(dir.normalized, Vector3.up)
+            : Quaternion.identity;
+        GameObject tether = VfxPool.Instance.Spawn(tetherVfx, from, rot);
+        BulletTimeController.MarkVfxOrigin(tether, IsOwnedByPlayer);
+        ScaleAbilityObject(tether);
+        Vector3 scale = tether.transform.localScale;
+        scale.z *= dir.magnitude / Mathf.Max(0.01f, tetherVfxLength);
+        tether.transform.localScale = scale;
+        PlayVfx(tether);
+        return tether;
     }
 
     private void ProcessCollisions(List<PullTargetState> pulls, HashSet<int> used)

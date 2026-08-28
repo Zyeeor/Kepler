@@ -1219,7 +1219,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 10000
+    maxHealth: 200
     moveSpeed: 4
     acceleration: 60
     deceleration: 80

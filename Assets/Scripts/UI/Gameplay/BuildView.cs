@@ -58,10 +58,18 @@ public class BuildView : MonoBehaviour
     public RectTransform stackAnchor;
 
     [Header("模式切换动效")]
-    [Tooltip("单张卡过渡到目标位置与缩放的时长（秒）。")]
+    [Tooltip("单张卡过渡到目标位置与缩放的时长（秒）。启用时间上限后，该值与 transitionStagger 的比值决定「每张卡时间片」的分配比例。")]
     public float transitionDuration = 0.2f;
-    [Tooltip("相邻两张卡之间的过渡延迟（秒），实现逐张依次飞入/飞出。")]
+    [Tooltip("相邻两张卡之间的过渡延迟（秒），实现逐张依次飞入/飞出。启用时间上限后按同一比例缩放。")]
     public float transitionStagger = 0.05f;
+
+    [Header("模式切换动效：各布局转换总时长上限（秒）")]
+    [Tooltip("模式 0（左上展开/迷你卡条）转换总时长上限。每张卡时长 = 上限 / 卡牌数量。<=0 表示不设上限，沿用上面的单卡时长。")]
+    public float miniTransitionTimeCap = 0.6f;
+    [Tooltip("模式 1（半屏扇形放大）转换总时长上限。每张卡时长 = 上限 / 卡牌数量。<=0 表示不设上限。")]
+    public float fanTransitionTimeCap = 0.6f;
+    [Tooltip("模式 2（左上收起/堆叠）转换总时长上限。每张卡时长 = 上限 / 卡牌数量。<=0 表示不设上限。")]
+    public float stackTransitionTimeCap = 0.6f;
 
     [Header("Debug Toggles（调试开关）")]
     [Tooltip("没有卡的时候是否显示提示文本（如“尚未获得任何卡片”）。关闭则无卡时什么都不显示。")]
@@ -341,10 +349,44 @@ public class BuildView : MonoBehaviour
             StopCoroutine(transitionRoutine);
             transitionRoutine = null;
         }
-        if (transitionDuration <= 0f) return; // 无动画：保持目标布局，不闪跳
+        ResolveTransitionTiming(out float perCardDuration, out float perCardStagger);
+        if (perCardDuration <= 0f) return; // 无动画：保持目标布局，不闪跳
         CaptureTargetPoses();
         ApplyStartPoses(); // 同步把卡对齐到源姿态，避免切换当帧先显示目标再跳回起点
-        transitionRoutine = StartCoroutine(TransitionRoutine());
+        transitionRoutine = StartCoroutine(TransitionRoutine(perCardDuration, perCardStagger));
+    }
+
+    /// <summary>当前布局（mode）对应的转换总时长上限（秒）。</summary>
+    float GetTransitionTimeCap()
+    {
+        switch (mode)
+        {
+            case ModeFan: return fanTransitionTimeCap;
+            case ModeStack: return stackTransitionTimeCap;
+            default: return miniTransitionTimeCap;
+        }
+    }
+
+    /// <summary>
+    /// 计算每张卡的过渡时长与间隔延迟：
+    /// 每张卡的时间片 = 该布局的时间上限 / 卡牌数量；片内按原「过渡时长 : 间隔延迟」比例分配，
+    /// 因此 N 张卡串起来的总时长严格不超过上限（不随卡牌数量线性膨胀）。
+    /// 上限 &lt;= 0 时沿用原本的单卡时长与间隔（旧行为）。
+    /// </summary>
+    void ResolveTransitionTiming(out float perCardDuration, out float perCardStagger)
+    {
+        float cap = GetTransitionTimeCap();
+        if (cap <= 0f)
+        {
+            perCardDuration = transitionDuration;
+            perCardStagger = transitionStagger;
+            return;
+        }
+
+        float perCard = cap / Mathf.Max(1, cardInstances.Count);
+        float total = Mathf.Max(0.0001f, transitionDuration + transitionStagger);
+        perCardDuration = perCard * (transitionDuration / total);
+        perCardStagger = perCard * (transitionStagger / total);
     }
 
     void CaptureTargetPoses()
@@ -377,7 +419,7 @@ public class BuildView : MonoBehaviour
         }
     }
 
-    IEnumerator TransitionRoutine()
+    IEnumerator TransitionRoutine(float perCardDuration, float perCardStagger)
     {
         for (int i = 0; i < cardInstances.Count; i++)
         {
@@ -393,12 +435,12 @@ public class BuildView : MonoBehaviour
             Vector3 startScale = face != null ? face.localScale : Vector3.one;
 
             float t = 0f;
-            while (t < transitionDuration)
+            while (t < perCardDuration)
             {
                 if (root == null || rootRT == null) yield break;
                 t += Time.unscaledDeltaTime;
                 // SmoothStep 三次缓动：起手加速、收尾减速（ease-in-out）。
-                float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / transitionDuration));
+                float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / perCardDuration));
                 rootRT.position = Vector3.Lerp(startPos, targetPos, u);
                 if (face != null) face.localScale = Vector3.Lerp(startScale, targetScale, u);
                 yield return null;
@@ -407,10 +449,10 @@ public class BuildView : MonoBehaviour
             rootRT.position = targetPos;
             if (face != null) face.localScale = targetScale;
 
-            if (i + 1 < cardInstances.Count && transitionStagger > 0f)
+            if (i + 1 < cardInstances.Count && perCardStagger > 0f)
             {
                 float waited = 0f;
-                while (waited < transitionStagger)
+                while (waited < perCardStagger)
                 {
                     waited += Time.unscaledDeltaTime;
                     yield return null;

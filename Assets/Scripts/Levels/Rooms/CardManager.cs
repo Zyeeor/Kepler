@@ -81,6 +81,7 @@ public class CardManager : SceneSingleton<CardManager>
 
     readonly List<CardChoiceGemPickup> activeOfferGems = new List<CardChoiceGemPickup>();
     bool openingGemRoutineStarted;
+    string openingGemRunId;
 
     /// <summary>
     /// 拾取流程互斥：当前正在"飘向玩家"或"选卡中"的宝石。
@@ -226,9 +227,17 @@ public class CardManager : SceneSingleton<CardManager>
     {
         // 直接 Play 时 RunSession 可能由 WaveManager.Start 稍后创建；在状态进入 Opening/Tutorial/Waves
         // 后再启动一次性协程，避免 Start 顺序竞争导致开局宝石漏生成。
+        // CardManager 挂在 DDOL 常驻对象上跨场景存活：启动进主菜单阶段会短暂进入 Tutorial，
+        // 提前把 openingGemRoutineStarted 置 true，随后场景切到 MainMenu、找不到 SoulActor 而跳过。
+        // 若不在新局（RunId 变化）时重置，从主菜单再次进入战场将永远不再生成开局宝石。
+        var session = RunSession.Instance;
+        if (openingGemRoutineStarted && session != null && !string.Equals(openingGemRunId, session.RunId))
+            openingGemRoutineStarted = false;
+
         if (!debugDoublePickOnStart && !openingGemRoutineStarted && ShouldSpawnOpeningGems())
         {
             openingGemRoutineStarted = true;
+            openingGemRunId = session != null ? session.RunId : null;
             Debug.Log("[CardManager] 开局宝石闸门开启，开始生成流程。" + DescribeOpeningGemGate());
             StartCoroutine(SpawnOpeningCardGemsWhenReady());
         }
@@ -331,16 +340,16 @@ public class CardManager : SceneSingleton<CardManager>
         }
 
         wait = 0f;
-        SoulActor soul = FindObjectOfType<SoulActor>();
+        SoulActor soul = FindBattleSoul();
         while (soul == null && wait < 10f)
         {
             wait += Time.unscaledDeltaTime;
             yield return null;
-            soul = FindObjectOfType<SoulActor>();
+            soul = FindBattleSoul();
         }
         if (soul == null)
         {
-            Debug.LogWarning("[CardManager] 开局宝石：找不到 SoulActor，跳过生成。");
+            Debug.LogWarning("[CardManager] 开局宝石：找不到战斗灵魂（SoulActor），跳过生成。");
             yield break;
         }
 
@@ -362,6 +371,16 @@ public class CardManager : SceneSingleton<CardManager>
             Debug.LogWarning("[CardManager] 开局宝石：等待就绪后闸门已关闭，跳过生成。" + DescribeOpeningGemGate());
             yield break;
         }
+
+        // 场景切换（启动进主菜单 → 进入战场）可能使上面捕获的 soul 引用失效：
+        // 生成前重新获取真实战斗灵魂，避免把宝石生成到主菜单展示灵魂处，或对已销毁引用取位置抛空引用。
+        soul = FindBattleSoul();
+        if (soul == null)
+        {
+            Debug.LogWarning("[CardManager] 开局宝石：生成前未找到战斗灵魂，跳过生成。");
+            yield break;
+        }
+
         int desired = Mathf.Max(0, openingGemCount);
         if (desired == 0)
         {
@@ -391,6 +410,23 @@ public class CardManager : SceneSingleton<CardManager>
         {
             Debug.LogWarning($"[CardManager] 开局宝石生成不完整：{spawned}/{desired}，请检查 cardOfferGemPrefab 配置。");
         }
+    }
+
+    /// <summary>
+    /// 获取战斗场景中的真实灵魂（排除主菜单展示灵魂 SoulMenuShowcase）。
+    /// 启动进主菜单阶段主菜单里只有展示灵魂，直接 FindObjectOfType 会误取到它，
+    /// 导致开局宝石生成到主菜单、或随场景卸载后引用失效抛空引用。
+    /// </summary>
+    static SoulActor FindBattleSoul()
+    {
+        SoulActor[] souls = FindObjectsOfType<SoulActor>();
+        for (int i = 0; i < souls.Length; i++)
+        {
+            if (souls[i] == null) continue;
+            if (souls[i].GetComponent<SoulMenuShowcase>() != null) continue;
+            return souls[i];
+        }
+        return null;
     }
 
     Vector3 GetOpeningGemOffset(int index, int total)

@@ -1484,7 +1484,7 @@ MonoBehaviour:
   - effectId: EN-A03
     unlocked: 0
   - effectId: EN-A05
-    unlocked: 0
+    unlocked: 1
   - effectId: EN-R01
     unlocked: 0
   vfxPrefab: {fileID: 0}
@@ -1548,7 +1548,7 @@ MonoBehaviour:
   laserHitEffect: {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
   rampMaxDamagePerSecond: 50
   rampTimeToMax: 3
-  rampWidthMultiplier: 1.5
+  rampWidthMultiplier: 3
   multiEyeInterval: 3
   multiEyeWindow: 1
   multiEyeTargetCount: 4
@@ -1710,7 +1710,7 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 10000
+    maxHealth: 200
     moveSpeed: 4
     acceleration: 60
     deceleration: 80

@@ -776,7 +776,7 @@ MonoBehaviour:
     collisionDamage: 0
     attackSpeed: 1
   possessedStats:
-    maxHealth: 10000
+    maxHealth: 280
     moveSpeed: 4
     acceleration: 0
     deceleration: 0
