@@ -168,6 +168,7 @@ public class LustBodyState : MonoBehaviour
             };
         }
 
+        MonsterStatusMarker.ShowLust(target, _owner);
         if (linkEffect != null && target.Combat != null)
             target.Combat.ApplyEffect(linkEffect, _owner != null ? _owner.Combat : target.Combat, null, out _);
     }
@@ -210,6 +211,7 @@ public class LustBodyState : MonoBehaviour
         if (target == null) return;
         int id = target.GetInstanceID();
         if (_links.ContainsKey(id)) _links.Remove(id);
+        MonsterStatusMarker.HideLust(target, _owner);
         if (linkEffect != null && target.Combat != null)
             target.Combat.RemoveEffect(linkEffect);
     }
@@ -224,6 +226,7 @@ public class LustBodyState : MonoBehaviour
         for (int i = 0; i < snapshot.Count; i++)
         {
             Enemy target = snapshot[i];
+            MonsterStatusMarker.HideLust(target, _owner);
             if (target != null && linkEffect != null && target.Combat != null)
                 target.Combat.RemoveEffect(linkEffect);
         }
@@ -247,8 +250,12 @@ public class LustBodyState : MonoBehaviour
             {
                 if (expired == null) expired = new List<int>();
                 expired.Add(pair.Key);
-                if (record != null && record.target != null && linkEffect != null && record.target.Combat != null)
-                    record.target.Combat.RemoveEffect(linkEffect);
+                if (record != null && record.target != null)
+                {
+                    MonsterStatusMarker.HideLust(record.target, _owner);
+                    if (linkEffect != null && record.target.Combat != null)
+                        record.target.Combat.RemoveEffect(linkEffect);
+                }
             }
         }
 
