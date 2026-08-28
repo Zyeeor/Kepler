@@ -320,30 +320,35 @@ public class HallOfFamePanel : MonoBehaviour
 
     string FormatEntry(HallOfFameEntry e)
     {
-        // 列表摘要（精炼版）：只保留核心识别 + 关键战绩；完整数据进详情页
+        // 列表摘要（开发案 §2 字段 + §5 两区块：冷蓝"原始 Run 表现" / 暖橙"异步战绩"；
+        // 卡牌完整清单进详情页，列表不展示——§5"列表默认仅展示摘要"）
         //   第 1 行：词缀名 + 阶段（含日期）
-        //   第 2 行：种类 + 构筑深度
-        //   第 3 行：异步战绩核心两数 + 同步时间
+        //   第 2 行：种类
+        //   第 3~4 行：原始 Run 表现区块（BD 深度 / 控制时长 / 本局击杀）
+        //   第 5~6 行：异步战绩区块（四计数器 + 同步状态）
         string epithetName = EpithetName(e);
         string sinName = SinDisplay(e.sin);
         string phase = PhaseText(e);
-        string statsTime = usingMockStats ? "（模拟）"
-            : e.statsUpdatedAtUnix > 0 ? FormatClock(e.statsUpdatedAtUnix)
+        string statsTag = usingMockStats ? "（离线模拟）"
+            : e.statsUpdatedAtUnix > 0 ? $"（{FormatClock(e.statsUpdatedAtUnix)}）"
             : TextCatalog.Get("ui.hof.entry.not_synced");
-        int deployed, runFail;
+        int deployed, fatal, possessed, runFail;
         if (usingMockStats)
         {
             var m = MockStatsFor(e);
-            deployed = m[0]; runFail = m[3];
+            deployed = m[0]; fatal = m[1]; possessed = m[2]; runFail = m[3];
         }
         else
         {
-            deployed = e.deployed; runFail = e.runFail;
+            deployed = e.deployed; fatal = e.fatal; possessed = e.possessed; runFail = e.runFail;
         }
 
         return $"<b>{epithetName}</b> · {phase} · {FormatClock(e.savedAtUnix)}\n" +
-               $"{sinName} · BD {e.bdCount}\n" +
-               $"被投放 <b>{deployed}</b> · 致 Run Fail <b>{runFail}</b> · {statsTime}";
+               $"{sinName}\n" +
+               "<color=#9fd4ff>──── 原始 Run 表现 ────</color>\n" +
+               $"BD 深度 {e.bdCount}│控制 {e.controlSeconds:F0} 秒│本局击杀 {e.kills}\n" +
+               $"<color=#ffd79f>──── 异步战绩 {statsTag} ────</color>\n" +
+               $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│致 Run Fail {runFail}";
     }
 
     /// <summary>战绩区块标题：在线 = 异步战绩（同步时间/未同步）；离线 = 异步战绩（离线模拟）。</summary>
@@ -893,6 +898,14 @@ public class HallOfFamePanel : MonoBehaviour
         var captured = entry;
         button.onClick.AddListener(() => ShowDetail(captured));
 
+        // 半透明深色遮罩（开发案 §5：横幅上叠加遮罩，确保文字与数据清晰可读）
+        var maskGo = new GameObject("Mask", typeof(RectTransform), typeof(Image));
+        maskGo.transform.SetParent(go.transform, false);
+        Stretch(maskGo.GetComponent<RectTransform>());
+        var maskImg = maskGo.GetComponent<Image>();
+        maskImg.color = new Color(0f, 0f, 0f, 0.45f);
+        maskImg.raycastTarget = false;
+
         // 罪别名 sprite（右上角 Card Filters 灰态；显式"傲慢/嫉妬/.../通用"识别）
         int cfIdx = SinSpriteIndex(entry.sin);
         if (cfIdx >= 0 && cfIdx < cardFilterSprites.GetLength(0) && cardFilterSprites[cfIdx, 0] != null)
@@ -916,7 +929,7 @@ public class HallOfFamePanel : MonoBehaviour
         text.rectTransform.offsetMin = new Vector2(380f, 12f); // 左缘避开罪别彩条 + Tips 怪物菱形图标（容器宽约 1690，图标占 ~340px）
         text.rectTransform.offsetMax = new Vector2(-160f, -10f); // 右缘避开罪名 sprite
         var le = go.GetComponent<LayoutElement>();
-        le.minHeight = 120f; // 精炼后 3 行文字（26 号）+ Tips sprite 等比缩放
+        le.minHeight = 210f; // 6 行两区块文字（26 号）+ Tips sprite 等比缩放
         le.flexibleHeight = 0f;
         return go;
     }
