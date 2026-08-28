@@ -82,7 +82,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4673453431339555007
 Transform:
   m_ObjectHideFlags: 0
@@ -252,9 +252,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.8
-  m_Height: 1.6
+  m_Height: 2.3698173
   m_Direction: 1
-  m_Center: {x: 0, y: 0.8, z: 0}
+  m_Center: {x: 0, y: 1.1849086, z: 0}
 --- !u!54 &8490741439310761608
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -330,6 +330,13 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!114 &5667508307776216601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -539,7 +546,7 @@ RectTransform:
   m_Father: {fileID: 3098779798062130778}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}

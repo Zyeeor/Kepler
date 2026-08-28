@@ -899,10 +899,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.2
-  m_Height: 0.2
+  m_Radius: 0.5446334
+  m_Height: 1.8381189
   m_Direction: 1
-  m_Center: {x: 0, y: 0.25, z: 0}
+  m_Center: {x: 0, y: 0.9690594, z: 0.082208395}
 --- !u!114 &606382932644109846
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -974,6 +974,13 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.01
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!1 &5464347350175569591
 GameObject:
   m_ObjectHideFlags: 0

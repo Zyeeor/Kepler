@@ -1662,7 +1662,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2606274025504633017
 Transform:
   m_ObjectHideFlags: 0
@@ -1873,6 +1873,13 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!136 &2748365033977391353
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1892,10 +1899,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 0.9702349
+  m_Height: 3.0173578
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0.13952482, y: 1.0086778, z: 0.11010396}
 --- !u!54 &7984481324477507707
 Rigidbody:
   m_ObjectHideFlags: 0
