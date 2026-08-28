@@ -374,7 +374,6 @@ public class EnemyAbility_GreedHands : EnemyAbility
                 vis.transform.localScale = Vector3.one * 0.25f * OwnerCombatScaleMultiplier;
                 Object.Destroy(vis.GetComponent<Collider>());
             }
-            VfxPool.ConfigureTransientRendering(vis);
             // Orbit visuals must not fly as projectiles.
             GreedHandProjectile projectile = vis.GetComponent<GreedHandProjectile>();
             if (projectile != null) Destroy(projectile);
