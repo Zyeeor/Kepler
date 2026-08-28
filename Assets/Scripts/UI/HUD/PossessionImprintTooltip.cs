@@ -49,9 +49,10 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
                     ((PossessionImprintMath.GluttonyHealthMultiplier(stacks) - 1f) * 100f).ToString("0"),
                     ((PossessionImprintMath.GluttonyScaleMultiplier(stacks) - 1f) * 100f).ToString("0"));
             case SinType.Greed:
-                float progress = PossessionImprintManager.Instance != null ? PossessionImprintManager.Instance.GreedBonusProgress : 0f;
+                float progress = PossessionImprintMath.GreedProgressPerPossession(stacks);
+                float fractionalProgress = progress - Mathf.Floor(progress);
                 return TextCatalog.Get("imprint.effect.greed",
-                    Mathf.Min(stacks * 5, 100).ToString(), (progress * 100f).ToString("0"));
+                    (progress * 100f).ToString("0"), (fractionalProgress * 100f).ToString("0"));
             case SinType.Envy:
                 return TextCatalog.Get("imprint.effect.envy",
                     PossessionImprintMath.EnvyBulletTimeBonus(stacks).ToString("0.00"));
