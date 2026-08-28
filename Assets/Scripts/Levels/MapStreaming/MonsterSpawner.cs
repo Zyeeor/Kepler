@@ -69,6 +69,10 @@ public class MonsterSpawner : MonoBehaviour
     [Tooltip("低频维护间隔（秒）：追踪列表修剪（尸体 fade 自行回池的怪摘除）。")]
     [Min(0.05f)] public float upkeepInterval = 0.25f;
 
+    [Header("尸体消散阈值")]
+    [Tooltip("场上普通击杀尸体的数量阈值。超过后，最早进入队列的尸体开始现有消散倒计时；倒计时结束后才进入 Fading；0 = 保持原有击杀后自动倒计时。")]
+    [Min(0)] public int corpseDissipationThreshold = 5;
+
     [Header("调试")]
     [Tooltip("Scene 视图绘制每只已刷怪的位置圆点（绿=激活，蓝=休眠）。")]
     public bool showGizmos = true;
@@ -180,6 +184,8 @@ public class MonsterSpawner : MonoBehaviour
         public bool countsTowardCombatLimit;
     }
     readonly Dictionary<MonsterActor, TrackedInfo> trackInfoByMonster = new Dictionary<MonsterActor, TrackedInfo>();
+    readonly Queue<MonsterActor> corpseDissipationQueue = new Queue<MonsterActor>();
+    readonly HashSet<MonsterActor> queuedDissipationCorpses = new HashSet<MonsterActor>();
 
     // 低频维护复用缓冲（避免每 0.25s 分配）
     readonly List<ChunkCoord> chunkPruneBuffer = new List<ChunkCoord>();
@@ -230,6 +236,8 @@ public class MonsterSpawner : MonoBehaviour
         if (Time.unscaledTime < nextUpkeepTime) return;
         nextUpkeepTime = Time.unscaledTime + upkeepInterval;
         PruneTracked();
+        PruneCorpseDissipationQueue();
+        EnforceCorpseDissipationThreshold();
     }
 
     // ── 波次玩法刷怪 API（WaveManager 驱动） ──
@@ -843,6 +851,58 @@ public class MonsterSpawner : MonoBehaviour
         var tiles = chunk.Tiles;
         if (!system.WorldToTileLocal(worldPos, chunk.Coord, out int lx, out int ly)) return false;
         return tiles[lx, ly].isWalkable;
+    }
+
+    // ── 躯体消散队列 ──
+
+    /// <summary>登记一具普通击杀尸体；神龛/Boss 永久尸体不经过此入口。</summary>
+    public void RegisterTimedCorpse(MonsterActor corpse)
+    {
+        if (corpse == null || corpse.Body != MonsterActor.BodyState.Downed || corpse.isPossessed
+            || corpse.IsBossBattleReserveBody || !queuedDissipationCorpses.Add(corpse)) return;
+
+        corpseDissipationQueue.Enqueue(corpse);
+        if (corpseDissipationThreshold <= 0)
+        {
+            queuedDissipationCorpses.Remove(corpse);
+            corpse.TriggerCorpseDissipation();
+            return;
+        }
+        EnforceCorpseDissipationThreshold();
+    }
+
+    /// <summary>尸体进入附身或消散流程后，从 FIFO 的有效集合中摘除。</summary>
+    public void UnregisterTimedCorpse(MonsterActor corpse)
+    {
+        if (corpse != null) queuedDissipationCorpses.Remove(corpse);
+    }
+
+    void PruneCorpseDissipationQueue()
+    {
+        while (corpseDissipationQueue.Count > 0)
+        {
+            MonsterActor corpse = corpseDissipationQueue.Peek();
+            if (corpse != null && queuedDissipationCorpses.Contains(corpse)) break;
+            corpseDissipationQueue.Dequeue();
+        }
+        if (queuedDissipationCorpses.Count == 0) corpseDissipationQueue.Clear();
+    }
+
+    void EnforceCorpseDissipationThreshold()
+    {
+        int threshold = Mathf.Max(0, corpseDissipationThreshold);
+        if (threshold <= 0) return;
+
+        while (queuedDissipationCorpses.Count > threshold && corpseDissipationQueue.Count > 0)
+        {
+            MonsterActor oldest = corpseDissipationQueue.Dequeue();
+            if (oldest == null || !queuedDissipationCorpses.Remove(oldest)) continue;
+            if (!oldest.gameObject.activeInHierarchy || oldest.Body != MonsterActor.BodyState.Downed
+                || oldest.isPossessed || oldest.IsBossBattleReserveBody) continue;
+
+            // 只启动既有 possession countdown；倒计时结束后才进入 Fading / 回池流程。
+            oldest.TriggerCorpseDissipation();
+        }
     }
 
     // ── 追踪与配额 ──

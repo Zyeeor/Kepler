@@ -19,9 +19,12 @@ public class MonsterActor : Actor
     /// <summary>True while this monster is a downed, fading, or already despawned corpse.</summary>
     public bool IsCorpse => isDowned || Body == BodyState.Downed || Body == BodyState.Fading || Body == BodyState.Despawned;
     public bool CanBePossessed => isPossessable && Body == BodyState.Downed && !isPossessed && !isPossessionReserved
-        && (!IsBossBattleReserveBody || currentHealth > 0f) && Time.time < possessionWindowEndsAt;
+        && (!IsBossBattleReserveBody || currentHealth > 0f)
+        && (!corpseDissipationTriggered || Time.time < possessionWindowEndsAt);
     public bool CanCompleteReservedPossession => Body == BodyState.Downed && !isPossessed && isPossessionReserved;
-    public float PossessionWindowRemaining => Body == BodyState.Downed && !isPossessionReserved ? Mathf.Max(0f, possessionWindowEndsAt - Time.time) : 0f;
+    public float PossessionWindowRemaining => Body == BodyState.Downed && !isPossessionReserved
+        ? (corpseDissipationTriggered ? Mathf.Max(0f, possessionWindowEndsAt - Time.time) : float.PositiveInfinity)
+        : 0f;
 
     /// <summary>当前控制状态（是否被玩家控制）。</summary>
     public ControlState Control => IsPlayerControlled ? ControlState.Possessed : ControlState.AI;
@@ -288,6 +291,7 @@ public class MonsterActor : Actor
 
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
+    private bool corpseDissipationTriggered;
     private bool isPossessionReserved;
     private bool bossDamageContext;
     private Coroutine corpseRoutine;
@@ -1632,6 +1636,7 @@ public class MonsterActor : Actor
     }
 
     public void OnPossessed(){
+        MonsterSpawner.Instance?.UnregisterTimedCorpse(this);
         if (activeAbilityTelegraph != null)
             activeAbilityTelegraph.CancelEnemyTelegraph();
         float reservedHealth = currentHealth;
@@ -1784,7 +1789,8 @@ public class MonsterActor : Actor
         CancelAbilityRuntimeState();
         SetAbilityComponentsEnabled(false);
         Combat?.ClearEffectsForCorpse();
-        possessionWindowEndsAt = Time.time + corpsePossessionWindow;
+        possessionWindowEndsAt = 0f;
+        corpseDissipationTriggered = false;
         isPossessionReserved = false;
         transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
         Transform corpseRoot = transform.root != null ? transform.root : transform;
@@ -1804,8 +1810,12 @@ public class MonsterActor : Actor
         Animator animator = GetActiveAnimator();
         if (animator != null) animator.SetBool("IsDowned", true);
 
-        if (corpseRoutine != null) StopCoroutine(corpseRoutine);
-        corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
+        if (corpseRoutine != null)
+        {
+            StopCoroutine(corpseRoutine);
+            corpseRoutine = null;
+        }
+        MonsterSpawner.EnsureInstance().RegisterTimedCorpse(this);
         Debug.Log($"[MonsterState] '{displayName}' downed. Possess window={corpsePossessionWindow:F1}s.");
     }
 
@@ -1834,6 +1844,7 @@ public class MonsterActor : Actor
         isDowned = true;
         isPossessed = false;
         Body = BodyState.Downed;
+        corpseDissipationTriggered = false;
         possessionWindowEndsAt = float.PositiveInfinity; // 永久等待附身，不自动消散
         isPossessionReserved = false;
         transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
@@ -1889,8 +1900,23 @@ public class MonsterActor : Actor
         BossReserveCorpseVisualFx.EnsureFor(this);
     }
 
+    /// <summary>
+    /// Starts the existing corpse possession countdown. The corpse remains Downed until the
+    /// countdown expires; the FIFO threshold decides when this countdown is allowed to start.
+    /// </summary>
+    public void TriggerCorpseDissipation()
+    {
+        if (Body != BodyState.Downed || isPossessed || corpseDissipationTriggered) return;
+
+        corpseDissipationTriggered = true;
+        possessionWindowEndsAt = Time.time + corpsePossessionWindow;
+        if (corpseRoutine != null) StopCoroutine(corpseRoutine);
+        corpseRoutine = StartCoroutine(CorpseLifecycleRoutine());
+    }
+
     public virtual void BeginDisappearing(){
         if (Body == BodyState.Fading || Body == BodyState.Despawned) return;
+        MonsterSpawner.Instance?.UnregisterTimedCorpse(this);
         if (corpseRoutine != null) StopCoroutine(corpseRoutine);
         isPossessionReserved = false;
         if (visualFx != null)
@@ -1946,6 +1972,7 @@ public class MonsterActor : Actor
     }
 
     public void ResetForSpawn(){
+        MonsterSpawner.Instance?.UnregisterTimedCorpse(this);
         SetPossessedAnimatorsUnscaled(false);
         if (corpseRoutine != null)
         {
@@ -1968,6 +1995,7 @@ public class MonsterActor : Actor
         playerDetected = false;
         aiActiveOverride = true; // 池复用默认激活；流送场景由 MonsterSpawner 刷出后按 Chunk 状态改写
         Body = BodyState.Active;
+        corpseDissipationTriggered = false;
         possessionWindowEndsAt = 0f;
         hitStateEndsAt = 0f;
         currentHealth = maxHealth;
@@ -2025,6 +2053,7 @@ public class MonsterActor : Actor
     protected virtual void OnResetForSpawn() { }
 
     public void ResetForPool(){
+        MonsterSpawner.Instance?.UnregisterTimedCorpse(this);
         SetPossessedAnimatorsUnscaled(false);
         SetController(NullController.Instance);
         CancelAbilityRuntimeState();

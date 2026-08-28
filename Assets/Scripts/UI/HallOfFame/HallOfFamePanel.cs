@@ -10,8 +10,7 @@ using UnityEngine.UI;
 ///
 /// 本期实现（开发案 §2/§2.1/§6 本期范围；Owner 三项拍板）：
 ///   - 记录列表：本地缓存优先 + 分页（每页 5 条，上一页/下一页/页码）+ 滚动条（内容不足自动隐藏）；
-///   - 记录详情：整条可点 → 全屏详情（完整构筑 + 两区块完整字段），返回后列表的排序/页码/滚动位置原样保留
-///     （详情为覆盖层，列表对象不销毁，状态天然保持）；
+///   - 记录详情：整条可点 → 列表内延伸展开（完整构筑 + 两区块完整字段，展开行插入该条目之后；再点收起 / 切换 / ESC / 刷新时收起）
 ///   - 排序（§5.6 四键循环，默认保存时间倒序）；标题保留词缀名 + 世代序号（Owner 拍板 2）；
 ///   - 异步战绩 UI 不再展示 bodyFatal 列（Owner 拍板 1；数据字段与服务器回传/ApplyStats 不变，仅展示层移除）；
 ///   - 在线用真实战绩、离线用模拟战绩展示（Owner 拍板 3）：刷新失败时按 (runId,sin) 哈希生成
@@ -60,10 +59,9 @@ public class HallOfFamePanel : MonoBehaviour
     int currentPage = 1;
     int totalPages = 1;
 
-    // 详情覆盖层（开发案 §2.1；列表对象不销毁 → 排序/页码/滚动位置天然保留）
-    GameObject detailRoot;
-    Transform detailContent;
-    ScrollRect detailScroll;
+    // 条目内展开详情（点击条目在列表内延伸显示完整内容，替代全屏弹层；同一时刻仅展开一条）
+    GameObject expandedRow;
+    string expandedKey;
 
     /// <summary>离线模拟战绩展示开关（Owner 拍板 3：不在线时用模拟数据渲染，明确标注、不落盘）。</summary>
     bool usingMockStats;
@@ -128,7 +126,7 @@ public class HallOfFamePanel : MonoBehaviour
         if (panelRoot == null || !panelRoot.activeSelf) return;
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (detailRoot != null && detailRoot.activeSelf) HideDetail();
+            if (expandedRow != null) CollapseExpanded();
             else Hide();
         }
     }
@@ -159,8 +157,8 @@ public class HallOfFamePanel : MonoBehaviour
 
     public void Hide()
     {
+        CollapseExpanded();
         if (panelRoot != null) panelRoot.SetActive(false);
-        if (detailRoot != null) detailRoot.SetActive(false);
     }
 
     // ── 列表数据与渲染 ──
@@ -186,6 +184,7 @@ public class HallOfFamePanel : MonoBehaviour
     /// <summary>全量渲染列表（滚动显示，不分页；倒序销毁旧条目，CoreChoiceUI.RefreshCards 同模式）。</summary>
     void RenderList(List<HallOfFameEntry> entries)
     {
+        CollapseExpanded(); // 列表重建（排序/刷新）前收起展开行，避免悬垂引用
         for (int i = contentRoot.childCount - 1; i >= 0; i--)
             Destroy(contentRoot.GetChild(i).gameObject);
 
@@ -324,7 +323,7 @@ public class HallOfFamePanel : MonoBehaviour
         // 卡牌完整清单进详情页，列表不展示——§5"列表默认仅展示摘要"）
         //   第 1 行：词缀名 + 阶段（含日期）
         //   第 2 行：种类
-        //   第 3~4 行：原始 Run 表现区块（BD 深度 / 控制时长 / 本局击杀）
+        //   第 3~4 行：原始 Run 表现区块（构筑深度 / 控制时长 / 本局击杀）
         //   第 5~6 行：异步战绩区块（四计数器 + 同步状态）
         string epithetName = EpithetName(e);
         string sinName = SinDisplay(e.sin);
@@ -346,9 +345,9 @@ public class HallOfFamePanel : MonoBehaviour
         return $"<b>{epithetName}</b> · {phase} · {FormatClock(e.savedAtUnix)}\n" +
                $"{sinName}\n" +
                "<color=#9fd4ff>──── 原始 Run 表现 ────</color>\n" +
-               $"BD 深度 {e.bdCount}│控制 {e.controlSeconds:F0} 秒│本局击杀 {e.kills}\n" +
+               $"构筑深度 {e.bdCount}│控制 {e.controlSeconds:F0} 秒│本局击杀 {e.kills}\n" +
                $"<color=#ffd79f>──── 异步战绩 {statsTag} ────</color>\n" +
-               $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│致 Run Fail {runFail}";
+               $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│杀敌 {runFail}";
     }
 
     /// <summary>战绩区块标题：在线 = 异步战绩（同步时间/未同步）；离线 = 异步战绩（离线模拟）。</summary>
@@ -374,44 +373,97 @@ public class HallOfFamePanel : MonoBehaviour
         {
             deployed = e.deployed; fatal = e.fatal; possessed = e.possessed; runFail = e.runFail;
         }
-        return $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│致 Run Fail {runFail}";
+        return $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│杀敌 {runFail}";
     }
 
-    // ── 详情页（开发案 §2.1）──
+    // ── 条目内展开详情（开发案 §2.1 完整字段；点击条目在列表内延伸展示，替代全屏弹层）──
 
-    void ShowDetail(HallOfFameEntry e)
+    /// <summary>点击条目：同一条目再点收起，点击其他条目切换；展开行插入到该条目行之后。</summary>
+    void ToggleExpand(HallOfFameEntry e)
     {
-        EnsureDetailBuilt();
-        for (int i = detailContent.childCount - 1; i >= 0; i--)
-            Destroy(detailContent.GetChild(i).gameObject);
+        if (e == null || contentRoot == null) return;
+        string key = e.runId + "|" + e.sin;
+        if (expandedRow != null && expandedKey == key)
+        {
+            CollapseExpanded();
+            return;
+        }
+        CollapseExpanded();
+        var row = MakeExpandRow(e);
+        if (row == null) return;
+        expandedRow = row;
+        expandedKey = key;
+        // 立即重算布局，ScrollRect / 滚动条同步更新
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)contentRoot);
+        Canvas.ForceUpdateCanvases();
+    }
 
-        // 详情文字：左上角对齐（防止 LayoutGroup 默认 center anchor 让文字水平居中导致两端被 RectMask2D 裁切）
-        var text = MakeText(detailContent, FormatDetail(e), 28, new Color(0.95f, 0.95f, 0.98f));
+    /// <summary>收起当前展开行（销毁对象；列表刷新/隐藏/ESC/切换时调用）。</summary>
+    void CollapseExpanded()
+    {
+        if (expandedRow != null)
+        {
+            Destroy(expandedRow);
+            expandedRow = null;
+        }
+        expandedKey = null;
+    }
+
+    /// <summary>
+    /// 构建展开行：深色底 + 左缘罪别色条 + 完整构筑与两区块统计（FormatDetail），
+    /// 插入到被点击条目行之后（SetSiblingIndex），列表上下文内延伸展示。
+    /// </summary>
+    GameObject MakeExpandRow(HallOfFameEntry e)
+    {
+        string want = EntryRowName(e);
+        Transform target = null;
+        for (int i = 0; i < contentRoot.childCount; i++)
+        {
+            if (contentRoot.GetChild(i).name == want)
+            {
+                target = contentRoot.GetChild(i);
+                break;
+            }
+        }
+        if (target == null) return null; // 条目行不存在（列表已刷新）则不展开
+
+        var go = new GameObject("ExpandedRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        go.transform.SetParent(contentRoot, false);
+        go.GetComponent<Image>().color = new Color(0.06f, 0.07f, 0.12f, 0.95f); // 深色底，与条目卡片区分
+
+        // 左缘罪别色条（与条目行同识别色）
+        var bar = new GameObject("Bar", typeof(RectTransform), typeof(Image));
+        bar.transform.SetParent(go.transform, false);
+        var barImg = bar.GetComponent<Image>();
+        barImg.color = SinUIColor(e.sin);
+        barImg.raycastTarget = false;
+        var barRt = bar.GetComponent<RectTransform>();
+        barRt.anchorMin = new Vector2(0f, 0f);
+        barRt.anchorMax = new Vector2(0f, 1f);
+        barRt.pivot = new Vector2(0f, 0.5f);
+        barRt.sizeDelta = new Vector2(8f, 0f);
+
+        // 完整内容文字：Stretch 铺满展开行（避免固定锚点 + offsetMax/Min 产生负 sizeDelta 导致文字宽度退化）
+        var text = MakeText(go.transform, FormatDetail(e), 24, new Color(0.95f, 0.95f, 0.98f));
         var trt = text.rectTransform;
-        trt.anchorMin = new Vector2(0f, 1f);
-        trt.anchorMax = new Vector2(0f, 1f);
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
         trt.pivot = new Vector2(0f, 1f);
         trt.anchoredPosition = Vector2.zero;
+        trt.offsetMin = new Vector2(24f, 12f);
+        trt.offsetMax = new Vector2(-24f, -12f);
         text.alignment = TextAlignmentOptions.TopLeft;
-        // 宽由 preferredWidth 决定，RectMask2D 自然裁剪右侧超出（文字超出可视区才裁）
         text.enableWordWrapping = true;
 
-        detailRoot.SetActive(true);
-        detailRoot.transform.SetAsLastSibling();
-        // 详情页全屏深色遮罩（alpha=1 + 全屏锚，双保险遮住列表层）
-        var dImg = detailRoot.GetComponent<Image>();
-        dImg.color = new Color(0.05f, 0.06f, 0.10f, 1f);
-        var dRect = detailRoot.GetComponent<RectTransform>();
-        dRect.anchorMin = Vector2.zero; dRect.anchorMax = Vector2.one;
-        dRect.offsetMin = Vector2.zero; dRect.offsetMax = Vector2.zero;
-        if (detailScroll != null) detailScroll.verticalNormalizedPosition = 1f;
+        var le = go.GetComponent<LayoutElement>();
+        le.minHeight = 300f; // 容纳 8~10 行完整内容（24 号）；换行超出时按 preferred 自动撑高
+        le.flexibleHeight = 0f;
+        go.transform.SetSiblingIndex(target.GetSiblingIndex() + 1);
+        return go;
     }
 
-    void HideDetail()
-    {
-        if (detailRoot != null) detailRoot.SetActive(false);
-        // 列表对象未销毁：排序、页码与滚动位置原样保留（开发案 §2.1）
-    }
+    /// <summary>条目行命名（runId+sin 唯一标识，供展开行定位插入位置）。</summary>
+    static string EntryRowName(HallOfFameEntry e) => "EntryRow_" + e.runId + "_" + e.sin;
 
     string FormatDetail(HallOfFameEntry e)
     {
@@ -420,10 +472,10 @@ public class HallOfFamePanel : MonoBehaviour
         string cards = e.cardIds != null && e.cardIds.Count > 0 ? string.Join("、", e.cardIds) : TextCatalog.Get("ui.hof.entry.no_cards");
         string staleMark = HasStaleCards(e) ? "  " + TextCatalog.Get("ui.hof.entry.stale_cards") : "";
 
-        return $"<size=36><b>{epithetName}</b></size>\n" +
+        return $"<size=30><b>{epithetName}</b></size>\n" +
                $"{sinName}（{e.sin}） · {FormatClock(e.savedAtUnix)} · {PhaseText(e)}\n" +
                "<color=#9fd4ff>──── 原始 Run 表现 ────</color>\n" +
-               $"构筑深度（BD 卡）：{e.bdCount}\n" +
+               $"构筑深度：{e.bdCount}\n" +
                $"本局控制时长：{e.controlSeconds:F0} 秒\n" +
                $"本局击杀数：{e.kills}\n" +
                $"卡牌清单（{(e.cardIds != null ? e.cardIds.Count : 0)} 张）：{cards}{staleMark}\n" +
@@ -819,66 +871,10 @@ public class HallOfFamePanel : MonoBehaviour
         emptyLabel.gameObject.SetActive(false);
     }
 
-    /// <summary>详情覆盖层（开发案 §2.1）：全屏层，激活时盖住列表；列表不销毁，状态天然保留。</summary>
-    void EnsureDetailBuilt()
-    {
-        if (detailRoot != null) return;
-
-        detailRoot = new GameObject("DetailRoot", typeof(RectTransform), typeof(Image));
-        detailRoot.transform.SetParent(panelRoot.transform, false);
-        Stretch(detailRoot.GetComponent<RectTransform>());
-        detailRoot.GetComponent<Image>().color = new Color(0.09f, 0.10f, 0.15f, 0.99f);
-        detailRoot.SetActive(false);
-
-        // 返回按钮（右上，顶部锚）
-        var back = MakeButton(detailRoot.transform, "←", 46f, 46f);
-        PlaceTopRight(back.GetComponent<RectTransform>(), -90f, -58f, 46f, 46f);
-        back.onClick.AddListener(HideDetail);
-
-        // 详情滚动区（全屏布局：四边避开边框 ~90px，顶部让出返回按钮）
-        var scrollGo = new GameObject("DetailScroll", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
-        scrollGo.transform.SetParent(detailRoot.transform, false);
-        var sRect = scrollGo.GetComponent<RectTransform>();
-        sRect.anchorMin = new Vector2(0f, 0f);
-        sRect.anchorMax = new Vector2(1f, 1f);
-        sRect.offsetMin = new Vector2(90f, 90f);
-        sRect.offsetMax = new Vector2(-90f, -120f);
-        scrollGo.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-        detailScroll = scrollGo.GetComponent<ScrollRect>();
-        detailScroll.horizontal = false;
-        detailScroll.vertical = true;
-        detailScroll.scrollSensitivity = 40f;
-        detailScroll.movementType = ScrollRect.MovementType.Clamped;
-
-        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
-        viewport.transform.SetParent(scrollGo.transform, false);
-        Stretch(viewport.GetComponent<RectTransform>());
-        viewport.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f); // RectMask2D 硬矩形裁剪（不依赖像素 alpha，避免 Mask 坑）
-        detailScroll.viewport = viewport.GetComponent<RectTransform>();
-
-        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        content.transform.SetParent(viewport.transform, false);
-        var cRect = content.GetComponent<RectTransform>();
-        cRect.anchorMin = new Vector2(0f, 1f);
-        cRect.anchorMax = new Vector2(1f, 1f);
-        cRect.pivot = new Vector2(0.5f, 1f);
-        cRect.anchoredPosition = Vector2.zero;
-        var layout = content.GetComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(120, 24, 6, 6); // 左侧大边距：详情文字整体右移，确保左缘不被 RectMask2D 裁切
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-        var fitter = content.GetComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        detailScroll.content = cRect;
-        detailContent = content.transform;
-    }
-
-    /// <summary>列表条目行：可点击整行（开发案 §2.1）+ 左侧罪别彩条（开发案 §5）。</summary>
+    /// <summary>列表条目行：可点击整行展开详情（开发案 §2.1）+ 左侧罪别彩条（开发案 §5）。</summary>
     GameObject MakeEntryRow(HallOfFameEntry entry)
     {
-        var go = new GameObject("EntryRow", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+        var go = new GameObject(EntryRowName(entry), typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         var img = go.GetComponent<Image>();
         // Tips sprite 作条目卡背景（拉伸到容器；已含左侧罪别彩条 + 中部怪物菱形图标，无需单独叠彩条）
         int tipIdx = SinSpriteIndex(entry.sin);
@@ -896,7 +892,7 @@ public class HallOfFamePanel : MonoBehaviour
         var button = go.GetComponent<Button>();
         button.targetGraphic = img;
         var captured = entry;
-        button.onClick.AddListener(() => ShowDetail(captured));
+        button.onClick.AddListener(() => ToggleExpand(captured));
 
         // 半透明深色遮罩（开发案 §5：横幅上叠加遮罩，确保文字与数据清晰可读）
         var maskGo = new GameObject("Mask", typeof(RectTransform), typeof(Image));
@@ -906,28 +902,10 @@ public class HallOfFamePanel : MonoBehaviour
         maskImg.color = new Color(0f, 0f, 0f, 0.45f);
         maskImg.raycastTarget = false;
 
-        // 罪别名 sprite（右上角 Card Filters 灰态；显式"傲慢/嫉妬/.../通用"识别）
-        int cfIdx = SinSpriteIndex(entry.sin);
-        if (cfIdx >= 0 && cfIdx < cardFilterSprites.GetLength(0) && cardFilterSprites[cfIdx, 0] != null)
-        {
-            var nameGo = new GameObject("SinName", typeof(RectTransform), typeof(Image));
-            nameGo.transform.SetParent(go.transform, false);
-            var ni = nameGo.GetComponent<Image>();
-            ni.sprite = cardFilterSprites[cfIdx, 0];
-            ni.color = Color.white;
-            ni.type = Image.Type.Simple;
-            ni.preserveAspect = true; // sprite 比例居中
-            ni.raycastTarget = false;
-            var nrt = nameGo.GetComponent<RectTransform>();
-            nrt.anchorMin = nrt.anchorMax = nrt.pivot = new Vector2(1f, 1f);
-            nrt.anchoredPosition = new Vector2(-14f, -10f); // 右上角内边距
-            nrt.sizeDelta = new Vector2(150f, 52f);
-        }
-
         var text = MakeText(go.transform, FormatEntry(entry), 26, new Color(0.95f, 0.95f, 0.98f));
         Stretch(text.rectTransform);
         text.rectTransform.offsetMin = new Vector2(380f, 12f); // 左缘避开罪别彩条 + Tips 怪物菱形图标（容器宽约 1690，图标占 ~340px）
-        text.rectTransform.offsetMax = new Vector2(-160f, -10f); // 右缘避开罪名 sprite
+        text.rectTransform.offsetMax = new Vector2(-24f, -10f);
         var le = go.GetComponent<LayoutElement>();
         le.minHeight = 210f; // 6 行两区块文字（26 号）+ Tips sprite 等比缩放
         le.flexibleHeight = 0f;
