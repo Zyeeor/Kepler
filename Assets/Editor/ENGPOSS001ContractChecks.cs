@@ -27,19 +27,27 @@ public static class ENGPOSS001ContractChecks
     static void GreedUsesPreviousStacksAndRewardsTarget()
     {
         int[] stacks = new int[8];
-        stacks[(int)SinType.Greed] = 20;
+        stacks[(int)SinType.Greed] = 10;
         float progress = 0f;
         PossessionImprintMath.ApplyTransaction(stacks, ref progress, SinType.Wrath);
         Require(stacks[(int)SinType.Wrath] == 2, "Greed bonus did not reward the possessed sin.");
-        Require(stacks[(int)SinType.Greed] == 20, "Greed bonus recursively modified Greed.");
+        Require(stacks[(int)SinType.Greed] == 10, "Greed bonus recursively modified Greed.");
         Require(Math.Abs(progress) < 0.0001f, "Greed progress remainder is wrong.");
+        Require(Approximately(PossessionImprintMath.GreedProgressPerPossession(15), 1.5f),
+            "Greed fractional progress is wrong.");
     }
 
     static void MultipliersRespectCaps()
     {
         Require(PossessionImprintMath.MaxStacks == 100, "Seven-sin stack cap must default to 100.");
-        Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(100), 0.4f), "Sloth drain cap is wrong.");
-        Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(1000), 0.4f), "Sloth stack cap is not enforced.");
+        Require(Approximately(PossessionImprintMath.PrideCooldownMultiplier(20), 0.3f), "Pride 20-stack CDR is wrong.");
+        Require(Approximately(PossessionImprintMath.WrathDamageMultiplier(20), 3f), "Wrath 20-stack damage is wrong.");
+        Require(Approximately(PossessionImprintMath.GluttonyHealthMultiplier(20), 3f), "Gluttony 20-stack health is wrong.");
+        Require(Approximately(PossessionImprintMath.GluttonyScaleMultiplier(20), 2f), "Gluttony 20-stack scale cap is wrong.");
+        Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(20), 0.3f), "Sloth 20-stack drain reduction is wrong.");
+        Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(1000), PossessionImprintMath.SlothDrainMultiplier(100)), "Sloth stack cap is not enforced.");
+        Require(Approximately(PossessionImprintMath.EnvyBulletTimeBonus(20), 0.6f), "Envy 20-stack bullet time is wrong.");
+        Require(Approximately(PossessionImprintMath.LustLifestealMultiplier(20), 0.2f), "Lust formula is wrong.");
         Require(Approximately(PossessionImprintMath.LustLifestealMultiplier(100), 1f), "Lust lifesteal formula is wrong.");
     }
 

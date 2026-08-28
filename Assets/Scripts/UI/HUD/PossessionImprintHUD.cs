@@ -131,10 +131,10 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         };
         pendingArrivals.Add(completion);
         Debug.Log($"[PossessionImprintHUD] Gain event queued: sin={sin}, body={(body != null ? body.name : "NULL")}, pendingAfter={pendingArrivals.Count}.");
-        StartCoroutine(PlayImprintGainAfterCameraUpdate(sin, body, completion));
+        StartCoroutine(PlayImprintGainAfterCameraUpdate(sin, body, Mathf.Max(1, gainedStacks), completion));
     }
 
-    IEnumerator PlayImprintGainAfterCameraUpdate(SinType sin, MonsterActor body, Action onArrived)
+    IEnumerator PlayImprintGainAfterCameraUpdate(SinType sin, MonsterActor body, int gainedStacks, Action onArrived)
     {
         // CameraDirector switches its Follow target during the possession transaction, while
         // Cinemachine writes the real camera pose later in the frame. Sample after that pose
@@ -153,9 +153,11 @@ public sealed class PossessionImprintHUD : MonoBehaviour
         float meteorTailLength = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorTailLength : DefaultMeteorTailLength;
         float meteorGlow = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorGlow : DefaultMeteorGlow;
         Color meteorColor = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorColor : DefaultMeteorColor;
-        int meteorCount = Mathf.Clamp(actorVisualFx != null ? actorVisualFx.possessionImprintMeteorCount : DefaultMeteorCount, 1, 8);
+        int configuredMeteorCount = Mathf.Clamp(actorVisualFx != null ? actorVisualFx.possessionImprintMeteorCount : DefaultMeteorCount, 1, 8);
+        int meteorCount = Mathf.Max(configuredMeteorCount, gainedStacks);
         float meteorArc = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorArc : DefaultMeteorArc;
         float meteorStagger = actorVisualFx != null ? actorVisualFx.possessionImprintMeteorStagger : DefaultMeteorStagger;
+        if (gainedStacks > 1) meteorStagger = Mathf.Max(0.2f, meteorStagger);
         Debug.Log($"[PossessionImprintHUD] Projection inputs: sin={sin}, body={(body != null ? body.name : "NULL")}, bodyActive={(body != null && body.isActiveAndEnabled)}, bodyWorld={(body != null ? body.transform.position.ToString() : "NA")}, targetIcon={(targetIcon != null ? targetIcon.name : "NULL")}, targetActive={(targetIcon != null && targetIcon.isActiveAndEnabled)}, canvas={(canvas != null ? canvas.name : "NULL")}, canvasMode={(canvas != null ? canvas.renderMode.ToString() : "NA")}, sourceCamera={(sourceCamera != null ? sourceCamera.name : "NULL")}, sourceCameraPos={(sourceCamera != null ? sourceCamera.transform.position.ToString() : "NA")}, sourceCameraPixel={(sourceCamera != null ? sourceCamera.pixelWidth + "x" + sourceCamera.pixelHeight : "NA")}.");
         if (targetIcon == null || body == null || canvas == null || sourceCamera == null || meteorWidth <= 0f)
         {

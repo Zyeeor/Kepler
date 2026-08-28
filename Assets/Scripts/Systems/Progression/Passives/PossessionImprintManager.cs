@@ -100,6 +100,7 @@ public sealed class PossessionImprintManager : MonoBehaviour
             stacks[i] = value;
             displayedStacks[i] = value;
         }
+        GreedBonusProgress = PossessionImprintMath.GreedProgressPerPossession(value);
         hasRun = true;
         restoredRun = false;
     }
@@ -126,8 +127,11 @@ public sealed class PossessionImprintManager : MonoBehaviour
                     stacks[index] = Mathf.Clamp(saved[i].stacks, 0, Mathf.Max(1, PossessionImprintMath.MaxStacks));
             }
         }
-        GreedBonusProgress = Mathf.Clamp01(greedProgress);
+        // Fractional Greed progress is now rolled immediately per possession. Rebuild this
+        // value as the next-possession preview and discard legacy carried progress.
+        GreedBonusProgress = 0f;
         LustHealProgress = Mathf.Max(0f, lustHealProgress);
+        GreedBonusProgress = PossessionImprintMath.GreedProgressPerPossession(stacks[(int)SinType.Greed]);
         Array.Copy(stacks, displayedStacks, stacks.Length);
         hasRun = true;
         restoredRun = true;
@@ -164,9 +168,9 @@ public sealed class PossessionImprintManager : MonoBehaviour
         if (!hasRun) BeginNewRun();
         int oldStackCount = stacks[(int)body.sinType];
         int oldDisplayedStackCount = displayedStacks[(int)body.sinType];
-        float greedProgress = GreedBonusProgress;
+        float greedProgress = 0f;
         PossessionImprintMath.ApplyTransaction(stacks, ref greedProgress, body.sinType);
-        GreedBonusProgress = greedProgress;
+        GreedBonusProgress = PossessionImprintMath.GreedProgressPerPossession(stacks[(int)SinType.Greed]);
         ApplyBodyEffects(body);
 
         int gainedStacks = Mathf.Max(0, stacks[(int)body.sinType] - oldStackCount);

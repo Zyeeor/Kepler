@@ -16,15 +16,15 @@ MonoBehaviour:
   templateEntries:
   - layout: {fileID: 11400000, guid: 892d092e6a0431445aeffebfb1958b8e, type: 2}
     mustGenerate: 0
-    maxCount: 3
+    maxCount: 5
     weight: 0
   - layout: {fileID: 11400000, guid: 70ae2771560ace749807da5b9c25358c, type: 2}
     mustGenerate: 0
-    maxCount: 3
+    maxCount: 10
     weight: 0
   - layout: {fileID: 11400000, guid: 13cbbcc02fea4934c9e24d42214e7554, type: 2}
     mustGenerate: 0
-    maxCount: 1
+    maxCount: 2
     weight: 0
   templateWeight: 0.1
   normalTiles:
@@ -32,7 +32,6 @@ MonoBehaviour:
   - {fileID: 2898380885021715338, guid: 681037e680563f34fa477926b1450484, type: 3}
   - {fileID: 3196925563032784384, guid: 01f00c3a586f6824d8da506c0a5cfe10, type: 3}
   triggerTiles:
-  - {fileID: 666978414410227392, guid: 35b25cfff689ed345a1866bdb4058c40, type: 3}
   - {fileID: 2449339998477889666, guid: 50f17a84894320947bcc8ac943a102dd, type: 3}
   - {fileID: 3138969978686984857, guid: 0cd215212401b754089b85d6502a57e0, type: 3}
   decorationTiles:
@@ -91,13 +90,13 @@ MonoBehaviour:
   decorationTilesLegacy: []
   triggerPatterns:
   - shape: 2
-    weight: 1
+    weight: 3
   - shape: 0
-    weight: 0.5
+    weight: 0
   - shape: 1
-    weight: 1
+    weight: 0
   - shape: 3
-    weight: 1
+    weight: 5
   - shape: 5
     weight: 1
   - shape: 6
@@ -108,13 +107,15 @@ MonoBehaviour:
     weight: 1
   decorationPatterns:
   - shape: 0
-    weight: 5
+    weight: 10
   - shape: 1
-    weight: 1
-  - shape: 7
+    weight: 2
+  - shape: 4
     weight: 1
   - shape: 8
-    weight: 2
+    weight: 3
+  - shape: 2
+    weight: 3
   minPatternsPerChunk: 1
   maxPatternsPerChunk: 5
   roadTiles:

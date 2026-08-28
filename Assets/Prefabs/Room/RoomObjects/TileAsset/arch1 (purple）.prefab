@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5495390383206564631}
   - component: {fileID: 5811054931024123282}
   m_Layer: 0
-  m_Name: arch1 (1) 1
+  m_Name: "arch1 (purple\uFF09"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26,14 +26,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8692942236956032075}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.12305658, z: -0, w: 0.9923997}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -4.120643, y: 0, z: -1.9665}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4732127382163455863}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: -14.137, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &5495390383206564631
 BoxCollider:
   m_ObjectHideFlags: 0

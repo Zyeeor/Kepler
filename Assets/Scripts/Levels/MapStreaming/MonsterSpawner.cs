@@ -145,6 +145,26 @@ public class MonsterSpawner : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 收集当前场上真正可以被玩家接管的躯体。
+    /// 与 CollectAliveMonsters 分开：这里专门包含 Downed 永久尸体，并以 MonsterActor.CanBePossessed 为最终判定。
+    /// </summary>
+    public void CollectPossessableMonsters(List<MonsterActor> buffer)
+    {
+        if (buffer == null) return;
+        buffer.Clear();
+        foreach (var kv in trackedByChunk)
+        {
+            var list = kv.Value;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var monster = list[i];
+                if (monster == null || !monster.gameObject.activeInHierarchy || !monster.CanBePossessed) continue;
+                buffer.Add(monster);
+            }
+        }
+    }
+
     readonly Dictionary<ChunkCoord, List<MonsterActor>> trackedByChunk = new Dictionary<ChunkCoord, List<MonsterActor>>();
 
     /// <summary>追踪信息：归属 Chunk + 来源 prefab + 是否波次怪。</summary>

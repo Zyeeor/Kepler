@@ -39,6 +39,10 @@ public class AbilityCooldownUI : MonoBehaviour
 
     public MonsterSkillIconConfig iconConfig;
 
+    [Header("效果提示")]
+    [Tooltip("技能图标悬浮时复用的效果提示面板；留空时自动查找 HUD 中的罪印提示面板。")]
+    public PossessionImprintTooltip tooltip;
+
     [Header("Style")]
     public Color readyColor = Color.white;
     public Color cooldownOverlayColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
@@ -65,6 +69,7 @@ public class AbilityCooldownUI : MonoBehaviour
     void Awake()
     {
         playerCombat = FindObjectOfType<PlayerCombat>();
+        if (tooltip == null) tooltip = FindObjectOfType<PossessionImprintTooltip>(true);
         defaultBasicIcon = basicIconImage != null ? basicIconImage.sprite : null;
         defaultSkillIcon = skillIconImage != null ? skillIconImage.sprite : null;
         defaultPossessIcon = possessIconImage != null ? possessIconImage.sprite : null;
@@ -195,6 +200,10 @@ public class AbilityCooldownUI : MonoBehaviour
             if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
         }
 
+        BindAbilityTooltip(basicIconRoot, enemyBasicAbility, playerBasicAbility);
+        BindAbilityTooltip(skillIconRoot, enemySkillAbility, playerSkillAbility);
+        BindAbilityTooltip(possessIconRoot, enemyMobilityAbility, null);
+
         // Soul state keeps the possession icon; possessed state already assigns the same slot to mobility.
         if (trackingPlayer)
         {
@@ -238,6 +247,20 @@ public class AbilityCooldownUI : MonoBehaviour
         }
     }
 
+    void BindAbilityTooltip(RectTransform root, EnemyAbility enemyAbility, PlayerAbility playerAbility)
+    {
+        if (root == null) return;
+        GameplayTooltipTarget target = root.GetComponent<GameplayTooltipTarget>();
+        if (target == null) target = root.gameObject.AddComponent<GameplayTooltipTarget>();
+        target.SetTooltip(tooltip);
+        if (enemyAbility != null)
+            target.BindAbility(enemyAbility);
+        else if (playerAbility != null)
+            target.BindAbility(playerAbility);
+        else
+            target.ClearBinding();
+    }
+
     bool IsEnemySkillDisplayChanged()
     {
         EnemyAbility currentSkill = null;
@@ -264,11 +287,22 @@ public class AbilityCooldownUI : MonoBehaviour
 
     bool IsEnemySkillUnavailable()
     {
-        if (trackingPlayer || currentEnemy == null || currentEnemy.sinType != SinType.Envy)
+        if (trackingPlayer || currentEnemy == null)
             return false;
 
-        EnemyAbility_EnvyThunderstorm thunderstorm = enemySkillAbility as EnemyAbility_EnvyThunderstorm;
-        return thunderstorm != null && !thunderstorm.HasLegalMarkedTargets;
+        if (currentEnemy.sinType == SinType.Envy)
+        {
+            EnemyAbility_EnvyThunderstorm thunderstorm = enemySkillAbility as EnemyAbility_EnvyThunderstorm;
+            return thunderstorm != null && !thunderstorm.HasLegalMarkedTargets;
+        }
+
+        if (currentEnemy.sinType == SinType.Lust)
+        {
+            EnemyAbility_LustSoulPull soulPull = enemySkillAbility as EnemyAbility_LustSoulPull;
+            return soulPull != null && !soulPull.HasValidPullTargets;
+        }
+
+        return false;
     }
 
 

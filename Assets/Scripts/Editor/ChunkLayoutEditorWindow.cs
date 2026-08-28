@@ -16,17 +16,25 @@ using UnityEngine;
 /// </summary>
 public class ChunkLayoutEditorPostprocessor : AssetPostprocessor
 {
+    /// <summary>关心的资产：Tile prefab（刷子面板）与 MapStreaming 配置资产（ChunkDef 装饰 footprint 映射）。</summary>
+    static bool IsRelevantPath(string p)
+    {
+        if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) return true;
+        if (p.StartsWith("Assets/Settings/MapStreaming") && p.EndsWith(".asset")) return true;
+        return false;
+    }
+
     static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
         bool relevant = false;
         foreach (var p in importedAssets)
-            if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) { relevant = true; break; }
+            if (IsRelevantPath(p)) { relevant = true; break; }
         if (!relevant)
             foreach (var p in deletedAssets)
-                if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) { relevant = true; break; }
+                if (IsRelevantPath(p)) { relevant = true; break; }
         if (!relevant)
             foreach (var p in movedAssets)
-                if (p.StartsWith("Assets/Prefabs/Room/RoomObjects/TileAsset") && p.EndsWith(".prefab")) { relevant = true; break; }
+                if (IsRelevantPath(p)) { relevant = true; break; }
         if (!relevant) return;
 
         var wins = Resources.FindObjectsOfTypeAll<ChunkLayoutEditorWindow>();
@@ -59,6 +67,8 @@ public class ChunkLayoutEditorWindow : EditorWindow
     EditLayer editLayer = EditLayer.Base;
     bool multiCellDecorationMode;
     Vector2Int multiCellFootprint = Vector2Int.one;
+    /// <summary>prefab → footprintSize（自动读取全部 ChunkDef.decorationTiles；配置了多格占位的装饰刷子自动铺整组）。</summary>
+    readonly Dictionary<GameObject, Vector2Int> decorationFootprints = new Dictionary<GameObject, Vector2Int>();
     bool showPreview = true;
     bool showDefaultGroundPreview = true;
     /// <summary>AssetPreview 异步加载中标记：有任意预览未就绪则下一帧重绘。</summary>
@@ -100,6 +110,27 @@ public class ChunkLayoutEditorWindow : EditorWindow
             palette.Add(prefab);
         }
         palette.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        RefreshDecorationFootprints();
+    }
+
+    /// <summary>扫描全部 ChunkDef 资产，收集装饰物 prefab → footprintSize（多格装饰刷子自动感知占格数）。</summary>
+    void RefreshDecorationFootprints()
+    {
+        decorationFootprints.Clear();
+        foreach (var guid in AssetDatabase.FindAssets("t:ChunkDef"))
+        {
+            var def = AssetDatabase.LoadAssetAtPath<ChunkDef>(AssetDatabase.GUIDToAssetPath(guid));
+            if (def == null || def.decorationTiles == null) continue;
+            foreach (var entry in def.decorationTiles)
+            {
+                if (entry == null || entry.prefab == null) continue;
+                var size = new Vector2Int(Mathf.Max(1, entry.footprintSize.x), Mathf.Max(1, entry.footprintSize.y));
+                if (decorationFootprints.TryGetValue(entry.prefab, out var existing))
+                    decorationFootprints[entry.prefab] = new Vector2Int(Mathf.Max(existing.x, size.x), Mathf.Max(existing.y, size.y));
+                else
+                    decorationFootprints.Add(entry.prefab, size);
+            }
+        }
     }
 
     void OnGUI()
@@ -185,7 +216,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
         EditorGUILayout.LabelField("Tile 刷子（点击即按类别落层）", EditorStyles.boldLabel);
         EditorGUILayout.LabelField("  地砖类→底层 ｜ 装饰物类→叠加层", EditorStyles.miniLabel);
         paletteScroll = EditorGUILayout.BeginScrollView(paletteScroll, GUILayout.Height(460f));
-        DrawBrushButton(null, "橡皮擦（刷空）");
+        DrawBrushButton(null, "橡皮擦（左键擦当前层）");
         EditorGUILayout.LabelField("— 地砖（底层） —", EditorStyles.miniLabel);
         for (int i = 0; i < palette.Count; i++)
             if (TileSemantics.ResolveKind(palette[i]) != TerrainKind.Decoration)
@@ -253,7 +284,10 @@ public class ChunkLayoutEditorWindow : EditorWindow
             {
                 if (e.button == 0)
                 {
-                    if (multiCellDecorationMode && editLayer == EditLayer.Overlay
+                    if (brush != null && TileSemantics.ResolveKind(brush) == TerrainKind.Decoration
+                        && decorationFootprints.TryGetValue(brush, out var autoFp) && (autoFp.x > 1 || autoFp.y > 1))
+                        PaintMultiCellDecoration(cx, cy, autoFp); // 配置了多格占位的装饰刷子：自动按 footprint 放置
+                    else if (multiCellDecorationMode && editLayer == EditLayer.Overlay
                         && brush != null && TileSemantics.ResolveKind(brush) == TerrainKind.Decoration
                         && (multiCellFootprint.x > 1 || multiCellFootprint.y > 1))
                         PaintMultiCellDecoration(cx, cy);
@@ -342,6 +376,22 @@ public class ChunkLayoutEditorWindow : EditorWindow
 
         if (hoverX >= 0)
         {
+            // 多格装饰刷子：悬停预览其 footprint 区域（允许占用 Chunk 边沿，但不能越出布局网格）
+            if (brush != null && TileSemantics.ResolveKind(brush) == TerrainKind.Decoration
+                && decorationFootprints.TryGetValue(brush, out var hoverFp)
+                && (hoverFp.x > 1 || hoverFp.y > 1))
+            {
+                bool fpInside = hoverX >= 0 && hoverY >= 0
+                    && hoverX + hoverFp.x <= size && hoverY + hoverFp.y <= size;
+                if (fpInside)
+                {
+                    var fpFirst = CellRect(gridRect, hoverX, hoverY);
+                    var fpLast = CellRect(gridRect, hoverX + hoverFp.x - 1, hoverY + hoverFp.y - 1);
+                    var fpArea = Rect.MinMaxRect(fpFirst.x, fpLast.y, fpLast.xMax, fpFirst.yMax);
+                    EditorGUI.DrawRect(fpArea, new Color(1f, 0.8f, 0.2f, 0.18f));
+                    DrawRectOutline(fpArea, new Color(1f, 0.8f, 0.2f, 0.9f), 2f);
+                }
+            }
             var hr = CellRect(gridRect, hoverX, hoverY);
             EditorGUI.DrawRect(hr, Color.white);
             hoveredCell = new Vector2Int(hoverX, hoverY);
@@ -418,16 +468,21 @@ public class ChunkLayoutEditorWindow : EditorWindow
         EditorGUI.DrawRect(new Rect(r.x + r.width - thickness, r.y, thickness, r.height), color);
     }
 
-    /// <summary>多格装饰放置：点击为 footprint 左下角锚点，整组占位后一次保存。</summary>
+    /// <summary>多格装饰放置（手动尺寸模式）：点击为 footprint 左下角锚点，整组占位后一次保存。</summary>
     void PaintMultiCellDecoration(int x, int y)
+    {
+        PaintMultiCellDecoration(x, y, new Vector2Int(Mathf.Max(1, multiCellFootprint.x), Mathf.Max(1, multiCellFootprint.y)));
+    }
+
+    /// <summary>多格装饰放置（自动 footprint / 手动尺寸共用）：点击为 footprint 左下角锚点，整组占位后一次保存。</summary>
+    void PaintMultiCellDecoration(int x, int y, Vector2Int footprint)
     {
         if (target == null || brush == null) return;
         int size = target.size;
-        var footprint = new Vector2Int(Mathf.Max(1, multiCellFootprint.x), Mathf.Max(1, multiCellFootprint.y));
-        // 与程序生成一致：边沿保留给 Chunk 连通，固定布局也提示并拒绝跨边界。
-        if (x < 1 || y < 1 || x + footprint.x > size - 1 || y + footprint.y > size - 1)
+        // 允许多格装饰占用 Chunk 边沿；仍需保证 footprint 完整位于布局网格内，避免写入越界格。
+        if (x < 0 || y < 0 || x + footprint.x > size || y + footprint.y > size)
         {
-            ShowNotification(new GUIContent("多格装饰必须完整位于内部区域，不能占用 Chunk 边沿"));
+            ShowNotification(new GUIContent("多格装饰不能超出布局网格范围"));
             return;
         }
         for (int px = x; px < x + footprint.x; px++)
@@ -471,6 +526,11 @@ public class ChunkLayoutEditorWindow : EditorWindow
         var ov = target.GetOverlay(x, y);
         if (brush == null)
         {
+            // 多格 placement 不写入 overlayTiles，而是单独存于 decorationPlacements；
+            // 叠加层橡皮擦必须优先移除覆盖当前格的整组 placement。
+            if (editLayer == EditLayer.Overlay && RemoveDecorationPlacementsAt(x, y, "擦除多格装饰物"))
+                return;
+
             if (editLayer == EditLayer.Base)
             {
                 if (baseP == null) return;
@@ -491,6 +551,12 @@ public class ChunkLayoutEditorWindow : EditorWindow
         var kind = TileSemantics.ResolveKind(brush);
         if (kind == TerrainKind.Decoration)
         {
+            // 配置了多格占位的装饰刷子：自动按 footprint 放置整组，避免只铺单格
+            if (decorationFootprints.TryGetValue(brush, out var fp) && (fp.x > 1 || fp.y > 1))
+            {
+                PaintMultiCellDecoration(x, y, fp);
+                return;
+            }
             if (ov == brush) return;
             Undo.RecordObject(target, "涂刷叠加层");
             target.SetOverlay(x, y, brush);
@@ -505,18 +571,10 @@ public class ChunkLayoutEditorWindow : EditorWindow
         Repaint();
     }
 
-    /// <summary>右键擦除：整格两层皆空。</summary>
+    /// <summary>右键擦除：多格装饰移除整组；普通格清除底层与叠加层。</summary>
     void EraseCell(int x, int y)
     {
-        var placement = FindPlacementAt(x, y);
-        if (placement != null)
-        {
-            Undo.RecordObject(target, "擦除多格装饰物");
-            target.decorationPlacements.Remove(placement);
-            EditorUtility.SetDirty(target);
-            Repaint();
-            return;
-        }
+        if (RemoveDecorationPlacementsAt(x, y, "擦除多格装饰物")) return;
         if (target.GetTile(x, y) == null && target.GetOverlay(x, y) == null) return;
         Undo.RecordObject(target, "清空整格");
         target.SetTile(x, y, null);
@@ -525,11 +583,43 @@ public class ChunkLayoutEditorWindow : EditorWindow
         Repaint();
     }
 
+    /// <summary>
+    /// 移除覆盖指定格的所有多格 placement。
+    /// 正常配置下 placement 不会重叠；全部移除可以同时清理旧数据/手动改资产造成的重叠残留，避免擦除后仍有装饰幽灵。
+    /// </summary>
+    bool RemoveDecorationPlacementsAt(int x, int y, string undoName)
+    {
+        if (target == null || target.decorationPlacements == null) return false;
+
+        bool found = false;
+        for (int i = 0; i < target.decorationPlacements.Count; i++)
+        {
+            var placement = target.decorationPlacements[i];
+            if (placement != null && placement.Contains(x, y))
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+
+        Undo.RecordObject(target, undoName);
+        for (int i = target.decorationPlacements.Count - 1; i >= 0; i--)
+        {
+            var placement = target.decorationPlacements[i];
+            if (placement != null && placement.Contains(x, y))
+                target.decorationPlacements.RemoveAt(i);
+        }
+        EditorUtility.SetDirty(target);
+        Repaint();
+        return true;
+    }
+
     void DrawFooter()
     {
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
-        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加）｜ 多格放置模式点击锚点放整组 ｜ 右键擦整格/整组 ｜ 多格装饰不可跨 Chunk 边沿", MessageType.None);
+        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加；橡皮擦左键擦当前层）｜ 配置了多格占位的装饰自动铺整组 ｜ 右键擦整格/整组 ｜ 多格装饰允许占用 Chunk 边沿但不可越出网格", MessageType.None);
         if (GUILayout.Button("清空全部", GUILayout.Width(100f), GUILayout.Height(24f))) ClearAll();
         EditorGUILayout.EndHorizontal();
     }
@@ -636,7 +726,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
         return kindCh + variant;
     }
 
-    static string BrushLabel(GameObject prefab)
+    string BrushLabel(GameObject prefab)
     {
         string name = prefab != null ? prefab.name : "?";
         var sb = new StringBuilder(name);
@@ -645,6 +735,8 @@ public class ChunkLayoutEditorWindow : EditorWindow
             sb.Append("  [").Append(TileSemantics.ResolveKind(prefab));
             if (TileSemantics.HasSolidCollider(prefab)) sb.Append(", 有碰撞");
             sb.Append(']');
+            if (decorationFootprints.TryGetValue(prefab, out var fp) && (fp.x > 1 || fp.y > 1))
+                sb.Append($"  {fp.x}×{fp.y}格");
         }
         return sb.ToString();
     }
