@@ -355,6 +355,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u66B4\u6012\u9501\u94FE"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: WR-S01
@@ -860,6 +861,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u55B7\u706B"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: WR-B01
@@ -3671,6 +3673,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u4EE5\u8EAB\u4E3A\u85AA"
+  abilityDescription: 
   type: 0
   upgrades:
   - effectId: WR-B02
@@ -4980,7 +4983,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45fc8e9cd83f148e18d4885b353f8335, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u94A9\u7D22\u4F4D\u79FB"
+  abilityName: "\u94A9\u7D22\u7A81\u8FDB"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: WR-M01

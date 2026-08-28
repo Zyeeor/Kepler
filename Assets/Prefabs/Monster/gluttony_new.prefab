@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u541E\u566C"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: GL-S01
@@ -523,6 +524,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5C0F\u732B\u5316"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: GL-M01
@@ -1136,7 +1138,7 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 100
   currentHealth: 100
-  displayName: "\u66B4\u98DF-\u9B54\u732B"
+  displayName: "\u66B4\u98DF\xB7\u9B54\u732B"
   sinType: 3
   isPossessable: 1
   enemyStats:
@@ -1402,6 +1404,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u6DF1\u6E0A\u5DE8\u53E3"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: GL-A01

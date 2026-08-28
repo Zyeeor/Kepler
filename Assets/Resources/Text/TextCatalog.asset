@@ -62,17 +62,17 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.result.gameover
-      text: "\u6E38\u620F\u7ED3\u675F"
+      text: "\u672C\u5C40\u7ED3\u675F"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.toggle.hp_on
-      text: "\u8840\u91CF\u6761\uFF1A\u5F00"
+      text: "\u8010\u4E45\u6761\uFF1A\u5F00"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.toggle.hp_off
-      text: "\u8840\u91CF\u6761\uFF1A\u5173"
+      text: "\u8010\u4E45\u6761\uFF1A\u5173"
       mythicText: 
       systemText: 
       carrier: 0
@@ -166,6 +166,57 @@ MonoBehaviour:
       mythicText: 
       systemText: 
       carrier: 0
+    - key: ui.return_menu.title
+      text: "\u8FD4\u56DE\u4E3B\u83DC\u5355"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.return_menu.message
+      text: "\u786E\u5B9A\u8FD4\u56DE\u4E3B\u83DC\u5355\u5417\uFF1F\u8FDB\u5EA6\u4F1A\u6839\u636E\u5F53\u524D\u8FDB\u5EA6\u4FDD\u5B58\u3002"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.boss.default_name
+      text: "\u9996\u9886"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.build.empty_all
+      text: "\u5C1A\u672A\u83B7\u5F97\u4EFB\u4F55\u5361\u724C"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.build.back
+      text: "\u8FD4\u56DE"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.build.empty
+      text: "\u5C1A\u672A\u83B7\u5F97\u5361\u724C"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.build.card_unavailable
+      text: "\u5361\u724C\u6682\u65F6\u65E0\u6CD5\u663E\u793A"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.archive.unlocked_count
+      text: "\u5DF2\u89E3\u9501 <color=#FFC93C>{0}</color> / \u603B\u8BA1 <color=#FFC93C>{1}</color>"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.archive.page_count
+      text: "\u672C\u9875\uFF1A\u5DF2\u77E5/\u5DF2\u89E3\u9501 <color=#FFC93C>{0}</color>
+        \u5F20\uFF0C\u672A\u89E3\u9501 <color=#FFC93C>{1}</color> \u5F20"
+      mythicText: 
+      systemText: 
+      carrier: 0
+    - key: ui.archive.page_count_known
+      text: "\u672C\u9875\uFF1A<color=#FFC93C>{0}</color> \u5F20"
+      mythicText: 
+      systemText: 
+      carrier: 0
   - sectionName: ui.hud
     entries:
     - key: ui.hud.attack
@@ -214,7 +265,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.stats.health
-      text: "\u751F\u547D"
+      text: "\u8010\u4E45"
       mythicText: 
       systemText: 
       carrier: 0
@@ -229,7 +280,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.stats.life_steal
-      text: "\u751F\u547D\u5077\u53D6"
+      text: "\u5438\u8840"
       mythicText: 
       systemText: 
       carrier: 0
@@ -281,12 +332,12 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.sort.run_fail
-      text: "\u6392\u5E8F\uFF1A\u81F4 Run Fail"
+      text: "\u6392\u5E8F\uFF1A\u5BFC\u81F4\u5BF9\u5C40\u5931\u8D25"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.sort.bd_count
-      text: "\u6392\u5E8F\uFF1ABD \u5361\u6570"
+      text: "\u6392\u5E8F\uFF1A\u6784\u7B51\u5361\u6570"
       mythicText: 
       systemText: 
       carrier: 0
@@ -316,12 +367,12 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.entry.raw_section
-      text: "\u2500\u2500 \u539F\u59CB Run \u8868\u73B0 \u2500\u2500"
+      text: "\u2500\u2500 \u672C\u5C40\u8868\u73B0 \u2500\u2500"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.entry.raw_line
-      text: "BD \u6DF1\u5EA6 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740
+      text: "\u6784\u7B51\u6DF1\u5EA6 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740
         {2}"
       mythicText: 
       systemText: 
@@ -333,12 +384,12 @@ MonoBehaviour:
       carrier: 0
     - key: ui.hof.entry.stats_line
       text: "\u88AB\u6295\u653E {0}\uFF5C\u88AB\u51FB\u6740 {1}\uFF5C\u88AB\u9644\u8EAB
-        {2}\uFF5C\u81F4 Body Fatal {3}\uFF5C\u81F4 Run Fail {4}"
+        {2}\uFF5C\u6467\u6BC1\u8EAF\u4F53 {3}\uFF5C\u7EC8\u7ED3\u5BF9\u5C40 {4}"
       mythicText: 
       systemText: 
       carrier: 0
     - key: ui.hof.entry.no_cards
-      text: "\uFF08\u65E0\u6E05\u5355\uFF09"
+      text: "\uFF08\u65E0\u5361\u724C\u8BB0\u5F55\uFF09"
       mythicText: 
       systemText: 
       carrier: 0
@@ -383,7 +434,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.phase.in_final
-      text: "\u8BB0\u5F55\u4E8E Final\uFF08\u5BF9\u5C40\u4E2D\uFF09"
+      text: "\u6700\u7EC8\u9636\u6BB5\uFF08\u5BF9\u5C40\u4E2D\uFF09"
       mythicText: 
       systemText: 
       carrier: 0
@@ -398,7 +449,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.empty
-      text: "\u6682\u65E0\u8363\u8A89\u8BB0\u5F55\n\n\u5B8C\u6210\u4E00\u5C40\u643A\u5E26\u5361\u724C\u7684\u6218\u6597\u540E\uFF0C\u4F60\u7684\u6784\u7B51\u5C06\u8F7D\u5165\u6BBF\u5802\uFF1B\n\u88AB\u5176\u4ED6\u73A9\u5BB6\u9047\u5230\u7684\u7CBE\u82F1\u4E5F\u4F1A\u5728\u6B64\u79EF\u7D2F\u6218\u7EE9\u3002"
+      text: "\u6682\u65E0\u8363\u8A89\u8BB0\u5F55\n\n\u5B8C\u6210\u4E00\u6B21\u643A\u5E26\u5361\u724C\u7684\u5BF9\u5C40\u540E\uFF0C\u6784\u7B51\u4E0E\u7CBE\u82F1\u6218\u7EE9\u5C06\u8BB0\u5F55\u4E8E\u6B64\u3002"
       mythicText: 
       systemText: 
       carrier: 0
@@ -470,13 +521,13 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: imprint.effect.gluttony
-      text: "\u9644\u8EAB\u4F53\u751F\u547D\u63D0\u5347 {0}%\n\u89C6\u89C9\u4F53\u578B\u63D0\u5347
-        {1}%\n\u6295\u63B7\u7269\u4E0E\u6280\u80FD\u547D\u4E2D\u8303\u56F4\u540C\u6B65\u653E\u5927"
+      text: "\u9644\u8EAB\u8EAF\u4F53\u8010\u4E45\u4E0A\u9650\u63D0\u9AD8 {0}%\n\u4F53\u578B\u589E\u5927
+        {1}%\n\u6295\u5C04\u7269\u4E0E\u6280\u80FD\u8303\u56F4\u540C\u6B65\u6269\u5927"
       mythicText: 
       systemText: 
       carrier: 0
     - key: imprint.effect.greed
-      text: "\u6BCF\u6B21\u593A\u820D\u989D\u5916\u53E0\u5C42\u8FDB\u5EA6 {0}%\n\u5F53\u524D\u8FDB\u5EA6
+      text: "\u6BCF\u6B21\u9644\u8EAB\u989D\u5916\u589E\u52A0 {0}% \u7F6A\u5370\u8FDB\u5EA6\n\u5F53\u524D\u8FDB\u5EA6
         {1}%"
       mythicText: 
       systemText: 
@@ -487,12 +538,13 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: imprint.effect.lust
-      text: "\u653B\u51FB\u4F24\u5BB3\u8F6C\u5316\u5438\u8840 {0}%"
+      text: "\u9020\u6210\u4F24\u5BB3\u7684 {0}% \u8F6C\u5316\u4E3A\u8010\u4E45\u6062\u590D"
       mythicText: 
       systemText: 
       carrier: 0
     - key: imprint.effect.sloth
-      text: "\u9644\u8EAB\u4E0E\u6280\u80FD\u751F\u547D\u6D88\u8017\u964D\u4F4E {0}%"
+      text: "\u9644\u8EAB\u53CA\u6280\u80FD\u6D88\u8017\u7684\u8010\u4E45\u964D\u4F4E
+        {0}%"
       mythicText: 
       systemText: 
       carrier: 0
@@ -502,7 +554,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: imprint.acquire_hint
-      text: "\u6BCF\u6B21\u593A\u820D\u8BE5\u7C7B\u602A\u7269\u90FD\u4F1A\u589E\u52A0\u4E00\u5C42\u3002"
+      text: "\u6BCF\u6B21\u9644\u8EAB\u8BE5\u7C7B\u602A\u7269\uFF0C\u7F6A\u5370\u589E\u52A0\u4E00\u5C42\u3002"
       mythicText: 
       systemText: 
       carrier: 0

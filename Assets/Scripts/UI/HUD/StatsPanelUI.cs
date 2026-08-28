@@ -85,7 +85,7 @@ public class StatsPanelUI : MonoBehaviour
             "<b>" + TextCatalog.Get("ui.stats.life_steal") + "</b>      " + (lifesteal * 100f).ToString("F1") + "%\n\n" +
 
             "<b><size=18>" + TextCatalog.Get("ui.stats.passive_buffs") + "</size></b>\n" +
-            "<color=#FFD700>Pride</color> × " + prideCount + "  +" + (prideCount * 5) + "% " + TextCatalog.Get("ui.stats.move_speed_short") + "\n" +
-            "<color=#FF4444>Wrath</color> × " + wrathCount + "  +" + (wrathCount * 1) + "% " + TextCatalog.Get("ui.stats.life_steal_short");
+            "<color=#FFD700>" + TextCatalog.Get("concept.sin.pride") + "</color> × " + prideCount + "  +" + (prideCount * 5) + "% " + TextCatalog.Get("ui.stats.move_speed_short") + "\n" +
+            "<color=#FF4444>" + TextCatalog.Get("concept.sin.wrath") + "</color> × " + wrathCount + "  +" + (wrathCount * 1) + "% " + TextCatalog.Get("ui.stats.life_steal_short");
     }
 }

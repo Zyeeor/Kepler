@@ -44,7 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47422195c187c4fbd8aacaf7cc5587b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u94FA\u9ED1\u6CB9"
+  abilityName: "\u6CFC\u6D12\u9ED1\u6CB9"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: GR-M01
@@ -474,7 +475,7 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 100
   currentHealth: 100
-  displayName: "\u8D2A\u5A6A-\u4E07\u624B\u85CF\u4E3B"
+  displayName: "\u8D2A\u5A6A\xB7\u4E07\u624B\u85CF\u4E3B"
   sinType: 6
   isPossessable: 1
   enemyStats:
@@ -760,6 +761,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5FF5\u529B\u9B54\u624B"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: GR-A01
@@ -887,7 +889,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4518346b973be45c28ab7dbd8b0ca515, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u5927\u624BGuard"
+  abilityName: "\u5927\u624B\u9632\u5FA1"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: GR-S01

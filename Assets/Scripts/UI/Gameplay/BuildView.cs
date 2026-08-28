@@ -213,7 +213,7 @@ public class BuildView : MonoBehaviour
         emptyHint.alignment = TextAlignmentOptions.Center;
         emptyHint.fontSize = 32;
         emptyHint.color = new Color(1f, 1f, 1f, 0.7f);
-        emptyHint.text = "尚未获得任何卡片";
+        emptyHint.text = TextCatalog.Get("ui.build.empty_all");
         if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(emptyHint, FontSlots.Default);
         emptyHint.gameObject.SetActive(false);
 
@@ -247,7 +247,7 @@ public class BuildView : MonoBehaviour
         clr.SetParent(cb, false);
         clr.anchorMin = Vector2.zero; clr.anchorMax = Vector2.one;
         clr.offsetMin = clr.offsetMax = Vector2.zero;
-        cl.text = "返回"; cl.alignment = TextAlignmentOptions.Center; cl.fontSize = 26; cl.color = Color.white;
+        cl.text = TextCatalog.Get("ui.build.back"); cl.alignment = TextAlignmentOptions.Center; cl.fontSize = 26; cl.color = Color.white;
         if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(cl, FontSlots.Default);
         closeButton.onClick.AddListener(() => SetMode(ModeMini));
     }
@@ -279,7 +279,7 @@ public class BuildView : MonoBehaviour
         miniEmptyHint.alignment = TextAlignmentOptions.Left;
         miniEmptyHint.fontSize = 22;
         miniEmptyHint.color = new Color(1f, 1f, 1f, 0.7f);
-        miniEmptyHint.text = "尚未获得卡片";
+        miniEmptyHint.text = TextCatalog.Get("ui.build.empty");
         if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(miniEmptyHint, FontSlots.Default);
 
         miniBar.SetActive(false);
@@ -572,7 +572,7 @@ public class BuildView : MonoBehaviour
         var prefab = ResolvePrefab();
         if (prefab == null)
         {
-            if (miniEmptyHint != null) { miniEmptyHint.text = "卡片预制体缺失"; miniEmptyHint.gameObject.SetActive(true); }
+            if (miniEmptyHint != null) { miniEmptyHint.text = TextCatalog.Get("ui.build.card_unavailable"); miniEmptyHint.gameObject.SetActive(true); }
             return;
         }
 
@@ -670,7 +670,7 @@ public class BuildView : MonoBehaviour
         if (prefab == null)
         {
             Debug.LogError("[BuildView] cardPrefab 未配置且 CoreChoiceUI 不存在，无法渲染卡片。");
-            emptyHint.text = "卡片预制体缺失";
+            emptyHint.text = TextCatalog.Get("ui.build.card_unavailable");
             emptyHint.gameObject.SetActive(true);
             cardParent.gameObject.SetActive(false);
             return;
@@ -761,7 +761,7 @@ public class BuildView : MonoBehaviour
     {
         var list = new List<CardData>();
         string title = "当前构筑";
-        string hint = "尚未获得任何卡片";
+        string hint = TextCatalog.Get("ui.build.empty_all");
 
         var body = (PossessionManager.Instance != null) ? PossessionManager.Instance.CurrentBody : null;
         if (body == null)
@@ -770,7 +770,7 @@ public class BuildView : MonoBehaviour
             if (!showInSoulState)
                 return new GatherResult { cards = list, title = "", hint = "" };
             title = "当前构筑";
-            hint = "尚未获得任何卡片";
+            hint = TextCatalog.Get("ui.build.empty_all");
             CollectUnlocked(list);
         }
         else if (body.IsElite)
