@@ -74,6 +74,30 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         StartCoroutine(GrappleRoutine(direction));
     }
 
+    /// <summary>
+    /// 钩索位移是钩索+本体冲锋：红圈用矩形预警带（长度=有效钩索距离、宽度=pathRadius×2、朝向=发射方向），
+    /// 与 GrappleRoutine 的冲锋路径判定一致（红圈=实际范围）。受 enemyIndicatorEnabled 开关控制。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        if (owner == null || !enemyIndicatorEnabled) return default;
+
+        if (!TryResolveFireDirection(out Vector3 direction))
+            return default;
+
+        float length = GetMaxGrappleDistance();
+        float width = ScaleAbilityRadius(pathRadius * 2f);
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Rect,
+            center = owner.transform.position,
+            forward = direction,
+            length = length,
+            width = width,
+            isValid = length > 0f && width > 0f
+        };
+    }
+
     private IEnumerator GrappleRoutine(Vector3 direction)
     {
         if (owner == null)

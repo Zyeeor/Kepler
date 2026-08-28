@@ -89,6 +89,32 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         StartCoroutine(AttackRoutine(owner != null ? owner.transform.position : Vector3.zero, ResolveAimDirection(), 1f, true));
     }
 
+    /// <summary>
+    /// 迷情往返是直线往返飞弹：红圈用矩形预警带（长度=mistRange、宽度=mistWidth、朝向=瞄准方向），
+    /// 与 TravelSegment 的 SphereCastAll 判定一致（红圈=实际范围）。受 enemyIndicatorEnabled 开关控制。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        if (owner == null || !enemyIndicatorEnabled) return default;
+
+        Vector3 forward = ResolveAimDirection();
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
+        forward.Normalize();
+
+        float length = ScaleAbilityRadius(mistRange);
+        float width = ScaleAbilityRadius(mistWidth);
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Rect,
+            center = owner.transform.position,
+            forward = forward,
+            length = length,
+            width = width,
+            isValid = length > 0f && width > 0f
+        };
+    }
+
     private IEnumerator BossSpreadRoutine()
     {
         if (owner == null)

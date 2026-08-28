@@ -3,6 +3,25 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
+/// <summary>敌人技能红圈预警的形状。</summary>
+public enum EnemyIndicatorShape
+{
+    Circle = 0,   // 圆形范围 AOE
+    Rect = 1      // 直线预警带（飞弹 / 冲锋 / 钩索）
+}
+
+/// <summary>敌人技能红圈预警的运行时几何描述。</summary>
+public struct EnemyTelegraphGeometry
+{
+    public EnemyIndicatorShape shape;
+    public Vector3 center;     // 世界空间中心
+    public float radius;       // Circle 用
+    public Vector3 forward;    // Rect 用（世界空间水平方向）
+    public float length;       // Rect 用（沿 forward 全长）
+    public float width;        // Rect 用（垂直 forward 全宽）
+    public bool isValid;
+}
+
 /// <summary>
 /// Base class for all enemy abilities (passive / basic attack / skill).
 /// Attach one or more of these to an enemy prefab. They self-register with the parent Enemy on Awake.
@@ -148,6 +167,14 @@ public abstract class EnemyAbility : MonoBehaviour
     [Min(0f)]
     public float enemyIndicatorHeight = 0.05f;
     public Vector3 enemyIndicatorOffset = Vector3.zero;
+    [Tooltip("Indicator shape: Circle (圆形范围) or Rect (直线预警带，用于飞弹/冲锋/钩索等沿直线判定).")]
+    public EnemyIndicatorShape enemyIndicatorShape = EnemyIndicatorShape.Circle;
+    [Min(0f)]
+    [Tooltip("Rect 预警带长度（沿发射方向，世界米）。仅在 shape=Rect 时生效。")]
+    public float enemyIndicatorLength = 0f;
+    [Min(0f)]
+    [Tooltip("Rect 预警带宽度（垂直发射方向，世界米）。仅在 shape=Rect 时生效。")]
+    public float enemyIndicatorWidth = 0f;
 
     [Header("Enemy Cast HUD")]
     [Min(8f)]
@@ -434,6 +461,64 @@ public abstract class EnemyAbility : MonoBehaviour
         return radius > 0f;
     }
 
+    /// <summary>
+    /// 统一红圈几何入口（Circle / Rect 都走这里）。返回 isValid=false 表示本技能不显示红圈。
+    /// 默认：Circle 走旧逻辑（含子类 override 的 center/radius）；Rect 走 enemyIndicatorLength/Width + 朝向。
+    /// 子类可整体 override 本方法（如飞弹技能返回 Rect），或仅 override ResolveIndicatorForward 定制朝向。
+    /// </summary>
+    public virtual EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        if (!enemyIndicatorEnabled || owner == null)
+            return default;
+
+        if (enemyIndicatorShape == EnemyIndicatorShape.Rect)
+        {
+            float length = ScaleAbilityRadius(enemyIndicatorLength);
+            float width = ScaleAbilityRadius(enemyIndicatorWidth);
+            if (length <= 0f || width <= 0f) return default;
+
+            Vector3 center = owner.transform.position + owner.transform.TransformVector(enemyIndicatorOffset);
+            return new EnemyTelegraphGeometry
+            {
+                shape = EnemyIndicatorShape.Rect,
+                center = center,
+                forward = ResolveIndicatorForward(),
+                length = length,
+                width = width,
+                isValid = true
+            };
+        }
+
+        if (!TryGetEnemyTelegraphGeometry(out Vector3 c, out float r))
+            return default;
+
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Circle,
+            center = c,
+            radius = r,
+            isValid = true
+        };
+    }
+
+    /// <summary>
+    /// Rect 预警带的朝向（世界空间水平单位向量）。默认优先瞄准当前目标玩家，否则取 owner 面朝方向。
+    /// 飞弹/冲锋/钩索技能可 override 以精确匹配其实际发射方向。
+    /// </summary>
+    protected virtual Vector3 ResolveIndicatorForward()
+    {
+        if (owner != null && owner.targetPlayer != null)
+        {
+            Vector3 toPlayer = owner.targetPlayer.position - owner.transform.position;
+            toPlayer.y = 0f;
+            if (toPlayer.sqrMagnitude > 0.0001f) return toPlayer.normalized;
+        }
+
+        Vector3 fwd = owner != null ? owner.transform.forward : transform.forward;
+        fwd.y = 0f;
+        return fwd.sqrMagnitude > 0.0001f ? fwd.normalized : Vector3.forward;
+    }
+
     private void BeginEnemyTelegraph()
     {
         if (_enemyTelegraphRoutine != null || owner == null) return;
@@ -453,7 +538,8 @@ public abstract class EnemyAbility : MonoBehaviour
             return;
         }
 
-        bool showIndicator = TryGetEnemyTelegraphGeometry(out Vector3 center, out float radius);
+        EnemyTelegraphGeometry geometry = GetEnemyTelegraphGeometry();
+        bool showIndicator = geometry.isValid;
         if (_enemyTelegraphVisual == null)
         {
             _enemyTelegraphVisual = owner.GetComponent<MonsterAbilityTelegraph>();
@@ -461,7 +547,7 @@ public abstract class EnemyAbility : MonoBehaviour
                 _enemyTelegraphVisual = owner.gameObject.AddComponent<MonsterAbilityTelegraph>();
         }
         if (_enemyTelegraphVisual != null)
-            _enemyTelegraphVisual.Begin(this, center, radius, showIndicator);
+            _enemyTelegraphVisual.Begin(this, geometry, showIndicator);
 
         _enemyTelegraphRoutine = StartCoroutine(EnemyTelegraphRoutine());
     }
