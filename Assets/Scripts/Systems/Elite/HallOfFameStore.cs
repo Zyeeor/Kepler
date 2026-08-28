@@ -168,7 +168,11 @@ public static class HallOfFameStore
         {
             if (st == null || string.IsNullOrEmpty(st.ownerRunId) || string.IsNullOrEmpty(st.sin)) continue;
             var entry = Find(st.ownerRunId, st.sin);
-            if (entry == null) continue;
+            if (entry == null)
+            {
+                Debug.Log($"[HallOfFame] 战绩条目无本地记录，跳过：runId={st.ownerRunId} sin={st.sin}（服务器聚合存在、本地荣誉记录缺失，不虚构原始表现）。");
+                continue;
+            }
             entry.deployed = st.deployed;
             entry.fatal = st.fatal;
             entry.possessed = st.possessed;
