@@ -10,7 +10,7 @@ Material:
   m_Name: GeoSphere001 Variant 2 Variant
   m_Shader: {fileID: 4800000, guid: 65ba99a025f80f2458da7209d789d260, type: 3}
   m_Parent: {fileID: 2100000, guid: cb911f4d182f0874fbdc8840704a79c9, type: 2}
-  m_ModifiedSerializedProperties: 0
+  m_ModifiedSerializedProperties: 4
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _0
@@ -30,7 +30,7 @@ Material:
   - _CUSTOM9_CUSTOM2X
   - _FLOAT154_OFF
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
