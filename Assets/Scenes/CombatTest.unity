@@ -9357,7 +9357,7 @@ MonoBehaviour:
   radiusD: 80
   chunkSize: 8
   tileSize: 2
-  boundaryChunkExtent: 8
+  boundaryChunkExtent: 0
   boundaryCenterOverride: {fileID: 0}
   worldSeed: 12345
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}

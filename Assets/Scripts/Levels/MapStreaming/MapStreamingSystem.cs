@@ -67,10 +67,10 @@ public class MapStreamingSystem : MonoBehaviour
     [Tooltip("每 Tile 世界尺寸（米），默认 2。")]
     [Min(0.01f)] public float tileSize = 2f;
 
-    [Header("地图边界（矩形：以出生点为中心，四周各扩展 N 个 Chunk）")]
-    [Tooltip("边界半径（Chunk 数）：以出生点为中心，四周各扩展 N 个 Chunk 才允许生成。0 或负数 = 无边界（全图无限生成）。")]
-    [Min(0)] public int boundaryChunkExtent = 8;
-    [Tooltip("边界中心（出生点）覆盖：为空时取系统 Awake 时玩家位置；地图本地坐标基准（支持旋转）。")]
+    [Header("地图边界（矩形：以出生点为中心，四周各扩展 N 个 Chunk；默认 0 = 无限无边界）")]
+    [Tooltip("边界半径（Chunk 数）：以出生点为中心，四周各扩展 N 个 Chunk 才允许生成。0 或负数 = 无边界（全图无限生成，默认）。需要有限地图时改为正数。")]
+    [Min(0)] public int boundaryChunkExtent = 0;
+    [Tooltip("边界中心（出生点）覆盖：为空时取系统 Awake 时玩家位置；地图本地坐标基准（支持旋转）。无限模式（boundaryChunkExtent≤0）忽略。")]
     public Transform boundaryCenterOverride;
 
     [Header("世界种子（Chunk 生成与 WorldPlan 区域解析共用）")]
@@ -262,6 +262,7 @@ public class MapStreamingSystem : MonoBehaviour
         if (boundaryChunkExtent <= 0)
         {
             boundaryEnabled = false;
+            Debug.Log("[MapStreamingSystem] 地图边界未启用：全图无限生成（boundaryChunkExtent≤0，玩家可向任意方向无限探索）。", this);
             return;
         }
         boundaryEnabled = true;
