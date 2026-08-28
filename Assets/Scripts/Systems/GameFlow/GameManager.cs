@@ -157,10 +157,10 @@ public class GameManager : MonoBehaviour
             // 正式流程：游戏启动先进主菜单（而非直接进入对局场景）。
             // 注意仅在首次创建时跳转——主菜单点"开始/继续"二次进入对局场景时
             // Instance 已存在（DDOL 保留），不会重新跳转。
-            // 进主菜单由 bootToMainMenu 或 useFormalFlow 任一为真触发（与屏蔽调试解耦）：
+            // 进主菜单仅由 bootToMainMenu 决定；useFormalFlow 只负责屏蔽调试显示。
             // - bootToMainMenu=true & useFormalFlow=false → 主界面开始 + 保留调试（新需求）
             // - useFormalFlow=true                    → 主界面开始 + 屏蔽调试（原正式流程）
-            if ((bootToMainMenu || useFormalFlow) && SceneManager.GetActiveScene().name != "MainMenu")
+            if (bootToMainMenu && SceneManager.GetActiveScene().name != "MainMenu")
             {
                 Debug.Log("[GameManager] 启动进主菜单。");
                 SceneManager.LoadScene("MainMenu");

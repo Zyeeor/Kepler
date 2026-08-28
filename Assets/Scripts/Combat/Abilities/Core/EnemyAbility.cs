@@ -477,12 +477,15 @@ public abstract class EnemyAbility : MonoBehaviour
             float width = ScaleAbilityRadius(enemyIndicatorWidth);
             if (length <= 0f || width <= 0f) return default;
 
-            Vector3 center = owner.transform.position + owner.transform.TransformVector(enemyIndicatorOffset);
+            Vector3 forward = ResolveIndicatorForward();
+            Vector3 center = owner.transform.position
+                + owner.transform.TransformVector(enemyIndicatorOffset)
+                + forward * (length * 0.5f);
             return new EnemyTelegraphGeometry
             {
                 shape = EnemyIndicatorShape.Rect,
                 center = center,
-                forward = ResolveIndicatorForward(),
+                forward = forward,
                 length = length,
                 width = width,
                 isValid = true

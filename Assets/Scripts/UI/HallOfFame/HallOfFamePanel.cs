@@ -230,10 +230,12 @@ public class HallOfFamePanel : MonoBehaviour
 
     public void Show()
     {
+        bool wasVisible = IsVisible();
         EnsureBuilt();
         panelRoot.SetActive(true);
         panelRoot.transform.SetAsLastSibling();
         RenderLocal();          // §5.7：先显示本地缓存
+        if (!wasVisible) AudioManager.Instance?.Play(SfxId.HallOfFameOpen);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (debugPreviewEntries != null) return;
 #endif
@@ -242,8 +244,10 @@ public class HallOfFamePanel : MonoBehaviour
 
     public void Hide()
     {
+        bool wasVisible = IsVisible();
         CollapseExpanded();
         if (panelRoot != null) panelRoot.SetActive(false);
+        if (wasVisible) AudioManager.Instance?.Play(SfxId.HallOfFameClose);
     }
 
     [ContextMenu("Refresh Visual Assets")]

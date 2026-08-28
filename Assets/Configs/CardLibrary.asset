@@ -598,9 +598,10 @@ MonoBehaviour:
       value: 1
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 21300000, guid: 3a3beba460c18b74c8e5e95539b0ede0, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: 59bc2b657ab32dd4a8450b025f3ab76b, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites:
+    - {fileID: 21300000, guid: 3a3beba460c18b74c8e5e95539b0ede0, type: 3}
     - {fileID: 21300000, guid: 5c9351288ac6ef64c9d21ba4fe72bda6, type: 3}
     - {fileID: 21300000, guid: c5037867434411e42950dbc9e56002f2, type: 3}
     middlegroundSprite: {fileID: 0}
@@ -920,17 +921,17 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 21300000, guid: 782ea6a9b4d89b64ea2cc3ddc0dcd502, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: f4acefd03c14b8b49b4ee9dc98d84c4a, type: 3}
     hideForegroundLayer: 0
-    extraForegroundSprites: []
-    middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
-      type: 3}
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: 5487b38e1c4881d4d8c505fe1a8e296e, type: 3}
+    middlegroundSprite: {fileID: 0}
     hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 21300000, guid: bed6fbea4e4f7ed44997ad6df6606583, type: 3}
+    backgroundSprite: {fileID: 0}
     hideBackgroundLayer: 0
     extraBackgroundSprites: []
-    borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
+    borderSprite: {fileID: 0}
     hideBorderLayer: 0
     extraBorderSprites: []
   - cardName: "\u7EC8\u672B\u98D3\u98CE"
@@ -945,14 +946,14 @@ MonoBehaviour:
     abilityParameters: []
     category: 2
     monsterType: 5
-    foregroundSprite: {fileID: 21300000, guid: bf6bd93e7fbe87241aaae07a1cd9bef3, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: 05437c9800ecdd34d8451218853ab133, type: 3}
     hideForegroundLayer: 0
-    extraForegroundSprites: []
-    middlegroundSprite: {fileID: 21300000, guid: 15288cc2915c7d543838a8dddd7267d5,
-      type: 3}
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: bf6bd93e7fbe87241aaae07a1cd9bef3, type: 3}
+    middlegroundSprite: {fileID: 0}
     hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 21300000, guid: db60b6b182cc27f4db2d25301e9e4e79, type: 3}
+    backgroundSprite: {fileID: 0}
     hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}
@@ -1074,15 +1075,16 @@ MonoBehaviour:
       value: 50
     category: 2
     monsterType: 3
-    foregroundSprite: {fileID: 21300000, guid: 3fe71c3c6bf496844aea2d0a03d4efd1, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: ebe61e392f5565c4ca7e5e720578b4ad, type: 3}
     hideForegroundLayer: 0
     extraForegroundSprites:
+    - {fileID: 21300000, guid: 3fe71c3c6bf496844aea2d0a03d4efd1, type: 3}
     - {fileID: 21300000, guid: dee59b6e22c137e4393da5472506331b, type: 3}
     - {fileID: 21300000, guid: c07572853e454e34592287fb278ac1f9, type: 3}
     middlegroundSprite: {fileID: 0}
     hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 21300000, guid: 5686ac109f1ca374290c6eb47f9b0872, type: 3}
+    backgroundSprite: {fileID: 0}
     hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 0}

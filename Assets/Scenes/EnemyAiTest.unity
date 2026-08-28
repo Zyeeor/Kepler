@@ -1366,17 +1366,17 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.33333334
+      value: 0.3
       inSlope: 0
-      outSlope: 0.28571427
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 7
-      value: 2.3333333
-      inSlope: 0.28571427
+      value: 1.35
+      inSlope: 0
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
@@ -1417,7 +1417,7 @@ MonoBehaviour:
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnMaxCountsByMinute: 0300000006000000090000000c0000000f0000001200000015000000
+  continuousSpawnMaxCountsByMinute: 0400000006000000080000000a0000000c0000000e00000010000000
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -1426,15 +1426,15 @@ MonoBehaviour:
       time: 0
       value: 1
       inSlope: 0
-      outSlope: 0.20000002
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 7
-      value: 2.4
-      inSlope: 0.20000002
+      value: 1.85
+      inSlope: 0
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
@@ -1450,15 +1450,15 @@ MonoBehaviour:
       time: 0
       value: 1
       inSlope: 0
-      outSlope: 0.120000005
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 7
-      value: 1.84
-      inSlope: 0.120000005
+      value: 1.5
+      inSlope: 0
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
@@ -14241,7 +14241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfb6e7daf61d3db4fb5196b0d8e82733, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bgmClip: {fileID: 8300000, guid: 7dacfce5938693c408eca3e60a8b2dd2, type: 3}
+  bgmClip: {fileID: 8300000, guid: dd9a1e9b611615a44af24b82b1bcd5c3, type: 3}
 --- !u!4 &1638854451
 Transform:
   m_ObjectHideFlags: 0
@@ -15461,7 +15461,7 @@ MonoBehaviour:
     type: 3}
   openingGemCount: 2
   openingGemDoublePick: 0
-  eliteGemDoublePick: 0
+  eliteGemDoublePick: 1
   eliteGemCountMin: 2
   eliteGemCountMax: 2
   cardOfferGemPickupRadius: 1.25
@@ -23238,6 +23238,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7460834580211659369, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 8337572258949966045, guid: 9099eb884cfa35b438e6b9e4fd5f7cb5,
+        type: 3}
+      propertyPath: possessionDecayPercent
+      value: 0.04
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

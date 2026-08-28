@@ -22,7 +22,8 @@ public class SfxBankEditor : UnityEditor.Editor
     static readonly Dictionary<SfxCategory, string> SectionHints = new Dictionary<SfxCategory, string>
     {
         { SfxCategory.GameEvent, "挂点已接线（AudioEventBinder），只需拖 clip；留空 = 静默。" },
-        { SfxCategory.UI, "走独立 UI 通道；UiClick 由通用点击音驱动，Card* 由选卡弹窗驱动。" },
+        { SfxCategory.UI, "走独立 UI 通道；UiClick 由通用点击音驱动，Card* 由选卡弹窗驱动。\n" +
+                           "HallOfFame/CardArchive 由局外面板 Show/Hide 驱动；BuildExpand/Collapse 由局内构筑展开/收起驱动。" },
         { SfxCategory.Combat, "战斗负责人直调；占位条目拖 clip 即生效。" },
     };
 

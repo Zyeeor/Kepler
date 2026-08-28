@@ -52,9 +52,17 @@ public enum SfxId
     EliteSpawn = 25,
     Hazard = 26,
 
+    // ── UI 界面音效（局外面板 / 局内构筑，走 UI 独立通道；挂点已接线，策划只配 clip）──
+    HallOfFameOpen = 31,     // 荣誉殿堂打开（HallOfFamePanel.Show）
+    HallOfFameClose = 32,    // 荣誉殿堂关闭（HallOfFamePanel.Hide）
+    CardArchiveOpen = 33,    // 卡牌图鉴打开（CardArchivePanel.Show）
+    CardArchiveClose = 34,   // 卡牌图鉴关闭（CardArchivePanel.Hide）
+    BuildExpand = 35,        // 局内构筑展开（BuildView 进入扇形放大，点开卡牌信息）
+    BuildCollapse = 36,      // 局内构筑收起（BuildView 退出扇形放大）
+
     // 怪物技能施放音已拆出（MonsterSkillAudioConfig，七罪×技能类别），不在此枚举内。
     // 召唤物（无人机/木灵）攻击音也已拆入 MonsterSkillAudioConfig 无人机条目。
-    // 编号 27/28 = Shrine 神龛，29/30 已随技能音效拆分弃用（按约定不复用），新成员从 31 起追加。
+    // 编号 27/28 = Shrine 神龛，29/30 已随技能音效拆分弃用（按约定不复用），新成员从 37 起追加。
 }
 
 /// <summary>音效类别（SfxBank 编辑器分区显示 + 策划配置导航用；不影响运行时行为）。</summary>
@@ -139,6 +147,12 @@ public class SfxBank : ScriptableObject
             case SfxId.CardOpen:
             case SfxId.CardSelect:
             case SfxId.CardReroll:
+            case SfxId.HallOfFameOpen:
+            case SfxId.HallOfFameClose:
+            case SfxId.CardArchiveOpen:
+            case SfxId.CardArchiveClose:
+            case SfxId.BuildExpand:
+            case SfxId.BuildCollapse:
                 return SfxCategory.UI;
 
             // Combat 战斗
