@@ -15398,7 +15398,22 @@ MonoBehaviour:
   fixedSeed: 12345
   forceTutorial: 0
   bootToMainMenu: 0
-  useFormalFlow: 0
+  useFormalFlow: 1
+  enableA1ShadowOptimization: 1
+  enableA2TrailOptimization: 1
+  enableA3AnimatorCulling: 1
+  enableA4ImportedLightOptimization: 1
+  enableB5SharedMaterialAndInstancing: 1
+  enableB6StaticChunkBatching: 1
+  enableDynamicShadowVisibility: 1
+  enableGpuInstancing: 1
+  enableSharedTransientMaterials: 1
+  optimizedTrailMinVertexDistance: 0.05
+  optimizedTrailTime: 0.35
+  optimizedAnimatorCullingMode: 1
+  staticChunkBatchMinimumRenderers: 8
+  enableMonsterPreload: 1
+  monsterPreloadInstancesPerPrefab: 1
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0
