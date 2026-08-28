@@ -19,11 +19,11 @@ MonoBehaviour:
     skillAttackRange: 3.5
     aiMinRange: 1.5
     rangeUnlocks: []
-    attackEagerness: 0.75
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.55
-    aiMobilityChance: 0.45
+    attackEagerness: 0.58
+    decisionIntervalMin: 0.25
+    decisionIntervalMax: 0.44
+    skillPriority: 0.48
+    aiMobilityChance: 0.28
     chaseDuration: 1
     strafeChance: 0.35
     strafeIntervalMin: 0.3
@@ -47,11 +47,11 @@ MonoBehaviour:
     - unlockId: PR-A04
       basicAttackRange: -1
       skillAttackRange: 15
-    attackEagerness: 0.21
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.6
-    aiMobilityChance: 0.3
+    attackEagerness: 0.38
+    decisionIntervalMin: 0.24
+    decisionIntervalMax: 0.42
+    skillPriority: 0.55
+    aiMobilityChance: 0.38
     chaseDuration: 1
     strafeChance: 0.221
     strafeIntervalMin: 0.3
@@ -72,11 +72,11 @@ MonoBehaviour:
     skillAttackRange: 10
     aiMinRange: 3
     rangeUnlocks: []
-    attackEagerness: 0.7
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.65
-    aiMobilityChance: 0.45
+    attackEagerness: 0.52
+    decisionIntervalMin: 0.28
+    decisionIntervalMax: 0.48
+    skillPriority: 0.66
+    aiMobilityChance: 0.48
     chaseDuration: 1
     strafeChance: 0.4
     strafeIntervalMin: 0.3
@@ -97,11 +97,11 @@ MonoBehaviour:
     skillAttackRange: 6
     aiMinRange: 3
     rangeUnlocks: []
-    attackEagerness: 0.9
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.6
-    aiMobilityChance: 0.3
+    attackEagerness: 0.46
+    decisionIntervalMin: 0.32
+    decisionIntervalMax: 0.54
+    skillPriority: 0.68
+    aiMobilityChance: 0.36
     chaseDuration: 0
     strafeChance: 0.4
     strafeIntervalMin: 0.3
@@ -122,11 +122,11 @@ MonoBehaviour:
     skillAttackRange: 6
     aiMinRange: 2
     rangeUnlocks: []
-    attackEagerness: 0.8
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.6
-    aiMobilityChance: 0.3
+    attackEagerness: 0.44
+    decisionIntervalMin: 0.34
+    decisionIntervalMax: 0.56
+    skillPriority: 0.62
+    aiMobilityChance: 0.28
     chaseDuration: 0
     strafeChance: 0.4
     strafeIntervalMin: 0.3
@@ -147,11 +147,11 @@ MonoBehaviour:
     skillAttackRange: 6
     aiMinRange: 2
     rangeUnlocks: []
-    attackEagerness: 0.6
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.6
-    aiMobilityChance: 0.3
+    attackEagerness: 0.5
+    decisionIntervalMin: 0.3
+    decisionIntervalMax: 0.5
+    skillPriority: 0.58
+    aiMobilityChance: 0.24
     chaseDuration: 0
     strafeChance: 0.4
     strafeIntervalMin: 0.3
@@ -172,11 +172,11 @@ MonoBehaviour:
     skillAttackRange: 6
     aiMinRange: 2
     rangeUnlocks: []
-    attackEagerness: 0.6
-    decisionIntervalMin: 0.12
-    decisionIntervalMax: 0.4
-    skillPriority: 0.6
-    aiMobilityChance: 0.3
+    attackEagerness: 0.34
+    decisionIntervalMin: 0.38
+    decisionIntervalMax: 0.62
+    skillPriority: 0.68
+    aiMobilityChance: 0.14
     chaseDuration: 0
     strafeChance: 0.4
     strafeIntervalMin: 0.3

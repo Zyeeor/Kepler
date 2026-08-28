@@ -390,17 +390,21 @@ public class CardArchivePanel : MonoBehaviour
 
     public void Show()
     {
+        bool wasVisible = visible;
         if (!built) Build();
         panelRoot.SetActive(true);
         visible = true;
         CardArchiveStore.MarkAllRead();   // 打开即视为已读（清除新解锁角标）
         Refresh();
+        if (!wasVisible) AudioManager.Instance?.Play(SfxId.CardArchiveOpen);
     }
 
     public void Hide()
     {
+        bool wasVisible = visible;
         if (panelRoot != null) panelRoot.SetActive(false);
         visible = false;
+        if (wasVisible) AudioManager.Instance?.Play(SfxId.CardArchiveClose);
         onClose?.Invoke();
         onClose = null;
     }

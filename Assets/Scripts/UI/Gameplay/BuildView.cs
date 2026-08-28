@@ -89,6 +89,7 @@ public class BuildView : MonoBehaviour
     int mode = 0;                         // 0=左上展开 1=放大展开 2=左上收起
     bool paused = false;
     bool initialized = false;
+    bool _soundArmed;                     // 构筑切换音守卫：跳过 Initialize 默认 SetMode 的首次误响
 
     // 附身状态追踪：附身怪 / 灵魂态 / 换身 变化时实时刷新构筑（Update 轮询，与 AbilityCooldownUI 同模式）
     MonsterActor trackedBody;
@@ -302,10 +303,22 @@ public class BuildView : MonoBehaviour
 
     void SetMode(int m)
     {
+        int prevMode = mode;
         CaptureCardPoses();
         mode = m;
         ApplyMode();
         PlayTransition();
+
+        // 构筑展开/收起音：仅在真正进入/离开扇形放大面板时响，迷你条内部切换（Mini↔Stack）不响。
+        // _soundArmed 跳过 Initialize 的默认 SetMode(ModeMini)，避免开局误响收起音。
+        if (_soundArmed)
+        {
+            if (m == ModeFan && prevMode != ModeFan)
+                AudioManager.Instance?.Play(SfxId.BuildExpand);
+            else if (prevMode == ModeFan && m != ModeFan)
+                AudioManager.Instance?.Play(SfxId.BuildCollapse);
+        }
+        _soundArmed = true;
     }
 
     void CaptureCardPoses()

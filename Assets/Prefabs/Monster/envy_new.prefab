@@ -555,13 +555,16 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
+  enemyCastLeadTime: 0.75
   enemyIndicatorEnabled: 1
   enemyIndicatorRadius: 0
   enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyIndicatorShape: 0
+  enemyIndicatorLength: 0
+  enemyIndicatorWidth: 0
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 0, y: 100}
   baseThunderDamage: 10
@@ -1417,7 +1420,7 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
-  enemyTelegraphEnabled: 1
+  enemyTelegraphEnabled: 0
   enemyCastLeadTime: 0.45
   enemyIndicatorEnabled: 1
   enemyIndicatorRadius: 0
@@ -1425,6 +1428,9 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyIndicatorShape: 0
+  enemyIndicatorLength: 0
+  enemyIndicatorWidth: 0
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 40, y: 100}
   flightDuration: 1
@@ -1528,13 +1534,16 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
+  enemyCastLeadTime: 0.5
   enemyIndicatorEnabled: 1
   enemyIndicatorRadius: 0
   enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyIndicatorShape: 0
+  enemyIndicatorLength: 0
+  enemyIndicatorWidth: 0
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 100}
   maxRange: 15
@@ -1710,10 +1719,10 @@ MonoBehaviour:
     collisionDamage: 30
     attackSpeed: 1
   possessedStats:
-    maxHealth: 10000
-    moveSpeed: 4
-    acceleration: 60
-    deceleration: 80
+    maxHealth: 200
+    moveSpeed: 8
+    acceleration: 120
+    deceleration: 120
     maxTenacity: 200
     collisionDamage: 30
     attackSpeed: 1

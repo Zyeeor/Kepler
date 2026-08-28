@@ -21,7 +21,7 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Scene Settings")]
     [Tooltip("开始游戏时加载的战斗场景名")]
-    public string battleSceneName = "CombatTest";
+    public string battleSceneName = "EnemyAiTest";
     [Tooltip("Boss 模式加载的正式战斗场景名。Boss 模式会在该场景中直接进入 Boss 阶段。")]
     public string bossBattleSceneName = "EnemyAiTest";
     [Min(0)]

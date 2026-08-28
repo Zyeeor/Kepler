@@ -90,7 +90,7 @@ public class EnemyAbility_WrathSelfGrapple : EnemyAbility
         return new EnemyTelegraphGeometry
         {
             shape = EnemyIndicatorShape.Rect,
-            center = owner.transform.position,
+            center = owner.transform.position + direction * (length * 0.5f),
             forward = direction,
             length = length,
             width = width,

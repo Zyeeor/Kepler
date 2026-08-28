@@ -276,13 +276,16 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
+  enemyCastLeadTime: 0.8
   enemyIndicatorEnabled: 1
   enemyIndicatorRadius: 0
   enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyIndicatorShape: 0
+  enemyIndicatorLength: 0
+  enemyIndicatorWidth: 0
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 230}
   projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,
@@ -776,10 +779,10 @@ MonoBehaviour:
     collisionDamage: 0
     attackSpeed: 1
   possessedStats:
-    maxHealth: 10000
-    moveSpeed: 4
-    acceleration: 0
-    deceleration: 0
+    maxHealth: 200
+    moveSpeed: 8
+    acceleration: 120
+    deceleration: 120
     maxTenacity: 150
     collisionDamage: 0
     attackSpeed: 1
@@ -1444,13 +1447,16 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
+  enemyCastLeadTime: 0.55
   enemyIndicatorEnabled: 1
   enemyIndicatorRadius: 0
   enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyIndicatorShape: 0
+  enemyIndicatorLength: 0
+  enemyIndicatorWidth: 0
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 40, y: 230}
   dronePrefab: {fileID: 6114247635342975564, guid: 7cb74f0d689f64bfbb41a3d25ad27b0b,
@@ -1901,13 +1907,16 @@ MonoBehaviour:
     hitStopScale: 0
     useGlobalTimeScale: 0
   enemyTelegraphEnabled: 1
-  enemyCastLeadTime: 0.45
+  enemyCastLeadTime: 0.7
   enemyIndicatorEnabled: 1
   enemyIndicatorRadius: 0
   enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyIndicatorShape: 0
+  enemyIndicatorLength: 0
+  enemyIndicatorWidth: 0
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 40, y: 230}
   windupDuration: 0.25

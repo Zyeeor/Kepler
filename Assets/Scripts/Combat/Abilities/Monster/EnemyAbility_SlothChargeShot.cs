@@ -499,7 +499,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         return new EnemyTelegraphGeometry
         {
             shape = EnemyIndicatorShape.Rect,
-            center = owner.transform.position,
+            center = owner.transform.position + forward * (length * 0.5f),
             forward = forward,
             length = length,
             width = width,
