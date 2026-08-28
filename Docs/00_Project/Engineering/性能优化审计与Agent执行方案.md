@@ -1,6 +1,7 @@
 # Possession 性能优化审计与 Agent 执行方案
 
 > 审计日期：2026-08-26
+> 第二阶段补充：2026-08-28
 > 审计范围：`Assets/Scripts/**/*.cs`（255 个 C# 文件，约 5.2 万行）
 > 工程版本：Unity 2022.3.62f3c1
 > 证据等级：当前结论来自静态代码审计；Unity Editor 已打开，但本地 Unity-MCP 未响应，尚无可信的 Play Mode Profiler 基线。文中不会把静态风险冒充实测耗时。
@@ -197,3 +198,64 @@
 - Unity 刷新编译无新增错误；若工具不可用，明确记录未验证原因，不能写“已通过”。
 - Review SubAgent 对正确性、池化生命周期、缓冲溢出、注册表对称性和用户脏改保护逐项确认。
 - 技术亮点报告只描述实际完成的优化，不把候选方案写成既成成果。
+
+## 10. 第二阶段：渲染几何、阴影与加载峰值
+
+第一阶段收紧了 CPU / GC 热路径；第二阶段针对“战斗进行数分钟后 GPU 与首刷加载成本一起上升”的风险，落地 A1–A4、B5、B6。实现仍遵守“运行时策略覆盖、保留资源原始配置”的边界，不修改 Prefab、Scene、Material 或导入设置。
+
+### 10.1 A1–A4 / B5–B6 执行合同
+
+| 编号 | Agent 可执行方案 | 代码落点与边界 |
+|---|---|---|
+| A1 阴影预算 | Particle/VFX、Trail、Line、范围圈关闭 `Shadow Casting`；怪物主体由 `RendererShadowVisibility` 根据摄像机可见性动态关闭屏幕外阴影 | `RenderingOptimizationState` 只对效果 Renderer 关闭阴影；怪物本体保留美术阴影并动态切换，不误伤粒子型怪物主体 |
+| A2 Trail 几何 | 提高 `TrailRenderer.minVertexDistance`、缩短 `time`，限制尾迹顶点数量和存活时间 | 默认 `0.05` / `0.35s`，通过 `GameManager` 调整；关闭开关时恢复捕获的原始值 |
+| A3 动画剔除 | 怪物 Animator 使用可见性剔除，屏幕外不持续执行完整动画更新 | 默认 `CullUpdateTransforms`，只作用于含 `MonsterActor` 的层级；不改变非怪物 UI/剧情 Animator |
+| A4 灯光收敛 | 关闭怪物与 VFX Prefab 中的非 Directional 灯光及其阴影 | 运行时覆盖 FBX Import Lights 等子层级灯光；Directional 灯光不处理，避免改变全局主光 |
+| B5 材质与实例化 | 瞬态线、Telegraph、范围圈、斩击等共享材质；颜色等 per-renderer 数据改用 `MaterialPropertyBlock`；可行 Renderer 开启 GPU Instancing | 统一由 `RenderingOptimizationState` / `RendererShadowVisibility` 入口执行；优化路径不访问 `Renderer.material`，关闭时保留原有运行时材质回退 |
+| B6 静态合批 | Chunk 视觉构建完成后，收集启用的 `MeshRenderer + MeshFilter.sharedMesh + sharedMaterials`，达到阈值后调用 `StaticBatchingUtility.Combine` | 仅处理 `ChunkVisual_` 下的静态 Mesh；显式排除 Particle、Trail、Line 和缺 Mesh/材质对象，避免把动态 VFX 合进静态批次 |
+
+### 10.2 GameManager 开关与运行入口
+
+所有第二阶段策略集中在 `GameManager` 的 `Performance / Rendering`、`Existing Rendering Optimization` 与 `Performance Tuning` 区域：
+
+- `enableA1ShadowOptimization`、`enableA2TrailOptimization`、`enableA3AnimatorCulling`、`enableA4ImportedLightOptimization`；
+- `enableB5SharedMaterialAndInstancing`、`enableB6StaticChunkBatching`；
+- 既有 `enableDynamicShadowVisibility`、`enableGpuInstancing`、`enableSharedTransientMaterials`；
+- `optimizedTrailMinVertexDistance`、`optimizedTrailTime`、`optimizedAnimatorCullingMode`、`staticChunkBatchMinimumRenderers`。
+
+场景启动和场景加载后会调用 `ApplyPerformanceOptimizationsToScene()`，新生成的怪物、VFX、投射物和 Chunk 在进入池或完成构建时调用同一策略入口。开关适合作为启动配置或调试对照；运行中关闭后需要主动重新应用策略，已经完成的 B6 静态合批不能在运行时无损“解批”。
+
+## 11. 选卡阶段的怪物与技能 VFX 分帧预加载
+
+### 11.1 触发与资源目录
+
+`CoreChoiceUI.Show()` 打开选卡并暂停战斗后，调用 `GameManager.BeginMonsterPreload()`。`MonsterPreloadService` 不引入新的 Addressables/Resources 约定，而是从当前场景可见的刷怪配置收集目录：
+
+- `RunSpawnDirector` 的 Boss 与普通怪列表；
+- `EnemySpawner`、`ENGPOSS001SceneInstaller` 的 Prefab 引用；
+- `WaveManager` → `WaveConfig` → `MonsterWaveDef` 的加权刷怪表；
+- 怪物 Prefab 组件中序列化的 `GameObject` 与 `GameplayEffectDefinition`，递归提取主动/命中特效引用。
+
+### 11.2 分帧与池化策略
+
+预加载协程每帧只处理一个怪物或 VFX/投射物 Prefab，并调用 `MonsterPool.Preload` / `VfxPool.Preload` 预热目标实例数（默认每个 Prefab 1 个）。新实例沿用正常 Spawn 路径，应用渲染优化策略；后续真正战斗租借时优先复用，降低首个波次的 Instantiate、组件唤醒和材质准备尖峰。
+
+选卡关闭、切场景或流程中断时调用 `CancelPreload()`；同一局再次打开选卡会重新补足池容量，不使用永久跳过集合，避免第一次预热不足导致后续仍然冷启动。若目录为空只记录警告，不阻塞选卡。
+
+## 12. 本轮 Agent 落地、Review 与验证记录
+
+- 实现 Agent：`GPT-5.6 Luna / xhigh`；Review Agent：独立 `GPT-5.6 Luna / xhigh`。Review 重点覆盖阴影分类、静态合批对象过滤、预加载重复触发/取消、池化生命周期和 Unity 初始化时序。
+- 关键脚本：`GameManager.cs`、`RenderingOptimizationState.cs`、`RendererShadowVisibility.cs`、`MonsterPreloadService.cs`、`MonsterPool.cs`、`VfxPool.cs`、`ChunkVisualizer.cs`、`CoreChoiceUI.cs` 及瞬态材质/范围圈调用方。
+- 使用项目生成的 `Assembly-CSharp.csproj` 完成静态编译：0 个错误、66 个 Warning；`git diff --check` 通过。
+- Unity-MCP 的 AssetDatabase Refresh 在当前会话因 OAuth `invalid_grant`（refresh token reuse detected）失败，因此没有把 Editor 导入、Play Mode 回归或 GPU/CPU 对照采样写成“已通过”。`profile.data` 仍应按固定 Seed、固定场景重新采样后量化收益。
+
+## 13. 第二阶段残余风险与验收清单
+
+| 风险 / 待验收项 | 验收方式 |
+|---|---|
+| `Renderer.isVisible` 会受多个摄像机、Scene 视图或阴影渲染影响 | Player/Development Build 中关闭 Scene 视图，仅保留游戏摄像机，确认屏幕外怪物阴影确实关闭 |
+| A4 可能关闭个别 Prefab 内有意保留的点光源 | 对带特殊局部光照的怪物/VFX 做画面对照；必要时关闭 A4 或增加白名单 |
+| GPU Instancing 依赖 Shader 支持，且共享材质开关为运行时策略 | 检查材质 `enableInstancing`、Frame Debugger 批次数与视觉一致性；不同 Shader 不强行合批 |
+| B6 合批后不支持运行时拆分，动态移动/销毁对象不能进入静态列表 | 仅在 Chunk 构建完成时收集静态 Mesh；Chunk 卸载整体销毁，禁止把动态对象加入列表 |
+| 预加载目录可能漏掉未序列化或运行时拼接的 VFX 引用 | 统计预加载日志与首波 Instantiate 次数；遗漏项补充显式注册入口，而不是扩大反射扫描范围 |
+| Collider 缓冲与池容量仍需极端密度验证 | 记录缓冲打满次数、首波 Instantiate 次数、Main Thread/Rendering/GC 的 P50/P95/P99；没有数据前不承诺百分比收益 |

@@ -100,6 +100,10 @@ public class CoreChoiceUI : MonoBehaviour
         if (_isDrafting) return;   // 会话进行中忽略重复打开
         _isDrafting = true;
 
+        // 选卡暂停提供了天然的加载窗口：按帧预热怪物与技能 VFX，避免下一波
+        // 第一次刷怪/施法时把 Instantiate、Awake 和材质准备成本集中到同一帧。
+        GameManager.Instance?.BeginMonsterPreload();
+
         // 选卡弹窗期间静默通用 UI 点击音（由专属卡牌音接管）——AudioManager 不感知具体 UI
         AudioManager.Instance?.PushUiClickMute();
 
@@ -280,6 +284,8 @@ public class CoreChoiceUI : MonoBehaviour
     private void Close()
     {
         _isDrafting = false;
+        MonsterPreloadService service = FindObjectOfType<MonsterPreloadService>(true);
+        if (service != null) service.CancelPreload();
         AudioManager.Instance?.PopUiClickMute(); // 退出静默（与 Show 的 Push 成对）
         if (panelRoot != null) panelRoot.SetActive(false);
         // continue 按钮随弹窗关闭隐藏

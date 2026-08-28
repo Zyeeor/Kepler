@@ -267,6 +267,7 @@ func (s *Server) handleEliteLeaderboard(w http.ResponseWriter, r *http.Request) 
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logx.Event("leaderboard · limit=%d → %d entries", limit, len(entries))
 
 	out := make([]leaderboardEntryJSON, 0, len(entries))
 	for i, e := range entries {
@@ -298,9 +299,11 @@ func (s *Server) handleEliteStats(w http.ResponseWriter, r *http.Request) {
 	owner := r.URL.Query().Get("playerId")
 	stats, err := s.eliteSvc.OwnerEliteStats(owner)
 	if err != nil {
+		logx.Event("stats query rejected · player=%q → %v", owner, err)
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	logx.Event("stats query · player=%s → %d rows", owner, len(stats))
 
 	out := make([]eliteStatsJSON, 0, len(stats))
 	for _, st := range stats {

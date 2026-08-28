@@ -674,6 +674,9 @@ public abstract class EnemyAbility : MonoBehaviour
         DestroyOnOwnerDeath tracker = go.GetComponent<DestroyOnOwnerDeath>();
         if (tracker == null) tracker = go.AddComponent<DestroyOnOwnerDeath>();
         tracker.owner = owner.gameObject;
+        // The tracker marks mesh-only transient VFX that do not contain a ParticleSystem;
+        // apply once more so A1/A4 can classify those pooled visuals as effects as well.
+        GameManager.ApplyPerformanceOptimizations(go);
         if (autoDestroyTime > 0f) ReleaseVfx(go, autoDestroyTime);
         return go;
     }

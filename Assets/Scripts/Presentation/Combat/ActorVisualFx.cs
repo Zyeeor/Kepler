@@ -115,6 +115,22 @@ public class ActorVisualFx : MonoBehaviour
     [Tooltip("Delay between successive meteors (seconds).")]
     [Min(0f)] public float possessionImprintMeteorStagger = 0.06f;
 
+    [Header("Monster Status Marker")]
+    [Tooltip("Shared world-space size for Envy ⚡ and Lust 💗 target markers.")]
+    [Min(0.05f)] public float monsterStatusMarkerSize = 0.8f;
+    [Tooltip("Screen-facing offset from the host's top point. X is screen right, Y is screen up. When both markers are visible, this is their combined center.")]
+    public Vector2 monsterStatusMarkerOffset = new Vector2(0f, 0.45f);
+    [Tooltip("Screen-facing gap between Envy ⚡ and Lust 💗 when both markers are present.")]
+    [Min(0f)] public float monsterStatusMarkerAdjacentSpacing = 0.08f;
+    [Tooltip("HDR color used by the Envy ⚡ marker.")]
+    [ColorUsage(true, true)] public Color envyStatusMarkerColor = new Color(0.25f, 0.9f, 1f, 1f);
+    [Tooltip("HDR color used by the Lust 💗 marker.")]
+    [ColorUsage(true, true)] public Color lustStatusMarkerColor = new Color(1f, 0.3f, 0.8f, 1f);
+    [Tooltip("Shared marker shader glow intensity.")]
+    [Min(0f)] public float monsterStatusMarkerGlowIntensity = 2.2f;
+    [Tooltip("Shared marker pulse speed in Hz. Set to 0 for a steady marker.")]
+    [Min(0f)] public float monsterStatusMarkerPulseSpeed = 5f;
+
 
     private Renderer[] _renderers;
     private MaterialPropertyBlock _block;

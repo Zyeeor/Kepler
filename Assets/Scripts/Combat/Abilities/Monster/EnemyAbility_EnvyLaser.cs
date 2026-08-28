@@ -30,6 +30,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     [Header("EN-A05 Ramp")]
     public float rampMaxDamagePerSecond = 50f;
     public float rampTimeToMax = 8f;
+    [Tooltip("EN-A05 外显：连续连接伤害爬升时整条激光宽度的最大放大倍数。")]
+    public float rampWidthMultiplier = 2.5f;
 
     [Header("EN-A01 Multi Eye")]
     public float multiEyeInterval = 3f;
@@ -55,8 +57,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private float _damageTimer;
     private float _fireDuration;
     private float _hpCostTimer;
-    private float _multiEyeTimer;
-    private float _pierceTimer;
+    private float _rampTimer;
     private GameObject _hitVfx;
     private readonly HashSet<Enemy> _connectedThisBurst = new HashSet<Enemy>();
     private readonly List<Enemy> _lastMarked = new List<Enemy>();
@@ -101,8 +102,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
                 _damageTimer = 0f;
                 _fireDuration = 0f;
                 _hpCostTimer = 0f;
-                _multiEyeTimer = 0f;
-                _pierceTimer = 0f;
+                _rampTimer = 0f;
                 _connectedThisBurst.Clear();
                 currentCooldown = 0f;
 
@@ -167,6 +167,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             connectCap = GetCardParameter("ConnectDuration", maxConnectDuration + 4f);
 
         _fireDuration += AbilityDeltaTime;
+        _rampTimer += AbilityDeltaTime;
         if (_fireDuration > connectCap)
         {
             StopLaser();
@@ -187,9 +188,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         float tickDamage = GetTickDamage();
 
         _damageTimer += AbilityDeltaTime;
-        _multiEyeTimer += AbilityDeltaTime;
-        _pierceTimer += AbilityDeltaTime;
-
         if (_damageTimer < tickInterval) return;
         _damageTimer -= tickInterval;
 
@@ -228,13 +226,11 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             // Empty fire: keep beam, but do not write Mark / ramp EN-A05.
             _connectedThisBurst.Clear();
             _fireDuration = 0f;
+            _rampTimer = 0f; // 断链：EN-A05 宽度爬升归零，下次连接重新 ramp up
         }
 
-        if (IsUpgradeUnlocked("EN-A01") && _multiEyeTimer >= multiEyeInterval)
-        {
-            _multiEyeTimer = 0f;
+        if (IsMultiEyeActive())
             FireMultiEye(origin, tickDamage, hitTargets);
-        }
 
         UpdateHitVfx(beamEnd);
     }
@@ -244,7 +240,16 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         if (!IsUpgradeUnlocked("EN-A03")) return false;
         float window = GetCardParameter("PierceDuration", piercePhaseDuration);
         float interval = Mathf.Max(window + 0.1f, GetCardParameter("PierceInterval", piercePhaseInterval));
-        float cycle = _pierceTimer % interval;
+        float cycle = AbilityTime % interval;
+        return cycle <= window;
+    }
+
+    private bool IsMultiEyeActive()
+    {
+        if (!IsUpgradeUnlocked("EN-A01")) return false;
+        float window = GetCardParameter("MultiEyeWindow", multiEyeWindow);
+        float interval = Mathf.Max(window + 0.1f, GetCardParameter("MultiEyeInterval", multiEyeInterval));
+        float cycle = AbilityTime % interval;
         return cycle <= window;
     }
 
@@ -261,16 +266,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         candidates.Sort((a, b) =>
             Vector3.Distance(origin, a.transform.position).CompareTo(Vector3.Distance(origin, b.transform.position)));
 
-        HashSet<Enemy> chosen = new HashSet<Enemy>();
-        for (int i = 0; i < primaryHits.Count; i++)
-        {
-            if (primaryHits[i] != null) chosen.Add(primaryHits[i]);
-        }
-
-        for (int i = 0; i < candidates.Count && chosen.Count < multiEyeTargetCount; i++)
-            chosen.Add(candidates[i]);
-
-        foreach (Enemy target in chosen)
+        // 万眼同视：链接 Beam VFX 到所有敌人。主光束已覆盖 primary 命中，其余每个敌人各接一束。
+        foreach (Enemy target in candidates)
         {
             if (primaryHits.Contains(target)) continue;
             Vector3 end = target.transform.position + Vector3.up;
@@ -320,14 +317,20 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         return blocked;
     }
 
+    private float GetRampFactor()
+    {
+        if (!IsUpgradeUnlocked("EN-A05") || _connectedThisBurst.Count <= 0) return 0f;
+        return Mathf.Clamp01(_rampTimer / Mathf.Max(0.01f, GetCardParameter("RampTime", rampTimeToMax)));
+    }
+
     private float GetTickDamage()
     {
         float dps = damagePerSecond;
-        if (IsUpgradeUnlocked("EN-A05") && _connectedThisBurst.Count > 0)
+        float ramp = GetRampFactor();
+        if (ramp > 0f)
         {
-            float t = Mathf.Clamp01(_fireDuration / Mathf.Max(0.01f, GetCardParameter("RampTime", rampTimeToMax)));
             float maxDps = GetCardParameter("RampMaxDps", rampMaxDamagePerSecond);
-            dps = Mathf.Lerp(damagePerSecond, maxDps, t);
+            dps = Mathf.Lerp(damagePerSecond, maxDps, ramp);
         }
 
         return dps * tickInterval;
@@ -406,9 +409,24 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             : Quaternion.identity) * Quaternion.Euler(beamRotationOffset);
         GameObject vfx = SpawnVfxTracked(beamPrefab, origin, rot, tickInterval);
         if (vfx == null) return;
+
+        // 光束由本地空间 LineRenderer 承载（蓝-激光 等，本地 0→authoredLength）。
+        // 按 authoredLength 归一化，使终点精确落在 targetPos（怪物→目标两点，不穿透 / 不越界）。
+        float authoredLength = ResolveBeamAuthoredLength(vfx);
         Vector3 scale = vfx.transform.localScale;
-        scale.z *= Mathf.Max(0.1f, dir.magnitude);
+        scale.z *= dir.magnitude / Mathf.Max(0.01f, authoredLength);
         vfx.transform.localScale = scale;
+
+        // EN-A05 外显：连续连接伤害爬升时按比例加宽整条激光。
+        float ramp = GetRampFactor();
+        if (ramp > 0f)
+        {
+            float widthMult = Mathf.Lerp(1f, GetCardParameter("RampWidthMult", rampWidthMultiplier), ramp);
+            foreach (LineRenderer lr in vfx.GetComponentsInChildren<LineRenderer>(true))
+            {
+                if (lr != null) lr.widthMultiplier *= widthMult;
+            }
+        }
 
         if (beamMaterial != null)
         {
@@ -418,6 +436,20 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
                 if (renderer != null) renderer.material = beamMaterial;
             }
         }
+    }
+
+    private static float ResolveBeamAuthoredLength(GameObject vfx)
+    {
+        if (vfx == null) return 1f;
+        LineRenderer[] renderers = vfx.GetComponentsInChildren<LineRenderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            LineRenderer lr = renderers[i];
+            if (lr == null || lr.positionCount < 2) continue;
+            float len = (lr.GetPosition(lr.positionCount - 1) - lr.GetPosition(0)).magnitude;
+            if (len > 0.001f) return len;
+        }
+        return 1f;
     }
 
     private void UpdateHitVfx(Vector3 hitPos)

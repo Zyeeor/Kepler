@@ -36,6 +36,37 @@ public class MonsterPool : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    /// <summary>
+    /// Creates inactive instances ahead of the first spawn. This is intentionally a small
+    /// pool warm-up API; MonsterPreloadService calls it once per prefab between card-choice
+    /// frames so the expensive Instantiate/Awake cost is not concentrated in one frame.
+    /// </summary>
+    public void Preload(GameObject prefab, int count)
+    {
+        if (prefab == null || count <= 0) return;
+
+        if (!availableByPrefab.TryGetValue(prefab, out Queue<GameObject> available))
+        {
+            available = new Queue<GameObject>();
+            availableByPrefab.Add(prefab, available);
+        }
+
+        int validCount = 0;
+        foreach (GameObject queued in available)
+            if (queued != null) validCount++;
+
+        while (validCount < count)
+        {
+            GameObject warmed = Instantiate(prefab);
+            warmed.SetActive(false);
+            warmed.transform.SetParent(transform, false);
+            prefabByInstance[warmed] = prefab;
+            GameManager.ApplyPerformanceOptimizations(warmed);
+            available.Enqueue(warmed);
+            validCount++;
+        }
+    }
+
     public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation)
     {
         if (prefab == null) return null;
@@ -58,6 +89,7 @@ public class MonsterPool : MonoBehaviour
             instanceToSpawn = Instantiate(prefab);
             instanceToSpawn.SetActive(false);
             prefabByInstance[instanceToSpawn] = prefab;
+            GameManager.ApplyPerformanceOptimizations(instanceToSpawn);
         }
 
         // Detach from pool root before reset / pose so world coordinates are authoritative.

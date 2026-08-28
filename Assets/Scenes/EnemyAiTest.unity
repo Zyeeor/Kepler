@@ -801,6 +801,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: pride_new
       objectReference: {fileID: 0}
+    - target: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5432388710610514242, guid: 7576bcb0b248840af8e004111454a76e,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -6714,7 +6719,7 @@ MonoBehaviour:
   pulseFadeTime: 1
   pulseCooldown: 3
   followPlayerAfterFire: 0
-  guideColor: {r: 0.996323, g: 1, b: 0, a: 1}
+  guideColor: {r: 0.8238993, g: 0.79708666, b: 0.6658557, a: 0.627451}
   brightness: 0.75
   breatheAmount: 0.35
   breatheSpeed: 2
@@ -23224,6 +23229,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: envy_new
       objectReference: {fileID: 0}
+    - target: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -23255,6 +23265,7 @@ SceneRoots:
   - {fileID: 1312176470}
   - {fileID: 603492335}
   - {fileID: 915700992}
+  - {fileID: 1178878877}
   - {fileID: 247974492}
   - {fileID: 7258229926153953795}
   - {fileID: 6390018595090732797}
@@ -23262,4 +23273,3 @@ SceneRoots:
   - {fileID: 3159027421792093386}
   - {fileID: 1938393086264155549}
   - {fileID: 1073311079}
-  - {fileID: 1178878877}

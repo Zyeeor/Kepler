@@ -18,6 +18,10 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
     private GameObject _indicatorObject;
     private Material _indicatorMaterial;
     private Renderer _indicatorRenderer;
+    private MaterialPropertyBlock _indicatorPropertyBlock;
+    private bool _usesSharedIndicatorMaterial;
+    private bool _ownsIndicatorMaterial;
+    private static Material _sharedIndicatorMaterial;
 
     private EnemyAbility _ability;
     private MonsterActor _owner;
@@ -53,9 +57,9 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
 
             float diameter = indicatorRadius * 2f / IndicatorEdgeRadius;
             _indicatorObject.transform.localScale = new Vector3(diameter, diameter, 1f);
-            _indicatorMaterial.SetColor(IndicatorColorId, ability.enemyIndicatorColor);
-            _indicatorMaterial.SetFloat(IndicatorIntensityId, Mathf.Max(0f, ability.enemyIndicatorIntensity));
-            _indicatorMaterial.SetFloat(IndicatorProgressId, 0f);
+            SetIndicatorColor(ability.enemyIndicatorColor);
+            SetIndicatorFloat(IndicatorIntensityId, Mathf.Max(0f, ability.enemyIndicatorIntensity));
+            SetIndicatorFloat(IndicatorProgressId, 0f);
         }
         else if (_indicatorObject != null)
         {
@@ -78,8 +82,7 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
         if (!_isShowing) return;
 
         float value = Mathf.Clamp01(progress);
-        if (_indicatorMaterial != null)
-            _indicatorMaterial.SetFloat(IndicatorProgressId, value);
+        SetIndicatorFloat(IndicatorProgressId, value);
 
         SetHudProgress(value);
         UpdateHudPosition();
@@ -316,12 +319,63 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
         Shader shader = Shader.Find("Possession/MonsterTelegraphIndicator");
         if (template != null || shader != null)
         {
-            _indicatorMaterial = template != null
-                ? new Material(template)
-                : new Material(shader);
-            _indicatorMaterial.hideFlags = HideFlags.DontSave;
+            _usesSharedIndicatorMaterial = GameManager.SharedMaterialOptimizationEnabled;
+            if (_usesSharedIndicatorMaterial)
+            {
+                _indicatorMaterial = template != null ? template : GetSharedIndicatorMaterial(shader);
+                _ownsIndicatorMaterial = false;
+                _indicatorPropertyBlock = new MaterialPropertyBlock();
+            }
+            else
+            {
+                _indicatorMaterial = template != null ? new Material(template) : new Material(shader);
+                _indicatorMaterial.hideFlags = HideFlags.DontSave;
+                _ownsIndicatorMaterial = true;
+            }
             if (_indicatorRenderer != null) _indicatorRenderer.sharedMaterial = _indicatorMaterial;
         }
+    }
+
+    private static Material GetSharedIndicatorMaterial(Shader shader)
+    {
+        if (_sharedIndicatorMaterial != null || shader == null) return _sharedIndicatorMaterial;
+        _sharedIndicatorMaterial = new Material(shader)
+        {
+            name = "SharedMonsterTelegraphIndicator",
+            hideFlags = HideFlags.HideAndDontSave
+        };
+        if (SystemInfo.supportsInstancing) _sharedIndicatorMaterial.enableInstancing = true;
+        return _sharedIndicatorMaterial;
+    }
+
+    private void SetIndicatorColor(Color color)
+    {
+        if (_indicatorMaterial == null || _indicatorRenderer == null) return;
+        if (!_usesSharedIndicatorMaterial)
+        {
+            _indicatorMaterial.SetColor(IndicatorColorId, color);
+            return;
+        }
+
+        if (_indicatorPropertyBlock == null) _indicatorPropertyBlock = new MaterialPropertyBlock();
+        _indicatorRenderer.GetPropertyBlock(_indicatorPropertyBlock);
+        _indicatorPropertyBlock.SetColor(IndicatorColorId, color);
+        _indicatorRenderer.SetPropertyBlock(_indicatorPropertyBlock);
+    }
+
+    private void SetIndicatorFloat(int propertyId, float value)
+    {
+        if (_indicatorMaterial == null || _indicatorRenderer == null) return;
+        if (!_usesSharedIndicatorMaterial)
+        {
+            _indicatorMaterial.SetFloat(propertyId, value);
+            return;
+        }
+
+        if (_indicatorPropertyBlock == null) _indicatorPropertyBlock = new MaterialPropertyBlock();
+        _indicatorRenderer.GetPropertyBlock(_indicatorPropertyBlock);
+        _indicatorPropertyBlock.SetFloat(propertyId, value);
+        _indicatorRenderer.SetPropertyBlock(_indicatorPropertyBlock);
     }
 
     private Image FindCloneImage(Transform sourceRoot, Image sourceImage)
@@ -378,7 +432,7 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (_indicatorMaterial != null) Destroy(_indicatorMaterial);
+        if (_ownsIndicatorMaterial && _indicatorMaterial != null) Destroy(_indicatorMaterial);
         if (_indicatorObject != null) Destroy(_indicatorObject);
         if (_hudRoot != null) Destroy(_hudRoot.gameObject);
     }

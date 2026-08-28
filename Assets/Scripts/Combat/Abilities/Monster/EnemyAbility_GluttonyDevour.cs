@@ -38,6 +38,18 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
     private GluttonyBodyState _state;
     private Coroutine _vfxMotionRoutine;
 
+    /// <summary>Returns the world-space radius of half the current horizontal screen.</summary>
+    public float GetCopiedSkillRadius()
+    {
+        if (MonsterSpawner.Instance != null)
+            return Mathf.Max(1f, MonsterSpawner.Instance.GetScreenDiameterWorldDistance() * 0.5f);
+
+        Camera camera = Camera.main;
+        if (camera != null && camera.orthographic)
+            return Mathf.Max(1f, camera.orthographicSize * camera.aspect);
+        return 12f;
+    }
+
     private void OnEnable()
     {
         type = AbilityType.Skill;
@@ -63,10 +75,20 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
         Animator anim = owner.GetActiveAnimator();
         if (anim != null) anim.SetTrigger("Skill");
 
-        Enemy target = FindNearestDevourTarget();
+        bool hasGluttonyTarget;
+        Enemy target = FindNearestDevourTarget(out hasGluttonyTarget);
         if (target != null)
         {
             StartCoroutine(ConsumeEnemyAfterDelay(target));
+            return;
+        }
+
+        // Gluttony cannot copy another Gluttony's Skill. If that is the only
+        // available target, cancel this cast so Devour can be tried again later.
+        if (hasGluttonyTarget)
+        {
+            currentCooldown = 0f;
+            EndActivationEffect();
             return;
         }
 
@@ -81,20 +103,28 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
     private IEnumerator ConsumeEnemyAfterDelay(Enemy target)
     {
         yield return AbilityWait(Mathf.Max(0f, hitDelay));
-        if (owner != null && target != null && owner.CanDamage(target))
+        if (owner != null && IsDevourTarget(target))
             ConsumeEnemy(target);
         EndActivationEffect();
     }
 
-    private Enemy FindNearestDevourTarget()
+    private Enemy FindNearestDevourTarget(out bool hasGluttonyTarget)
     {
+        hasGluttonyTarget = false;
         Enemy nearest = null;
         float nearestSqrDistance = float.MaxValue;
         Vector3 origin = owner.transform.position;
-        foreach (Enemy candidate in FindEnemiesInArc(origin, owner.transform.forward, range, angle))
+        foreach (Enemy candidate in FindEnemiesInArc(origin, owner.transform.forward, range * 2f, angle))
         {
-            if (candidate == null || !owner.CanDamage(candidate)) continue;
-            float sqrDistance = (candidate.transform.position - origin).sqrMagnitude;
+            if (!IsDevourTarget(candidate)) continue;
+            if (candidate.sinType == SinType.Gluttony)
+            {
+                hasGluttonyTarget = true;
+                continue;
+            }
+            Vector3 offset = candidate.transform.position - origin;
+            offset.y = 0f;
+            float sqrDistance = offset.sqrMagnitude;
             if (sqrDistance >= nearestSqrDistance) continue;
             nearest = candidate;
             nearestSqrDistance = sqrDistance;
@@ -111,7 +141,10 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             damageToDeal = target.currentHealth;
         }
 
-        DealDamageTo(target, damageToDeal);
+        // A downed body is a valid Devour source, but it is already dead and cannot
+        // pass through the normal offensive-damage gate.
+        if (!IsCorpseDevourTarget(target))
+            DealDamageTo(target, damageToDeal);
         PlayBlastVfx(target.transform.position);
         _state?.GrantOverfed();
 
@@ -126,6 +159,18 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
         else if (owner is BossSevenfoldActor boss && boss.AffixAssimilator != null
                  && PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody != null)
             boss.AffixAssimilator.Assimilate(PossessionManager.Instance.CurrentBody);
+    }
+
+    private bool IsDevourTarget(Enemy candidate)
+    {
+        if (candidate == null || candidate == owner) return false;
+        if (IsCorpseDevourTarget(candidate)) return true;
+        return owner != null && owner.CanDamage(candidate);
+    }
+
+    private static bool IsCorpseDevourTarget(Enemy candidate)
+    {
+        return candidate != null && candidate.Body == MonsterActor.BodyState.Downed;
     }
 
     private void PlayBlastVfx(Vector3 position)
