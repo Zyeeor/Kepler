@@ -114,6 +114,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
         IsBodyDecaying = false;
         if (State != SwitchState.Possessing || CurrentBody == null) return;
+        if (TimeScaleManager.IsDomainActive(TimeDomain.Pause)) return;
         if (CurrentBody.suppressPossessionDrain || MonsterActor.IsDamageImmune(CurrentBody)) return;
         // 技能烧血已把耐久扣到 0，死亡结算正等待该次技能判定完成：
         // 被动流逝不得在宽限窗口内抢先判死，否则技能仍会被打断。

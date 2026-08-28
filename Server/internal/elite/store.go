@@ -13,7 +13,7 @@ type BuildSnapshot struct {
 	MonsterType string // 怪物种类（透传，客户端注入用）
 	BDData      string // BD 数据 JSON 原文（卡 ID + 层数，结构由前台定义，后台不解析）
 	BDCount     int    // BD 数量（代表 BD 深度；由客户端计算上报，后台不解析 bdData）
-	SourceWave  int    // 该 BD 数据拍摄时的投放序号 = 上传者当时第几次投放精英怪（透传数值；语义/编码由前台决定，后台只做数值比较）
+	SourceWave  int    // 该 BD 数据拍摄时的进度序号 = 上传者本局第几次选卡（Owner 2026-08-26 决策；透传数值，后台只做数值比较）
 	GameTime    int64  // 游戏时间（透传，供名人堂统计，筛选不读取）
 	Stats       string // 可选统计字段 JSON 原文（名人堂预留，筛选不读取）
 	CreatedAt   int64

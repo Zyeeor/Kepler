@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Run 级流程阶段（整局状态链）：与战斗级状态（GameManager.GameState）分离。
@@ -37,8 +38,8 @@ public enum RunMode
 /// 流转：
 ///   - 主菜单[新游戏] → BeginNewRun：随机种子 + 清状态 + 清旧存档（阶段=Opening）
 ///   - 主菜单[继续]   → LoadFromSave：读档填充内存态（阶段=Waves 或 Choice，跳过开场/教学）
-///   - 对局中波间存档  → SaveProgress：更新内存态 + 落盘
-///   - 返回主菜单     → 会话保留（内存态=最近波间，再进入零读盘恢复）
+///   - 对局中波间/离开存档  → SaveProgress：更新内存态 + 落盘
+///   - 返回主菜单     → 会话保留（内存态=最近快照，再进入从存档恢复）
 ///   - 重开/胜利/失败 → EndRun：清内存态 + 清存档
 /// </summary>
 public class RunSession : MonoBehaviour
@@ -59,6 +60,14 @@ public class RunSession : MonoBehaviour
 
     /// <summary>当前 Run 级流程阶段（整局状态链，总控）。</summary>
     public RunPhase CurrentPhase { get; private set; }
+
+    /// <summary>开局卡牌宝石是否已经生成；只在本次 Run 内存中使用，防止场景重载重复生成。</summary>
+    public bool OpeningCardGemsSpawned { get; private set; }
+
+    public void MarkOpeningCardGemsSpawned()
+    {
+        OpeningCardGemsSpawned = true;
+    }
 
     /// <summary>阶段切换事件（UI/子系统订阅，事件驱动——不直接跨系统调用）。</summary>
     public event Action<RunPhase> OnPhaseChanged;
@@ -149,10 +158,15 @@ public class RunSession : MonoBehaviour
 
     /// <summary>场上可附身尸体（存档点采样，downed 且窗口内）。</summary>
     public readonly List<SaveData.MonsterBodySave> Corpses = new List<SaveData.MonsterBodySave>();
+    /// <summary>场上仍存在的怪物快照（普通怪、精英、尸体与当前附身身体）。</summary>
+    public readonly List<SaveData.MonsterSnapshotSave> MonsterSnapshots = new List<SaveData.MonsterSnapshotSave>();
 
     public float ActiveCombatSeconds { get; private set; }
     public bool BossSpawned { get; private set; }
     public bool BossDefeated { get; private set; }
+    public int ContinuousNormalOrderIndex { get; private set; }
+    public float ContinuousNextNormalSpawnTime { get; private set; }
+    public readonly List<bool> ContinuousEliteSpawned = new List<bool>();
 
     /// <summary>
     /// 确保会话实例存在（主菜单/对局场景均可调用）。
@@ -193,6 +207,7 @@ public class RunSession : MonoBehaviour
         Mode = RunMode.Normal;
         BossModeInitialImprintStacks = 0;
         StartedFromMainMenu = false; // 直接 Play/重开路径：不触发新人引导
+        OpeningCardGemsSpawned = false;
         // Run Analytics：直接 Play 也启动采集（幂等；主菜单新局路径由 BeginNewRun 负责）
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Opening;
@@ -218,6 +233,7 @@ public class RunSession : MonoBehaviour
         SoulTime = 0f;
         PossessedBody = null;
         Corpses.Clear();
+        MonsterSnapshots.Clear();
         // DDOL 灵魂跨局复用：上局 0 HP 死亡残留会让新局开局即死，新局必须回满（读档路径由 RestorePlayerRuntime 恢复，不经此）。
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.ResetHealth();
         PossessionImprintManager.EnsureInstance().BeginNewRun();
@@ -225,9 +241,13 @@ public class RunSession : MonoBehaviour
         ActiveCombatSeconds = 0f;
         BossSpawned = false;
         BossDefeated = false;
+        ContinuousNormalOrderIndex = 0;
+        ContinuousNextNormalSpawnTime = 0f;
+        ContinuousEliteSpawned.Clear();
         HasActiveRun = true;
         RunId = NewRunId();
         StartedFromMainMenu = true; // 主菜单"新游戏"：新人引导唯一合法触发入口
+        OpeningCardGemsSpawned = false;
         SaveCoordinator.DeleteSave();
         // Run Analytics：新局启动采集器并重置统计（常驻单例自动创建）
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
@@ -256,15 +276,20 @@ public class RunSession : MonoBehaviour
         SoulTime = 0f;
         PossessedBody = null;
         Corpses.Clear();
+        MonsterSnapshots.Clear();
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.ResetHealth();
         PossessionImprintManager.EnsureInstance().BeginBossModeRun(BossModeInitialImprintStacks);
         RunSpawnDirector.EnsureInstance().RestoreRuntime(0f, false, false);
         ActiveCombatSeconds = 0f;
         BossSpawned = false;
         BossDefeated = false;
+        ContinuousNormalOrderIndex = 0;
+        ContinuousNextNormalSpawnTime = 0f;
+        ContinuousEliteSpawned.Clear();
         HasActiveRun = true;
         RunId = NewRunId();
         StartedFromMainMenu = true;
+        OpeningCardGemsSpawned = false;
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Final;
         Debug.Log($"[RunSession] Boss 对局开始：scene=EnemyAiTest，罪印层数={BossModeInitialImprintStacks}");
@@ -287,7 +312,9 @@ public class RunSession : MonoBehaviour
         Mode = RunMode.Normal;
         BossModeInitialImprintStacks = 0;
         CompletedWaveIndex = data.completedWaveIndex;
-        PendingChoice = data.pendingChoice;
+        // 迁移后的 runPhase 是阶段真源；不要把旧档残留的 pendingChoice=true 带入战斗，
+        // 否则玩家继续战斗后再次保存仍会被错误标记为选卡阶段。
+        PendingChoice = data.runPhase == RunPhase.Choice;
         ChoicePicks.Clear();
         if (data.choicePicks != null) ChoicePicks.AddRange(data.choicePicks);
         UnlockedEffects.Clear();
@@ -299,17 +326,27 @@ public class RunSession : MonoBehaviour
         PossessedBody = data.possessedBody;
         Corpses.Clear();
         if (data.corpses != null) Corpses.AddRange(data.corpses);
+        MonsterSnapshots.Clear();
+        if (data.monsterSnapshots != null) MonsterSnapshots.AddRange(data.monsterSnapshots);
         ActiveCombatSeconds = data.activeCombatSeconds;
         BossSpawned = data.bossSpawned;
         BossDefeated = data.bossDefeated;
+        ContinuousNormalOrderIndex = Mathf.Max(0, data.continuousNormalOrderIndex);
+        ContinuousNextNormalSpawnTime = Mathf.Max(0f, data.continuousNextNormalSpawnTime);
+        ContinuousEliteSpawned.Clear();
+        if (data.continuousEliteSpawned != null)
+            ContinuousEliteSpawned.AddRange(data.continuousEliteSpawned);
         PossessionImprintManager.EnsureInstance().LoadFromSave(data.possessionImprints, data.greedBonusProgress, data.lustHealProgress);
         RunSpawnDirector.EnsureInstance().RestoreRuntime(ActiveCombatSeconds, BossSpawned, BossDefeated);
         // 读档延续同一 runId（老档/缺失字段时补生成，保证精英快照 upsert 键可用）
         RunId = !string.IsNullOrEmpty(data.runId) ? data.runId : NewRunId();
         HasActiveRun = true;
         StartedFromMainMenu = false; // 读档路径：不触发新人引导（阶段直接为 Waves/Choice）
-        // 读档不经过开场/教学：回到波次或选卡补弹（pendingChoice=true → Choice）
-        CurrentPhase = PendingChoice ? RunPhase.Choice : RunPhase.Waves;
+        OpeningCardGemsSpawned = false;
+        // 读档不经过开场/教学：恢复快照中的波次/选卡阶段。
+        CurrentPhase = data.runPhase;
+        if (CurrentPhase == RunPhase.Opening || CurrentPhase == RunPhase.Tutorial)
+            CurrentPhase = PendingChoice ? RunPhase.Choice : RunPhase.Waves;
         // 叙事调度 Run-local 状态恢复（旧档 narrative=null → 按新局初始化）
         NarrativeScheduler.Instance?.RestoreSnapshot(data.narrative);
         Debug.Log($"[RunSession] 读档恢复对局：已完成波 {CompletedWaveIndex + 1}，worldSeed={WorldSeed}，解锁卡 {UnlockedEffects.Count} 张（阶段={CurrentPhase}）。");
@@ -317,10 +354,10 @@ public class RunSession : MonoBehaviour
     }
 
     /// <summary>
-    /// 波间存档点：采样当前玩家状态 → 更新会话内存态 → 落盘。
-    /// 由 WaveManager 在"波清场后"与"选完卡后"两个时间点调用。
+    /// 对局快照：采样当前玩家状态 → 更新会话内存态 → 落盘。
+    /// 由 WaveManager 在安全窗口调用，也由返回主菜单/应用退出前调用。
     /// </summary>
-    /// <param name="completedWaveIndex">刚完成的波次索引（恢复从下一波开始）。</param>
+    /// <param name="completedWaveIndex">旧波次模式刚完成的波次索引；连续刷怪模式传 -1。</param>
     /// <param name="pendingChoice">选卡是否未完成（true = 选卡界面退出，恢复时需补弹选卡）。</param>
     public void SaveProgress(int completedWaveIndex, bool pendingChoice = false)
     {
@@ -336,10 +373,28 @@ public class RunSession : MonoBehaviour
         SoulTime = GameManager.Instance != null ? GameManager.Instance.soulTime : 0f;
         CompletedWaveIndex = completedWaveIndex;
         PendingChoice = pendingChoice;
+        // 调用方在选卡关闭后先切回 Waves 再写入 false；因此这里直接保存当前阶段，
+        // 避免用旧 pendingChoice 标志把战斗快照误写成选卡阶段。
+        RunPhase snapshotPhase = pendingChoice ? RunPhase.Choice : CurrentPhase;
         SampleBodies();
+        SampleMonsterSnapshots();
         ActiveCombatSeconds = RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : ActiveCombatSeconds;
         BossSpawned = RunSpawnDirector.Instance != null && RunSpawnDirector.Instance.BossSpawned;
         BossDefeated = RunSpawnDirector.Instance != null && RunSpawnDirector.Instance.BossDefeated;
+        var waveManager = WaveManager.Instance;
+        if (waveManager != null && waveManager.IsUsingNewSpawnLogic)
+        {
+            ContinuousNormalOrderIndex = waveManager.ContinuousNormalOrderIndex;
+            ContinuousNextNormalSpawnTime = waveManager.ContinuousNextNormalSpawnTime;
+            ContinuousEliteSpawned.Clear();
+            ContinuousEliteSpawned.AddRange(waveManager.ContinuousEliteSpawned);
+        }
+        else
+        {
+            ContinuousNormalOrderIndex = 0;
+            ContinuousNextNormalSpawnTime = 0f;
+            ContinuousEliteSpawned.Clear();
+        }
         // 候选卡不在此采样：CardManager 每次抽卡/重抽/恢复后已实时同步 ChoicePicks
         // （弹卡后任何时刻退出，快照都是玩家最后看到的候选，含双选第二轮/重抽结果）。
 
@@ -348,8 +403,10 @@ public class RunSession : MonoBehaviour
             ActiveCombatSeconds, PossessionImprintManager.EnsureInstance().CaptureStates(),
             PossessionImprintManager.EnsureInstance().GreedBonusProgress,
             PossessionImprintManager.EnsureInstance().LustHealProgress, BossSpawned, BossDefeated,
-            NarrativeScheduler.Instance?.CaptureSnapshot());
-        Debug.Log($"[RunSession] 波 {completedWaveIndex} 存档完成：位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count}");
+            NarrativeScheduler.Instance?.CaptureSnapshot(),
+            ContinuousNormalOrderIndex, ContinuousNextNormalSpawnTime, ContinuousEliteSpawned, snapshotPhase,
+            MonsterSnapshots);
+        Debug.Log($"[RunSession] 对局快照存档完成：波索引={completedWaveIndex} 位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count} 场上怪物={MonsterSnapshots.Count}");
     }
 
     /// <summary>采样附身怪与可附身尸体（波间时刻：玩家身体 + 场上待附身尸体）。</summary>
@@ -385,6 +442,73 @@ public class RunSession : MonoBehaviour
         }
     }
 
+    /// <summary>采样当前场上仍存在的怪物，供继续游戏重建离开时的战斗现场。</summary>
+    void SampleMonsterSnapshots()
+    {
+        MonsterSnapshots.Clear();
+        MonsterSpawner spawner = MonsterSpawner.Instance;
+        MonsterActor[] all = FindObjectsOfType<MonsterActor>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            MonsterActor monster = all[i];
+            if (monster == null || !monster.gameObject.activeInHierarchy
+                || monster.Body == MonsterActor.BodyState.Fading
+                || monster.Body == MonsterActor.BodyState.Despawned)
+                continue;
+
+            string prefabId = ResolvePrefabId(monster.gameObject);
+            if (string.IsNullOrEmpty(prefabId)) continue;
+
+            bool isContinuousAutomatic = false;
+            bool countsTowardCombatLimit = true;
+            if (spawner != null)
+                spawner.TryGetTrackingInfo(monster, out isContinuousAutomatic, out countsTowardCombatLimit);
+            // 附身身体和倒地尸体仍在场、但不应重新占用战斗/连续刷怪配额。
+            if (monster.isDowned || monster.isPossessed)
+            {
+                isContinuousAutomatic = false;
+                countsTowardCombatLimit = false;
+            }
+
+            var snapshot = new SaveData.MonsterSnapshotSave
+            {
+                prefabId = prefabId,
+                displayName = monster.displayName,
+                sin = monster.sinType,
+                position = monster.transform.position,
+                rotation = monster.transform.rotation,
+                health = monster.isDowned ? 0f : Mathf.Max(0f, monster.currentHealth),
+                tenacity = Mathf.Max(0f, monster.currentTenacity),
+                isWeakened = monster.isWeakened,
+                isDowned = monster.isDowned,
+                isPossessed = monster.isPossessed,
+                isContinuousAutomatic = isContinuousAutomatic,
+                countsTowardCombatLimit = countsTowardCombatLimit,
+                isElite = monster.IsElite,
+                spawnOrigin = monster.spawnOrigin,
+                hasEliteRuntimeModifiers = monster.HasEliteRuntimeModifiers,
+                eliteHealthMultiplier = monster.EliteHealthMultiplier,
+                eliteAttackDamageMultiplier = monster.EliteAttackDamageMultiplier,
+                eliteVisualScaleMultiplier = monster.EliteVisualScaleMultiplier,
+            };
+
+            EliteBuildCarrier carrier = EliteBuildCarrier.Get(monster);
+            if (carrier != null)
+            {
+                snapshot.eliteSnapshotId = carrier.SnapshotId;
+                snapshot.eliteSourcePlayerId = carrier.SourcePlayerId;
+                snapshot.eliteRunId = carrier.RunId;
+                snapshot.eliteSin = carrier.Sin;
+                snapshot.eliteSourceWave = carrier.SourceWave;
+                foreach (string cardId in carrier.CardIds)
+                    if (!string.IsNullOrEmpty(cardId) && !snapshot.eliteCardIds.Contains(cardId))
+                        snapshot.eliteCardIds.Add(cardId);
+            }
+
+            MonsterSnapshots.Add(snapshot);
+        }
+    }
+
     /// <summary>
     /// 解析 prefabId：优先取 MonsterPool 反查的真实 prefab 资产名（恢复时与波表 prefab.name 匹配）；
     /// 非池实例（如场景静态怪）回退去 "(Clone)" 的实例名。
@@ -398,6 +522,22 @@ public class RunSession : MonoBehaviour
         return n != null ? n.Replace("(Clone)", "") : null;
     }
 
+    void OnApplicationQuit()
+    {
+        if (!HasActiveRun || IsBossMode || SceneManager.GetActiveScene().name == "MainMenu"
+            || CurrentPhase == RunPhase.Final || CurrentPhase == RunPhase.Result || CurrentPhase == RunPhase.Failed)
+            return;
+
+        var waveManager = WaveManager.Instance;
+        int saveWaveIndex = waveManager != null && waveManager.IsUsingNewSpawnLogic
+            ? -1
+            : CompletedWaveIndex;
+        bool pendingChoice = PendingChoice
+            || CurrentPhase == RunPhase.Choice
+            || (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting);
+        SaveProgress(saveWaveIndex, pendingChoice);
+    }
+
     /// <summary>
     /// 结束对局（重开/胜利/失败）：清内存态 + 清存档，回到无会话状态。
     /// </summary>
@@ -409,6 +549,7 @@ public class RunSession : MonoBehaviour
             RunStatsCollector.Instance.EndRunEarly();
         HasActiveRun = false;
         StartedFromMainMenu = false;
+        OpeningCardGemsSpawned = false;
         Mode = RunMode.Normal;
         BossModeInitialImprintStacks = 0;
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
@@ -420,6 +561,10 @@ public class RunSession : MonoBehaviour
         ActiveCombatSeconds = 0f;
         BossSpawned = false;
         BossDefeated = false;
+        ContinuousNormalOrderIndex = 0;
+        ContinuousNextNormalSpawnTime = 0f;
+        ContinuousEliteSpawned.Clear();
+        MonsterSnapshots.Clear();
         if (!preserveNormalSave)
             SaveCoordinator.DeleteSave();
         Debug.Log(preserveNormalSave

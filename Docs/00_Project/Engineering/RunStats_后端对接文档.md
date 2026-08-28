@@ -36,7 +36,7 @@ RunStatsData
 ├── 结果
 │   ├── won                是否胜利
 │   ├── endPhase           结束阶段（Result / Failed / Aborted）
-│   ├── reachedWaveIndex   到达的最远波次（0-based，-1=未完成任何波）
+│   ├── reachedWaveIndex   到达的最远进度索引（0-based：波次=最远波 / 连续刷怪=投放序号-1；-1=未进入）
 │   ├── finalReached       是否到达 Final
 │   └── finalCompleted     是否完成 Final
 ├── Global 计数
@@ -78,7 +78,7 @@ RunStatsData
 
 1. **只记原始值，不做评分**：主/次倾向、行为描述由后端（或配置化评分器）基于原始数据计算（Canonical §28：精确权重、阈值、句式由配置和 Playable 收口）。
 2. **`sin` 传输格式**：建议用 wire 名（与现有精英 BD 快照 `sin` 字段一致，见 `Server/docs/api-guide.md` §4.1），避免枚举值漂移。
-3. **`reachedWaveIndex`**：0-based 已开始的最远波次；`-1` = 一局未完成任何波（如开场即退）。
+3. **`reachedWaveIndex`**：0-based 最远进度索引——波次模式 = 已开始的最远波次；连续刷怪模式 = 已触发的精英投放序号 - 1（时间驱动进度，Owner 2026-08-28 方案 B）；`-1` = 一局未进入任何进度信号（如开场即退）。
 4. **`endPhase`**：`Result`（胜利，`won=true`）、`Failed`（失败，`won=false`）、`Aborted`（中途退出/重开兜底，`won=false`）。
 5. **`deathRelays` / `shrineRecovers`**：依赖 M3 玩法（Death Relay / Soul Shrine），当前恒 0，字段已预留。
 6. **击杀归属**：`totalKills` 是全局击杀；`perSin[].kills` 只计"玩家附身该 Sin 身体期间"击杀的其它怪。
