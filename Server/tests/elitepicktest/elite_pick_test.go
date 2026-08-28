@@ -181,7 +181,7 @@ func TestPickAndFallback(t *testing.T) {
 	if r.Snapshot.SourcePlayerID != playerA || r.Snapshot.SourceWave != 6 || r.Snapshot.BDCount != 2 {
 		t.Fatalf("main path unexpected snapshot: %+v", r.Snapshot)
 	}
-	t.Log("✓ 主路径：B@第5次投放 拿到 A 的第6次投放快照（他人 + 投放序号差 + bdCount>=MIN_BD）")
+	t.Log("✓ 主路径：B@第5次投放 拿到 A 的第6次选卡快照（他人 + 投放序号差 + bdCount>=MIN_BD）")
 
 	// 6. 兜底 1：B 第 6 波 → 主路径 sourceWave>=7 为空 → 放宽 WAVE_GAP=0 命中 wave6
 	if r := pick(t, base, playerB, 6); r.Snapshot == nil || !r.Relaxed {
@@ -189,7 +189,7 @@ func TestPickAndFallback(t *testing.T) {
 	}
 	t.Log("✓ 兜底1：WAVE_GAP 放宽到 0，relaxed=true")
 
-	// 7. 兜底 2：B 第 8 次投放 → 放宽后仍空（6<8）→ 全库最高投放序号档取 bdCount 最大
+	// 7. 兜底 2：B 第 8 次投放 → 放宽后仍空（6<8）→ 全库最高选卡进度档取 bdCount 最大
 	if r := pick(t, base, playerB, 8); r.Snapshot == nil || !r.Relaxed || r.Snapshot.SourceWave != 6 {
 		t.Fatalf("fallback 2 unexpected: %+v", r.Snapshot)
 	}
