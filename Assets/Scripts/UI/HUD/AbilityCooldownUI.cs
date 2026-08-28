@@ -264,11 +264,22 @@ public class AbilityCooldownUI : MonoBehaviour
 
     bool IsEnemySkillUnavailable()
     {
-        if (trackingPlayer || currentEnemy == null || currentEnemy.sinType != SinType.Envy)
+        if (trackingPlayer || currentEnemy == null)
             return false;
 
-        EnemyAbility_EnvyThunderstorm thunderstorm = enemySkillAbility as EnemyAbility_EnvyThunderstorm;
-        return thunderstorm != null && !thunderstorm.HasLegalMarkedTargets;
+        if (currentEnemy.sinType == SinType.Envy)
+        {
+            EnemyAbility_EnvyThunderstorm thunderstorm = enemySkillAbility as EnemyAbility_EnvyThunderstorm;
+            return thunderstorm != null && !thunderstorm.HasLegalMarkedTargets;
+        }
+
+        if (currentEnemy.sinType == SinType.Lust)
+        {
+            EnemyAbility_LustSoulPull soulPull = enemySkillAbility as EnemyAbility_LustSoulPull;
+            return soulPull != null && !soulPull.HasValidPullTargets;
+        }
+
+        return false;
     }
 
 

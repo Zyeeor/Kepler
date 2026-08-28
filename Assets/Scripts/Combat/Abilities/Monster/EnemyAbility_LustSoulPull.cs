@@ -57,12 +57,20 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
         upgrades.Add(new UpgradeSlot { effectId = effectId, unlocked = false });
     }
 
+    public bool HasValidPullTargets
+    {
+        get
+        {
+            CacheState();
+            if (_state == null || !_state.HasValidAnchor) return false;
+            return _state.GetValidLinkedTargets().Count > 0;
+        }
+    }
+
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        CacheState();
-        if (_state == null || !_state.HasValidAnchor) return false;
-        return _state.GetValidLinkedTargets().Count > 0;
+        return HasValidPullTargets;
     }
 
     protected override void OnTrigger()
