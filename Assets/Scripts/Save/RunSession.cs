@@ -61,6 +61,14 @@ public class RunSession : MonoBehaviour
     /// <summary>当前 Run 级流程阶段（整局状态链，总控）。</summary>
     public RunPhase CurrentPhase { get; private set; }
 
+    /// <summary>开局卡牌宝石是否已经生成；只在本次 Run 内存中使用，防止场景重载重复生成。</summary>
+    public bool OpeningCardGemsSpawned { get; private set; }
+
+    public void MarkOpeningCardGemsSpawned()
+    {
+        OpeningCardGemsSpawned = true;
+    }
+
     /// <summary>阶段切换事件（UI/子系统订阅，事件驱动——不直接跨系统调用）。</summary>
     public event Action<RunPhase> OnPhaseChanged;
 
@@ -199,6 +207,7 @@ public class RunSession : MonoBehaviour
         Mode = RunMode.Normal;
         BossModeInitialImprintStacks = 0;
         StartedFromMainMenu = false; // 直接 Play/重开路径：不触发新人引导
+        OpeningCardGemsSpawned = false;
         // Run Analytics：直接 Play 也启动采集（幂等；主菜单新局路径由 BeginNewRun 负责）
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Opening;
@@ -238,6 +247,7 @@ public class RunSession : MonoBehaviour
         HasActiveRun = true;
         RunId = NewRunId();
         StartedFromMainMenu = true; // 主菜单"新游戏"：新人引导唯一合法触发入口
+        OpeningCardGemsSpawned = false;
         SaveCoordinator.DeleteSave();
         // Run Analytics：新局启动采集器并重置统计（常驻单例自动创建）
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
@@ -279,6 +289,7 @@ public class RunSession : MonoBehaviour
         HasActiveRun = true;
         RunId = NewRunId();
         StartedFromMainMenu = true;
+        OpeningCardGemsSpawned = false;
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
         CurrentPhase = RunPhase.Final;
         Debug.Log($"[RunSession] Boss 对局开始：scene=EnemyAiTest，罪印层数={BossModeInitialImprintStacks}");
@@ -331,6 +342,7 @@ public class RunSession : MonoBehaviour
         RunId = !string.IsNullOrEmpty(data.runId) ? data.runId : NewRunId();
         HasActiveRun = true;
         StartedFromMainMenu = false; // 读档路径：不触发新人引导（阶段直接为 Waves/Choice）
+        OpeningCardGemsSpawned = false;
         // 读档不经过开场/教学：恢复快照中的波次/选卡阶段。
         CurrentPhase = data.runPhase;
         if (CurrentPhase == RunPhase.Opening || CurrentPhase == RunPhase.Tutorial)
@@ -537,6 +549,7 @@ public class RunSession : MonoBehaviour
             RunStatsCollector.Instance.EndRunEarly();
         HasActiveRun = false;
         StartedFromMainMenu = false;
+        OpeningCardGemsSpawned = false;
         Mode = RunMode.Normal;
         BossModeInitialImprintStacks = 0;
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）

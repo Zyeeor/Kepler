@@ -555,30 +555,69 @@ public class WaveManager : SceneSingleton<WaveManager>
         if (choiceBuffer > 0f)
             yield return new WaitForSecondsRealtime(choiceBuffer);
 
-        // 弹卡：先广播波次完成，再由 autoShowChoiceUI 打开 CoreChoiceUI；CoreChoiceUI 负责防重入。
-        // 读档补弹（fireCompletionEvent=false）时 keepPicks=true：保留已恢复的候选（与退出时一致）。
+        // 选卡不再直接弹窗：先广播波次完成，再在玩家当前位置生成选卡宝石。
+        // 读档补弹（fireCompletionEvent=false）时 keepPicks=true：宝石拾取后恢复已保存候选。
         if (fireCompletionEvent) OnWaveCompleted?.Invoke(waveIndex);
-        if (autoShowChoiceUI && CoreChoiceUI.Instance != null)
-            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: GetWaveDoublePick(waveIndex), keepPicks: !fireCompletionEvent, waveIndex: waveIndex);
+        CardChoiceGemPickup choiceGem = null;
+        if (autoShowChoiceUI)
+        {
+            if (CardManager.Instance != null)
+            {
+                if (fireCompletionEvent)
+                    CardManager.Instance.ClearChoicePicksForPendingOffer();
+                Vector3 gemPosition = Vector3.zero;
+                CardManager.Instance.TryGetPlayerAnchorPosition(out gemPosition);
+                choiceGem = CardManager.Instance.SpawnCardOfferGem(
+                    gemPosition,
+                    GetWaveDoublePick(waveIndex),
+                    !fireCompletionEvent,
+                    waveIndex,
+                    CardOfferGemSource.Wave);
+            }
+            else
+            {
+                Debug.LogError("[WaveManager] CardManager 缺失，无法生成波次选卡宝石。");
+            }
+        }
 
-        // 波次间安全存档点①：弹卡后、等待选卡前写入（选卡未完成标记 + 本次候选快照）。
-        // 必须放在 Show 之后——SaveProgress 的 SampleChoicePicks 采样 CardManager.currentPicks，
-        // 弹卡前采样到的是上一波遗留候选（Close 不清 currentPicks），恢复补弹时候选与退出时不一致。
-        // 玩家在选卡界面退出（ESC→Return to Menu 不重新存档）时，本存档即唯一候选来源。
+        // 波次间安全存档点①：宝石生成后、等待拾取前写入（选卡未完成标记 + 候选快照）。
         if (RunSession.Instance != null)
         {
             RunSession.Instance.SaveProgress(waveIndex, pendingChoice: true);
             RunSession.Instance.TransitionTo(RunPhase.Choice); // RunFlow：波清场 → 选卡阶段
         }
 
-        // 等待选卡会话结束再进下一波（弹卡后 timeScale=0，怪物不会在暂停期间刷出）。
-        // 用 IsDrafting 轮询而非 WaitForSeconds：不依赖 timeScale，
-        // 暂停菜单等其它 timeScale=0 场景不受影响；30s 超时兜底防死锁。
+        // 先等待玩家拾取宝石，再等待选卡会话结束。
+        // 宝石未拾取时不暂停游戏，玩家需要实际走到奖励位置；拾取后 CoreChoiceUI 才暂停。
+        if (choiceGem != null)
+        {
+            // 正常场景 UI 会在此时存在；缺失时只等待有限时间，避免配置错误把波次流程永久卡住。
+            float uiWaitStart = Time.realtimeSinceStartup;
+            while (CoreChoiceUI.Instance == null && Time.realtimeSinceStartup - uiWaitStart < 10f)
+                yield return null;
+
+            if (CoreChoiceUI.Instance == null)
+            {
+                Debug.LogError("[WaveManager] CoreChoiceUI 缺失，销毁未拾取宝石并跳过本次选卡，避免流程卡死。");
+                Destroy(choiceGem.gameObject);
+                choiceGem = null;
+            }
+            else
+            {
+                while (choiceGem != null && !choiceGem.IsCollected)
+                    yield return null;
+
+                // CoreChoiceUI.Show 已经生成候选，下一帧再写入 pendingChoice 存档，确保候选快照不是旧数据。
+                if (choiceGem != null && choiceGem.IsCollected && RunSession.Instance != null)
+                    RunSession.Instance.SaveProgress(waveIndex, pendingChoice: true);
+            }
+        }
+
+        // 等待选卡会话结束再进下一波（拾取后 timeScale=0，怪物不会在暂停期间刷出）。
+        // 用 IsDrafting 轮询而非 WaitForSeconds：不依赖 timeScale。
         if (CoreChoiceUI.Instance != null)
         {
-            float cardWaitStart = Time.realtimeSinceStartup;
-            while (CoreChoiceUI.Instance.IsDrafting
-                   && Time.realtimeSinceStartup - cardWaitStart < 30f)
+            while (CoreChoiceUI.Instance.IsDrafting)
                 yield return null;
         }
 

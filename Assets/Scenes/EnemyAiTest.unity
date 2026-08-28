@@ -15454,7 +15454,26 @@ MonoBehaviour:
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 0}
   maxRerollsPerCard: 1
-  debugDoublePickOnStart: 1
+  cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
+    type: 3}
+  openingGemCount: 2
+  openingGemDoublePick: 0
+  eliteGemDoublePick: 0
+  eliteGemCountMin: 2
+  eliteGemCountMax: 2
+  cardOfferGemPickupRadius: 2
+  cardOfferGemAttractSeconds: 0.35
+  cardOfferGemAttractHeight: 0.8
+  cardOfferGemAttractEndScale: 0
+  cardOfferGemScatterRadius: 1.4
+  cardOfferGemDropForwardSpeed: 3.5
+  cardOfferGemDropUpSpeed: 4
+  cardOfferGemDropGravity: 18
+  gemPickupRequiresDropLanded: 1
+  openingGemOffsets:
+  - {x: -2, y: 0, z: 1.25}
+  - {x: 2, y: 0, z: 1.25}
+  debugDoublePickOnStart: 0
   currentPicks:
   - cardName: 
     textKey: 
@@ -22727,6 +22746,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: greed_new
+      objectReference: {fileID: 0}
+    - target: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4202068629033295698, guid: 46df1b33623c493681a5cf633b8fdc40,
         type: 3}

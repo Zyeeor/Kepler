@@ -189,6 +189,7 @@ MonoBehaviour:
   enemyIconRoot: {fileID: 874037355}
   enemyIconImage: {fileID: 874037356}
   iconConfig: {fileID: 0}
+  tooltip: {fileID: 0}
   readyColor: {r: 1, g: 1, b: 1, a: 1}
   cooldownOverlayColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
 --- !u!114 &5513539
@@ -4177,9 +4178,6 @@ MonoBehaviour:
   cardParent: {fileID: 1170007485}
   confirmAllButton: {fileID: 1361398536}
   titleText: {fileID: 342066982}
-  cardOpenSfx: {fileID: 0}
-  cardSelectSfx: {fileID: 0}
-  cardRerollSfx: {fileID: 0}
 --- !u!114 &786004063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13603,6 +13601,25 @@ MonoBehaviour:
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 11400000, guid: f16753855c04a438eb9ae4fe1c54da4d, type: 2}
   maxRerollsPerCard: 1
+  cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
+    type: 3}
+  openingGemCount: 0
+  openingGemDoublePick: 0
+  eliteGemDoublePick: 0
+  eliteGemCountMin: 2
+  eliteGemCountMax: 2
+  cardOfferGemPickupRadius: 2
+  cardOfferGemAttractSeconds: 0.35
+  cardOfferGemAttractHeight: 0.8
+  cardOfferGemAttractEndScale: 0
+  cardOfferGemScatterRadius: 1.4
+  cardOfferGemDropForwardSpeed: 3.5
+  cardOfferGemDropUpSpeed: 4
+  cardOfferGemDropGravity: 18
+  gemPickupRequiresDropLanded: 1
+  openingGemOffsets:
+  - {x: -2, y: 0, z: 1.25}
+  - {x: 2, y: 0, z: 1.25}
   debugDoublePickOnStart: 0
   currentPicks:
   - cardName: 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -105,8 +104,6 @@ public class EliteBuildDirector : MonoBehaviour
     const string DebugEliteRewardRunId = "__debug_elite_run__";
     string eliteRewardRunId;
     int eliteKillRewardCount;
-    int pendingEliteCardRewards;
-    Coroutine eliteCardRewardRoutine;
 
     /// <summary>确保实例存在（场景挂载优先，否则创建常驻对象）。</summary>
     public static EliteBuildDirector EnsureInstance()
@@ -139,11 +136,6 @@ public class EliteBuildDirector : MonoBehaviour
     void OnDestroy()
     {
         MonsterActor.OnMonsterKilled -= HandleMonsterKilled;
-        if (eliteCardRewardRoutine != null)
-        {
-            StopCoroutine(eliteCardRewardRoutine);
-            eliteCardRewardRoutine = null;
-        }
         if (Instance == this) Instance = null;
         Attach(null);
         if (boundRunSession != null)
@@ -803,7 +795,7 @@ public class EliteBuildDirector : MonoBehaviour
 
         // 精英 Fatal（§6.5）：在致死伤害结算时计入；脱离附身时的消散和调试清场不计入。
         EnqueueEliteEvent("fatal", carrier);
-        QueueEliteCardReward();
+        QueueEliteCardReward(monster);
     }
 
     void EnsureEliteRewardRun()
@@ -817,69 +809,57 @@ public class EliteBuildDirector : MonoBehaviour
 
         eliteRewardRunId = currentRunId;
         eliteKillRewardCount = 0;
-        pendingEliteCardRewards = 0;
-        if (eliteCardRewardRoutine != null)
-        {
-            StopCoroutine(eliteCardRewardRoutine);
-            eliteCardRewardRoutine = null;
-        }
     }
 
-    void QueueEliteCardReward()
+    void QueueEliteCardReward(MonsterActor monster)
     {
         EnsureEliteRewardRun();
         if (string.IsNullOrEmpty(eliteRewardRunId) || eliteKillRewardCount >= EliteKillCardRewardLimit)
             return;
+        if (monster == null || CardManager.Instance == null)
+        {
+            Debug.LogError("[EliteBuildDirector] 精英击杀奖励无法生成宝石：MonsterActor 或 CardManager 缺失。", this);
+            return;
+        }
+
+        Vector3 deathPosition = monster.transform.position;
+        int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
+
+        // 掉落颗数由 CardManager 统一解析（下限=上限即固定数量，否则区间随机），
+        // 多颗沿死亡位置周围环形散落，每颗独立播"弹射散落"动画，落地后才可拾取。
+        int count = CardManager.Instance.ResolveEliteGemDropCount();
+
+        int spawned = CardManager.Instance.SpawnCardOfferGemScatter(
+            deathPosition,
+            count,
+            CardManager.Instance.eliteGemDoublePick,
+            false,
+            waveIndex,
+            CardOfferGemSource.Elite,
+            OnEliteCardGemCompleted);
+        if (spawned == 0) return;
 
         eliteKillRewardCount++;
-        pendingEliteCardRewards++;
-        if (eliteCardRewardRoutine == null)
-            eliteCardRewardRoutine = StartCoroutine(DrainEliteCardRewards());
+        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，"
+            + $"在 {deathPosition} 掉落 {spawned} 颗选卡宝石（每颗拾取后各结算一次选卡）。", this);
+    }
 
-        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，获得双选卡机会。", this);
+    void OnEliteCardGemCompleted()
+    {
+        // 宝石拾取后选卡完成：BD 可能变化，与波次选卡同口径上传。
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun && eliteEnabled)
+            UploadBuildSnapshots(AdvancePickSessionCount(run), "wave");
     }
 
     /// <summary>
-    /// 离开战斗场景时取消尚未展示的奖励选卡，避免常驻协程跨场景等待并在下次进入时误弹。
+    /// 离开战斗场景时清理场上尚未拾取的选卡宝石，避免跨场景残留。
     /// 正在展示的选卡由 UIManager 先保存为 Choice 快照，再随场景销毁。
     /// </summary>
     public void CancelPendingCardRewards()
     {
-        pendingEliteCardRewards = 0;
-        if (eliteCardRewardRoutine != null)
-        {
-            StopCoroutine(eliteCardRewardRoutine);
-            eliteCardRewardRoutine = null;
-        }
-    }
-
-    IEnumerator DrainEliteCardRewards()
-    {
-        while (pendingEliteCardRewards > 0)
-        {
-            while (CoreChoiceUI.Instance == null || CoreChoiceUI.Instance.IsDrafting)
-                yield return null;
-
-            if (string.IsNullOrEmpty(eliteRewardRunId))
-            {
-                pendingEliteCardRewards = 0;
-                break;
-            }
-
-            pendingEliteCardRewards--;
-            int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
-            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: true, keepPicks: false, waveIndex: waveIndex);
-
-            while (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting)
-                yield return null;
-
-            // 奖励选卡完成：BD 可能变化 → 与波次选卡同口径上传（sourceWave = 第几次选卡）
-            var run = RunSession.Instance;
-            if (run != null && run.HasActiveRun && eliteEnabled)
-                UploadBuildSnapshots(AdvancePickSessionCount(run), "wave");
-        }
-
-        eliteCardRewardRoutine = null;
+        if (CardManager.Instance != null)
+            CardManager.Instance.ClearCardOfferGems();
     }
 
     void HandlePossessionStarted(MonsterActor body)
