@@ -11,8 +11,9 @@
 //   - response.go：JSON 编解码与统一错误/成功响应辅助
 //   - ugc.go：UGC 域（路由注册 + handler + DTO）
 //   - elite.go：精英域（路由注册 + handler + DTO）
+//   - runstats.go：Run Analytics 域（对局数据上传，POST /api/runs）
 //
-// 存储实现统一在 internal/storage/sqlite（单连接实现两域接口）。
+// 存储实现统一在 internal/storage/sqlite（单连接实现各域接口）。
 package httpapi
 
 import (
@@ -26,6 +27,7 @@ import (
 
 	"possession/server/internal/elite"
 	"possession/server/internal/logx"
+	"possession/server/internal/runstats"
 	"possession/server/internal/storage/sqlite"
 	"possession/server/internal/ugc"
 )
@@ -41,13 +43,14 @@ type Config struct {
 	DisableRateLimit  bool              // 禁用限流（测试用；默认启用，见 ratelimit.go）
 }
 
-// Server UGC 内容服务 + 精英怪投放服务。
+// Server UGC 内容服务 + 精英怪投放服务 + Run Analytics 接收服务。
 type Server struct {
-	cfg        Config
-	store      *sqlite.SQLiteStore
-	contentSvc *ugc.ContentService
-	eliteSvc   *elite.EliteService
-	limiters   map[string]*limiter // 路由组 → 限流器（nil 规则 = 限流禁用，见 limited）
+	cfg         Config
+	store       *sqlite.SQLiteStore
+	contentSvc  *ugc.ContentService
+	eliteSvc    *elite.EliteService
+	runStatsSvc *runstats.Service
+	limiters    map[string]*limiter // 路由组 → 限流器（nil 规则 = 限流禁用，见 limited）
 }
 
 // New 创建服务。
@@ -88,11 +91,12 @@ func New(cfg Config) (*Server, error) {
 	}
 
 	return &Server{
-		cfg:        cfg,
-		store:      st,
-		contentSvc: ugc.NewContentService(st, cfg.UploadDir),
-		eliteSvc:   eliteSvc,
-		limiters:   limiters,
+		cfg:         cfg,
+		store:       st,
+		contentSvc:  ugc.NewContentService(st, cfg.UploadDir),
+		eliteSvc:    eliteSvc,
+		runStatsSvc: runstats.NewService(st),
+		limiters:    limiters,
 	}, nil
 }
 
@@ -107,6 +111,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	s.registerUGCRoutes(mux)
 	s.registerEliteRoutes(mux)
+	s.registerRunStatsRoutes(mux)
 	mux.Handle("GET /api/health", named("handleHealth", s.handleHealth))
 	return logRequests(mux)
 }

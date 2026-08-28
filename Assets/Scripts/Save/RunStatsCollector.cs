@@ -5,7 +5,7 @@ using UnityEngine;
 /// 整局运行数据采集器（Run Analytics Collector）。
 ///
 /// 职责：一局（Run）内订阅各系统事件，把"原始统计"累计进 RunStatsData，
-/// 在整局终态（RunPhase.Result / Failed）时经 RunStatsStore 落盘并触发上传预留。
+/// 在整局终态（RunPhase.Result / Failed）时经 RunStatsStore 落盘并上传后端（POST /api/runs，失败静默重试）。
 ///
 /// 采集点（对齐 Canonical §8 / Narrative §8.1-8.2）：
 ///   - RunSession.OnPhaseChanged            → 终态结算 / Final 到达完成 / run 时长
@@ -51,7 +51,9 @@ public class RunStatsCollector : MonoBehaviour
         if (Instance != null) return Instance;
         var go = new GameObject("[RunStatsCollector]");
         DontDestroyOnLoad(go);
-        return go.AddComponent<RunStatsCollector>();
+        var collector = go.AddComponent<RunStatsCollector>();
+        RunStatsStore.RetryPendingUploads(); // 首次拉起：批量重试历史未上传记录（对接文档 §5-3，静默）
+        return collector;
     }
 
     void Awake()
@@ -208,7 +210,7 @@ public class RunStatsCollector : MonoBehaviour
         Current.RefreshDistinctSinsUsed();
         RunStatsStore.SaveRunStats(Current);
         HallOfFameStore.FinalizeRun(Current);   // 荣誉殿堂 §5.2/§5.7：Run 结束立即冻结荣誉记录（失败局同样保留 §5.10）
-        RunStatsStore.UploadRunData(Current);   // 预留出口（当前空实现）
+        RunStatsStore.UploadRunData(Current);   // 上传出后端（POST /api/runs，幂等；失败本地保留待重试）
         Debug.Log($"[RunStats] 本局采集完成：runId={Current.runId}, 时长={Current.runDurationSeconds:F1}s, 附身={Current.totalPossessions}, 到达波={Current.reachedWaveIndex}, 胜利={won}");
         Current = null;
         currentBody = null;

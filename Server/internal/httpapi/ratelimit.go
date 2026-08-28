@@ -37,6 +37,7 @@ var rateRules = map[string]rateRule{
 	"pick":       {rate: 4, burst: 120},  // 精英投放请求：~240/min（正常 60s 一次，超宽）
 	"events":     {rate: 2, burst: 60},   // 战果回传批量上报：~120/min
 	"userbd":     {rate: 1, burst: 20},   // 工具构筑上传：~60/min
+	"runs":       {rate: 1, burst: 30},   // Run Analytics 对局数据上传：一局一次（重试幂等），超宽
 	"read":       {rate: 10, burst: 300}, // GET 类（列表/搜索/下载/stats/leaderboard/health）
 }
 
