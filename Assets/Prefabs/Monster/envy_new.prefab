@@ -507,6 +507,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u96F7\u66B4\u5151\u73B0"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: EN-S01
@@ -1372,6 +1373,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u98DE\u884C\u52A0\u901F"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: EN-M01
@@ -1474,24 +1476,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u6FC0\u5149"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: EN-A01
     unlocked: 1
   - effectId: EN-A03
     unlocked: 1
-  - effectId: EN-A04
-    unlocked: 1
   - effectId: EN-A05
     unlocked: 1
   - effectId: EN-R01
-    unlocked: 1
-  - effectId: EN-R02
-    unlocked: 1
-  - effectId: EN-R04
-    unlocked: 1
-  - effectId: EN-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 2137282384873386104}
   weaponVfxPrefab: {fileID: 0}
@@ -1499,8 +1494,8 @@ MonoBehaviour:
   vfxPositionOffset: {x: 0, y: 0, z: 0}
   vfxDelay: 0
   vfxRotationOffset: {x: 0, y: 0, z: 0}
-  damage: 3
-  drawHitboxes: 0
+  damage: 15
+  drawHitboxes: 1
   cooldown: 0
   debugLogCooldown: 0
   abilityTags:
@@ -1543,7 +1538,7 @@ MonoBehaviour:
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 100}
   maxRange: 15
-  damagePerSecond: 10
+  damagePerSecond: 100
   tickInterval: 0.01
   markStorageCap: 100
   markWriteRatio: 0.2
@@ -1552,13 +1547,14 @@ MonoBehaviour:
   markEffect: {fileID: 11400000, guid: d35abb93af99477880e7abb901d8ffd6, type: 2}
   laserHitEffect: {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
   rampMaxDamagePerSecond: 50
-  rampTimeToMax: 8
+  rampTimeToMax: 3
+  rampWidthMultiplier: 1.5
   multiEyeInterval: 3
-  multiEyeWindow: 0.6
+  multiEyeWindow: 1
   multiEyeTargetCount: 4
   piercePhaseInterval: 4
-  piercePhaseDuration: 1
-  beamPrefab: {fileID: 2540417558773106788, guid: 3fdd30d0b52b3864e92fe3606bf66eff,
+  piercePhaseDuration: 2
+  beamPrefab: {fileID: 3961195698503531321, guid: f1ac8c8e8348b3149860656c1901b9f3,
     type: 3}
   beamMaterial: {fileID: 0}
   beamPositionOffset: {x: 0, y: -0.5, z: 0}
@@ -1661,7 +1657,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6903147954728295723
 Transform:
   m_ObjectHideFlags: 0
