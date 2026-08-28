@@ -11,9 +11,10 @@ using System.Collections.Generic;
 /// 所有显示配置（扇形参数、左上角迷你卡条参数、卡牌预制体等）直接在本组件的 Inspector 上编辑。
 ///
 /// 交互：点按“构筑”按钮循环三态：
-///   0 左上角一排（迷你图标横向排开，常驻 HUD，不暂停）
-///   1 半屏扇形放大（CardArcLayout 弧形排布，暂停查看）
-///   2 左上角堆叠（沿用迷你卡的尺寸与位置，全部卡片叠在一起，只露出堆叠边缘）
+///   0 左上展开（迷你卡横向排开，常驻 HUD，不暂停）
+///   1 放大展开（CardArcLayout 弧形排布，暂停查看）
+///   2 左上收起（所有迷你卡完全重叠，并置于构筑卡面下方）
+
 /// 卡片复用 CoreChoiceCard 预制体渲染为只读模式（隐藏文本/按钮）。
 ///
 /// 构筑按钮为场景内静态对象：设计者在 UICanvas 下摆放一个命名为 BuildButton 的 Button（或把引用拖到 buildButton 字段），
@@ -40,17 +41,20 @@ public class BuildView : MonoBehaviour
     [Header("迷你卡条（模式 0：左上角一排，默认常驻 HUD）")]
     [Tooltip("控制默认左上角常驻的迷你卡条。")]
     public float miniScale = 0.15f;       // 迷你卡相对原始卡面的缩放（原始卡面约 100×100）；调大卡更大更宽
-    float miniCardW = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
-    float miniCardH = 80f;         // 由 cardPrefab 根尺寸 × miniScale 自动推导，无需手填
+    float miniCardW = 80f;         // 实际视觉卡面宽度 × miniScale，用于 hover 命中层
+    float miniCardH = 80f;         // 实际视觉卡面高度 × miniScale，用于 hover 命中层
+    float miniSlotW = 15f;         // 原始卡片根宽度 × miniScale，用于保持既有布局位置
+    float miniSlotH = 15f;         // 原始卡片根高度 × miniScale，用于保持既有布局位置
+    Vector2 miniVisualCenter;
     public float miniSpacing = 60f;       // ★ 迷你卡之间的间隔（像素）。想让模式0卡片排得更松/更紧，调这个值
     public Vector2 miniAnchor = new Vector2(76f, -32f); // 迷你卡条距屏幕左上角的偏移（X 右移，Y 上移）；默认让卡条落在构筑按钮右侧并与其垂直居中
 
-    [Header("堆叠模式（模式 2：左上角缩小态基础上把所有卡叠在一起）")]
-    [Tooltip("堆叠模式下每张卡相对前一张的像素偏移。默认只做水平错位、上下对齐（y=0），让叠层横向铺开；y 非 0 会形成斜向堆叠。0,0 = 完全重合只看到最上面一张。")]
-    public Vector2 stackOffset = new Vector2(12f, 0f);
+    [Header("左上收起（模式 2：所有卡叠在构筑卡面下方）")]
+    [Tooltip("兼容旧场景的堆叠偏移配置；左上收起状态固定完全重叠，不使用该偏移。")]
+    public Vector2 stackOffset = Vector2.zero;
     [Tooltip("左上角两种模式（迷你一排 / 堆叠）要隐藏的卡面子物体名：卡面预制体里溢出卡框的装饰图层（如 Image (1)）缩小后会变成碍眼的色块，这里按需裁掉。留空则不裁剪；扇形放大模式不受影响。")]
     public List<string> miniHiddenChildren = new List<string> { "Image (1)" };
-    [Tooltip("堆叠模式最左边那张卡的对齐位置（屏幕空间 RectTransform）。留空则回退到 miniAnchor 位置。")]
+    [Tooltip("左上收起状态的卡面中心位置（屏幕空间 RectTransform）。留空则回退到 miniAnchor 位置。")]
     public RectTransform stackAnchor;
 
     [Header("模式切换动效")]
@@ -82,7 +86,7 @@ public class BuildView : MonoBehaviour
     readonly List<CardPose> lastPoses = new List<CardPose>();
     readonly List<CardPose> targetPoses = new List<CardPose>();
     Coroutine transitionRoutine;
-    int mode = 0;                         // 0=迷你一排 1=扇形放大 2=收回
+    int mode = 0;                         // 0=左上展开 1=放大展开 2=左上收起
     bool paused = false;
     bool initialized = false;
 
@@ -259,7 +263,7 @@ public class BuildView : MonoBehaviour
         mb.pivot = new Vector2(0f, 1f);
         mb.anchoredPosition = miniAnchor;
         ComputeCardSize();
-        mb.sizeDelta = new Vector2(0f, miniCardH + 8f);
+        mb.sizeDelta = new Vector2(0f, miniSlotH + 8f);
 
         miniCardParent = mb;
 
@@ -282,7 +286,7 @@ public class BuildView : MonoBehaviour
     }
 
     // ───────────────────────── 模式切换 ─────────────────────────
-    /// <summary>点按构筑按钮：循环切换三态（迷你一排 → 扇形放大 → 左上角堆叠）。</summary>
+    /// <summary>点按构筑按钮：循环切换三态（左上展开 → 放大展开 → 左上收起）。</summary>
     public void CycleMode()
     {
         SetMode((mode + 1) % 3);
@@ -456,18 +460,47 @@ public class BuildView : MonoBehaviour
     }
 
     // ───────────────────────── 迷你条渲染 ─────────────────────────
-    // 根据 cardPrefab 根尺寸 × miniScale 推导每张迷你卡的实际像素尺寸
+    // 分离布局尺寸和视觉命中尺寸：布局沿用原始根节点，命中层覆盖完整可见卡面。
     void ComputeCardSize()
     {
-        float bw = 100f, bh = 100f;
+        float rootW = 100f, rootH = 100f;
+        float visualW = rootW, visualH = rootH;
+        miniVisualCenter = Vector2.zero;
         var prefab = ResolvePrefab();
         if (prefab != null)
         {
-            var prt = prefab.GetComponent<RectTransform>();
-            if (prt != null) { bw = prt.sizeDelta.x; bh = prt.sizeDelta.y; }
+            var prefabRect = prefab.GetComponent<RectTransform>();
+            if (prefabRect != null)
+            {
+                rootW = prefabRect.sizeDelta.x;
+                rootH = prefabRect.sizeDelta.y;
+            }
+
+            var sample = Instantiate(prefab, transform);
+            var sampleRect = sample.GetComponent<RectTransform>();
+            if (sampleRect != null)
+            {
+                sampleRect.localPosition = Vector3.zero;
+                sampleRect.localRotation = Quaternion.identity;
+                sampleRect.localScale = Vector3.one;
+                Canvas.ForceUpdateCanvases();
+                Bounds visualBounds = RectTransformUtility.CalculateRelativeRectTransformBounds(transform, sampleRect);
+                if (visualBounds.size.x > 1f && visualBounds.size.y > 1f)
+                {
+                    visualW = Mathf.Abs(visualBounds.size.x);
+                    visualH = Mathf.Abs(visualBounds.size.y);
+                    Vector3 worldCenter = transform.TransformPoint(visualBounds.center);
+                    miniVisualCenter = sampleRect.InverseTransformPoint(worldCenter);
+                }
+            }
+            sample.SetActive(false);
+            Destroy(sample);
         }
-        miniCardW = bw * miniScale;
-        miniCardH = bh * miniScale;
+
+        miniSlotW = rootW * miniScale;
+        miniSlotH = rootH * miniScale;
+        miniCardW = visualW * miniScale;
+        miniCardH = visualH * miniScale;
     }
 
     /// <summary>堆叠模式把 MiniBar 对齐到 stackAnchor（最左卡落在该 Transform 位置）；其余情况恢复 miniAnchor 默认定位。</summary>
@@ -486,15 +519,14 @@ public class BuildView : MonoBehaviour
         mb.anchoredPosition = miniAnchor;
     }
 
-    /// <summary>第 idx 张卡在两种左上角模式下的锚点偏移：横排模式按卡宽+间距递进，堆叠模式按 stackOffset 递进。</summary>
+    /// <summary>第 idx 张卡沿用原始根节点的布局中心；slot 尺寸只负责覆盖完整视觉卡面。</summary>
     Vector2 MiniSlotPos(int idx, bool stacked)
     {
-        return stacked
-            ? new Vector2(idx * stackOffset.x, idx * stackOffset.y)
-            : new Vector2(idx * (miniCardW + miniSpacing), 0f);
+        float x = stacked ? miniSlotW * 0.5f : idx * (miniSlotW + miniSpacing) + miniSlotW * 0.5f;
+        return new Vector2(x + miniVisualCenter.x * miniScale, miniVisualCenter.y * miniScale);
     }
 
-    // 手动排布迷你卡槽：左对齐、卡间仅保留 miniSpacing 间隙，不依赖布局组重建时序
+    // 手动排布迷你卡槽：布局位置沿用原始根尺寸，命中层覆盖实际视觉 bounds。
     void ApplyMiniLayout(bool stacked = false)
     {
         if (miniCardParent == null) return;
@@ -502,7 +534,7 @@ public class BuildView : MonoBehaviour
         if (miniBar != null)
         {
             var mb = miniBar.GetComponent<RectTransform>();
-            if (mb != null) mb.sizeDelta = new Vector2(mb.sizeDelta.x, miniCardH + 8f);
+            if (mb != null) mb.sizeDelta = new Vector2(mb.sizeDelta.x, miniSlotH + 8f);
         }
         int idx = 0;
         foreach (Transform child in miniCardParent)
@@ -512,7 +544,7 @@ public class BuildView : MonoBehaviour
             if (rt == null) continue;
             rt.sizeDelta = new Vector2(miniCardW, miniCardH);
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 0.5f);
-            rt.pivot = new Vector2(0f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = MiniSlotPos(idx, stacked);
             idx++;
         }
@@ -528,6 +560,7 @@ public class BuildView : MonoBehaviour
 
     void RefreshMini(bool stacked = false)
     {
+        if (miniEmptyHint != null) miniEmptyHint.gameObject.SetActive(false);
         ClearCards();
         ComputeCardSize();
         ApplyMiniLayout(stacked);
@@ -550,7 +583,7 @@ public class BuildView : MonoBehaviour
             var srt = slot.GetComponent<RectTransform>();
             srt.sizeDelta = new Vector2(miniCardW, miniCardH);
             srt.anchorMin = srt.anchorMax = new Vector2(0f, 0.5f);
-            srt.pivot = new Vector2(0f, 0.5f);
+            srt.pivot = new Vector2(0.5f, 0.5f);
             srt.anchoredPosition = MiniSlotPos(i, stacked);
 
             var data = result.cards[i];
@@ -561,13 +594,14 @@ public class BuildView : MonoBehaviour
                 crt.anchorMin = new Vector2(0.5f, 0.5f);
                 crt.anchorMax = new Vector2(0.5f, 0.5f);
                 crt.pivot = new Vector2(0.5f, 0.5f);
-                crt.anchoredPosition = Vector2.zero;
+                crt.anchoredPosition = -miniVisualCenter * miniScale;
                 crt.localScale = Vector3.one * miniScale;
             }
             if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(go.transform, FontSlots.Card);
             var card = go.GetComponent<CoreChoiceCard>();
             if (card == null) card = go.AddComponent<CoreChoiceCard>();
             card.Init(i, data.ResolveCardName(), data.image, data.ResolveDescription() ?? "", null, null, data);
+            AttachCardTooltip(slot, data);
             if (card.confirmButton != null) card.confirmButton.gameObject.SetActive(false);
             if (card.rerollButton != null) card.rerollButton.gameObject.SetActive(false);
             if (card.cardText != null) card.cardText.gameObject.SetActive(false);
@@ -575,12 +609,31 @@ public class BuildView : MonoBehaviour
             var choiceCard = go.GetComponent<ChoiceCard>();
             if (choiceCard != null) Destroy(choiceCard);
             HideCardChildren(go);
-            // 迷你图标纯展示，关闭射线拦截避免遮挡世界点击
-            var imgs = go.GetComponentsInChildren<Image>(true);
-            foreach (var img in imgs) img.raycastTarget = false;
+            // 迷你图标纯展示，关闭卡面内部所有 Graphic 的射线，只保留 MiniSlot 作为完整命中区域。
+            var graphics = go.GetComponentsInChildren<Graphic>(true);
+            foreach (var graphic in graphics) graphic.raycastTarget = false;
+            Image hitArea = slot.GetComponent<Image>();
+            if (hitArea != null) hitArea.raycastTarget = true;
 
             cardInstances.Add(slot);
         }
+        if (miniEmptyHint != null) miniEmptyHint.gameObject.SetActive(false);
+        SetMiniBarLayer(stacked);
+    }
+
+    void SetMiniBarLayer(bool stacked)
+    {
+        if (miniBar == null) return;
+        if (!stacked)
+        {
+            miniBar.transform.SetAsLastSibling();
+            return;
+        }
+
+        if (buildButton != null && miniBar.transform.parent == buildButton.transform.parent)
+            miniBar.transform.SetSiblingIndex(buildButton.transform.GetSiblingIndex());
+        else
+            miniBar.transform.SetAsFirstSibling();
     }
 
     /// <summary>
@@ -639,6 +692,7 @@ public class BuildView : MonoBehaviour
             var card = go.GetComponent<CoreChoiceCard>();
             if (card == null) card = go.AddComponent<CoreChoiceCard>();
             card.Init(i, data.ResolveCardName(), data.image, data.ResolveDescription() ?? "", null, null, data);
+            AttachCardTooltip(go, data);
             if (card.confirmButton != null) card.confirmButton.gameObject.SetActive(false);
             if (card.rerollButton != null) card.rerollButton.gameObject.SetActive(false);
             if (card.cardText != null) card.cardText.gameObject.SetActive(false);
@@ -649,6 +703,15 @@ public class BuildView : MonoBehaviour
             cardInstances.Add(go);
         }
         layout.Rebuild(cardInstances);
+    }
+
+    void AttachCardTooltip(GameObject go, CardData data)
+    {
+        if (go == null) return;
+        GameplayTooltipTarget target = go.GetComponent<GameplayTooltipTarget>();
+        if (target == null) target = go.AddComponent<GameplayTooltipTarget>();
+        target.SetTooltip(FindObjectOfType<PossessionImprintTooltip>(true));
+        target.BindCard(data);
     }
 
     /// <summary>鼠标悬停某卡时把它置顶并轻微放大，避免被堆叠的其它卡遮挡。</summary>

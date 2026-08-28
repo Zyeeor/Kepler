@@ -6,15 +6,90 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
     public GameObject panel;
     public Text titleText;
     public Text effectText;
+    public Vector2 cursorOffset = new Vector2(18f, 18f);
+
+    RectTransform panelRect;
+    RectTransform canvasRect;
+    RectTransform parentRect;
+    Canvas canvas;
+    bool visible;
+
+    void Awake()
+    {
+        CacheReferences();
+        DisableRaycasts();
+    }
+
+    void CacheReferences()
+    {
+        if (panel == null) panel = gameObject;
+        panelRect = panel.GetComponent<RectTransform>();
+        parentRect = panelRect != null ? panelRect.parent as RectTransform : null;
+        canvas = panel.GetComponentInParent<Canvas>();
+        canvasRect = canvas != null ? canvas.transform as RectTransform : null;
+    }
+
+    void DisableRaycasts()
+    {
+        if (panel == null) return;
+        Graphic[] graphics = panel.GetComponentsInChildren<Graphic>(true);
+        foreach (Graphic graphic in graphics) graphic.raycastTarget = false;
+    }
+
+    void Update()
+    {
+        if (visible && panel != null && panel.activeSelf) PositionNearCursor();
+    }
+
     public void Show(SinType sin, int stacks)
     {
-        if (panel != null) panel.SetActive(true);
-        if (titleText != null) titleText.text = TextCatalog.Get("imprint.stack_suffix", GetTitle(sin), stacks);
-        if (effectText != null) effectText.text = GetEffect(sin, stacks);
+        Show(TextCatalog.Get("imprint.stack_suffix", GetTitle(sin), stacks), GetEffect(sin, stacks));
     }
+
+    public void Show(string title, string effect)
+    {
+        if (panel != null)
+        {
+            panel.SetActive(true);
+            DisableRaycasts();
+            panel.transform.SetAsLastSibling();
+        }
+        if (titleText != null) titleText.text = title ?? string.Empty;
+        if (effectText != null) effectText.text = effect ?? string.Empty;
+        visible = true;
+        PositionNearCursor();
+    }
+
     public void Hide()
     {
+        visible = false;
         if (panel != null) panel.SetActive(false);
+    }
+
+    void PositionNearCursor()
+    {
+        if (panelRect == null || parentRect == null || canvas == null)
+            CacheReferences();
+        if (panelRect == null || parentRect == null || canvas == null) return;
+
+        Rect bounds = canvas.pixelRect;
+        Vector2 mouse = Input.mousePosition;
+        Vector2 scale = panelRect.lossyScale;
+        Vector2 size = new Vector2(
+            panelRect.rect.width * Mathf.Abs(scale.x),
+            panelRect.rect.height * Mathf.Abs(scale.y));
+        Vector2 pivot = new Vector2(
+            mouse.x + cursorOffset.x + size.x <= bounds.xMax - 8f ? 0f : 1f,
+            mouse.y - cursorOffset.y - size.y >= bounds.yMin + 8f ? 1f : 0f);
+
+        Vector2 screenPosition = mouse;
+        screenPosition.x += pivot.x < 0.5f ? cursorOffset.x : -cursorOffset.x;
+        screenPosition.y += pivot.y > 0.5f ? -cursorOffset.y : cursorOffset.y;
+        panelRect.pivot = pivot;
+
+        Camera eventCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        if (RectTransformUtility.ScreenPointToWorldPointInRectangle(parentRect, screenPosition, eventCamera, out Vector3 worldPosition))
+            panelRect.position = worldPosition;
     }
 
     public static string GetTitle(SinType sin)

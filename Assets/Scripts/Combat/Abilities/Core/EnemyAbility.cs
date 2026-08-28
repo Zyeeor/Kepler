@@ -22,6 +22,9 @@ public abstract class EnemyAbility : MonoBehaviour
 
     [Header("Identity")]
     public string abilityName = "Ability";
+    [TextArea(2, 5)]
+    [Tooltip("技能在 HUD 悬浮提示中显示的具体效果；留空时使用伤害、冷却等通用字段生成摘要。")]
+    public string abilityDescription;
     public AbilityType type = AbilityType.Passive;
 
     [Header("Upgrades")]
