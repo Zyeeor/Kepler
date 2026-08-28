@@ -11,6 +11,7 @@ public sealed class BossHealthBarUI : MonoBehaviour
     BossSevenfoldActor boss;
     GameObject panel;
     Image fill;
+    TextMeshProUGUI label;
     float lastLoggedHealth = float.NaN;
 
     public static void ShowFor(BossSevenfoldActor target)
@@ -40,6 +41,8 @@ public sealed class BossHealthBarUI : MonoBehaviour
     void Bind(BossSevenfoldActor target)
     {
         boss = target;
+        if (label != null)
+            label.text = !string.IsNullOrWhiteSpace(boss.DisplayName) ? boss.DisplayName : TextCatalog.Get("ui.boss.default_name");
         lastLoggedHealth = float.NaN;
         if (panel != null) panel.SetActive(true);
         Debug.Log($"[BossHealth] Bound UI to {boss.name}, hp={boss.currentHealth:F1}/{boss.maxHealth:F1}", this);
@@ -131,8 +134,8 @@ public sealed class BossHealthBarUI : MonoBehaviour
         labelRect.pivot = new Vector2(0f, 0.5f);
         labelRect.anchoredPosition = new Vector2(0f, 0f);
         labelRect.sizeDelta = new Vector2(100f, barHeight + 12f);
-        TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-        label.text = "Boss";
+        label = labelObject.GetComponent<TextMeshProUGUI>();
+        label.text = TextCatalog.Get("ui.boss.default_name");
         label.fontSize = 26f;
         label.fontStyle = FontStyles.Bold;
         label.alignment = TextAlignmentOptions.MidlineLeft;

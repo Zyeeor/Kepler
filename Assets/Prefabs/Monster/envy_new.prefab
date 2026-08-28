@@ -506,7 +506,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a44d06f59404695b7790269c53f7bb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u96F7\u66B4\u5151\u73B0"
+  abilityName: "\u96F7\u66B4"
   abilityDescription: 
   type: 2
   upgrades:
@@ -1372,7 +1372,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64fcd9440dd654b769e52e3735898e8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u98DE\u884C\u52A0\u901F"
+  abilityName: "\u75BE\u98DE"
   abilityDescription: 
   type: 3
   upgrades:

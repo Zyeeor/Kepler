@@ -15,7 +15,7 @@ MonoBehaviour:
   steps:
   - id: TUT-01
     title: "\u7075\u9B42\u79FB\u52A8"
-    text: "\u6309 WASD \u79FB\u52A8\u4F60\u7684\u7075\u9B42(\u865A\u5F71\u5F62\u6001\u53EF\u81EA\u7531\u6F02\u79FB)"
+    text: "\u6309 WASD \u79FB\u52A8\u3002\u7075\u9B42\u5F62\u6001\u53EF\u4EE5\u81EA\u7531\u6F02\u79FB\u3002"
     textKey: 
     startFacts: 
     completeFacts: 0b000000
@@ -31,7 +31,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-02
     title: "\u9644\u8EAB\u8EAF\u4F53"
-    text: "\u9760\u8FD1\u795E\u9F9B\u524D\u7684\u8EAF\u4F53,{SKILL1} \u53F3\u952E\u53D1\u8D77\u9644\u8EAB.\u9644\u8EAB\u540E\u4F60\u5C06\u64CD\u63A7\u8FD9\u5177\u8EAF\u4F53\u6218\u6597"
+    text: "\u9760\u8FD1\u795E\u9F9B\u524D\u7684\u8EAF\u4F53\uFF0C\u6309\u3010{SKILL1}\u3011\u9644\u8EAB\u3002\u9644\u8EAB\u540E\u5373\u53EF\u64CD\u63A7\u8FD9\u5177\u8EAF\u4F53\u6218\u6597\u3002"
     textKey: 
     startFacts: 
     completeFacts: 02000000
@@ -47,7 +47,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 1
   - id: "TUT-MONSTER-\u50B2\u6162"
     title: "\u50B2\u6162\u7C7B\u602A\u7269"
-    text: "\u50B2\u6162\u7C7B\u602A\u7269:\u627F\u91CD\u7532\u3001\u6B63\u9762\u5F3A\u653B\u7684\u538B\u5236\u578B\u654C\u4EBA,\u8D34\u8FD1\u540E\u53CD\u5E94\u66F4\u51CC\u5389."
+    text: "\u64C5\u957F\u5251\u6C14\u3001\u7A81\u8FDB\u4E0E\u8FDE\u7EED\u65A9\u51FB\u3002\u4E0E\u5B83\u6B63\u9762\u5BF9\u653B\u65F6\uFF0C\u7559\u610F\u8FCE\u9762\u5251\u6C14\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -63,7 +63,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u8272\u6B32"
     title: "\u8272\u6B32\u7C7B\u602A\u7269"
-    text: "\u8272\u6B32\u7C7B\u602A\u7269:\u7075\u5FF5\u7CFB\u654C\u4EBA,\u64C5\u957F\u5E72\u6270\u4E0E\u8BC0\u8BA1,\u4FDD\u6301\u6BCF\u4E00\u6B65\u90FD\u5728\u9884\u5224\u4E2D."
+    text: "\u64C5\u957F\u6B8B\u5F71\u6362\u4F4D\u4E0E\u7075\u9B42\u7275\u5F15\u3002\u4E0D\u8981\u88AB\u5B83\u548C\u6B8B\u5F71\u5939\u4F4F\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -79,7 +79,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u6124\u6012"
     title: "\u6124\u6012\u7C7B\u602A\u7269"
-    text: "\u6124\u6012\u7C7B\u602A\u7269:\u72C2\u66B4\u6012\u7259,\u4EE5\u7A81\u8FDB\u548C\u8FDE\u6253\u50AC\u622E\u5C40\u52BF,\u975E\u5E38\u5371\u9669."
+    text: "\u64C5\u957F\u94A9\u7D22\u7A81\u8FDB\u4E0E\u70C8\u7130\u653B\u51FB\u3002\u88AB\u94A9\u4F4F\u540E\u5C3D\u5FEB\u62C9\u5F00\u8DDD\u79BB\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -95,7 +95,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u8D2A\u5A6A"
     title: "\u8D2A\u5A6A\u7C7B\u602A\u7269"
-    text: "\u8D2A\u5A6A\u7C7B\u602A\u7269:\u7FA4\u96C6\u4F5C\u6D3E,\u64C5\u957F\u5305\u88F1\u4E0E\u7F60\u7EDA,\u8B66\u60D5\u88AB\u56F4\u653B."
+    text: "\u4F1A\u53EC\u51FA\u9B54\u624B\u56F4\u653B\uFF0C\u5E76\u5728\u5730\u9762\u7559\u4E0B\u51CF\u901F\u9ED1\u6CB9\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -111,7 +111,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u66B4\u98DF"
     title: "\u66B4\u98DF\u7C7B\u602A\u7269"
-    text: "\u66B4\u98DF\u7C7B\u602A\u7269:\u8D2A\u5A6A\u7684\u54AC\u98DF\u8005,\u8D34\u8FD1\u65F6\u98DF\u5929\u98DF\u5730,\u4FDD\u6301\u8DDD\u79BB\u89C2\u5BDF."
+    text: "\u4F1A\u5316\u4E3A\u5C0F\u732B\u903C\u8FD1\uFF0C\u518D\u53EC\u4E0B\u6DF1\u6E0A\u5DE8\u53E3\u3002\u770B\u89C1\u843D\u70B9\u65F6\u53CA\u65F6\u95EA\u907F\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -127,7 +127,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u5AC9\u5992"
     title: "\u5AC9\u5992\u7C7B\u602A\u7269"
-    text: "\u5AC9\u5992\u7C7B\u602A\u7269:\u8FDC\u7A0B\u5149\u675F\u4E0E\u96F7\u66B4\u7684\u5C04\u624B,\u5C3D\u65E9\u8D70\u4F4D\u907F\u5F00\u6295\u5C04\u8303\u56F4."
+    text: "\u64C5\u957F\u8FDC\u7A0B\u6FC0\u5149\u4E0E\u96F7\u66B4\u3002\u6301\u7EED\u79FB\u52A8\uFF0C\u907F\u5F00\u843D\u96F7\u8303\u56F4\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -143,7 +143,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u6020\u60F0"
     title: "\u6020\u60F0\u7C7B\u602A\u7269"
-    text: "\u6020\u60F0\u7C7B\u602A\u7269:\u673A\u68B0\u4E4B\u9B42,\u52A8\u4F5C\u6162\u5374\u6B7B\u6C14\u4E00\u62DB,\u6BCF\u4E00\u4E0B\u90FD\u5B9E\u6253\u5B9E."
+    text: "\u884C\u52A8\u8FDF\u7F13\uFF0C\u5374\u64C5\u957F\u84C4\u529B\u91CD\u70AE\u3001\u8DF3\u7838\u4E0E\u6728\u7075\u56F4\u653B\u3002"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -158,8 +158,8 @@ MonoBehaviour:
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
   - id: TUT-03A
-    title: "\u666E\u653B"
-    text: "{BASIC} \u5DE6\u952E\u666E\u653B\u653B\u51FB\u602A\u7269"
+    title: "\u666E\u901A\u653B\u51FB"
+    text: "\u6309\u3010{BASIC}\u3011\u666E\u901A\u653B\u51FB\u3002"
     textKey: 
     startFacts: 
     completeFacts: 06000000
@@ -175,7 +175,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-03B
     title: "\u6280\u80FD"
-    text: "{SKILL} Q \u91CA\u653E\u6280\u80FD"
+    text: "\u6309\u3010{SKILL}\u3011\u91CA\u653E\u6280\u80FD\u3002"
     textKey: 
     startFacts: 
     completeFacts: 07000000
@@ -191,7 +191,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-03C
     title: "\u4F4D\u79FB"
-    text: "{MOBILITY} \u7A7A\u683C\u4F4D\u79FB\u95EA\u907F"
+    text: "\u6309\u3010{MOBILITY}\u3011\u4F4D\u79FB\u95EA\u907F\u3002"
     textKey: 
     startFacts: 
     completeFacts: 05000000
@@ -206,8 +206,8 @@ MonoBehaviour:
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
   - id: TUT-04
-    title: "\u51FB\u6740\u602A\u7269"
-    text: "\u51FB\u8D25\u602A\u7269\u540E\u5C38\u4F53\u53EF\u88AB\u9644\u8EAB,\u7EE7\u7EED\u653B\u51FB\u5373\u53EF\u6D4B\u8BD5\u6362\u8EAB"
+    title: "\u51FB\u8D25\u602A\u7269"
+    text: "\u51FB\u8D25\u602A\u7269\u540E\uFF0C\u4F1A\u7559\u4E0B\u53EF\u9644\u8EAB\u7684\u8EAF\u4F53\u3002"
     textKey: 
     startFacts: 
     completeFacts: 00000000
@@ -223,8 +223,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-05
     title: "\u4E3B\u52A8\u6362\u8EAB"
-    text: "\u6309 {RELEASE} \u8131\u79BB\u5F53\u524D\u8EAB\u4F53,\u6216\u76F4\u63A5\u5BF9\u53E6\u4E00\u5177\u5C38\u4F53\u6309
-      {SKILL1},\u5373\u53EF\u6362\u8EAB"
+    text: "\u6309\u3010{RELEASE}\u3011\u8131\u79BB\u5F53\u524D\u8EAF\u4F53\uFF1B\u9760\u8FD1\u53E6\u4E00\u5177\u8EAF\u4F53\uFF0C\u6309\u3010{SKILL1}\u3011\u76F4\u63A5\u6362\u8EAB\u3002"
     textKey: 
     startFacts: 
     completeFacts: 08000000

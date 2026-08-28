@@ -1900,10 +1900,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 0.9702349
+  m_Height: 3.0173578
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0.13952482, y: 1.0086778, z: 0.11010396}
 --- !u!54 &7984481324477507707
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4991,7 +4991,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45fc8e9cd83f148e18d4885b353f8335, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: "\u94A9\u7D22\u4F4D\u79FB"
+  abilityName: "\u94A9\u7D22\u7A81\u8FDB"
   abilityDescription: 
   type: 3
   upgrades:

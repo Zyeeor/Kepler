@@ -23,9 +23,9 @@ public static class GameInputBindings
     {
         switch (button)
         {
-            case CommandButtons.Basic: return "左键";
-            case CommandButtons.Skill1: return "中键";
-            case CommandButtons.Skill2: return "右键";
+            case CommandButtons.Basic: return "鼠标左键";
+            case CommandButtons.Skill1: return "鼠标中键";
+            case CommandButtons.Skill2: return "鼠标右键";
             case CommandButtons.Mobility: return "空格";
             case CommandButtons.Skill3: return Skill3.ToString();
             case CommandButtons.Release: return Release.ToString();

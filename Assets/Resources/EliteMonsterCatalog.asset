@@ -14,26 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - sin: 1
-    displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
-    prefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e, type: 3}
+    displayName: "\u50B2\u6162\xB7\u7EC8\u5203\u7EDD\u5F71"
+    prefab: {fileID: 4811431479158837486, guid: 7576bcb0b248840af8e004111454a76e,
+      type: 3}
   - sin: 2
-    displayName: "\u6020\u60F0-\u673A\u68B0\u4E4B\u7075"
-    prefab: {fileID: 1827098444623938932, guid: ccfe57e3a23d2b24584ac09f7333c19c, type: 3}
+    displayName: "\u6020\u60F0\xB7\u673A\u68B0\u4E4B\u7075"
+    prefab: {fileID: 1827098444623938932, guid: ccfe57e3a23d2b24584ac09f7333c19c,
+      type: 3}
   - sin: 3
-    displayName: "\u66B4\u98DF-\u9B54\u732B"
-    prefab: {fileID: 4750602423163319368, guid: 60ee0a829a7a04ba9bbf8cd652f5c562, type: 3}
+    displayName: "\u66B4\u98DF\xB7\u9B54\u732B"
+    prefab: {fileID: 4750602423163319368, guid: 60ee0a829a7a04ba9bbf8cd652f5c562,
+      type: 3}
   - sin: 4
     displayName: "\u5AC9\u5992"
-    prefab: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342, type: 3}
+    prefab: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342,
+      type: 3}
   - sin: 5
     displayName: "\u6124\u6012"
-    prefab: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7, type: 3}
+    prefab: {fileID: 3551598183782676372, guid: eb0bae419f034dc18139a0659b41bff7,
+      type: 3}
   - sin: 6
-    displayName: "\u8D2A\u5A6A-\u4E07\u624B\u85CF\u4E3B"
-    prefab: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40, type: 3}
+    displayName: "\u8D2A\u5A6A\xB7\u4E07\u624B\u85CF\u4E3B"
+    prefab: {fileID: 3744361111654940414, guid: 46df1b33623c493681a5cf633b8fdc40,
+      type: 3}
   - sin: 7
-    displayName: "\u8272\u6B32-\u7075\u5FF5\u5E08"
-    prefab: {fileID: 2259565064542781952, guid: adf557850b8644449a273ddc69a83bd5, type: 3}
+    displayName: "\u8272\u6B32\xB7\u7075\u5FF5\u5E08"
+    prefab: {fileID: 2259565064542781952, guid: adf557850b8644449a273ddc69a83bd5,
+      type: 3}
   presetSnapshots:
   - presetName: pride-deep
     sin: 1

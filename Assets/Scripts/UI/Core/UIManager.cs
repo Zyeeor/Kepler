@@ -450,7 +450,7 @@ public class UIManager : SceneSingleton<UIManager>
         {
             if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
             confirmOpenedFromPause = true;
-            confirmDialog.Show("Return to Menu", "Return to menu? Progress is saved at each wave clear and can be continued from the main menu.", OnReturnToMenuConfirmed, null);
+            confirmDialog.Show(TextCatalog.Get("ui.return_menu.title"), TextCatalog.Get("ui.return_menu.message"), OnReturnToMenuConfirmed, null);
             Debug.Log("UIManager: ConfirmDialog.Show called. IsVisible=" + confirmDialog.IsVisible());
         }
         else

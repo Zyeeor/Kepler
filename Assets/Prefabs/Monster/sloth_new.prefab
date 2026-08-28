@@ -223,7 +223,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7703087bc8aac4ad585d2e2c112da87e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u84C4\u529B\u91CD\u70AE"
   abilityDescription: 
   type: 1
   upgrades:
@@ -527,7 +527,7 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 140
   currentHealth: 140
-  displayName: "\u6020\u60F0-\u673A\u68B0\u4E4B\u7075"
+  displayName: "\u6020\u60F0\xB7\u673A\u68B0\u4E4B\u7075"
   sinType: 2
   isPossessable: 1
   enemyStats:
@@ -710,12 +710,10 @@ MonoBehaviour:
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
   monsterStatusMarkerSize: 0.8
-  monsterStatusMarkerOffset: {x: 0, y: 4}
+  monsterStatusMarkerOffset: {x: 0, y: 0.45}
   monsterStatusMarkerAdjacentSpacing: 0.08
   envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
   lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
-  envyStatusMarkerTexture: {fileID: 0}
-  lustStatusMarkerTexture: {fileID: 0}
   monsterStatusMarkerGlowIntensity: 2.2
   monsterStatusMarkerPulseSpeed: 5
 --- !u!1 &2420022869048254844
@@ -1158,7 +1156,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c186fdde8e7164aa7bdb2c0ddb539aa0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u53EC\u5524\u6728\u7075"
   abilityDescription: 
   type: 2
   upgrades:
@@ -1618,7 +1616,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4f19133aa14a45fc8e3a0b7f9a8a08f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u8DC3\u7A7A\u7838\u51FB"
   abilityDescription: 
   type: 3
   upgrades:

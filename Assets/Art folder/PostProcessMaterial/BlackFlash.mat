@@ -141,7 +141,7 @@ Material:
     - _LogoAR: 0
     - _LogoAlpha: 0
     - _MainAlpha: 1
-    - _MainAlphaK: 0.049
+    - _MainAlphaK: 0.135
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
@@ -156,7 +156,7 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StepFactor: 0.6
-    - _StepFactorK: 0.5
+    - _StepFactorK: 0.464
     - _Surface: 0
     - _TexAR: 1
     - _TexAlpha: 0

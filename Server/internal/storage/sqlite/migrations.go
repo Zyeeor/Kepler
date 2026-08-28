@@ -28,6 +28,12 @@ var migrations = []migration{
 		// 精英域表（见 elite.go）
 		stmts: append(append([]string{}, ugcMigrateStmts...), eliteMigrateStmts...),
 	},
+	{
+		version: 2,
+		desc:    "run stats tables (Run Analytics, POST /api/runs)",
+		// Run Analytics 域表（见 runstats.go）
+		stmts: runStatsMigrateStmts,
+	},
 }
 
 // migrate 执行未应用的 schema 版本（幂等：已应用版本跳过）。

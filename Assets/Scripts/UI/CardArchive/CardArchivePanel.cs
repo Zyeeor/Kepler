@@ -443,10 +443,10 @@ public class CardArchivePanel : MonoBehaviour
 
         int unlocked = CardArchiveStore.UnlockedCount();
         int totalAll = CardArchiveStore.ValidCardTotal;
-        progressText.text = $"已解锁 <color=#FFC93C>{unlocked}</color> / 总计 <color=#FFC93C>{totalAll}</color>";
+        progressText.text = TextCatalog.Get("ui.archive.unlocked_count", unlocked, totalAll);
         statusText.text = currentTab == "all"
-            ? $"本页：已知/已解锁 <color=#FFC93C>{shown}</color> 张，未解锁 <color=#FFC93C>{unknownCount}</color> 张"
-            : $"本页：<color=#FFC93C>{shown}</color> 张";
+            ? TextCatalog.Get("ui.archive.page_count", shown, unknownCount)
+            : TextCatalog.Get("ui.archive.page_count_known", shown);
         statusText.color = new Color(0.9f, 0.9f, 0.9f);
 
         if (progressFill != null)

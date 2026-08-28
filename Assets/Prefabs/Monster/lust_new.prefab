@@ -122,7 +122,7 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 100
   currentHealth: 100
-  displayName: "\u8272\u6B32-\u7075\u5FF5\u5E08"
+  displayName: "\u8272\u6B32\xB7\u7075\u5FF5\u5E08"
   sinType: 7
   isPossessable: 1
   enemyStats:
@@ -252,9 +252,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.8
-  m_Height: 1.6
+  m_Height: 2.3698173
   m_Direction: 1
-  m_Center: {x: 0, y: 0.8, z: 0}
+  m_Center: {x: 0, y: 1.1849086, z: 0}
 --- !u!54 &8490741439310761608
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -723,7 +723,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb8e34f9441540a9867e69cf2c0a208d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u7075\u9B42\u7275\u5F15"
   abilityDescription: 
   type: 0
   upgrades:
@@ -915,7 +915,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfa1f3c3fc174fd5adea25eef6256b48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u5F80\u8FD4\u8FF7\u6C14"
   abilityDescription: 
   type: 0
   upgrades:
@@ -1077,7 +1077,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5d89656e7b1492e86bb14ef6ec9a325, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  abilityName: Ability
+  abilityName: "\u6B8B\u5F71\u6362\u4F4D"
   abilityDescription: 
   type: 0
   upgrades:

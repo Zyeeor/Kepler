@@ -804,7 +804,7 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 80
   currentHealth: 20
-  displayName: "\u50B2\u6162-\u7EC8\u5203\u7EDD\u5F71"
+  displayName: "\u50B2\u6162\xB7\u7EC8\u5203\u7EDD\u5F71"
   sinType: 1
   isPossessable: 1
   enemyStats:
@@ -899,10 +899,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.2
-  m_Height: 0.2
+  m_Radius: 0.5446334
+  m_Height: 1.8381189
   m_Direction: 1
-  m_Center: {x: 0, y: 0.25, z: 0}
+  m_Center: {x: 0, y: 0.9690594, z: 0.082208395}
 --- !u!114 &606382932644109846
 MonoBehaviour:
   m_ObjectHideFlags: 0

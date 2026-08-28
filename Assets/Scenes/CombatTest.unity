@@ -189,6 +189,7 @@ MonoBehaviour:
   enemyIconRoot: {fileID: 559263422}
   enemyIconImage: {fileID: 559263423}
   iconConfig: {fileID: 0}
+  tooltip: {fileID: 0}
   readyColor: {r: 1, g: 1, b: 1, a: 1}
   cooldownOverlayColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
 --- !u!114 &5513539
@@ -19676,7 +19677,7 @@ MonoBehaviour:
   fixedSeed: 12345
   forceTutorial: 0
   bootToMainMenu: 0
-  useFormalFlow: 1
+  useFormalFlow: 0
 --- !u!4 &1807762708
 Transform:
   m_ObjectHideFlags: 0

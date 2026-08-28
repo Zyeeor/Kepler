@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5FF5\u529B\u9B54\u624B"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: GR-A01
@@ -94,6 +95,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   maxDaggers: 6
   cardInventoryMax: 10
   initialPossessedHands: 2
@@ -225,6 +236,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u66B4\u6012\u9501\u94FE"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: WR-S01
@@ -271,6 +283,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   baseDuration: 2
   durationBonusS03: 2
   tickInterval: 0.5
@@ -337,6 +359,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5927\u624BGuard"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: GR-S01
@@ -382,6 +405,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   baseDuration: 1
   extendedDuration: 3
   absorbPerHand: 100
@@ -445,6 +478,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: Sloth.Scatter
@@ -489,6 +523,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,
     type: 3}
   projectileSpawnPoint: {fileID: 7937874198874001404}
@@ -595,6 +639,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 0
   upgrades: []
   vfxPrefab: {fileID: 0}
@@ -635,6 +680,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   segmentDamage: 20
   mistWidth: 1
   mistSpeed: 14
@@ -730,6 +785,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u5251\u6C14"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: Pride.Pierce
@@ -778,6 +834,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   maxRange: 2
   projectileSpeed: 40
   projectileDelay: 0.3
@@ -893,7 +959,7 @@ MonoBehaviour:
     m_Bits: 0
   maxHealth: 8000
   currentHealth: 8000
-  displayName: "\u4E03\u76F8\u6536\u675F\u8F7D\u4F53"
+  displayName: "\u4E03\u76F8\u5F52\u4E00"
   sinType: 1
   isPossessable: 1
   enemyStats:
@@ -935,6 +1001,8 @@ MonoBehaviour:
   isPossessed: 0
   playerDetected: 0
   aiActiveOverride: 1
+  aliveY: 0
+  corpseY: 0
   corpsePossessionWindow: 5
   corpseFadeDuration: 1.5
   hitStateDuration: 0.12
@@ -1105,6 +1173,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u7A7F\u68AD\u65A9"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: Pride.BlinkSwordQi
@@ -1151,6 +1220,16 @@ MonoBehaviour:
     hitStopDuration: 1
     hitStopScale: 0.166
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   searchRange: 8
   blinkCount: 4
   blinkInterval: 0.25
@@ -1211,6 +1290,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u6DF1\u6E0A\u5DE8\u53E3"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: GL-A01
@@ -1256,6 +1336,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   maxAimDistance: 8
   glA03AimDistance: 12
   warnDelay: 0.5
@@ -1318,6 +1408,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u6FC0\u5149"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: EN-A01
@@ -1376,6 +1467,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   maxRange: 15
   damagePerSecond: 2
   tickInterval: 0.25
@@ -1445,6 +1546,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u541E\u566C"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: GL-S01
@@ -1493,6 +1595,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   range: 1
   angle: 100
   damageAmount: 40
@@ -1592,6 +1704,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u55B7\u706B"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: WR-B01
@@ -1636,6 +1749,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   radius: 3
   slamOffset: {x: 0, y: 0, z: 2}
   firstHitDelay: 0.1
@@ -1729,6 +1852,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u96F7\u66B4\u5151\u73B0"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: EN-S01
@@ -1775,6 +1899,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   baseThunderDamage: 10
   searchRadius: 30
   telegraphDuration: 0.6
@@ -1836,6 +1970,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 0
   upgrades: []
   vfxPrefab: {fileID: 0}
@@ -1876,6 +2011,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   pullWindow: 0.6
   pullMaxDistance: 6
   pullDamage: 25
@@ -2044,6 +2189,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: Sloth.DroneEconomy
@@ -2089,6 +2235,16 @@ MonoBehaviour:
     hitStopDuration: 0
     hitStopScale: 0
     useGlobalTimeScale: 0
+  enemyTelegraphEnabled: 1
+  enemyCastLeadTime: 0.45
+  enemyIndicatorEnabled: 1
+  enemyIndicatorRadius: 0
+  enemyIndicatorColor: {r: 1, g: 0.04, b: 0.015, a: 1}
+  enemyIndicatorIntensity: 1.1
+  enemyIndicatorHeight: 0.05
+  enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyCastHudSize: 64
+  enemyCastHudScreenOffset: {x: 48, y: 44}
   dronePrefab: {fileID: 6114247635342975564, guid: 7cb74f0d689f64bfbb41a3d25ad27b0b,
     type: 3}
   droneLifetime: 4
@@ -2105,6 +2261,7 @@ MonoBehaviour:
   bonusDroneCount: 2
   maxActiveDrones: 3
   pursuitAttackIntervalMultiplier: 0.6
+  droneAttackRange: 30
 --- !u!1001 &1664334519427229345
 PrefabInstance:
   m_ObjectHideFlags: 0
