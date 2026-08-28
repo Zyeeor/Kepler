@@ -113,18 +113,33 @@ public class EnemyAbility_Slash : EnemyAbility
         lineRenderer.endWidth = 0.02f * visualScale;
         lineRenderer.useWorldSpace = false;
         lineRenderer.alignment = LineAlignment.View;
+        bool useSharedMaterial = GameManager.SharedMaterialOptimizationEnabled;
         Shader lineShader = Shader.Find("Universal Render Pipeline/Unlit");
         if (lineShader == null) lineShader = Shader.Find("Standard");
-        Material lineMat = new Material(lineShader);
-        lineMat.color = new Color(slashColor.r, slashColor.g, slashColor.b, 0.9f);
-        lineMat.SetInt("_Surface", 1);
-        lineMat.SetInt("_Blend", 0);
-        lineMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        lineMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
-        lineMat.SetInt("_ZWrite", 0);
-        lineMat.SetInt("_Cull", 0);
-        lineMat.renderQueue = 3001;
-        lineRenderer.material = lineMat;
+        Material lineMat = useSharedMaterial
+            ? RendererShadowVisibility.GetSharedTransientLineMaterial()
+            : null;
+        if (lineMat == null)
+        {
+            useSharedMaterial = false;
+            lineMat = lineShader != null ? new Material(lineShader) : null;
+        }
+        if (lineMat != null && !useSharedMaterial)
+        {
+            lineMat.color = new Color(slashColor.r, slashColor.g, slashColor.b, 0.9f);
+            lineMat.SetInt("_Surface", 1);
+            lineMat.SetInt("_Blend", 0);
+            lineMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            lineMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            lineMat.SetInt("_ZWrite", 0);
+            lineMat.SetInt("_Cull", 0);
+            lineMat.renderQueue = 3001;
+        }
+        lineRenderer.sharedMaterial = lineMat;
+        lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lineRenderer.receiveShadows = false;
+        if (useSharedMaterial)
+            RendererShadowVisibility.SetSharedColor(lineRenderer, new Color(slashColor.r, slashColor.g, slashColor.b, 0.9f));
         for (int i = 0; i < lineSegments; i++)
         {
             float t = (float)i / (lineSegments - 1);

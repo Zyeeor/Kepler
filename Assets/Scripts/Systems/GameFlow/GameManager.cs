@@ -36,6 +36,40 @@ public class GameManager : MonoBehaviour
     [Tooltip("正式流程（屏蔽调试显示）：开启后屏蔽全部调试组件（F2/F4/F5/F6 面板、作弊提示、刷怪面板、调试相机等）。不再控制\"是否进主菜单\"——由 bootToMainMenu 单独决定。")]
     public bool useFormalFlow = false;
 
+    [Header("Performance / Rendering（运行时优化开关）")]
+    [Tooltip("A1：关闭粒子、VFX、范围圈的阴影，并让怪物仅在摄像机可见时投射阴影。保留美术原始设置，可随时关闭回退。")]
+    public bool enableA1ShadowOptimization = true;
+    [Tooltip("A2：提高 TrailRenderer 最小顶点距离并缩短尾迹寿命，降低拖尾几何和填充开销。")]
+    public bool enableA2TrailOptimization = true;
+    [Tooltip("A3：怪物 Animator 使用可见性剔除。默认 CullUpdateTransforms，保留根节点状态与位置更新。")]
+    public bool enableA3AnimatorCulling = true;
+    [Tooltip("A4：关闭怪物与 VFX Prefab 内的非 Directional 灯光（通常来自 FBX Import Lights），避免逐物体额外光照。")]
+    public bool enableA4ImportedLightOptimization = true;
+    [Tooltip("B5：共享瞬态材质并为支持的 Renderer 开启 GPU Instancing；代码路径避免使用 Renderer.material。")]
+    public bool enableB5SharedMaterialAndInstancing = true;
+    [Tooltip("B6：Chunk 视觉建成后将静态 Mesh Renderer 做运行时 Static Batching。")]
+    public bool enableB6StaticChunkBatching = true;
+
+    [Header("Existing Rendering Optimization（既有渲染优化）")]
+    [Tooltip("启用已有 RendererShadowVisibility：怪物离开所有摄像机时暂停其阴影投射。")]
+    public bool enableDynamicShadowVisibility = true;
+    [Tooltip("启用已有共享材质的 GPU Instancing 标记。需要材质 Shader 支持 Instancing。")]
+    public bool enableGpuInstancing = true;
+    [Tooltip("启用已有瞬态线/范围圈共享材质路径；关闭后回退到原先的运行时材质。")]
+    public bool enableSharedTransientMaterials = true;
+
+    [Header("Performance Tuning")]
+    [Min(0f)] public float optimizedTrailMinVertexDistance = 0.05f;
+    [Min(0f)] public float optimizedTrailTime = 0.35f;
+    public AnimatorCullingMode optimizedAnimatorCullingMode = AnimatorCullingMode.CullUpdateTransforms;
+    [Min(0)] public int staticChunkBatchMinimumRenderers = 8;
+
+    [Header("Monster Preload")]
+    [Tooltip("选卡界面打开时，按帧预加载当前刷怪表引用的怪物 Prefab 与技能 VFX。")]
+    public bool enableMonsterPreload = true;
+    [Min(1), Tooltip("每个怪物/VFX Prefab 预热的池实例数。")]
+    public int monsterPreloadInstancesPerPrefab = 1;
+
     public enum GameState
     {
         Soul,        // 灵魂态
@@ -49,6 +83,53 @@ public class GameManager : MonoBehaviour
 
     /// <summary>强制开启新人引导（GameManager 调试开关，供 TutorialController 准入判定查询）。</summary>
     public static bool ForceTutorial => Instance != null && Instance.forceTutorial;
+
+    /// <summary>是否启用 A1 阴影预算。</summary>
+    public static bool ShadowOptimizationEnabled => Instance == null || Instance.enableA1ShadowOptimization;
+
+    /// <summary>是否启用已有的屏幕外动态阴影组件。</summary>
+    public static bool DynamicShadowVisibilityEnabled => ShadowOptimizationEnabled
+        && (Instance == null || Instance.enableDynamicShadowVisibility);
+
+    /// <summary>是否启用 A2 TrailRenderer 预算。</summary>
+    public static bool TrailOptimizationEnabled => Instance == null || Instance.enableA2TrailOptimization;
+
+    /// <summary>是否启用 A3 Animator 可见性剔除。</summary>
+    public static bool AnimatorCullingEnabled => Instance == null || Instance.enableA3AnimatorCulling;
+
+    /// <summary>是否启用 A4 怪物/VFX 子层级灯光优化。</summary>
+    public static bool ImportedLightOptimizationEnabled => Instance == null || Instance.enableA4ImportedLightOptimization;
+
+    /// <summary>是否启用 B5 共享材质路径。</summary>
+    public static bool SharedMaterialOptimizationEnabled => (Instance == null || Instance.enableB5SharedMaterialAndInstancing)
+        && (Instance == null || Instance.enableSharedTransientMaterials);
+
+    /// <summary>是否启用 B5 GPU Instancing 标记。</summary>
+    public static bool GpuInstancingEnabled => (Instance == null || Instance.enableB5SharedMaterialAndInstancing)
+        && (Instance == null || Instance.enableGpuInstancing);
+
+    /// <summary>是否启用 B6 Chunk 静态合批。</summary>
+    public static bool StaticChunkBatchingEnabled => Instance != null && Instance.enableB6StaticChunkBatching;
+
+    public static float OptimizedTrailMinVertexDistance => Instance != null
+        ? Mathf.Max(0f, Instance.optimizedTrailMinVertexDistance)
+        : 0.05f;
+
+    public static float OptimizedTrailTime => Instance != null
+        ? Mathf.Max(0f, Instance.optimizedTrailTime)
+        : 0.35f;
+
+    public static AnimatorCullingMode OptimizedAnimatorCullingMode => Instance != null
+        ? Instance.optimizedAnimatorCullingMode
+        : AnimatorCullingMode.CullUpdateTransforms;
+
+    public static int StaticChunkBatchMinimumRenderers => Instance != null
+        ? Mathf.Max(0, Instance.staticChunkBatchMinimumRenderers)
+        : 8;
+
+    public static int MonsterPreloadInstancesPerPrefab => Instance != null
+        ? Mathf.Max(1, Instance.monsterPreloadInstancesPerPrefab)
+        : 1;
 
     /// <summary>
     /// 游戏状态变更事件（Kimi 评审断环：GameManager 不再直接调用各系统，改为广播；
@@ -113,6 +194,9 @@ public class GameManager : MonoBehaviour
         // - 进主菜单：只销毁无 Showcase 标记的残留 Player（bug 残留），保留正规展示灵魂
         // - 进对局场景：销毁所有 DDOL Player（含展示灵魂，防双 Player 静态 Instance 竞争）
         PurgeDdolSouls(keepShowcase: scene.name == "MainMenu");
+        MonsterPreloadService preloadService = FindObjectOfType<MonsterPreloadService>(true);
+        if (preloadService != null) preloadService.CancelPreload();
+        ApplyPerformanceOptimizationsToScene();
     }
 
     /// <summary>
@@ -161,6 +245,7 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         CardFaceBrowser.EnsureOnGameManager();
 #endif
+        ApplyPerformanceOptimizationsToScene();
         soulTime = 15f;
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;
@@ -192,6 +277,44 @@ public class GameManager : MonoBehaviour
     {
         soulTime -= seconds;
         Debug.Log($"-{seconds}s, Current Time: {soulTime:F1}s");
+    }
+
+    /// <summary>
+    /// Applies the current GameManager rendering policy to one runtime hierarchy. Pool
+    /// implementations call this only for a newly instantiated root; reused instances keep
+    /// their captured authored settings and do not pay another hierarchy scan.
+    /// </summary>
+    public static void ApplyPerformanceOptimizations(GameObject root)
+    {
+        if (root == null) return;
+        RenderingOptimizationState.ApplyTo(root);
+    }
+
+    /// <summary>Reapplies rendering settings to monsters already present in the active scene.</summary>
+    public void ApplyPerformanceOptimizationsToScene()
+    {
+        if (!Application.isPlaying) return;
+
+        MonsterActor[] monsters = FindObjectsOfType<MonsterActor>(true);
+        for (int i = 0; i < monsters.Length; i++)
+        {
+            MonsterActor monster = monsters[i];
+            if (monster != null) ApplyPerformanceOptimizations(monster.gameObject);
+        }
+
+        RendererShadowVisibility[] guards = FindObjectsOfType<RendererShadowVisibility>(true);
+        for (int i = 0; i < guards.Length; i++)
+        {
+            RendererShadowVisibility guard = guards[i];
+            if (guard != null) guard.SetOptimizationEnabled(DynamicShadowVisibilityEnabled);
+        }
+    }
+
+    /// <summary>由 CoreChoiceUI 在选卡暂停打开时调用，启动幂等的分帧预加载。</summary>
+    public void BeginMonsterPreload()
+    {
+        if (!enableMonsterPreload) return;
+        MonsterPreloadService.EnsureInstance().BeginPreload();
     }
     
     public void SwitchState(GameState newState)

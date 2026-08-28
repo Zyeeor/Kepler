@@ -36,6 +36,43 @@ public class VfxPool : MonoBehaviour
     }
 
     /// <summary>
+    /// Warms a small number of inactive instances for a prefab. The caller is expected to
+    /// invoke this from a frame-sliced preload routine; this method itself performs no
+    /// coroutine scheduling so pool ownership remains explicit.
+    /// </summary>
+    public void Preload(GameObject prefab, int count)
+    {
+        if (prefab == null || count <= 0) return;
+
+        if (!availableByPrefab.TryGetValue(prefab, out Queue<GameObject> available))
+        {
+            available = new Queue<GameObject>();
+            availableByPrefab.Add(prefab, available);
+        }
+
+        int validCount = 0;
+        foreach (GameObject queued in available)
+            if (queued != null) validCount++;
+
+        while (validCount < count)
+        {
+            GameObject warmed = Instantiate(prefab);
+            warmed.SetActive(false);
+            warmed.transform.SetParent(transform, false);
+            prefabByInstance[warmed] = prefab;
+
+            PooledObject marker = warmed.GetComponent<PooledObject>();
+            if (marker == null) marker = warmed.AddComponent<PooledObject>();
+            marker.SourcePrefab = prefab;
+            marker.OriginalLocalScale = warmed.transform.localScale;
+            GameManager.ApplyPerformanceOptimizations(warmed);
+            PrepareForRelease(warmed);
+            available.Enqueue(warmed);
+            validCount++;
+        }
+    }
+
+    /// <summary>
     /// Rent an instance. Transform is set before SetActive(true). Particles are cleared; caller should Play.
     /// </summary>
     public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, Transform parent = null)
@@ -70,6 +107,8 @@ public class VfxPool : MonoBehaviour
             marker.SourcePrefab = prefab;
             marker.OriginalLocalScale = rented.transform.localScale;
         }
+        if (newlyInstantiated)
+            GameManager.ApplyPerformanceOptimizations(rented);
         if (!prefabByInstance.ContainsKey(rented)) prefabByInstance[rented] = prefab;
 
         BumpReleaseEpoch(rented);
