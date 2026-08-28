@@ -160,7 +160,11 @@ public class CardManager : SceneSingleton<CardManager>
         // scene CardManager. Retry once after all scene Awake calls have completed.
         if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
             UnlockAllEffectsForBossMode();
-        if (debugDoublePickOnStart && !(RunSession.Instance != null && RunSession.Instance.IsBossMode))
+        var run = RunSession.Instance;
+        bool isResumeRun = run != null && run.HasActiveRun && !run.StartedFromMainMenu;
+        if (debugDoublePickOnStart
+            && !(run != null && run.IsBossMode)
+            && !isResumeRun)
             StartCoroutine(DebugTriggerDoublePickOnStart());
     }
 
@@ -194,6 +198,12 @@ public class CardManager : SceneSingleton<CardManager>
     /// </summary>
     IEnumerator DebugTriggerDoublePickOnStart()
     {
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun && !run.StartedFromMainMenu)
+        {
+            Debug.Log("[CardManager] debugDoublePickOnStart：继续读档，跳过开局调试双选。");
+            yield break;
+        }
         float deadline = Time.realtimeSinceStartup + 10f;
         while (CoreChoiceUI.Instance == null && Time.realtimeSinceStartup < deadline)
             yield return null;

@@ -140,6 +140,11 @@ public class BuildView : MonoBehaviour
 
     void OnDestroy()
     {
+        if (transitionRoutine != null)
+        {
+            StopCoroutine(transitionRoutine);
+            transitionRoutine = null;
+        }
         CardManager.OnEffectUnlocked -= OnCardsChanged;
     }
 
@@ -331,7 +336,11 @@ public class BuildView : MonoBehaviour
 
     void PlayTransition()
     {
-        if (transitionRoutine != null) StopCoroutine(transitionRoutine);
+        if (transitionRoutine != null)
+        {
+            StopCoroutine(transitionRoutine);
+            transitionRoutine = null;
+        }
         if (transitionDuration <= 0f) return; // 无动画：保持目标布局，不闪跳
         CaptureTargetPoses();
         ApplyStartPoses(); // 同步把卡对齐到源姿态，避免切换当帧先显示目标再跳回起点
@@ -386,6 +395,7 @@ public class BuildView : MonoBehaviour
             float t = 0f;
             while (t < transitionDuration)
             {
+                if (root == null || rootRT == null) yield break;
                 t += Time.unscaledDeltaTime;
                 // SmoothStep 三次缓动：起手加速、收尾减速（ease-in-out）。
                 float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / transitionDuration));
@@ -393,6 +403,7 @@ public class BuildView : MonoBehaviour
                 if (face != null) face.localScale = Vector3.Lerp(startScale, targetScale, u);
                 yield return null;
             }
+            if (root == null || rootRT == null) yield break;
             rootRT.position = targetPos;
             if (face != null) face.localScale = targetScale;
 
@@ -743,6 +754,11 @@ public class BuildView : MonoBehaviour
 
     void ClearCards()
     {
+        if (transitionRoutine != null)
+        {
+            StopCoroutine(transitionRoutine);
+            transitionRoutine = null;
+        }
         foreach (var go in cardInstances) Destroy(go);
         cardInstances.Clear();
     }
