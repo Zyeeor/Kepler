@@ -26,6 +26,8 @@ public sealed class MonsterStatusMarker : MonoBehaviour
     private static readonly int MarkerColorId = Shader.PropertyToID("_MarkerColor");
     private static readonly int GlowIntensityId = Shader.PropertyToID("_GlowIntensity");
     private static readonly int PulseSpeedId = Shader.PropertyToID("_PulseSpeed");
+    private static readonly int MarkerTexId = Shader.PropertyToID("_MarkerTex");
+    private static readonly int UseMarkerTexId = Shader.PropertyToID("_UseMarkerTex");
 
     private readonly HashSet<int> _envySources = new HashSet<int>();
     private readonly HashSet<int> _lustSources = new HashSet<int>();
@@ -176,6 +178,10 @@ public sealed class MonsterStatusMarker : MonoBehaviour
         material.SetColor(MarkerColorId, kind == MarkerKind.Envy ? GetEnvyColor() : GetLustColor());
         material.SetFloat(GlowIntensityId, GetGlowIntensity());
         material.SetFloat(PulseSpeedId, GetPulseSpeed());
+
+        Texture2D texture = kind == MarkerKind.Envy ? GetEnvyTexture() : GetLustTexture();
+        material.SetTexture(MarkerTexId, texture);
+        material.SetFloat(UseMarkerTexId, texture != null ? 1f : 0f);
     }
 
     private MarkerVisual GetOrCreateVisual(MarkerKind kind)
@@ -252,6 +258,16 @@ public sealed class MonsterStatusMarker : MonoBehaviour
         return _actorVisualFx != null
             ? _actorVisualFx.lustStatusMarkerColor
             : DefaultLustColor;
+    }
+
+    private Texture2D GetEnvyTexture()
+    {
+        return _actorVisualFx != null ? _actorVisualFx.envyStatusMarkerTexture : null;
+    }
+
+    private Texture2D GetLustTexture()
+    {
+        return _actorVisualFx != null ? _actorVisualFx.lustStatusMarkerTexture : null;
     }
 
     private float GetGlowIntensity()

@@ -355,6 +355,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u66B4\u6012\u9501\u94FE"
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: WR-S01
@@ -860,6 +861,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u55B7\u706B"
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: WR-B01
@@ -926,8 +928,7 @@ MonoBehaviour:
   burnDuration: 3
   burnTickInterval: 0.5
   burnFieldOffset: {x: 0, y: 0, z: 0}
-  burnFieldVfxPrefab: {fileID: 6371568231982942969, guid: d24e582af111f6d4381b2e2b5b6d1ad1,
-    type: 3}
+  burnFieldVfxPrefab: {fileID: 0}
   burnEffect: {fileID: 11400000, guid: 4531f875d7d74cc2af0e3aec4f7039d4, type: 2}
   burnFieldObjectName: WrathBurnField
   baseCooldown: 2
@@ -1660,7 +1661,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2606274025504633017
 Transform:
   m_ObjectHideFlags: 0
@@ -1871,6 +1872,15 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 3}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  envyStatusMarkerTexture: {fileID: 0}
+  lustStatusMarkerTexture: {fileID: 0}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!136 &2748365033977391353
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -3671,6 +3681,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u4EE5\u8EAB\u4E3A\u85AA"
+  abilityDescription: 
   type: 0
   upgrades:
   - effectId: WR-B02
@@ -4981,6 +4992,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: "\u94A9\u7D22\u4F4D\u79FB"
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: WR-M01

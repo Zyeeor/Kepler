@@ -30,6 +30,8 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
 
     [Header("Upgrade - Sloth.LandingMine")]
     public GameObject minePrefab;
+    [Tooltip("Mine spawn position offset from the takeoff point (owner local space).")]
+    public Vector3 mineSpawnOffset;
     public float mineDuration = 10f;
     public int maxMines = 3;
     public GameObject mineBlastVfxPrefab;
@@ -153,9 +155,13 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
             if (oldest != null) Destroy(oldest.gameObject);
         }
 
+        Vector3 minePos = pos;
+        if (owner != null)
+            minePos = pos + owner.transform.TransformDirection(mineSpawnOffset);
+
         GameObject mineGo;
         if (minePrefab != null)
-            mineGo = Instantiate(minePrefab, pos, Quaternion.identity);
+            mineGo = Instantiate(minePrefab, minePos, Quaternion.identity);
         else
             mineGo = new GameObject("Mine");
 

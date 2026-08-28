@@ -224,6 +224,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 1
   upgrades:
   - effectId: Sloth.Scatter
@@ -366,7 +367,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1338306576578461038
 Transform:
   m_ObjectHideFlags: 0
@@ -708,6 +709,15 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 4}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  envyStatusMarkerTexture: {fileID: 0}
+  lustStatusMarkerTexture: {fileID: 0}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!1 &2420022869048254844
 GameObject:
   m_ObjectHideFlags: 0
@@ -1062,7 +1072,7 @@ RectTransform:
   m_Father: {fileID: 3499328068789318101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1149,6 +1159,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 2
   upgrades:
   - effectId: Sloth.DroneEconomy
@@ -1608,6 +1619,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityName: Ability
+  abilityDescription: 
   type: 3
   upgrades:
   - effectId: Sloth.LandingBlast
@@ -1682,6 +1694,7 @@ MonoBehaviour:
   landingVfxDuration: 1
   minePrefab: {fileID: 1455237202425575238, guid: 2de265022472a3e4b96294cae884560c,
     type: 3}
+  mineSpawnOffset: {x: 0, y: 1, z: 0}
   mineDuration: 10
   maxMines: 3
   mineBlastVfxPrefab: {fileID: 7032838786907163409, guid: 6b110cee9c965f94e9b991d02a20bf36,
