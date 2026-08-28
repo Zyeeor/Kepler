@@ -1,4 +1,4 @@
-// 快照滚动上传（§8.1：每轮选卡后；sourceWave 语义 = 上传时第几次投放精英怪）与容量治理（§8.2/§8.4）。
+// 快照滚动上传（§8.1：每轮选卡后；sourceWave = 上传者本局第几次选卡，Owner 2026-08-26 决策）与容量治理（§8.2/§8.4）。
 package elite
 
 import (
@@ -14,7 +14,7 @@ type SnapshotInput struct {
 	MonsterType string          `json:"monsterType"`
 	BDCount     int             `json:"bdCount"`
 	BDData      json.RawMessage `json:"bdData"`
-	SourceWave  int             `json:"sourceWave"` // 上传时投放序号（第几次投放精英怪）
+	SourceWave  int             `json:"sourceWave"` // 本局第几次选卡（选卡会话计数，与投放序号 wave 同量纲；Owner 2026-08-26 决策）
 	GameTime    int64           `json:"gameTime"`
 	Stats       json.RawMessage `json:"stats,omitempty"`
 }

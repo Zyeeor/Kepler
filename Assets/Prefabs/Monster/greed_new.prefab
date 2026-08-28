@@ -487,7 +487,7 @@ MonoBehaviour:
     collisionDamage: 10
     attackSpeed: 1
   possessedStats:
-    maxHealth: 10000
+    maxHealth: 200
     moveSpeed: 8
     acceleration: 0
     deceleration: 0
@@ -599,10 +599,12 @@ MonoBehaviour:
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
   monsterStatusMarkerSize: 0.8
-  monsterStatusMarkerOffset: {x: 0, y: 0.45}
+  monsterStatusMarkerOffset: {x: 0, y: 1}
   monsterStatusMarkerAdjacentSpacing: 0.08
   envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
   lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  envyStatusMarkerTexture: {fileID: 0}
+  lustStatusMarkerTexture: {fileID: 0}
   monsterStatusMarkerGlowIntensity: 2.2
   monsterStatusMarkerPulseSpeed: 5
 --- !u!1 &4160834089309182554
@@ -649,8 +651,8 @@ Light:
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
+  m_Color: {r: 0.67295593, g: 0.60621554, b: 0.40842918, a: 1}
+  m_Intensity: 5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1120,7 +1122,7 @@ Transform:
   m_GameObject: {fileID: 8531382652210482826}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.615, y: 1.249, z: -0.03}
+  m_LocalPosition: {x: 0.562, y: 0.529, z: -0.03}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1137,8 +1139,8 @@ Light:
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
+  m_Color: {r: 1, g: 0.85074973, b: 0.48113197, a: 1}
+  m_Intensity: 5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208

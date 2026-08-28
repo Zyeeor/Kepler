@@ -43,7 +43,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -95,7 +95,175 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: Order Buttons_0
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 127
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a8e3bbbccf4b6b8459ce6f76a7fbc221
+      internalID: -219425747
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_1
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 180
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c3a81c3d08bce394f9927dc46d39ae0f
+      internalID: 1156988145
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_2
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 180
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ba690a0b8043d7c458cf007f342babad
+      internalID: -338674011
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_26
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 74
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bc6db133e50180845bfad3f563a76ab6
+      internalID: 1865721470
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_35
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 21
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d42307d2b2ffe51418ff31a5f24ac0a5
+      internalID: -569680
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_3
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 127
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 835b9ebba351bd441b88444232bfd67d
+      internalID: 1278910843
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_4
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 74
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6f427382e647cfe4994de873c55c1271
+      internalID: -689077576
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Order Buttons_5
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 21
+        width: 130
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 865aa7274888dea4ba62c530c72a7858
+      internalID: 1671396686
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -106,7 +274,47 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Order Buttons_0: -219425747
+      Order Buttons_1: 1156988145
+      Order Buttons_10: 2073622482
+      Order Buttons_11: 1945628308
+      Order Buttons_12: -1861799062
+      Order Buttons_13: -817072502
+      Order Buttons_14: 1284645297
+      Order Buttons_15: -268182677
+      Order Buttons_16: 418595241
+      Order Buttons_17: -1936552368
+      Order Buttons_18: -93744628
+      Order Buttons_19: -109401821
+      Order Buttons_2: -338674011
+      Order Buttons_20: 756496547
+      Order Buttons_21: 809082832
+      Order Buttons_22: 280034939
+      Order Buttons_23: 420825853
+      Order Buttons_24: -691491246
+      Order Buttons_25: -1472473263
+      Order Buttons_26: 1865721470
+      Order Buttons_27: 1972447667
+      Order Buttons_28: -1599344075
+      Order Buttons_29: 503516211
+      Order Buttons_3: 1278910843
+      Order Buttons_30: 2091519723
+      Order Buttons_31: 487976052
+      Order Buttons_32: -452458815
+      Order Buttons_33: 1863859346
+      Order Buttons_34: -333358621
+      Order Buttons_35: -569680
+      Order Buttons_36: 303683904
+      Order Buttons_37: 2087435480
+      Order Buttons_38: 1799557240
+      Order Buttons_39: -481792334
+      Order Buttons_4: -689077576
+      Order Buttons_5: 1671396686
+      Order Buttons_6: -223908786
+      Order Buttons_7: -719134226
+      Order Buttons_8: -1937722925
+      Order Buttons_9: -1686319209
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

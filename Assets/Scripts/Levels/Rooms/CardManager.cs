@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,12 +29,65 @@ public class CardManager : SceneSingleton<CardManager>
     [Tooltip("每张卡（按槽位记）最多可刷新的次数：0 = 不限，1 = 每卡 1 次，N = 每卡 N 次。")]
     public int maxRerollsPerCard = 1;
 
+    [Header("Card Offer Gems")]
+    [Tooltip("卡牌选卡宝石 prefab（默认使用 Assets/Prefabs/Room/GEM.prefab）。所有正式选卡均先生成宝石，玩家拾取后才打开弹窗。")]
+    public GameObject cardOfferGemPrefab;
+    [Tooltip("新局出生点附近生成的宝石数量。")]
+    [Min(0)] public int openingGemCount = 2;
+    [Tooltip("开局宝石是否每颗触发一次单选。关闭时每颗宝石触发双选。")]
+    public bool openingGemDoublePick = false;
+    [Tooltip("精英掉落的每颗宝石是否触发双选。默认 false：每颗只触发一次单选，奖励总量由上面随机掉落的颗数决定。改 true 则每颗都是双选（总量翻倍）。")]
+    public bool eliteGemDoublePick = true;
+    [Tooltip("精英击杀掉落的宝石数量下限（含）。多颗时在死亡位置周围散落。与上限相等即固定数量。")]
+    [Min(1)] public int eliteGemCountMin = 2;
+    [Tooltip("精英击杀掉落的宝石数量上限（含）。等于下限则固定掉落该数量；大于下限则在区间内随机。若误配成小于下限，运行时自动回退为下限。")]
+    [Min(1)] public int eliteGemCountMax = 2;
+    [Tooltip("玩家进入该半径后自动拾取宝石；角色移动不依赖 Rigidbody，因此由宝石轮询距离。")]
+    [Min(0.25f)] public float cardOfferGemPickupRadius = 1.25f;
+
+    [Header("Card Offer Gem Attract")]
+    [Tooltip("进入拾取半径后，宝石飘向玩家的动画时长（秒）。动画播完才打开选卡界面并暂停游戏。")]
+    [Min(0f)] public float cardOfferGemAttractSeconds = 0.35f;
+    [Tooltip("吸附终点相对玩家锚点的高度偏移（让宝石飘向胸口而不是脚底）。")]
+    public float cardOfferGemAttractHeight = 0.8f;
+    [Tooltip("吸附动画结束时的缩放系数：0 = 完全缩小消失。")]
+    [Min(0f)] public float cardOfferGemAttractEndScale = 0f;
+
+    [Header("Card Offer Gem Drop")]
+    [Tooltip("掉落散落半径：多颗宝石沿掉落点周围环形散开，落点在该半径附近随机抖动。")]
+    [Min(0f)] public float cardOfferGemScatterRadius = 1.2f;
+    [Tooltip("掉落动画的水平初速（米/秒）。")]
+    [Min(0.5f)] public float cardOfferGemDropForwardSpeed = 3.5f;
+    [Tooltip("掉落动画的上抛初速（米/秒）；调大抛得更高更远。")]
+    [Min(0f)] public float cardOfferGemDropUpSpeed = 4f;
+    [Tooltip("掉落动画的重力加速度（米/秒²）；调大落得更快更干脆。")]
+    [Min(1f)] public float cardOfferGemDropGravity = 18f;
+    [Tooltip("掉落动画播完才可被拾取。关闭则宝石在空中就能被吸走。")]
+    public bool gemPickupRequiresDropLanded = true;
+
+    [Tooltip("开局宝石相对出生点的散落位置；数量不足时使用默认左右偏移。")]
+    public Vector3[] openingGemOffsets =
+    {
+        new Vector3(-2f, 0f, 1.25f),
+        new Vector3(2f, 0f, 1.25f),
+    };
+
     [Header("Debug")]
-    [Tooltip("调试：勾选后开局自动弹出双选测试（等待选卡 UI 就绪后触发，最迟 10 秒）。仅测试用，与正常波次流程互斥——调试弹窗期间游戏暂停，关闭后波次流程继续。")]
+    [Tooltip("调试：开局生成一颗双选宝石，不再直接打开选卡弹窗。")]
     public bool debugDoublePickOnStart = false;
 
     [Header("Current Picks (read-only)")]
     public CardData[] currentPicks = new CardData[3];
+
+    readonly List<CardChoiceGemPickup> activeOfferGems = new List<CardChoiceGemPickup>();
+    bool openingGemRoutineStarted;
+
+    /// <summary>
+    /// 拾取流程互斥：当前正在"飘向玩家"或"选卡中"的宝石。
+    /// 非 null 时其余宝石一律不进入拾取流程，保证附近有多颗宝石时同时只会触发一颗，
+    /// 且必须选完卡（弹窗关闭 → 宝石销毁）后才轮到下一颗。
+    /// </summary>
+    CardChoiceGemPickup busyOfferGem;
 
     /// <summary>抽卡候选落定广播（叙事事件总线订阅：Offer=候选生成，含重抽外的每次呈现）。</summary>
     public static event System.Action OnCardOffered;
@@ -160,8 +214,24 @@ public class CardManager : SceneSingleton<CardManager>
         // scene CardManager. Retry once after all scene Awake calls have completed.
         if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
             UnlockAllEffectsForBossMode();
-        if (debugDoublePickOnStart && !(RunSession.Instance != null && RunSession.Instance.IsBossMode))
+        var run = RunSession.Instance;
+        bool isResumeRun = run != null && run.HasActiveRun && !run.StartedFromMainMenu;
+        if (debugDoublePickOnStart
+            && !(run != null && run.IsBossMode)
+            && !isResumeRun)
             StartCoroutine(DebugTriggerDoublePickOnStart());
+    }
+
+    void Update()
+    {
+        // 直接 Play 时 RunSession 可能由 WaveManager.Start 稍后创建；在状态进入 Opening/Tutorial/Waves
+        // 后再启动一次性协程，避免 Start 顺序竞争导致开局宝石漏生成。
+        if (!debugDoublePickOnStart && !openingGemRoutineStarted && ShouldSpawnOpeningGems())
+        {
+            openingGemRoutineStarted = true;
+            Debug.Log("[CardManager] 开局宝石闸门开启，开始生成流程。" + DescribeOpeningGemGate());
+            StartCoroutine(SpawnOpeningCardGemsWhenReady());
+        }
     }
 
     /// <summary>Boss 模式解锁卡库中所有启用效果，供新生成怪物的构筑应用路径复用。</summary>
@@ -188,22 +258,399 @@ public class CardManager : SceneSingleton<CardManager>
     }
 
     /// <summary>
-    /// 调试：开局自动弹双选。等 CoreChoiceUI 就绪（场景加载后 Awake 注册单例）后触发，
-    /// waveIndex=0 固定种子。弹窗期间游戏暂停，关闭后正常波次流程继续（WaveManager 首次弹卡
-    /// 会因 CoreChoiceUI._isDrafting 已复位而正常工作）。仅测试用。
+    /// 调试：开局生成一颗双选宝石，不再直接打开选卡弹窗；玩家拾取后才开始 Offer。
     /// </summary>
     IEnumerator DebugTriggerDoublePickOnStart()
     {
-        float deadline = Time.realtimeSinceStartup + 10f;
-        while (CoreChoiceUI.Instance == null && Time.realtimeSinceStartup < deadline)
-            yield return null;
-        if (CoreChoiceUI.Instance == null)
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun && !run.StartedFromMainMenu)
         {
-            Debug.LogWarning("[CardManager] debugDoublePickOnStart：等待选卡 UI 超时（10 秒），跳过调试双选。");
+            Debug.Log("[CardManager] debugDoublePickOnStart：继续读档，跳过开局调试双选。");
             yield break;
         }
-        CoreChoiceUI.Instance.Show(onClosed: null, doublePick: true, keepPicks: false, waveIndex: 0);
-        Debug.Log("[CardManager] debugDoublePickOnStart：开局双选已触发。");
+        float deadline = Time.realtimeSinceStartup + 10f;
+        SoulActor soul = FindObjectOfType<SoulActor>();
+        while (soul == null && Time.realtimeSinceStartup < deadline)
+        {
+            yield return null;
+            soul = FindObjectOfType<SoulActor>();
+        }
+        if (soul == null)
+        {
+            Debug.LogWarning("[CardManager] debugDoublePickOnStart：找不到灵魂，跳过调试宝石。");
+            yield break;
+        }
+        CardChoiceGemPickup gem = SpawnCardOfferGem(
+            soul.transform.position + Vector3.forward * 1.5f,
+            true, false, 0, CardOfferGemSource.Debug);
+        if (gem == null)
+            Debug.LogWarning("[CardManager] debugDoublePickOnStart：宝石生成失败。");
+        else
+            Debug.Log("[CardManager] debugDoublePickOnStart：已生成双选宝石，拾取后触发选卡。");
+    }
+
+    bool ShouldSpawnOpeningGems()
+    {
+        RunSession run = RunSession.Instance;
+        if (run == null || run.IsBossMode || run.OpeningCardGemsSpawned || debugDoublePickOnStart) return false;
+        if (run.CompletedWaveIndex >= 0 || run.PendingChoice) return false;
+        if (run.StartedFromMainMenu
+            || run.CurrentPhase == RunPhase.Opening
+            || run.CurrentPhase == RunPhase.Tutorial)
+            return true;
+
+        // 直接 Play 路径不会把 HasActiveRun 置为 true，但仍应拥有开局两颗宝石；
+        // 只接受“尚未完成任何波次、当前已进入 Waves”的一次性初始态，避免读档/中途场景重载误生成。
+        return !run.HasActiveRun && run.CurrentPhase == RunPhase.Waves;
+    }
+
+    /// <summary>开局宝石闸门诊断串（排查"宝石没生成"时定位到具体字段）。</summary>
+    string DescribeOpeningGemGate()
+    {
+        RunSession run = RunSession.Instance;
+        if (run == null) return " [run=null]";
+        return $" [phase={run.CurrentPhase}, hasActiveRun={run.HasActiveRun}, fromMainMenu={run.StartedFromMainMenu}"
+            + $", bossMode={run.IsBossMode}, completedWave={run.CompletedWaveIndex}, pendingChoice={run.PendingChoice}"
+            + $", openingGemsSpawned={run.OpeningCardGemsSpawned}, debugDoublePickOnStart={debugDoublePickOnStart}]";
+    }
+
+    IEnumerator SpawnOpeningCardGemsWhenReady()
+    {
+        // 每个等待阶段使用独立超时预算：共用一个累加器会让前一步耗时挤掉后一步的等待窗口，
+        // 表现为"SoulActor 明明会出现却被判定找不到"。
+        float wait = 0f;
+        while (RunSession.Instance == null && wait < 10f)
+        {
+            wait += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (RunSession.Instance == null)
+        {
+            Debug.LogWarning("[CardManager] 开局宝石：等待 RunSession 超时，跳过生成。");
+            yield break;
+        }
+
+        wait = 0f;
+        SoulActor soul = FindObjectOfType<SoulActor>();
+        while (soul == null && wait < 10f)
+        {
+            wait += Time.unscaledDeltaTime;
+            yield return null;
+            soul = FindObjectOfType<SoulActor>();
+        }
+        if (soul == null)
+        {
+            Debug.LogWarning("[CardManager] 开局宝石：找不到 SoulActor，跳过生成。");
+            yield break;
+        }
+
+        // 等待本场景所有 Start 执行完，确保 OpeningLandingSequence 已有机会把门置为 false；
+        // 否则 Start 顺序竞争时可能在降落演出开始前就把宝石放到空中/初始位置。
+        yield return null;
+        wait = 0f;
+        while (!OpeningLandingSequence.LandingComplete && wait < 10f)
+        {
+            wait += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        RunSession run = RunSession.Instance;
+        if (run == null || !ShouldSpawnOpeningGems())
+        {
+            // 等待期间状态发生变化（进入选卡/已完成波次/开局宝石已由别处生成等）。
+            // 这里必须留日志：否则开局宝石会"静默不生成"，无法与 prefab 配置错误区分。
+            Debug.LogWarning("[CardManager] 开局宝石：等待就绪后闸门已关闭，跳过生成。" + DescribeOpeningGemGate());
+            yield break;
+        }
+        int desired = Mathf.Max(0, openingGemCount);
+        if (desired == 0)
+        {
+            run.MarkOpeningCardGemsSpawned();
+            yield break;
+        }
+
+        int spawned = 0;
+        for (int i = 0; i < desired; i++)
+        {
+            Vector3 offset = GetOpeningGemOffset(i, desired);
+            CardChoiceGemPickup gem = SpawnCardOfferGem(
+                soul.transform.position + offset,
+                openingGemDoublePick,
+                false,
+                0,
+                CardOfferGemSource.Opening);
+            if (gem != null) spawned++;
+        }
+
+        if (spawned == desired)
+        {
+            run.MarkOpeningCardGemsSpawned();
+            Debug.Log($"[CardManager] 开局宝石已生成：{spawned} 颗（每颗拾取后打开选卡）。");
+        }
+        else
+        {
+            Debug.LogWarning($"[CardManager] 开局宝石生成不完整：{spawned}/{desired}，请检查 cardOfferGemPrefab 配置。");
+        }
+    }
+
+    Vector3 GetOpeningGemOffset(int index, int total)
+    {
+        if (openingGemOffsets != null && index >= 0 && index < openingGemOffsets.Length)
+            return openingGemOffsets[index];
+        if (total == 2)
+            return index == 0 ? new Vector3(-2f, 0f, 1.25f) : new Vector3(2f, 0f, 1.25f);
+
+        float angle = (index / (float)Mathf.Max(1, total)) * Mathf.PI * 2f;
+        return new Vector3(Mathf.Cos(angle) * 2f, 0f, Mathf.Sin(angle) * 2f);
+    }
+
+    public bool TryGetPlayerAnchorPosition(out Vector3 position)
+    {
+        PossessionManager possession = PossessionManager.Instance;
+        if (possession != null && possession.CurrentBody != null
+            && possession.CurrentBody.gameObject.activeInHierarchy)
+        {
+            position = possession.CurrentBody.transform.position;
+            return true;
+        }
+
+        SoulActor soul = FindObjectOfType<SoulActor>();
+        if (soul != null && soul.gameObject.activeInHierarchy)
+        {
+            position = soul.transform.position;
+            return true;
+        }
+
+        position = Vector3.zero;
+        return false;
+    }
+
+    public bool IsPlayerWithinPickupRadius(Vector3 gemPosition, float radius)
+    {
+        if (!TryGetPlayerAnchorPosition(out Vector3 playerPosition)) return false;
+        Vector3 delta = playerPosition - gemPosition;
+        delta.y = 0f;
+        float maxDistance = Mathf.Max(0.25f, radius);
+        return delta.sqrMagnitude <= maxDistance * maxDistance;
+    }
+
+    /// <summary>生成一颗选卡宝石；正式选卡的唯一生成入口。</summary>
+    public CardChoiceGemPickup SpawnCardOfferGem(Vector3 position, bool doublePick, bool keepPicks,
+        int waveIndex, CardOfferGemSource source, Action onChoiceCompleted = null)
+    {
+        RunSession run = RunSession.Instance;
+        if (run != null && run.IsBossMode)
+        {
+            Debug.Log("[CardManager] Boss 模式不生成选卡宝石。");
+            return null;
+        }
+        if (cardOfferGemPrefab == null)
+        {
+            Debug.LogError("[CardManager] cardOfferGemPrefab 未配置，无法生成选卡宝石。", this);
+            return null;
+        }
+        // 场景 YAML 若把引用写成 prefab 资产对象（fileID 100100000）而不是 prefab 根 GameObject 的
+        // fileID，字段会解析成"非 null 但无效"的幽灵引用（name 为空串）→ Instantiate 静默失败。
+        // 这里显式拦截并给出可操作提示，避免再次出现"宝石一颗都不生成且无任何报错"。
+        if (string.IsNullOrEmpty(cardOfferGemPrefab.name))
+        {
+            Debug.LogError("[CardManager] cardOfferGemPrefab 引用无效（未解析到 prefab 根 GameObject），"
+                + "请在 Inspector 重新拖入 Assets/Prefabs/Room/GEM.prefab。", this);
+            return null;
+        }
+
+        GameObject instance = Instantiate(cardOfferGemPrefab, position, Quaternion.identity);
+        if (instance == null)
+        {
+            Debug.LogError($"[CardManager] 选卡宝石实例化失败：prefab={cardOfferGemPrefab.name}, source={source}。", this);
+            return null;
+        }
+        instance.name = $"CardOfferGem_{source}";
+        CardChoiceGemPickup pickup = instance.GetComponent<CardChoiceGemPickup>();
+        if (pickup == null) pickup = instance.AddComponent<CardChoiceGemPickup>();
+        pickup.Initialize(this, doublePick, keepPicks, waveIndex, source,
+            cardOfferGemPickupRadius, onChoiceCompleted);
+        activeOfferGems.Add(pickup);
+        return pickup;
+    }
+
+    /// <summary>
+    /// 解析本次精英掉落的数量：下限/上限相等即固定数量，否则在区间内随机。
+    /// 集中在这里是为了让调用方与日志用同一套口径，并兜住两类配置错误：
+    /// 上限被误配成小于下限、上限/下限被序列化成 0（新增字段的老场景常见）。
+    /// </summary>
+    public int ResolveEliteGemDropCount()
+    {
+        const int fallback = 2;
+        int min = eliteGemCountMin;
+        int max = eliteGemCountMax;
+        if (min <= 0 && max <= 0) return fallback;
+        if (min <= 0) min = Mathf.Max(1, max);
+        if (max <= 0) max = min;
+        if (max < min) max = min;          // 上限误配小于下限 → 按固定数量处理
+        return max > min ? UnityEngine.Random.Range(min, max + 1) : min;
+    }
+
+    /// <summary>
+    /// 在掉落点周围散落生成多颗选卡宝石，每颗播"弹射散落"动画，落地后才可拾取。
+    /// 用于精英击杀等"一次掉多颗、随机位置"的场景。每颗宝石独立结算一次选卡，
+    /// 由拾取互斥闸门保证同时只触发一颗、选完卡才轮到下一颗。
+    /// </summary>
+    /// <param name="origin">掉落点（如精英怪死亡位置）。</param>
+    /// <param name="count">掉落数量；小于等于 1 时原地掉落不散开。</param>
+    /// <returns>实际生成的宝石数量。</returns>
+    public int SpawnCardOfferGemScatter(Vector3 origin, int count, bool doublePick, bool keepPicks,
+        int waveIndex, CardOfferGemSource source, Action onChoiceCompleted = null)
+    {
+        int desired = Mathf.Max(0, count);
+        if (desired == 0) return 0;
+
+        float scatter = Mathf.Max(0f, cardOfferGemScatterRadius);
+        // 单颗不散开：直接落在掉落点，避免"随机偏离"让宝石跑到玩家够不着的地方。
+        if (desired == 1) scatter = 0f;
+
+        // 环形均分 + 随机抖动：既保证多颗散得开，又不会每次都一样。
+        float baseAngle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        int spawned = 0;
+        for (int i = 0; i < desired; i++)
+        {
+            Vector3 landing = origin;
+            if (scatter > 0.001f)
+            {
+                float angle = baseAngle + (Mathf.PI * 2f * i) / desired + UnityEngine.Random.Range(-0.35f, 0.35f);
+                float radius = scatter * UnityEngine.Random.Range(0.7f, 1f);
+                landing = origin + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+            }
+
+            CardChoiceGemPickup gem = SpawnCardOfferGem(landing, doublePick, keepPicks, waveIndex,
+                source, onChoiceCompleted);
+            if (gem == null) continue;
+            spawned++;
+
+            if (gemPickupRequiresDropLanded)
+                gem.StartDrop(origin, landing, origin.y, null);
+        }
+        return spawned;
+    }
+
+    /// <summary>
+    /// 当前是否已有宝石处于拾取流程中（正在飞向玩家，或选卡弹窗进行中）。
+    /// 非 null 时其余宝石一律不触发拾取：附近有多颗宝石时同时只会触发一颗。
+    /// </summary>
+    public bool IsCardOfferGemBusy()
+    {
+        CardChoiceGemPickup busy = busyOfferGem;
+        if (busy == null) return false;
+        // 兜底：宝石已被销毁却没走完释放流程时不要永久卡死闸门。
+        if (busy.IsChoiceCompleted || !activeOfferGems.Contains(busy))
+        {
+            busyOfferGem = null;
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>宝石进入玩家拾取半径后开始吸附动画；动画播完才打开选卡会话。</summary>
+    public bool TryCollectCardOfferGem(CardChoiceGemPickup gem)
+    {
+        if (gem == null || !activeOfferGems.Contains(gem) || gem.IsCollected || gem.IsChoiceCompleted)
+            return false;
+        if (CoreChoiceUI.Instance == null || CoreChoiceUI.Instance.IsDrafting)
+            return false;
+        RunSession run = RunSession.Instance;
+        if (run != null && run.IsBossMode) return false;
+        // 已有别的宝石在飞/在选卡 → 本颗原地等待，等上一颗选完卡释放闸门后才可拾取。
+        // 正在飞行中的那颗自己也会回到这里，此处直接短路，避免被自己的闸门拒掉。
+        if (busyOfferGem != null && busyOfferGem != gem) return false;
+        if (busyOfferGem == null && IsCardOfferGemBusy()) return false;
+
+        busyOfferGem = gem;
+        // 先播"飘向玩家 + 缩小消失"，动画结束（OnCardOfferGemAttracted）才弹窗并暂停游戏。
+        gem.StartAttract(OnCardOfferGemAttracted);
+        return true;
+    }
+
+    /// <summary>吸附动画结束：此时宝石已缩小消失，才打开选卡弹窗。</summary>
+    void OnCardOfferGemAttracted()
+    {
+        CardChoiceGemPickup gem = busyOfferGem;
+        if (gem == null || gem.IsChoiceCompleted) return;
+        if (CoreChoiceUI.Instance == null || CoreChoiceUI.Instance.IsDrafting)
+        {
+            busyOfferGem = null;
+            gem.CancelCollection();
+            return;
+        }
+        RunSession run = RunSession.Instance;
+        if (run != null && run.IsBossMode)
+        {
+            busyOfferGem = null;
+            gem.CancelCollection();
+            return;
+        }
+
+        gem.MarkCollected();
+        CoreChoiceUI.Instance.Show(
+            onClosed: () => CompleteCardOfferGem(gem),
+            doublePick: gem.DoublePick,
+            keepPicks: gem.KeepPicks,
+            waveIndex: gem.WaveIndex);
+
+        if (!CoreChoiceUI.Instance.IsDrafting)
+        {
+            // UI 未能打开（无候选卡等）：释放闸门并让宝石回到场上，不影响后续流程。
+            busyOfferGem = null;
+            gem.CancelCollection();
+            return;
+        }
+        Debug.Log($"[CardManager] 拾取选卡宝石：source={gem.Source}, doublePick={gem.DoublePick}, wave={gem.WaveIndex}。");
+    }
+
+    void CompleteCardOfferGem(CardChoiceGemPickup gem)
+    {
+        activeOfferGems.Remove(gem);
+        // 选完卡才释放互斥闸门，让下一颗宝石可以被拾取。
+        if (busyOfferGem == gem) busyOfferGem = null;
+        if (gem != null)
+        {
+            gem.CompleteChoice();
+            Debug.Log("[CardManager] 选卡完成，拾取闸门已释放；剩余宝石=" + activeOfferGems.Count + "。");
+        }
+    }
+
+    /// <summary>
+    /// 清理场上尚未拾取的选卡宝石（如离开战斗场景时），避免跨场景残留。
+    /// 正在展示选卡的那颗保持原样，其生命周期由选卡流程与场景销毁接管。
+    /// </summary>
+    public void ClearCardOfferGems()
+    {
+        if (activeOfferGems.Count == 0)
+        {
+            if (busyOfferGem != null && !busyOfferGem.IsCollected) busyOfferGem = null;
+            return;
+        }
+
+        int removed = 0;
+        for (int i = activeOfferGems.Count - 1; i >= 0; i--)
+        {
+            CardChoiceGemPickup gem = activeOfferGems[i];
+            if (gem == null) { activeOfferGems.RemoveAt(i); continue; }
+            if (gem.IsCollected) continue;      // 已进入选卡流程，交给流程自身收尾
+            Destroy(gem.gameObject);
+            activeOfferGems.RemoveAt(i);
+            removed++;
+        }
+
+        if (busyOfferGem != null && !busyOfferGem.IsCollected) busyOfferGem = null;
+        Debug.Log($"[CardManager] 已清理未拾取的选卡宝石 {removed} 颗；剩余=" + activeOfferGems.Count + "。");
+    }
+
+    public void ClearChoicePicksForPendingOffer()
+    {
+        currentPicks = new CardData[3];
+        shownThisSession.Clear();
+        rerollCounts.Clear();
+        RunSession.Instance?.ChoicePicks.Clear();
     }
 
     /// <summary>从已解锁卡重建各 Sin Investment（§6：取得该 Sin 类型卡数量）。</summary>

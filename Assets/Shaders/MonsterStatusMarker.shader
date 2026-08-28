@@ -6,6 +6,8 @@ Shader "Possession/MonsterStatusMarker"
         _MarkerKind ("Marker Kind (0=Lightning, 1=Heart)", Range(0, 1)) = 0
         _GlowIntensity ("Glow Intensity", Range(0, 8)) = 2.2
         _PulseSpeed ("Pulse Speed", Range(0, 20)) = 5
+        _MarkerTex ("Marker Texture", 2D) = "white" {}
+        _UseMarkerTex ("Use Marker Texture", Range(0, 1)) = 0
     }
 
     SubShader
@@ -43,11 +45,15 @@ Shader "Possession/MonsterStatusMarker"
                 float2 uv : TEXCOORD0;
             };
 
+            TEXTURE2D(_MarkerTex);
+            SAMPLER(sampler_MarkerTex);
+
             CBUFFER_START(UnityPerMaterial)
                 half4 _MarkerColor;
                 half _MarkerKind;
                 half _GlowIntensity;
                 half _PulseSpeed;
+                half _UseMarkerTex;
             CBUFFER_END
 
             Varyings Vert(Attributes input)
@@ -81,7 +87,7 @@ Shader "Possession/MonsterStatusMarker"
             float HeartMask(float2 p)
             {
                 float x = p.x * 1.18;
-                float y = -p.y * 1.18;
+                float y = p.y * 1.18;
                 float q = x * x + y * y - 0.52;
                 float heartFunction = q * q * q - x * x * y * y * y;
                 float fill = 1.0 - smoothstep(-0.018, 0.018, heartFunction);
@@ -92,10 +98,12 @@ Shader "Possession/MonsterStatusMarker"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 p = input.uv * 2.0 - 1.0;
-                float marker = lerp(LightningMask(p), HeartMask(p), step(0.5, _MarkerKind));
+                float procedural = lerp(LightningMask(p), HeartMask(p), step(0.5, _MarkerKind));
+                float4 tex = SAMPLE_TEXTURE2D(_MarkerTex, sampler_MarkerTex, input.uv);
+                float marker = lerp(procedural, tex.a, _UseMarkerTex);
                 float pulse = 0.88 + 0.12 * sin(_Time.y * _PulseSpeed);
                 float alpha = saturate(marker * pulse * _MarkerColor.a);
-                half3 color = _MarkerColor.rgb * (_GlowIntensity * pulse);
+                half3 color = lerp(_MarkerColor.rgb, tex.rgb, _UseMarkerTex) * (_GlowIntensity * pulse);
                 return half4(color, alpha);
             }
             ENDHLSL

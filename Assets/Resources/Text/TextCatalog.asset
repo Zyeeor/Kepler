@@ -429,7 +429,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.phase.reached_wave
-      text: "{0} \xB7 \u5230\u8FBE\u7B2C {1} \u6CE2"
+      text: "{0} \xB7 \u63A8\u8FDB\u81F3\u7B2C {1} \u9636\u6BB5"
       mythicText: 
       systemText: 
       carrier: 0
@@ -439,7 +439,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.phase.in_wave
-      text: "\u8BB0\u5F55\u4E8E\u7B2C {0} \u6CE2\uFF08\u5BF9\u5C40\u4E2D\uFF09"
+      text: "\u8BB0\u5F55\u4E8E\u7B2C {0} \u9636\u6BB5\uFF08\u5BF9\u5C40\u4E2D\uFF09"
       mythicText: 
       systemText: 
       carrier: 0

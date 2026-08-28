@@ -31,6 +31,9 @@ public static class SaveMigrator
         migrations[2] = MigrateV2ToV3;
         migrations[3] = MigrateV3ToV4;
         migrations[4] = MigrateV4ToV5;
+        migrations[5] = MigrateV5ToV6;
+        migrations[6] = MigrateV6ToV7;
+        migrations[7] = MigrateV7ToV8;
     }
 
     static SaveData MigrateV1ToV2(SaveData d)
@@ -53,6 +56,32 @@ public static class SaveMigrator
     static SaveData MigrateV4ToV5(SaveData d)
     {
         d.narrative = null; // 旧档无叙事状态，恢复按新局初始化
+        return d;
+    }
+
+    static SaveData MigrateV5ToV6(SaveData d)
+    {
+        // 旧档没有连续刷怪调度游标：恢复时由当前战斗时钟推导下一次调度，
+        // 已经过去的配置精英时间点不会重复投放。
+        if (d.continuousEliteSpawned == null)
+            d.continuousEliteSpawned = new List<bool>();
+        return d;
+    }
+
+    static SaveData MigrateV6ToV7(SaveData d)
+    {
+        // v6 没有流程阶段字段：pendingChoice 是唯一可靠的阶段线索。
+        d.runPhase = d.pendingChoice ? RunPhase.Choice : RunPhase.Waves;
+        return d;
+    }
+
+    static SaveData MigrateV7ToV8(SaveData d)
+    {
+        // v7 only stored the currently possessed body and downed corpses. New saves
+        // additionally carry the complete in-scene monster snapshot; old bodies remain
+        // available to WaveManager as the backward-compatible fallback.
+        if (d.monsterSnapshots == null)
+            d.monsterSnapshots = new List<SaveData.MonsterSnapshotSave>();
         return d;
     }
 

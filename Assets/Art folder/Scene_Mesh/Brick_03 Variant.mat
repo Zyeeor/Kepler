@@ -10,11 +10,11 @@ Material:
   m_Name: Brick_03 Variant
   m_Shader: {fileID: 4800000, guid: 95c2f845aeca12d47910e87d8746c9ec, type: 3}
   m_Parent: {fileID: 2100000, guid: 617149bf0db45d24bb6c89f2f953fefa, type: 2}
-  m_ModifiedSerializedProperties: 0
+  m_ModifiedSerializedProperties: 4
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}

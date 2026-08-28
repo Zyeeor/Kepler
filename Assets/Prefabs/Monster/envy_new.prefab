@@ -44,8 +44,8 @@ Light:
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 0.380503, g: 0.93475574, b: 1, a: 1}
-  m_Intensity: 1
+  m_Color: {r: 0.44585136, g: 0.3803922, b: 1, a: 1}
+  m_Intensity: 10
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -511,9 +511,9 @@ MonoBehaviour:
   type: 2
   upgrades:
   - effectId: EN-S01
-    unlocked: 1
+    unlocked: 0
   - effectId: EN-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 3300406336262876018, guid: d2b876535f2838740a1350517892a20c,
     type: 3}
   vfxSpawnPoint: {fileID: 0}
@@ -1879,6 +1879,15 @@ MonoBehaviour:
   possessionImprintMeteorCount: 1
   possessionImprintMeteorArc: 0.107
   possessionImprintMeteorStagger: 0.06
+  monsterStatusMarkerSize: 0.8
+  monsterStatusMarkerOffset: {x: 0, y: 2}
+  monsterStatusMarkerAdjacentSpacing: 0.08
+  envyStatusMarkerColor: {r: 0.25, g: 0.9, b: 1, a: 1}
+  lustStatusMarkerColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  envyStatusMarkerTexture: {fileID: 0}
+  lustStatusMarkerTexture: {fileID: 0}
+  monsterStatusMarkerGlowIntensity: 2.2
+  monsterStatusMarkerPulseSpeed: 5
 --- !u!1001 &2494704053077779638
 PrefabInstance:
   m_ObjectHideFlags: 0

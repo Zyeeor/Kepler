@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -105,8 +104,6 @@ public class EliteBuildDirector : MonoBehaviour
     const string DebugEliteRewardRunId = "__debug_elite_run__";
     string eliteRewardRunId;
     int eliteKillRewardCount;
-    int pendingEliteCardRewards;
-    Coroutine eliteCardRewardRoutine;
 
     /// <summary>确保实例存在（场景挂载优先，否则创建常驻对象）。</summary>
     public static EliteBuildDirector EnsureInstance()
@@ -139,11 +136,6 @@ public class EliteBuildDirector : MonoBehaviour
     void OnDestroy()
     {
         MonsterActor.OnMonsterKilled -= HandleMonsterKilled;
-        if (eliteCardRewardRoutine != null)
-        {
-            StopCoroutine(eliteCardRewardRoutine);
-            eliteCardRewardRoutine = null;
-        }
         if (Instance == this) Instance = null;
         Attach(null);
         if (boundRunSession != null)
@@ -351,7 +343,14 @@ public class EliteBuildDirector : MonoBehaviour
     public bool RequestScheduledElite(SinType sin, int scheduleIndex,
         float healthMultiplier, float attackMultiplier)
     {
-        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return false;
+        // 进度信号在守卫前推进：投放槽位由 WaveManager 按时间消费，注入成败与否时间深度均已到达该序号。
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun)
+        {
+            if (deployProgressRunId != run.RunId) { deployProgressRunId = run.RunId; reachedDeployCount = 0; }
+            if (scheduleIndex + 1 > reachedDeployCount) reachedDeployCount = scheduleIndex + 1;
+        }
+        if (run != null && run.IsBossMode) return false;
         if (!eliteEnabled) return false;
         if (catalog == null)
             catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
@@ -577,6 +576,16 @@ public class EliteBuildDirector : MonoBehaviour
     int pickSessionCount;
     string pickSessionRunId;
 
+    // 连续刷怪模式进度信号（波次数据缺口方案 B，Owner 2026-08-28 拍板）：
+    // reachedDeployCount = 本局已触发的定时投放序号（1-based，时间驱动；投放槽位由 WaveManager
+    // 按时间消费，注入成败不影响深度语义）。runId 变化时重置；波次模式不走定时投放入口，恒 0，
+    // 不影响 OnWaveStarted 既有口径。消费方：RunStatsCollector（到达深度合并）、
+    // 荣誉殿堂滚动写入与战果事件 wave 字段（第 N 阶段口径）。
+    /// <summary>本局已触发的定时投放序号（1-based；连续模式进度信号，波次模式恒 0）。</summary>
+    public int ReachedDeployCount => reachedDeployCount;
+    int reachedDeployCount;
+    string deployProgressRunId;
+
     void HandlePhaseChanged(RunPhase next)
     {
         var prev = lastPhase;
@@ -639,8 +648,10 @@ public class EliteBuildDirector : MonoBehaviour
         if (run == null) return;
 
         // 荣誉殿堂 §5.2：对局内持续更新构筑快照——与上传同源双写，本地无条件落盘（离线/上传失败不影响冻结源）。
-        // reachedWave 记真实波次（荣誉殿堂「到达第 N 波」展示口径）；wire 的 sourceWave = 第几次选卡，两语义分离。
-        HallOfFameStore.UpsertFromSnapshots(run.RunId, run.CompletedWaveIndex + 1, stage, snapshots);
+        // reachedWave = max(已完成波次, 已触发投放序号)（「第 N 阶段」展示口径，方案 B）；
+        // wire 的 sourceWave = 第几次选卡，两语义分离。
+        HallOfFameStore.UpsertFromSnapshots(run.RunId,
+            Mathf.Max(run.CompletedWaveIndex + 1, reachedDeployCount), stage, snapshots);
 
         try
         {
@@ -784,7 +795,7 @@ public class EliteBuildDirector : MonoBehaviour
 
         // 精英 Fatal（§6.5）：在致死伤害结算时计入；脱离附身时的消散和调试清场不计入。
         EnqueueEliteEvent("fatal", carrier);
-        QueueEliteCardReward();
+        QueueEliteCardReward(monster);
     }
 
     void EnsureEliteRewardRun()
@@ -798,55 +809,57 @@ public class EliteBuildDirector : MonoBehaviour
 
         eliteRewardRunId = currentRunId;
         eliteKillRewardCount = 0;
-        pendingEliteCardRewards = 0;
-        if (eliteCardRewardRoutine != null)
-        {
-            StopCoroutine(eliteCardRewardRoutine);
-            eliteCardRewardRoutine = null;
-        }
     }
 
-    void QueueEliteCardReward()
+    void QueueEliteCardReward(MonsterActor monster)
     {
         EnsureEliteRewardRun();
         if (string.IsNullOrEmpty(eliteRewardRunId) || eliteKillRewardCount >= EliteKillCardRewardLimit)
             return;
-
-        eliteKillRewardCount++;
-        pendingEliteCardRewards++;
-        if (eliteCardRewardRoutine == null)
-            eliteCardRewardRoutine = StartCoroutine(DrainEliteCardRewards());
-
-        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，获得双选卡机会。", this);
-    }
-
-    IEnumerator DrainEliteCardRewards()
-    {
-        while (pendingEliteCardRewards > 0)
+        if (monster == null || CardManager.Instance == null)
         {
-            while (CoreChoiceUI.Instance == null || CoreChoiceUI.Instance.IsDrafting)
-                yield return null;
-
-            if (string.IsNullOrEmpty(eliteRewardRunId))
-            {
-                pendingEliteCardRewards = 0;
-                break;
-            }
-
-            pendingEliteCardRewards--;
-            int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
-            CoreChoiceUI.Instance.Show(onClosed: null, doublePick: true, keepPicks: false, waveIndex: waveIndex);
-
-            while (CoreChoiceUI.Instance != null && CoreChoiceUI.Instance.IsDrafting)
-                yield return null;
-
-            // 奖励选卡完成：BD 可能变化 → 与波次选卡同口径上传（sourceWave = 第几次选卡）
-            var run = RunSession.Instance;
-            if (run != null && run.HasActiveRun && eliteEnabled)
-                UploadBuildSnapshots(AdvancePickSessionCount(run), "wave");
+            Debug.LogError("[EliteBuildDirector] 精英击杀奖励无法生成宝石：MonsterActor 或 CardManager 缺失。", this);
+            return;
         }
 
-        eliteCardRewardRoutine = null;
+        Vector3 deathPosition = monster.transform.position;
+        int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
+
+        // 掉落颗数由 CardManager 统一解析（下限=上限即固定数量，否则区间随机），
+        // 多颗沿死亡位置周围环形散落，每颗独立播"弹射散落"动画，落地后才可拾取。
+        int count = CardManager.Instance.ResolveEliteGemDropCount();
+
+        int spawned = CardManager.Instance.SpawnCardOfferGemScatter(
+            deathPosition,
+            count,
+            CardManager.Instance.eliteGemDoublePick,
+            false,
+            waveIndex,
+            CardOfferGemSource.Elite,
+            OnEliteCardGemCompleted);
+        if (spawned == 0) return;
+
+        eliteKillRewardCount++;
+        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，"
+            + $"在 {deathPosition} 掉落 {spawned} 颗选卡宝石（每颗拾取后各结算一次选卡）。", this);
+    }
+
+    void OnEliteCardGemCompleted()
+    {
+        // 宝石拾取后选卡完成：BD 可能变化，与波次选卡同口径上传。
+        var run = RunSession.Instance;
+        if (run != null && run.HasActiveRun && eliteEnabled)
+            UploadBuildSnapshots(AdvancePickSessionCount(run), "wave");
+    }
+
+    /// <summary>
+    /// 离开战斗场景时清理场上尚未拾取的选卡宝石，避免跨场景残留。
+    /// 正在展示的选卡由 UIManager 先保存为 Choice 快照，再随场景销毁。
+    /// </summary>
+    public void CancelPendingCardRewards()
+    {
+        if (CardManager.Instance != null)
+            CardManager.Instance.ClearCardOfferGems();
     }
 
     void HandlePossessionStarted(MonsterActor body)
@@ -866,7 +879,7 @@ public class EliteBuildDirector : MonoBehaviour
     /// <summary>
     /// 事件入队并立即尝试上报。仅服务器来源快照回报（本地 Preset 兜底无真实主人，回报无意义）。
     /// </summary>
-    /// <param name="waveOverride">事件波次（投放事件用注入波；-1 = 取当前波）。</param>
+    /// <param name="waveOverride">事件进度（投放事件用注入投放序号；-1 = 取当前进度：波次模式 = 当前波，连续模式 = 已触发投放序号）。</param>
     void EnqueueEliteEvent(string type, EliteBuildCarrier carrier, int waveOverride = -1)
     {
         if (carrier == null || !eliteEnabled) return;
@@ -880,7 +893,7 @@ public class EliteBuildDirector : MonoBehaviour
             type = type,
             eventId = System.Guid.NewGuid().ToString("N"), // 幂等去重键：上报失败重发同一批事件时，服务端按此跳过重复计数
             wave = waveOverride > 0 ? waveOverride
-                : (boundWaveManager != null ? boundWaveManager.CurrentWaveIndex + 1 : 0),
+                : Mathf.Max(boundWaveManager != null ? boundWaveManager.CurrentWaveIndex + 1 : 0, reachedDeployCount),
             gameTime = (long)(GameManager.Instance != null ? GameManager.Instance.gameTimer : 0f),
         });
         TryFlushEliteEvents();

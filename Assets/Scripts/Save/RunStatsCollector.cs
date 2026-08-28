@@ -207,6 +207,12 @@ public class RunStatsCollector : MonoBehaviour
         // 若终态时仍附身（如 GameOver 打断），结算未闭合的控制时长
         CloseBodyControl();
 
+        // 连续刷怪模式无波次事件（OnWaveStarted 不触发）：到达深度改由投放序号驱动（方案 B，
+        // 1-based 投放序号对齐 0-based 索引）；波次模式下取 max，保持既有口径不变。
+        var eliteDirector = EliteBuildDirector.Instance;
+        if (eliteDirector != null)
+            Current.reachedWaveIndex = Mathf.Max(Current.reachedWaveIndex, eliteDirector.ReachedDeployCount - 1);
+
         Current.RefreshDistinctSinsUsed();
         RunStatsStore.SaveRunStats(Current);
         HallOfFameStore.FinalizeRun(Current);   // 荣誉殿堂 §5.2/§5.7：Run 结束立即冻结荣誉记录（失败局同样保留 §5.10）

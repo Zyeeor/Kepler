@@ -25,7 +25,7 @@ using UnityEngine.UI;
 ///     ——切分（SpriteMode=Multiple + 坐标）属美术侧 Sprite Editor 操作，此前维持运行时估测裁剪。
 ///
 /// 装配：主菜单经 MainMenuController 克隆设置按钮注入入口（零场景编辑）；
-/// 面板本体为纯代码 UGUI（自建 Overlay Canvas，模式扩展自 EliteNetworkStatusUI），常驻跨场景。
+/// 面板本体从 Resources/UI/HallOfFamePanel Prefab 实例化，常驻跨场景。
 /// 调试：F6 直接开关（仅非正式流程；CardProgressPanel 同款门禁）。
 /// </summary>
 public class HallOfFamePanel : MonoBehaviour
@@ -39,23 +39,58 @@ public class HallOfFamePanel : MonoBehaviour
     /// <summary>列表显示模式：全量滚动（用户需求 2026-08-28：滚动显示替代分页；原 PageSize 分页已移除）。</summary>
 
     enum SortKey { SavedTime, Kills, RunFail, BdCount }
+
+    [Serializable]
+    public class SortButtonStyle
+    {
+        [Tooltip("未选中态的可选覆盖图；留空时使用 Order Buttons.png 的对应切片。")]
+        public Sprite normalSprite;
+        [Tooltip("选中态的可选覆盖图；留空时使用 Order Buttons.png 的对应切片。")]
+        public Sprite selectedSprite;
+        public Color normalColor = Color.white;
+        public Color selectedColor = Color.white;
+        [Min(0.1f)] public float normalScale = 1f;
+        [Min(0.1f)] public float selectedScale = 1f;
+    }
+
     // 统一文本目录：排序标签（TextCatalog，运行时取文本；策划改文案不动代码）
     static readonly string[] SortLabelKeys = { "ui.hof.sort.saved_time", "ui.hof.sort.kills", "ui.hof.sort.run_fail", "ui.hof.sort.bd_count" };
     static string SortLabel(int i) => TextCatalog.Get(SortLabelKeys[i]);
     SortKey sortKey = SortKey.SavedTime; // §5.6 默认按保存时间倒序
 
-    GameObject panelRoot;
-    Button refreshButton;
-    Button[] sortButtons;
-    TMP_Text statusLabel;
-    TMP_Text emptyLabel;
-    Transform contentRoot;
-    ScrollRect scrollRect;
+    [Header("Visual Layout (Prefab)")]
+    [SerializeField] GameObject panelRoot;
+    [SerializeField] Button refreshButton;
+    [SerializeField] Button closeButton;
+    [SerializeField] Button[] sortButtons;
+
+    [Header("Sort Button Styles")]
+    [Tooltip("顺序对应：保存时间、杀怪数、造成 Run Fail 次数、BD 卡牌数量。未指定 Sprite 时沿用 Order Buttons.png。")]
+    [SerializeField] SortButtonStyle[] sortButtonStyles =
+    {
+        new SortButtonStyle(), new SortButtonStyle(), new SortButtonStyle(), new SortButtonStyle()
+    };
+
+    [SerializeField] TMP_Text statusLabel;
+    [SerializeField] TMP_Text emptyLabel;
+
+    [Header("Record Scroll Area")]
+    [Tooltip("记录列表滚动区域根节点；在 Prefab 中调整其 RectTransform 可改变整体可见范围。")]
+    [SerializeField] RectTransform recordScrollArea;
+    [Tooltip("记录可见裁切区域；在 Prefab 中调整其 RectTransform 可改变记录显示区域。")]
+    [SerializeField] RectTransform recordViewport;
+    [Tooltip("记录条目的容器；在 Prefab 中可调整其锚点、边距与布局组件。")]
+    [SerializeField] RectTransform recordContent;
+    [Tooltip("记录列表的滚动条区域；在 Prefab 中调整其 RectTransform 可改变滚动条位置与高度。")]
+    [SerializeField] RectTransform recordScrollbarArea;
+    [SerializeField] Transform contentRoot;
+    [SerializeField] ScrollRect scrollRect;
+    [SerializeField] Scrollbar verticalScrollbar;
 
     // 分页（开发案 §2）
-    Button prevButton;
-    Button nextButton;
-    TMP_Text pageLabel;
+    [SerializeField] Button prevButton;
+    [SerializeField] Button nextButton;
+    [SerializeField] TMP_Text pageLabel;
     int currentPage = 1;
     int totalPages = 1;
 
@@ -93,6 +128,10 @@ public class HallOfFamePanel : MonoBehaviour
     bool refreshing;
     bool built;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    List<HallOfFameEntry> debugPreviewEntries;
+#endif
+
     // ── 生命周期 ──
 
     public static HallOfFamePanel EnsureInstance()
@@ -100,9 +139,14 @@ public class HallOfFamePanel : MonoBehaviour
         if (Instance != null) return Instance;
         var existing = FindObjectOfType<HallOfFamePanel>();
         if (existing != null) return existing; // Awake 已注册 Instance
-        var go = new GameObject("[HallOfFamePanel]");
-        DontDestroyOnLoad(go);
-        return go.AddComponent<HallOfFamePanel>();
+
+        var prefab = Resources.Load<HallOfFamePanel>("UI/HallOfFamePanel");
+        if (prefab == null)
+            throw new InvalidOperationException("缺少 Resources/UI/HallOfFamePanel Prefab，无法创建荣誉殿堂界面。");
+
+        var instance = Instantiate(prefab);
+        DontDestroyOnLoad(instance.gameObject);
+        return instance;
     }
 
     void Awake()
@@ -113,7 +157,19 @@ public class HallOfFamePanel : MonoBehaviour
             return;
         }
         Instance = this;
-        BuildUI();
+
+        if (!HasVisualLayout())
+        {
+            Debug.LogError("[HallOfFame] HallOfFamePanel Prefab 缺少必要的 UI 引用。", this);
+            enabled = false;
+            return;
+        }
+
+        built = true;
+        LoadSystemUISprites();
+        ApplyVisualAssets();
+        BindVisualLayoutEvents();
+        if (Application.isPlaying) panelRoot.SetActive(false);
     }
 
     void OnDestroy()
@@ -141,6 +197,32 @@ public class HallOfFamePanel : MonoBehaviour
         {
             if (IsVisible()) Hide(); else Show();
         }
+        if (Input.GetKeyDown(KeyCode.F7))
+            EnableDebugPreviewData();
+        if (Input.GetKeyDown(KeyCode.F8))
+            DisableDebugPreviewData();
+    }
+
+    void EnableDebugPreviewData()
+    {
+        if (GameManager.IsFormalFlow) return;
+        debugPreviewEntries = CreateDebugPreviewEntries();
+        usingMockStats = false;
+        Show();
+        Debug.Log("[HallOfFame] 已启用 8 条开发预览数据（仅内存，不会写入荣誉存档）。");
+    }
+
+    void DisableDebugPreviewData()
+    {
+        if (GameManager.IsFormalFlow || debugPreviewEntries == null) return;
+        debugPreviewEntries = null;
+        usingMockStats = false;
+        if (IsVisible())
+        {
+            RenderLocal();
+            _ = RefreshFromServer();
+        }
+        Debug.Log("[HallOfFame] 已关闭开发预览数据，恢复本地荣誉记录。");
     }
 #endif
 
@@ -152,6 +234,9 @@ public class HallOfFamePanel : MonoBehaviour
         panelRoot.SetActive(true);
         panelRoot.transform.SetAsLastSibling();
         RenderLocal();          // §5.7：先显示本地缓存
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (debugPreviewEntries != null) return;
+#endif
         _ = RefreshFromServer(); // 再后台联网刷新（失败 → 离线模拟展示，Owner 拍板 3）
     }
 
@@ -161,14 +246,135 @@ public class HallOfFamePanel : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
     }
 
+    [ContextMenu("Refresh Visual Assets")]
+    public void PrepareVisualLayout()
+    {
+        if (!HasVisualLayout())
+        {
+            Debug.LogError("[HallOfFame] 请在 HallOfFamePanel Prefab 中配置完整的 UI 引用。", this);
+            return;
+        }
+
+        LoadSystemUISprites();
+        ApplyVisualAssets();
+        if (!Application.isPlaying) panelRoot.SetActive(true);
+    }
+
+    bool HasVisualLayout() =>
+        panelRoot != null && refreshButton != null && closeButton != null &&
+        sortButtons != null && sortButtons.Length == SortLabelKeys.Length &&
+        emptyLabel != null && recordScrollArea != null && recordViewport != null &&
+        recordContent != null && recordScrollbarArea != null && contentRoot != null &&
+        scrollRect != null && verticalScrollbar != null && prevButton != null && nextButton != null;
+
+    void BindVisualLayoutEvents()
+    {
+        contentRoot = recordContent;
+        scrollRect.viewport = recordViewport;
+        scrollRect.content = recordContent;
+        scrollRect.verticalScrollbar = verticalScrollbar;
+
+        refreshButton.onClick.AddListener(RefreshButtonClicked);
+        closeButton.onClick.AddListener(Hide);
+        prevButton.onClick.AddListener(PreviousSortClicked);
+        nextButton.onClick.AddListener(NextSortClicked);
+        for (int i = 0; i < sortButtons.Length; i++)
+        {
+            int index = i;
+            sortButtons[i].onClick.AddListener(() => SelectSort(index));
+        }
+    }
+
+    void RefreshButtonClicked() => _ = RefreshFromServer();
+    void PreviousSortClicked() => ShiftSort(-1);
+    void NextSortClicked() => ShiftSort(+1);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    static List<HallOfFameEntry> CreateDebugPreviewEntries()
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        string[] sins = { "pride", "envy", "sloth", "lust", "wrath", "gluttony", "greed", "pride" };
+        string[] endPhases = { "Result", "Failed", "Result", "Aborted", "Result", "Failed", "Result", "NewRunInterrupt" };
+        var entries = new List<HallOfFameEntry>();
+        for (int i = 0; i < sins.Length; i++)
+        {
+            entries.Add(new HallOfFameEntry
+            {
+                playerId = "debug-preview",
+                runId = "debug-hof-" + (i + 1).ToString("00"),
+                sin = sins[i],
+                savedAtUnix = now - i * 5400,
+                stage = endPhases[i],
+                endPhase = endPhases[i],
+                reachedWave = 2 + i,
+                bdCount = 1 + (i % 5),
+                cardIds = new List<string>
+                {
+                    "debug_card_" + (i + 1) + "_a",
+                    "debug_card_" + (i + 1) + "_b",
+                    "debug_card_" + (i + 1) + "_c"
+                },
+                controlSeconds = 45f + i * 37f,
+                kills = 8 + i * 19,
+                deployed = 2 + i,
+                fatal = i % 4,
+                possessed = (i + 1) % 5,
+                bodyFatal = i % 3,
+                runFail = i % 3,
+                statsUpdatedAtUnix = now - i * 900
+            });
+        }
+        return entries;
+    }
+#endif
+
+    void ApplyVisualAssets()
+    {
+        if (panelRoot != null)
+        {
+            var rootImage = panelRoot.GetComponent<Image>();
+            if (rootImage != null && horBgSprite != null)
+            {
+                rootImage.sprite = horBgSprite;
+                rootImage.color = Color.white;
+            }
+        }
+
+        ApplyIconButton(refreshButton, funcRefreshSprite);
+        ApplyIconButton(closeButton, funcCloseSprite);
+        ApplyIconButton(prevButton, pageLeftSprite);
+        ApplyIconButton(nextButton, pageRightSprite);
+        RefreshSortButtons();
+
+        if (verticalScrollbar == null) return;
+        var track = verticalScrollbar.image;
+        if (track != null && sliderTrackSprite != null)
+        {
+            track.sprite = sliderTrackSprite;
+            track.color = Color.white;
+        }
+        if (verticalScrollbar.targetGraphic is Image handle && sliderHandleSprite != null)
+        {
+            handle.sprite = sliderHandleSprite;
+            handle.color = Color.white;
+        }
+    }
+
     // ── 列表数据与渲染 ──
 
     void RenderLocal()
     {
-        // 老档 / 词表改版补生成称号（方案 §7.2）：无词缀的条目用当前词表生成一次并写入
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        bool isDebugPreview = debugPreviewEntries != null;
+        if (!isDebugPreview)
+            HallOfFameStore.BackfillMissingEpithets();
+        var entries = isDebugPreview
+            ? new List<HallOfFameEntry>(debugPreviewEntries)
+            : HallOfFameStore.EntriesBySavedTimeDesc();
+#else
         HallOfFameStore.BackfillMissingEpithets();
-
         var entries = HallOfFameStore.EntriesBySavedTimeDesc();
+#endif
         entries = ApplySort(entries);
         generationIndex = BuildGenerationIndex(entries);
 
@@ -178,7 +384,15 @@ public class HallOfFamePanel : MonoBehaviour
         RenderList(entries);
 
         if (statusLabel != null && !refreshing)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            statusLabel.text = debugPreviewEntries != null
+                ? $"开发预览数据（未保存）· {entries.Count} 条"
+                : TextCatalog.Get("ui.hof.status.count", entries.Count);
+#else
             statusLabel.text = TextCatalog.Get("ui.hof.status.count", entries.Count);
+#endif
+        }
     }
 
     /// <summary>全量渲染列表（滚动显示，不分页；倒序销毁旧条目，CoreChoiceUI.RefreshCards 同模式）。</summary>
@@ -243,6 +457,13 @@ public class HallOfFamePanel : MonoBehaviour
     async Task RefreshFromServer()
     {
         if (refreshing) return;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (debugPreviewEntries != null)
+        {
+            RenderLocal();
+            return;
+        }
+#endif
         refreshing = true;
         SetStatus(TextCatalog.Get("ui.hof.status.refreshing"));
         refreshButton.interactable = false;
@@ -293,61 +514,55 @@ public class HallOfFamePanel : MonoBehaviour
         RenderLocal();
     }
 
-    /// <summary>排序栏选中态：sprite 两态切换（Order Buttons 左列灰=未选 / 右列金=选中）。</summary>
+    /// <summary>排序栏状态：优先使用 Prefab 配置，未配置 Sprite 时回退 Order Buttons 的两态切片。</summary>
     void RefreshSortButtons()
     {
         if (sortButtons == null) return;
+        EnsureSortButtonStyles();
         for (int i = 0; i < sortButtons.Length; i++)
         {
             if (sortButtons[i] == null) continue;
             var img = sortButtons[i].image;
-            bool spriteReady = orderSprites != null && orderSprites[i, 0] != null && orderSprites[i, 1] != null;
-            if (spriteReady)
-            {
-                img.sprite = (i == (int)sortKey) ? orderSprites[i, 1] : orderSprites[i, 0];
-                img.color = Color.white;
-                img.preserveAspect = true;
-                img.type = Image.Type.Simple;
-            }
-            // sprite 缺失时按钮保持空白（安全回退，不显示半生不熟的 TMP 文字与美术字不一致）
+            var style = GetSortButtonStyle(i);
+            bool selected = i == (int)sortKey;
+            Sprite configuredSprite = selected ? style.selectedSprite : style.normalSprite;
+            Sprite fallbackSprite = orderSprites != null && i < orderSprites.GetLength(0)
+                ? orderSprites[i, selected ? 1 : 0] : null;
+            if (configuredSprite != null || fallbackSprite != null)
+                img.sprite = configuredSprite != null ? configuredSprite : fallbackSprite;
+
+            img.color = selected ? style.selectedColor : style.normalColor;
+            img.rectTransform.localScale = Vector3.one * (selected ? style.selectedScale : style.normalScale);
+            img.preserveAspect = true;
+            img.type = Image.Type.Simple;
         }
     }
 
-    // ── 条目格式化（§5.4 两段式摘要；Owner 拍板 1：不展示 bodyFatal 列）──
-    // 注：战绩行与分页/详情等新文案暂为代码内嵌（bodyFatal 移除后 ui.hof.entry.stats_line 的 5 参数模板
-    // 不再适用），待策划增补 TextCatalog 键（ui.hof.stats_line4 / ui.hof.pager.* / ui.hof.detail.*）后迁回。
-
-    string FormatEntry(HallOfFameEntry e)
+    SortButtonStyle GetSortButtonStyle(int index)
     {
-        // 列表摘要（开发案 §2 字段 + §5 两区块：冷蓝"原始 Run 表现" / 暖橙"异步战绩"；
-        // 卡牌完整清单进详情页，列表不展示——§5"列表默认仅展示摘要"）
-        //   第 1 行：词缀名 + 阶段（含日期）
-        //   第 2 行：种类
-        //   第 3~4 行：原始 Run 表现区块（构筑深度 / 控制时长 / 本局击杀）
-        //   第 5~6 行：异步战绩区块（四计数器 + 同步状态）
-        string epithetName = EpithetName(e);
-        string sinName = SinDisplay(e.sin);
-        string phase = PhaseText(e);
-        string statsTag = usingMockStats ? "（离线模拟）"
-            : e.statsUpdatedAtUnix > 0 ? $"（{FormatClock(e.statsUpdatedAtUnix)}）"
-            : TextCatalog.Get("ui.hof.entry.not_synced");
-        int deployed, fatal, possessed, runFail;
-        if (usingMockStats)
-        {
-            var m = MockStatsFor(e);
-            deployed = m[0]; fatal = m[1]; possessed = m[2]; runFail = m[3];
-        }
-        else
-        {
-            deployed = e.deployed; fatal = e.fatal; possessed = e.possessed; runFail = e.runFail;
-        }
+        EnsureSortButtonStyles();
+        return sortButtonStyles[index];
+    }
 
-        return $"<b>{epithetName}</b> · {phase} · {FormatClock(e.savedAtUnix)}\n" +
-               $"{sinName}\n" +
-               "<color=#9fd4ff>──── 原始 Run 表现 ────</color>\n" +
-               $"构筑深度 {e.bdCount}│控制 {e.controlSeconds:F0} 秒│本局击杀 {e.kills}\n" +
-               $"<color=#ffd79f>──── 异步战绩 {statsTag} ────</color>\n" +
-               $"被投放 {deployed}│被击杀 {fatal}│被附身 {possessed}│杀敌 {runFail}";
+    void EnsureSortButtonStyles()
+    {
+        if (sortButtonStyles == null || sortButtonStyles.Length != SortLabelKeys.Length)
+            Array.Resize(ref sortButtonStyles, SortLabelKeys.Length);
+        for (int i = 0; i < sortButtonStyles.Length; i++)
+            if (sortButtonStyles[i] == null) sortButtonStyles[i] = new SortButtonStyle();
+    }
+
+    // ── 条目格式化（折叠行仅显示成品名与当前排序指标；其余信息在展开详情展示）──
+
+    string SortSummary(HallOfFameEntry e)
+    {
+        switch (sortKey)
+        {
+            case SortKey.Kills: return $"击杀 {e.kills}";
+            case SortKey.RunFail: return $"Run Fail {e.runFail}";
+            case SortKey.BdCount: return $"BD {e.bdCount} 张";
+            default: return FormatClock(e.savedAtUnix);
+        }
     }
 
     /// <summary>战绩区块标题：在线 = 异步战绩（同步时间/未同步）；离线 = 异步战绩（离线模拟）。</summary>
@@ -443,7 +658,6 @@ public class HallOfFamePanel : MonoBehaviour
         barRt.pivot = new Vector2(0f, 0.5f);
         barRt.sizeDelta = new Vector2(8f, 0f);
 
-        // 完整内容文字：Stretch 铺满展开行（避免固定锚点 + offsetMax/Min 产生负 sizeDelta 导致文字宽度退化）
         var text = MakeText(go.transform, FormatDetail(e), 24, new Color(0.95f, 0.95f, 0.98f));
         var trt = text.rectTransform;
         trt.anchorMin = Vector2.zero;
@@ -596,36 +810,36 @@ public class HallOfFamePanel : MonoBehaviour
         return entry != null && !string.IsNullOrEmpty(entry.displayName) ? entry.displayName : wire;
     }
 
-    /// <summary>Sin wire name → Tips/Card Filters sprite 索引（按美术切分的视觉顺序）：
-    /// 0=傲慢 1=嫉妒 2=怠惰 3=色欲 4=暴怒 5=暴食 6=贪婪 7=通用（未识别回退）。</summary>
-    static readonly Dictionary<string, int> SinToSpriteIndex = new Dictionary<string, int>
+    /// <summary>Sin wire name → Tips 横幅切片索引（按特征色视觉顺序）：
+    /// 0=傲慢青、1=色欲粉、2=暴怒红、3=贪婪黄、4=暴食紫、5=嫉妒蓝、6=怠惰绿。</summary>
+    static readonly Dictionary<string, int> SinToTipsSpriteIndex = new Dictionary<string, int>
     {
-        { "pride",    0 }, { "envy",    1 }, { "sloth",  2 }, { "lust",     3 },
-        { "wrath",    4 }, { "gluttony",5 }, { "greed",  6 }, { "",         7 },
+        { "pride",    0 }, { "lust",     1 }, { "wrath",    2 }, { "greed",    3 },
+        { "gluttony",4 }, { "envy",      5 }, { "sloth",    6 },
     };
 
-    /// <summary>wire 名 → sprite 索引（未识别回退到 7=通用）。</summary>
-    static int SinSpriteIndex(string wire)
+    /// <summary>wire 名 → Tips 横幅切片索引（未识别时不显示罪别横幅）。</summary>
+    static int SinTipsSpriteIndex(string wire)
     {
-        if (string.IsNullOrEmpty(wire)) return 7;
-        return SinToSpriteIndex.TryGetValue(wire.ToLowerInvariant(), out int i) ? i : 7;
+        if (string.IsNullOrEmpty(wire)) return -1;
+        return SinToTipsSpriteIndex.TryGetValue(wire.ToLowerInvariant(), out int i) ? i : -1;
     }
 
     /// <summary>罪别 UI 色（开发案 §5 左侧识别条；仅身份识别不表稀有度）。
-    /// 色系按 SystemUI 参考图（Hall Of Record.png）：紫蓝/紫/红/橙/金/青/玫红。</summary>
+    /// 色系按怪物技能图标特征色：青/粉/红/黄/紫/蓝/绿。</summary>
     static Color SinUIColor(string wire)
     {
         if (Enum.TryParse(wire, true, out SinType sin) && sin != SinType.None)
         {
             switch (sin)
             {
-                case SinType.Pride: return new Color(0.75f, 0.40f, 0.90f);    // 紫
-                case SinType.Wrath: return new Color(0.90f, 0.25f, 0.20f);    // 红
-                case SinType.Gluttony: return new Color(0.90f, 0.55f, 0.15f); // 橙
-                case SinType.Greed: return new Color(0.95f, 0.78f, 0.25f);    // 金
-                case SinType.Envy: return new Color(0.25f, 0.85f, 0.80f);     // 青
-                case SinType.Lust: return new Color(0.95f, 0.35f, 0.55f);     // 玫红
-                case SinType.Sloth: return new Color(0.45f, 0.50f, 0.95f);    // 紫蓝
+                case SinType.Pride: return new Color(0.64f, 0.95f, 0.95f);    // 青
+                case SinType.Lust: return new Color(0.94f, 0.55f, 0.91f);     // 粉
+                case SinType.Wrath: return new Color(1.00f, 0.36f, 0.38f);    // 红
+                case SinType.Greed: return new Color(1.00f, 0.86f, 0.62f);    // 黄
+                case SinType.Gluttony: return new Color(0.55f, 0.32f, 0.93f); // 紫
+                case SinType.Envy: return new Color(0.33f, 0.33f, 0.93f);     // 蓝
+                case SinType.Sloth: return new Color(0.66f, 0.96f, 0.56f);    // 绿
             }
         }
         return new Color(0.55f, 0.57f, 0.62f); // 未识别：中性灰（历史记录回退）
@@ -670,7 +884,15 @@ public class HallOfFamePanel : MonoBehaviour
     void EnsureBuilt()
     {
         if (built) return;
-        BuildUI();
+        if (HasVisualLayout())
+        {
+            built = true;
+            LoadSystemUISprites();
+            ApplyVisualAssets();
+            BindVisualLayoutEvents();
+            return;
+        }
+        throw new InvalidOperationException("HallOfFamePanel 必须从 Resources/UI/HallOfFamePanel Prefab 实例化。");
     }
 
     void BuildUI()
@@ -736,10 +958,10 @@ public class HallOfFamePanel : MonoBehaviour
         refreshButton.onClick.AddListener(() => _ = RefreshFromServer());
         ApplyIconButton(refreshButton, funcRefreshSprite);
 
-        var close = MakeButton(ui, funcCloseSprite != null ? "" : "✕", 46f, 46f);
-        PlaceTopRight(close.GetComponent<RectTransform>(), -90f, -58f, 46f, 46f);
-        close.onClick.AddListener(Hide);
-        ApplyIconButton(close, funcCloseSprite);
+        closeButton = MakeButton(ui, funcCloseSprite != null ? "" : "✕", 46f, 46f);
+        PlaceTopRight(closeButton.GetComponent<RectTransform>(), -90f, -58f, 46f, 46f);
+        closeButton.onClick.AddListener(Hide);
+        ApplyIconButton(closeButton, funcCloseSprite);
 
         // 排序栏（参考图：横线下方、左缘与标题对齐；4 键并排透明底、大字号，
         // 选中金色+下划线；Order Buttons sprite 切分后替换为图形态两态样式）
@@ -844,12 +1066,12 @@ public class HallOfFamePanel : MonoBehaviour
         {
             handleImg.color = new Color(0.85f, 0.88f, 0.95f, 0.85f);
         }
-        var scrollbar = sbGo.GetComponent<Scrollbar>();
+        verticalScrollbar = sbGo.GetComponent<Scrollbar>();
         // 必须显式赋值 handleRect：运行时创建不会自动查找子对象，缺失时滑块不跟随、拖动换算失效
-        scrollbar.handleRect = handleGo.GetComponent<RectTransform>();
-        scrollbar.targetGraphic = handleImg;
-        scrollbar.direction = Scrollbar.Direction.BottomToTop;
-        scrollRect.verticalScrollbar = scrollbar;
+        verticalScrollbar.handleRect = handleGo.GetComponent<RectTransform>();
+        verticalScrollbar.targetGraphic = handleImg;
+        verticalScrollbar.direction = Scrollbar.Direction.BottomToTop;
+        scrollRect.verticalScrollbar = verticalScrollbar;
         scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
         // 底部右下角箭头（用户需求 2026-08-28：从翻页改为排序循环切换；◀=上一个排序 ▶=下一个排序）
@@ -876,18 +1098,30 @@ public class HallOfFamePanel : MonoBehaviour
     {
         var go = new GameObject(EntryRowName(entry), typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         var img = go.GetComponent<Image>();
-        // Tips sprite 作条目卡背景（拉伸到容器；已含左侧罪别彩条 + 中部怪物菱形图标，无需单独叠彩条）
-        int tipIdx = SinSpriteIndex(entry.sin);
+        var le = go.GetComponent<LayoutElement>();
+        // Tips sprite 作条目卡背景（已含左侧罪别彩条 + 中部怪物菱形图标，无需单独叠彩条）。
+        // 行宽由 VerticalLayoutGroup 控制，行高按当前切片原始宽高比计算，避免拉伸变形。
+        int tipIdx = SinTipsSpriteIndex(entry.sin);
         if (tipIdx >= 0 && tipIdx < tipsSprites.Length && tipsSprites[tipIdx] != null)
         {
             img.sprite = tipsSprites[tipIdx];
             img.color = Color.white;
             img.type = Image.Type.Simple;
-            img.preserveAspect = false; // 拉伸填满整条
+            img.preserveAspect = false;
+
+            var contentRect = contentRoot as RectTransform;
+            var layout = contentRoot != null ? contentRoot.GetComponent<VerticalLayoutGroup>() : null;
+            float contentWidth = contentRect != null ? contentRect.rect.width : img.sprite.rect.width;
+            float rowWidth = Mathf.Max(1f, contentWidth - (layout != null ? layout.padding.horizontal : 0));
+            float rowHeight = rowWidth * img.sprite.rect.height / img.sprite.rect.width;
+            le.minHeight = rowHeight;
+            le.preferredHeight = rowHeight;
         }
         else
         {
             img.color = new Color(1f, 1f, 1f, 0.10f); // sprite 缺失兜底
+            le.minHeight = 150f;
+            le.preferredHeight = 150f;
         }
         var button = go.GetComponent<Button>();
         button.targetGraphic = img;
@@ -902,12 +1136,25 @@ public class HallOfFamePanel : MonoBehaviour
         maskImg.color = new Color(0f, 0f, 0f, 0.45f);
         maskImg.raycastTarget = false;
 
-        var text = MakeText(go.transform, FormatEntry(entry), 26, new Color(0.95f, 0.95f, 0.98f));
-        Stretch(text.rectTransform);
-        text.rectTransform.offsetMin = new Vector2(380f, 12f); // 左缘避开罪别彩条 + Tips 怪物菱形图标（容器宽约 1690，图标占 ~340px）
-        text.rectTransform.offsetMax = new Vector2(-24f, -10f);
-        var le = go.GetComponent<LayoutElement>();
-        le.minHeight = 210f; // 6 行两区块文字（26 号）+ Tips sprite 等比缩放
+        // 折叠行只显示怪物完整称号与当前排序指标，详细来源局/战绩仅在展开行展示。
+        var nameText = MakeText(go.transform, EpithetName(entry), 30, new Color(0.95f, 0.95f, 0.98f));
+        var nameRt = nameText.rectTransform;
+        nameRt.anchorMin = new Vector2(0f, 0f);
+        nameRt.anchorMax = new Vector2(0.64f, 1f);
+        nameRt.offsetMin = new Vector2(380f, 0f); // 避开罪别彩条与 Tips 怪物菱形图标
+        nameRt.offsetMax = Vector2.zero;
+        nameText.alignment = TextAlignmentOptions.MidlineLeft;
+        nameText.enableWordWrapping = false;
+        nameText.overflowMode = TextOverflowModes.Ellipsis;
+
+        var sortText = MakeText(go.transform, SortSummary(entry), 28, new Color(1f, 0.84f, 0.56f));
+        var sortRt = sortText.rectTransform;
+        sortRt.anchorMin = new Vector2(0.64f, 0f);
+        sortRt.anchorMax = new Vector2(1f, 1f);
+        sortRt.offsetMin = Vector2.zero;
+        sortRt.offsetMax = new Vector2(-28f, 0f);
+        sortText.alignment = TextAlignmentOptions.MidlineRight;
+        sortText.enableWordWrapping = false;
         le.flexibleHeight = 0f;
         return go;
     }
@@ -937,20 +1184,17 @@ public class HallOfFamePanel : MonoBehaviour
             funcCloseSprite = Sprite.Create(funcTex, new Rect(70f, 2f, 62f, 62f), new Vector2(0.5f, 0.5f), 100f);
         }
         // Order Buttons 运行时裁剪（328×234，左列 x=0~164 灰=未选，右列 x=164~328 金=选中；
-        // y 左下原点：顶部行=保存时间 → y=175.5~234，底部行=构筑深度 → y=0~58.5；
-        // 每行 pivot.y 独立——Order Buttons 图里 4 行的视觉中心不在 rect 几何中心，
-        // 统一 pivot 0.5 会导致视觉错位，pivot 数组按图视觉位置估测）
+        // y 左下原点：顶部行=保存时间 → y=175.5~234，底部行=构筑深度 → y=0~58.5。
+        // 所有切片使用同一中心 pivot，确保四个排序选项在等高容器中对齐。）
         Sprite orderWhole = Resources.Load<Sprite>("SystemUI/Order Buttons");
         Texture2D orderTex = orderWhole != null ? orderWhole.texture : Resources.Load<Texture2D>("SystemUI/Order Buttons");
         if (orderTex != null)
         {
             const float rowH = 58.5f, texH = 234f;
-            // 视觉中心 pivot.y（0=底，1=顶；>0.5 让 sprite 在 Image 内整体下移补偿原偏上的视觉内容）
-            float[] pivotsY = { 0.62f, 0.42f, 0.50f, 0.60f }; // 保存时间/杀敌次数/入侵战绩/构筑深度
+            Vector2 pivot = new Vector2(0.5f, 0.5f);
             for (int i = 0; i < 4; i++)
             {
                 float yFromBottom = texH - (i + 1) * rowH;
-                Vector2 pivot = new Vector2(0.5f, pivotsY[i]);
                 orderSprites[i, 0] = Sprite.Create(orderTex,
                     new Rect(0f, yFromBottom, 164f, rowH), pivot, 100f);
                 orderSprites[i, 1] = Sprite.Create(orderTex,

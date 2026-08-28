@@ -4,10 +4,10 @@ using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// 对局存档协调器（轨 B：波次间安全存档点）。
+/// 对局存档协调器（轨 B：安全窗口与离开战斗场景时写入的对局快照）。
 ///
 /// 纯静态实现（无场景挂载要求）：
-///   - 写：WaveManager 在波次清场后（选卡弹窗前）调用 SaveSnapshot(completedWaveIndex)
+///   - 写：WaveManager 在波次清场后，或离开战斗场景前调用 SaveSnapshot(completedWaveIndex)
 ///   - 读：主菜单"继续"按钮 RequestResume() → 加载场景后各系统在自身启动点读取 ResumeData
 ///         （MapStreamingSystem.Awake 应用 worldSeed / CardManager.Awake 恢复已解锁卡 /
 ///          WaveManager.Start 恢复波次进度 + 玩家运行时状态）
@@ -17,8 +17,8 @@ using UnityEngine;
 /// </summary>
 public static class SaveCoordinator
 {
-    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v4：新增战斗 imprint/贪婪/色欲/boss 字段。v5：新增 narrative。</summary>
-    public const int SchemaVersion = 5;
+    /// <summary>存档结构版本（与 SaveData.schemaVersion 一致）。v4：新增战斗 imprint/贪婪/色欲/boss 字段。v5：新增 narrative。v6：新增连续刷怪调度快照。v7：新增 RunPhase。v8：新增场上怪物快照。</summary>
+    public const int SchemaVersion = 8;
 
     static readonly string SavePath = Path.Combine(Application.persistentDataPath, "possess_run_save.json");
 
@@ -51,11 +51,18 @@ public static class SaveCoordinator
         resumeData = null;
     }
 
+    /// <summary>场景完成恢复后清除跨场景请求，避免后续场景重复消费同一份快照。</summary>
+    public static void ClearResumeRequest()
+    {
+        resumeRequested = false;
+        resumeData = null;
+    }
+
     /// <summary>
     /// 写入存档（纯 IO：数据由 RunSession 采集并传入，本层不感知场景对象）。
-    /// 由 RunSession.SaveProgress 调用（波间安全窗口：场上怪已清空、选卡未弹）。
+    /// 由 RunSession.SaveProgress 调用（波间安全窗口或离开战斗场景前）。
     /// </summary>
-    /// <param name="completedWaveIndex">刚完成的波次索引（恢复从下一波开始）。</param>
+    /// <param name="completedWaveIndex">旧波次模式刚完成的波次索引；连续刷怪模式传 -1。</param>
     public static void SaveSnapshot(int completedWaveIndex, uint worldSeed, List<string> unlockedEffects,
         Vector3 soulPosition, float soulHealth, float soulTime,
         SaveData.MonsterBodySave possessedBody = null, List<SaveData.MonsterBodySave> corpses = null,
@@ -67,7 +74,12 @@ public static class SaveCoordinator
         float lustHealProgress = 0f,
         bool bossSpawned = false,
         bool bossDefeated = false,
-        NarrativeRunSave narrative = null)
+        NarrativeRunSave narrative = null,
+        int continuousNormalOrderIndex = 0,
+        float continuousNextNormalSpawnTime = 0f,
+        List<bool> continuousEliteSpawned = null,
+        RunPhase runPhase = RunPhase.Waves,
+        List<SaveData.MonsterSnapshotSave> monsterSnapshots = null)
     {
         var data = new SaveData
         {
@@ -88,6 +100,9 @@ public static class SaveCoordinator
             bossSpawned = bossSpawned,
             bossDefeated = bossDefeated,
             narrative = narrative,
+            continuousNormalOrderIndex = continuousNormalOrderIndex,
+            continuousNextNormalSpawnTime = continuousNextNormalSpawnTime,
+            runPhase = runPhase,
         };
         if (unlockedEffects != null)
             data.unlockedEffects.AddRange(unlockedEffects);
@@ -97,13 +112,17 @@ public static class SaveCoordinator
             data.choicePicks.AddRange(choicePicks);
         if (possessionImprints != null)
             data.possessionImprints.AddRange(possessionImprints);
+        if (continuousEliteSpawned != null)
+            data.continuousEliteSpawned.AddRange(continuousEliteSpawned);
+        if (monsterSnapshots != null)
+            data.monsterSnapshots.AddRange(monsterSnapshots);
 
         try
         {
             File.WriteAllText(SavePath, JsonUtility.ToJson(data, prettyPrint: true));
             resumeRequested = false;   // 存档后清除继续标记，避免同场景误恢复
             resumeData = data;         // 缓存当前存档（本次会话内可再次查询）
-            Debug.Log($"[SaveCoordinator] 波次 {completedWaveIndex} 后已存档 → {SavePath}（{new FileInfo(SavePath).Length}B）");
+            Debug.Log($"[SaveCoordinator] 对局快照已存档（波索引={completedWaveIndex}）→ {SavePath}（{new FileInfo(SavePath).Length}B）");
         }
         catch (Exception e)
         {

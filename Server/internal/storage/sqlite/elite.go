@@ -148,7 +148,7 @@ func (s *SQLiteStore) PickCandidates(minBD, minWave int, excludePlayerID string)
 	return scanSnapshots(rows)
 }
 
-// TopWaveCandidates 兜底候选（§5）：sourceWave（投放序号）最高档中 bdCount 降序。
+// TopWaveCandidates 兜底候选（§5）：sourceWave（上传者选卡进度）最高档中 bdCount 降序。
 func (s *SQLiteStore) TopWaveCandidates(minBD int, excludePlayerID string) ([]*elite.BuildSnapshot, error) {
 	rows, err := s.db.Query(`
 		SELECT `+snapshotColumns+` FROM monster_build_snapshots

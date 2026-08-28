@@ -126,6 +126,10 @@ public class ActorVisualFx : MonoBehaviour
     [ColorUsage(true, true)] public Color envyStatusMarkerColor = new Color(0.25f, 0.9f, 1f, 1f);
     [Tooltip("HDR color used by the Lust 💗 marker.")]
     [ColorUsage(true, true)] public Color lustStatusMarkerColor = new Color(1f, 0.3f, 0.8f, 1f);
+    [Tooltip("Optional texture for the Envy ⚡ marker. Leave empty to use the built-in lightning symbol.")]
+    public Texture2D envyStatusMarkerTexture;
+    [Tooltip("Optional texture for the Lust 💗 marker. Leave empty to use the built-in heart symbol.")]
+    public Texture2D lustStatusMarkerTexture;
     [Tooltip("Shared marker shader glow intensity.")]
     [Min(0f)] public float monsterStatusMarkerGlowIntensity = 2.2f;
     [Tooltip("Shared marker pulse speed in Hz. Set to 0 for a steady marker.")]
