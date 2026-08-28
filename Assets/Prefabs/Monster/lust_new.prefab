@@ -387,12 +387,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2663089432379167242}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.985, z: 0.103}
+  m_LocalRotation: {x: -0.01701858, y: 0.0034142504, z: -0.014377141, w: 0.99974597}
+  m_LocalPosition: {x: 0.0040716957, y: 0.857, z: 0.055}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7345992790909924927}
+  m_Father: {fileID: 3719594454009586876}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!108 &3933834357111489435
 Light:
@@ -405,8 +405,8 @@ Light:
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.12
+  m_Color: {r: 0.90645754, g: 0.55660367, b: 1, a: 1}
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -728,11 +728,11 @@ MonoBehaviour:
   type: 0
   upgrades:
   - effectId: LU-S05
-    unlocked: 1
+    unlocked: 0
   - effectId: LU-S06
-    unlocked: 1
+    unlocked: 0
   - effectId: LU-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -920,13 +920,13 @@ MonoBehaviour:
   type: 0
   upgrades:
   - effectId: LU-M05
-    unlocked: 1
+    unlocked: 0
   - effectId: LU-A03
     unlocked: 0
   - effectId: LU-A04
     unlocked: 0
   - effectId: LU-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1169,12 +1169,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7718348592882287749}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.812, z: -0.015}
+  m_LocalRotation: {x: -0.017018594, y: 0.003414198, z: -0.0143771395, w: 0.999746}
+  m_LocalPosition: {x: 0.001, y: -0.035, z: 0.024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7345992790909924927}
+  m_Father: {fileID: 1929766414656872530}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!108 &5526891552371283242
 Light:
@@ -1187,8 +1187,8 @@ Light:
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.26
+  m_Color: {r: 0.98737746, g: 0.79559743, b: 1, a: 1}
+  m_Intensity: 5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1418,11 +1418,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6920f115ee24b004e8556c97f7fc5346,
+    - targetCorrespondingSourceObject: {fileID: -3321919801592875672, guid: 6920f115ee24b004e8556c97f7fc5346,
         type: 3}
-      insertIndex: 0
+      insertIndex: -1
       addedObject: {fileID: 6561384471388637094}
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6920f115ee24b004e8556c97f7fc5346,
+    - targetCorrespondingSourceObject: {fileID: 8700783698680967558, guid: 6920f115ee24b004e8556c97f7fc5346,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6647814473732390502}
@@ -1432,6 +1432,18 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 7516842489868016412}
   m_SourcePrefab: {fileID: 100100000, guid: 6920f115ee24b004e8556c97f7fc5346, type: 3}
+--- !u!4 &1929766414656872530 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8700783698680967558, guid: 6920f115ee24b004e8556c97f7fc5346,
+    type: 3}
+  m_PrefabInstance: {fileID: 7095576212763398612}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3719594454009586876 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -3321919801592875672, guid: 6920f115ee24b004e8556c97f7fc5346,
+    type: 3}
+  m_PrefabInstance: {fileID: 7095576212763398612}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7345992790909924927 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6920f115ee24b004e8556c97f7fc5346,
