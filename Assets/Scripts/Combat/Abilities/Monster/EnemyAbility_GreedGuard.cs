@@ -51,6 +51,7 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
     private Coroutine _guardRoutine;
     private bool _earlyCancelArmed;
+    private bool _gluttonyCopyMode;
 
     private void OnEnable()
     {
@@ -81,11 +82,25 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         // GR-S04 early cancel must not start a second activation window.
         if (IsGuarding && IsUpgradeUnlocked("GR-S04"))
         {
+            if (_guardRoutine != null)
+            {
+                StopCoroutine(_guardRoutine);
+                _guardRoutine = null;
+            }
             EndGuard(applyCooldown: true);
+            EndActivationEffect();
             return;
         }
 
         base.Trigger();
+    }
+
+    /// <summary>Marks this Guard as a Gluttony copy that dumps absorbed hands when Guard ends.</summary>
+    public void ConfigureForGluttonyCopy(EnemyAbility_GreedHands hands)
+    {
+        _gluttonyCopyMode = true;
+        _hands = hands;
+        guardHandCenter = owner != null ? owner.transform : null;
     }
 
     protected override void OnTrigger()
@@ -232,6 +247,8 @@ public class EnemyAbility_GreedGuard : EnemyAbility
 
     private void EndGuard(bool applyCooldown)
     {
+        bool shouldDumpCopiedHands = applyCooldown && _gluttonyCopyMode
+            && _hands != null && _hands.CurrentHands > 0;
         bool hasGuardHands = _guardHandsVfx[0] != null || _guardHandsVfx[1] != null;
         if (!IsGuarding && !hasGuardHands && guardEffect == null)
         {
@@ -256,6 +273,9 @@ public class EnemyAbility_GreedGuard : EnemyAbility
         // Zero absorb: no convert success feedback (already gated in ConvertAbsorbed).
         if (applyCooldown)
             currentCooldown = EffectiveCooldown;
+
+        if (shouldDumpCopiedHands)
+            _hands.FireStoredHands();
     }
 
     protected override void OnDisable()
