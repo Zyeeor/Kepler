@@ -64,8 +64,19 @@ public class EnemyAbility_GreedHands : EnemyAbility
     private float _regenTimer;
     private bool _wasPossessed;
     private bool _dumping;
+    private bool _gluttonyCopyPayload;
     private readonly List<GameObject> _orbitVisuals = new List<GameObject>();
     private EnemyAbility_GreedGuard _guard;
+
+    /// <summary>Marks this inventory as the temporary payload attached to a copied Greed Guard.</summary>
+    public void ConfigureForGluttonyCopy(Transform ownerCenter)
+    {
+        _gluttonyCopyPayload = true;
+        orbitCircleCenterOffset = ownerCenter;
+        CurrentHands = 0;
+        _regenTimer = 0f;
+        RefreshOrbitVisuals();
+    }
 
     private void OnEnable()
     {
@@ -82,7 +93,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
     {
         _wasPossessed = owner != null && owner.isPossessed;
         _guard = owner != null ? owner.GetComponentInChildren<EnemyAbility_GreedGuard>(true) : null;
-        if (_wasPossessed)
+        if (_wasPossessed && !_gluttonyCopyPayload)
             CurrentHands = Mathf.Clamp(initialPossessedHands, 0, InventoryMax);
         RefreshOrbitVisuals();
         if (debugLog)
@@ -109,12 +120,12 @@ public class EnemyAbility_GreedHands : EnemyAbility
         if (_wasPossessed != owner.isPossessed)
         {
             _wasPossessed = owner.isPossessed;
-            if (_wasPossessed)
+            if (_wasPossessed && !_gluttonyCopyPayload)
                 CurrentHands = Mathf.Clamp(initialPossessedHands, 0, InventoryMax);
             RefreshOrbitVisuals();
         }
 
-        if (!_dumping && CurrentHands < InventoryMax)
+        if (!_gluttonyCopyPayload && !_dumping && CurrentHands < InventoryMax)
         {
             _regenTimer += AbilityDeltaTime;
             if (_regenTimer >= regenInterval)
@@ -131,6 +142,12 @@ public class EnemyAbility_GreedHands : EnemyAbility
     }
 
     protected override void OnTrigger()
+    {
+        FireStoredHands();
+    }
+
+    /// <summary>Starts a hand dump without requiring the hidden payload to be a player basic slot.</summary>
+    public void FireStoredHands()
     {
         if (owner == null || CurrentHands <= 0)
         {
@@ -357,6 +374,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
                 vis.transform.localScale = Vector3.one * 0.25f * OwnerCombatScaleMultiplier;
                 Object.Destroy(vis.GetComponent<Collider>());
             }
+            VfxPool.ConfigureTransientRendering(vis);
             // Orbit visuals must not fly as projectiles.
             GreedHandProjectile projectile = vis.GetComponent<GreedHandProjectile>();
             if (projectile != null) Destroy(projectile);
