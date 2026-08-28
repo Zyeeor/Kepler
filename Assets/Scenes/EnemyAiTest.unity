@@ -6323,6 +6323,185 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &1178878874
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1178878877}
+  - component: {fileID: 1178878876}
+  - component: {fileID: 1178878875}
+  m_Layer: 0
+  m_Name: DirectLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1178878875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178878874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890b837f12478884d9e089bf241730c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guideMode: 1
+  linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
+    type: 3}
+  noMonsterVisibleSeconds: 5
+  noPossessableMonsterSeconds: 1
+  pulseTravelTime: 0.5
+  pulseHoldTime: 0.5
+  pulseFadeTime: 1
+  pulseCooldown: 3
+  followPlayerAfterFire: 0
+  guideColor: {r: 0.996323, g: 1, b: 0, a: 1}
+  brightness: 0.75
+  breatheAmount: 0.35
+  breatheSpeed: 2
+  widthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.025
+      value: 0.0526
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.55
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.88
+      value: 0.06
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  widthMultiplier: 3
+  heightOffset: 0.05
+  waveAmplitude: 0.2
+  waveCount: 3
+  waveSpeed: 1
+--- !u!114 &1178878876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178878874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890b837f12478884d9e089bf241730c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guideMode: 0
+  linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
+    type: 3}
+  noMonsterVisibleSeconds: 5
+  noPossessableMonsterSeconds: 5
+  pulseTravelTime: 0.5
+  pulseHoldTime: 0.5
+  pulseFadeTime: 1
+  pulseCooldown: 5
+  followPlayerAfterFire: 0
+  guideColor: {r: 3.8, g: 4.05, b: 4.6, a: 0.85}
+  brightness: 0.75
+  breatheAmount: 0.35
+  breatheSpeed: 2
+  widthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.025
+      value: 0.0526
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.55
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.88
+      value: 0.06
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  widthMultiplier: 3
+  heightOffset: 0.05
+  waveAmplitude: 0.2
+  waveCount: 3
+  waveSpeed: 1
+--- !u!4 &1178878877
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178878874}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6.407918, y: 0.55713534, z: 38.008095}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1210088046
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15336,7 +15515,6 @@ GameObject:
   - component: {fileID: 1950834435}
   - component: {fileID: 1950834437}
   - component: {fileID: 1950834438}
-  - component: {fileID: 1950834439}
   m_Layer: 0
   m_Name: StreamingTest
   m_TagString: Untagged
@@ -15363,7 +15541,7 @@ MonoBehaviour:
   radiusD: 80
   chunkSize: 8
   tileSize: 2
-  boundaryChunkExtent: 6
+  boundaryChunkExtent: 0
   boundaryCenterOverride: {fileID: 0}
   worldSeed: 12345
   defaultChunkDef: {fileID: 11400000, guid: aa952bfbe63762146b88f35b3eb8fb88, type: 2}
@@ -15436,77 +15614,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   showDebug: 0
   logBuilds: 0
---- !u!114 &1950834439
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950834434}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 890b837f12478884d9e089bf241730c4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
-    type: 3}
-  noMonsterVisibleSeconds: 5
-  pulseTravelTime: 0.5
-  pulseHoldTime: 0.5
-  pulseFadeTime: 1
-  pulseCooldown: 5
-  followPlayerAfterFire: 0
-  guideColor: {r: 3.8, g: 4.05, b: 4.6, a: 0.85}
-  brightness: 0.75
-  breatheAmount: 0.35
-  breatheSpeed: 2
-  widthCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0.025
-      value: 0.0526
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.5
-      value: 0.55
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.88
-      value: 0.06
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  widthMultiplier: 3
-  heightOffset: 0.05
-  waveAmplitude: 0.2
-  waveCount: 3
-  waveSpeed: 1
 --- !u!1 &1977854421 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 237825726053667382, guid: b30793652b68d5e4db709d1665e0d3f3,
@@ -22352,3 +22459,4 @@ SceneRoots:
   - {fileID: 3159027421792093386}
   - {fileID: 1938393086264155549}
   - {fileID: 1073311079}
+  - {fileID: 1178878877}

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -18,6 +19,20 @@ using UnityEngine;
 /// </summary>
 public class PossessionBodyProvider : MonoBehaviour
 {
+    static readonly HashSet<PossessionBodyProvider> activeProviders = new HashSet<PossessionBodyProvider>();
+
+    /// <summary>当前场景中激活的神龛供给点，供引导 UI 等外部系统低分配查询。</summary>
+    public static void CollectActiveProviders(List<PossessionBodyProvider> buffer)
+    {
+        if (buffer == null) return;
+        buffer.Clear();
+        foreach (var provider in activeProviders)
+        {
+            if (provider == null || !provider.isActiveAndEnabled || !provider.gameObject.activeInHierarchy) continue;
+            buffer.Add(provider);
+        }
+    }
+
     /// <summary>躯体来源模式。</summary>
     public enum BodyMode
     {
@@ -54,14 +69,81 @@ public class PossessionBodyProvider : MonoBehaviour
     [Header("状态（调试可重置）")]
     [Tooltip("已提供过（只一次）。调试时可手动取消勾选重置。")]
     public bool used;
+    /// <summary>本次运行中由该神龛生成的躯体；用于区分“已生成但玩家尚未使用”和“已被使用”。</summary>
+    [System.NonSerialized] MonsterActor providedBody;
+    /// <summary>生成的躯体是否已被玩家真正接管过；脱离后仍保持已使用。</summary>
+    [System.NonSerialized] bool providedBodyConsumed;
+    PossessionManager observedPossessionManager;
+
+    /// <summary>
+    /// 是否仍是神龛引导的有效目标：尚未生成躯体，或已生成的躯体仍在场且从未被玩家接管。
+    /// HasValidSource 是必要条件，避免把配置失效的装饰物当作神龛目标。
+    /// </summary>
+    public bool IsValidForGuide
+    {
+        get
+        {
+            if (!HasValidSource()) return false;
+            if (!used) return true;
+            if (providedBody == null || providedBodyConsumed || providedBody.isPossessed) return false;
+            if (!providedBody.gameObject.activeInHierarchy) return false;
+            return providedBody.Body != MonsterActor.BodyState.Fading
+                && providedBody.Body != MonsterActor.BodyState.Despawned;
+        }
+    }
+
     /// <summary>接近提示音是否已播（每次进入触发圈只播一次，离开后重置）。</summary>
     bool proximitySfxPlayed;
 
     /// <summary>提示日志限频（配置缺失时）。</summary>
     float lastWarnTime = -999f;
 
+    void OnEnable()
+    {
+        activeProviders.Add(this);
+        TryBindPossessionManager();
+    }
+
+    void OnDisable()
+    {
+        activeProviders.Remove(this);
+        UnbindPossessionManager();
+    }
+
+    void OnDestroy()
+    {
+        activeProviders.Remove(this);
+        UnbindPossessionManager();
+    }
+
+    void TryBindPossessionManager()
+    {
+        PossessionManager manager = PossessionManager.Instance;
+        if (observedPossessionManager == manager) return;
+        UnbindPossessionManager();
+        observedPossessionManager = manager;
+        if (observedPossessionManager != null)
+            observedPossessionManager.OnPossessionStarted += HandlePossessionStarted;
+    }
+
+    void UnbindPossessionManager()
+    {
+        if (observedPossessionManager != null)
+            observedPossessionManager.OnPossessionStarted -= HandlePossessionStarted;
+        observedPossessionManager = null;
+    }
+
+    void HandlePossessionStarted(MonsterActor body)
+    {
+        if (body != null && body == providedBody)
+            providedBodyConsumed = true;
+    }
+
     void Update()
     {
+        TryBindPossessionManager();
+        if (providedBody != null && providedBody.isPossessed)
+            providedBodyConsumed = true;
         if (used) return;
         if (!HasValidSource())
         {
@@ -165,14 +247,17 @@ public class PossessionBodyProvider : MonoBehaviour
         // 转尸体状态：永久倒地躯体（不自动消散），等待附身；附身后由附身流程管理消散
         monster.SpawnAsPermanentCorpse();
 
+        providedBody = monster;
+        providedBodyConsumed = false;
         used = true;
         // 提供躯体音（默认 3D 定位在神龛位置；未配置 clip 静默）
         if (audioEnabled)
             AudioManager.Instance?.Play(SfxId.ShrineProvide, transform.position);
         Debug.Log($"[PossessionBodyProvider] {name} 提供躯体（尸体）{monster.name}（{mode}）@{pos.ToString("F1")}", this);
 
-        if (autoPossess && PossessionManager.Instance != null)
-            PossessionManager.Instance.DebugForcePossess(monster);
+        PossessionManager manager = PossessionManager.Instance;
+        if (autoPossess && manager != null && manager.DebugForcePossess(monster))
+            providedBodyConsumed = true;
     }
 
     void OnDrawGizmosSelected()

@@ -2,32 +2,37 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 怪物指引脉冲（找不到怪时的方向引导）：
-/// 屏幕中连续 noMonsterVisibleSeconds 秒没有出现任何可交互怪物（且地图上仍有活怪）时，
-/// 从玩家/附身怪脚底朝目标怪物发出一道脉冲：一条光带沿蛇形路径从脚底推进到怪物脚底，
-/// 停留片刻后从发出端向终点逐段消散，冷却后循环发出下一道。
+/// 方向引导脉冲：
+/// Monsters 模式保留原有逻辑——玩家处于附身态时，屏幕连续 noMonsterVisibleSeconds 秒没有活怪可见，
+/// 从当前控制身体朝屏幕外最近活怪发出引导；自由灵魂态时该模式完全停用。
 ///
-/// 目标锁定：锁定目标后，只要它未死亡/未被附身/未被回收，且屏幕中未出现别的怪物，
-/// 就持续朝同一只怪发脉冲——不做"最近怪"重算，避免两只怪分居两侧时引导来回跳转。
+/// Shrines 模式是自由灵魂态资源引导：屏幕中没有可附身躯体时，若场上仍有躯体则引导到最近躯体，
+/// 若场上没有可附身躯体则引导到最近有效神龛。两种模式由场景中的两个组件分工，但通过状态门控互斥。
 ///
-/// 美术资源：引导线 Prefab（linePrefab，Root 挂 LineRenderer + 拖尾同款 Material 资产，
-/// 子对象 PulseHead 挂 ParticleSystem 脉冲头光尘——与项目 VFX 规范一致：Root + 子粒子层），
-/// 所有样式参数直接在本组件检查器设置（无需额外配置资产）。
-///
-/// 脉冲锚点：followPlayerAfterFire=false（默认）时，脉冲发出瞬间锁定起点（玩家当时脚下）
-/// 与终点（怪物当时位置），推进/停留/消散全程不再跟随；true 时起点实时跟随玩家（终点仍锁定）。
-///
-/// 数据源：MonsterSpawner.CollectAliveMonsters（在场活怪：未附身、未倒地）。
+/// 美术资源：两种模式都复用同一个引导线 Prefab（Root 挂 LineRenderer + 拖尾同款 Material，
+/// 子对象 PulseHead 挂 ParticleSystem 脉冲头光尘），所有样式参数直接在本组件检查器设置。
 /// </summary>
 public class MonsterDirectionUI : MonoBehaviour
 {
+    public enum GuideTargetMode
+    {
+        Monsters = 0,
+        Shrines = 1,
+    }
+
+    [Header("引导目标")]
+    [Tooltip("Monsters = 非灵魂态时，视野内没有活怪则引导到最近活怪；Shrines = 灵魂态时，视野内没有可附身躯体则优先引导躯体，没有躯体才引导神龛。")]
+    public GuideTargetMode guideMode = GuideTargetMode.Monsters;
+
     [Header("引导线资源")]
     [Tooltip("引导线 Prefab 资产（Assets/Prefabs/VFX/MonsterGuideLine.prefab）：Root 挂 LineRenderer + 拖尾同款材质，子对象 PulseHead 为脉冲头光尘粒子；为空时运行时动态创建。")]
     public GameObject linePrefab;
 
     [Header("触发条件")]
-    [Tooltip("屏幕中连续无怪物可见的秒数超过该值后发出第一道引导脉冲（秒）。")]
+    [Tooltip("怪物模式：视野内连续无活怪的秒数；神龛模式：灵魂态且视野内连续无可附身躯体的秒数。")]
     [Min(0.5f)] public float noMonsterVisibleSeconds = 5f;
+    [Tooltip("仅神龛模式使用：灵魂态且视野内没有可附身躯体后，持续达到该秒数才开始引导；场上有躯体时引导躯体，否则引导有效神龛。")]
+    [Min(0.5f)] public float noPossessableMonsterSeconds = 5f;
 
     [Header("脉冲节奏")]
     [Tooltip("脉冲从脚底推进到怪物脚底的耗时（秒），值越大推进越从容。")]
@@ -80,8 +85,10 @@ public class MonsterDirectionUI : MonoBehaviour
 
     /// <summary>是否正在显示引导（脉冲推进/停留/消散中）。</summary>
     public bool IsShowing { get; private set; }
-    /// <summary>当前锁定的引导目标（无锁定为 null）。</summary>
+    /// <summary>当前锁定的怪物引导目标（无锁定为 null）。</summary>
     public MonsterActor LockedTarget { get; private set; }
+    /// <summary>当前锁定的神龛引导目标（神龛模式，无锁定为 null）。</summary>
+    public PossessionBodyProvider LockedShrine => lockedShrine;
 
     LineRenderer line;
     Material runtimeMat;
@@ -89,9 +96,16 @@ public class MonsterDirectionUI : MonoBehaviour
     Camera mainCamera;
     Transform player;
     readonly List<MonsterActor> aliveMonsters = new List<MonsterActor>();
+    readonly List<MonsterActor> possessableBodies = new List<MonsterActor>();
+    readonly List<PossessionBodyProvider> activeShrines = new List<PossessionBodyProvider>();
     readonly Vector3[] pathPoints = new Vector3[64];
+    SoulActor soulActor;
+    MonsterActor lockedBody;
+    PossessionBodyProvider lockedShrine;
     float nextCollectTime;
+    float nextShrineCollectTime;
     float noMonsterTimer;
+    float noPossessableMonsterTimer;
     float wavePhase;
     float pulseTime;
     Vector3 pulseOrigin;       // 当前脉冲发出瞬间锁定的起点（玩家当时脚下）
@@ -117,6 +131,24 @@ public class MonsterDirectionUI : MonoBehaviour
 
     void Update()
     {
+        if (guideMode == GuideTargetMode.Shrines)
+        {
+            UpdateShrineGuide();
+            return;
+        }
+
+        UpdateMonsterGuide();
+    }
+
+    void UpdateMonsterGuide()
+    {
+        // 自由灵魂态由 Shrine 模式负责引导躯体/神龛，怪物模式让路，确保两套引导互斥。
+        if (IsFreeSoulState())
+        {
+            ResetMonsterGuide();
+            return;
+        }
+
         var spawner = MonsterSpawner.Instance;
         if (spawner == null)
         {
@@ -264,6 +296,261 @@ public class MonsterDirectionUI : MonoBehaviour
         }
     }
 
+    void UpdateShrineGuide()
+    {
+        // 自由灵魂态只处理“躯体 → 神龛”资源引导；附身/过渡态由怪物模式独立处理。
+        if (!IsFreeSoulState())
+        {
+            ResetShrineGuide();
+            return;
+        }
+
+        if (Time.time >= nextShrineCollectTime)
+        {
+            var spawner = MonsterSpawner.Instance;
+            if (spawner != null)
+                spawner.CollectPossessableMonsters(possessableBodies);
+            else
+                CollectPossessableMonstersFallback();
+            PossessionBodyProvider.CollectActiveProviders(activeShrines);
+            nextShrineCollectTime = Time.time + kCollectInterval;
+        }
+
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            ResetShrineGuide();
+            return;
+        }
+
+        // 触发条件改为“视野内没有可附身躯体”，不再要求场上完全没有躯体。
+        for (int i = 0; i < possessableBodies.Count; i++)
+        {
+            if (IsPossessableBodyVisible(possessableBodies[i]))
+            {
+                ResetShrineGuide();
+                return;
+            }
+        }
+
+        if (lockedBody != null && !IsPossessableBodyValid(lockedBody))
+        {
+            lockedBody = null;
+            anchorsReady = false;
+            pulseTime = 0f;
+        }
+        if (lockedShrine != null && !lockedShrine.IsValidForGuide)
+        {
+            lockedShrine = null;
+            anchorsReady = false;
+            pulseTime = 0f;
+        }
+
+        // 场上存在可附身躯体时，躯体优先级高于神龛；若躯体后来消失，再切换到神龛。
+        if (possessableBodies.Count > 0)
+        {
+            if (lockedShrine != null)
+            {
+                lockedShrine = null;
+                anchorsReady = false;
+                pulseTime = 0f;
+            }
+
+            if (lockedBody == null)
+            {
+                noPossessableMonsterTimer += Time.deltaTime;
+                if (noPossessableMonsterTimer < Mathf.Max(0.01f, noPossessableMonsterSeconds))
+                {
+                    Hide();
+                    return;
+                }
+
+                lockedBody = FindNearestPossessableBody();
+                if (lockedBody == null)
+                {
+                    Hide();
+                    return;
+                }
+                pulseTime = 0f;
+                anchorsReady = false;
+                Debug.Log($"[SoulDirectionUI] 锁定躯体引导目标：{lockedBody.name}@{lockedBody.transform.position}", lockedBody);
+            }
+        }
+        else
+        {
+            if (lockedBody != null)
+            {
+                lockedBody = null;
+                anchorsReady = false;
+                pulseTime = 0f;
+            }
+
+            if (lockedShrine == null)
+            {
+                PossessionBodyProvider nearest = FindNearestValidShrine();
+                if (nearest == null)
+                {
+                    noPossessableMonsterTimer = 0f;
+                    Hide();
+                    return;
+                }
+
+                noPossessableMonsterTimer += Time.deltaTime;
+                if (noPossessableMonsterTimer < Mathf.Max(0.01f, noPossessableMonsterSeconds))
+                {
+                    Hide();
+                    return;
+                }
+
+                lockedShrine = nearest;
+                pulseTime = 0f;
+                anchorsReady = false;
+                Debug.Log($"[SoulDirectionUI] 锁定神龛引导目标：{nearest.name}@{nearest.transform.position}", nearest);
+            }
+        }
+
+        Vector3 origin = GetGuideOrigin();
+        float oldPulseTime = pulseTime;
+        pulseTime += Time.deltaTime;
+        float cycle = pulseTravelTime + pulseHoldTime + pulseFadeTime + pulseCooldown;
+        if (pulseTime >= cycle) pulseTime -= cycle;
+
+        // 脉冲终点可以是躯体或神龛，起点沿用现有 followPlayerAfterFire 配置。
+        if (!anchorsReady || oldPulseTime > pulseTime)
+        {
+            pulseOrigin = origin;
+            pulseTargetPos = lockedBody != null
+                ? lockedBody.transform.position
+                : lockedShrine.transform.position;
+            anchorsReady = true;
+        }
+        else if (followPlayerAfterFire)
+        {
+            pulseOrigin = origin;
+        }
+
+        if (pulseTime < pulseTravelTime)
+        {
+            ShowPulse(0f, Mathf.Clamp01(pulseTime / pulseTravelTime));
+        }
+        else if (pulseTime < pulseTravelTime + pulseHoldTime)
+        {
+            ShowPulse(0f, 1f);
+        }
+        else if (pulseTime < pulseTravelTime + pulseHoldTime + pulseFadeTime)
+        {
+            float fade = Mathf.Clamp01((pulseTime - pulseTravelTime - pulseHoldTime) / pulseFadeTime);
+            ShowPulse(fade, 1f);
+        }
+        else
+        {
+            Hide();
+        }
+    }
+
+    bool IsFreeSoulState()
+    {
+        if (soulActor == null) soulActor = FindObjectOfType<SoulActor>();
+        if (soulActor == null || !soulActor.gameObject.activeInHierarchy
+            || soulActor.IsSuppressed || soulActor.IsInPossessionFlight)
+            return false;
+
+        PossessionManager manager = PossessionManager.Instance;
+        if (manager != null && (manager.CurrentBody != null
+            || manager.State != PossessionManager.SwitchState.Idle))
+            return false;
+        return true;
+    }
+
+    void ResetMonsterGuide()
+    {
+        noMonsterTimer = 0f;
+        LockedTarget = null;
+        anchorsReady = false;
+        pulseTime = 0f;
+        Hide();
+    }
+
+    void CollectPossessableMonstersFallback()
+    {
+        possessableBodies.Clear();
+        MonsterActor[] monsters = FindObjectsOfType<MonsterActor>(true);
+        for (int i = 0; i < monsters.Length; i++)
+        {
+            MonsterActor monster = monsters[i];
+            if (IsPossessableBodyValid(monster))
+                possessableBodies.Add(monster);
+        }
+    }
+
+    bool IsPossessableBodyValid(MonsterActor body)
+    {
+        return body != null && body.gameObject.activeInHierarchy && body.CanBePossessed;
+    }
+
+    bool IsPossessableBodyVisible(MonsterActor body)
+    {
+        if (!IsPossessableBodyValid(body) || mainCamera == null) return false;
+        Vector3 vp = mainCamera.WorldToViewportPoint(body.transform.position);
+        return vp.z > 0f && vp.x >= kViewportMargin && vp.x <= 1f - kViewportMargin
+            && vp.y >= kViewportMargin && vp.y <= 1f - kViewportMargin;
+    }
+
+    MonsterActor FindNearestPossessableBody()
+    {
+        Vector3 origin = GetGuideOrigin();
+        MonsterActor nearest = null;
+        float nearestSqr = float.MaxValue;
+        for (int i = 0; i < possessableBodies.Count; i++)
+        {
+            MonsterActor body = possessableBodies[i];
+            if (!IsPossessableBodyValid(body)) continue;
+            float sqr = (body.transform.position - origin).sqrMagnitude;
+            if (sqr >= nearestSqr) continue;
+            nearestSqr = sqr;
+            nearest = body;
+        }
+        return nearest;
+    }
+
+
+    PossessionBodyProvider FindNearestValidShrine()
+    {
+        Vector3 origin = GetGuideOrigin();
+        PossessionBodyProvider nearest = null;
+        float nearestSqr = float.MaxValue;
+        for (int i = 0; i < activeShrines.Count; i++)
+        {
+            PossessionBodyProvider shrine = activeShrines[i];
+            if (shrine == null || !shrine.IsValidForGuide) continue;
+            float sqr = (shrine.transform.position - origin).sqrMagnitude;
+            if (sqr >= nearestSqr) continue;
+            nearestSqr = sqr;
+            nearest = shrine;
+        }
+        return nearest;
+    }
+
+    Vector3 GetGuideOrigin()
+    {
+        if (player == null && PlayerController.Instance != null)
+            player = PlayerController.Instance.transform;
+        if (player != null) return player.position;
+        if (soulActor != null) return soulActor.transform.position;
+        if (mainCamera == null) mainCamera = Camera.main;
+        return mainCamera != null ? mainCamera.transform.position : transform.position;
+    }
+
+    void ResetShrineGuide()
+    {
+        noPossessableMonsterTimer = 0f;
+        lockedBody = null;
+        lockedShrine = null;
+        anchorsReady = false;
+        pulseTime = 0f;
+        Hide();
+    }
+
     bool IsTargetValid(MonsterActor m)
     {
         return m != null && m.gameObject.activeInHierarchy && !m.isDowned && !m.isPossessed;
@@ -381,7 +668,7 @@ public class MonsterDirectionUI : MonoBehaviour
         if (linePrefab != null)
         {
             go = Instantiate(linePrefab, transform, false);
-            go.name = "MonsterGuideLine";
+            go.name = guideMode == GuideTargetMode.Shrines ? "ShrineGuideLine" : "MonsterGuideLine";
             line = go.GetComponent<LineRenderer>();
         }
         else
