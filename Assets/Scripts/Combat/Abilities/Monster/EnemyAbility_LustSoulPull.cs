@@ -28,6 +28,9 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
     public float s06Grace = 0.15f;
 
     private LustBodyState _state;
+    private bool _gluttonyCopyMode;
+    private Vector3 _gluttonyAnchorPosition;
+    private float _gluttonyPullRadius;
 
     private void OnEnable()
     {
@@ -67,16 +70,27 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
         }
     }
 
+    /// <summary>Configures a copied Lust skill to create its Anchor at the swallowed body's position.</summary>
+    public void ConfigureForGluttonyCopy(Vector3 anchorPosition, float radius)
+    {
+        _gluttonyCopyMode = true;
+        _gluttonyAnchorPosition = anchorPosition;
+        _gluttonyPullRadius = Mathf.Max(0f, radius);
+    }
+
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        return HasValidPullTargets;
+        return _gluttonyCopyMode ? CountGluttonyCopyTargets() > 0 : HasValidPullTargets;
     }
 
     protected override void OnTrigger()
     {
         CacheState();
-        if (_state == null || !_state.HasValidAnchor || _state.GetValidLinkedTargets().Count == 0)
+        bool valid = _gluttonyCopyMode
+            ? PrepareGluttonyCopyState()
+            : _state != null && _state.HasValidAnchor && _state.GetValidLinkedTargets().Count > 0;
+        if (!valid)
         {
             // Spec: failed gate must not charge / reload. Undo the base Trigger cooldown.
             currentCooldown = 0f;
@@ -85,6 +99,57 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
         }
 
         StartCoroutine(PullRoutine());
+    }
+
+    private bool PrepareGluttonyCopyState()
+    {
+        if (_state == null) return false;
+        List<Enemy> targets = CollectGluttonyCopyTargets();
+        if (targets.Count == 0) return false;
+
+        _state.ClearAllLinks();
+        _state.PlaceOrReplaceAnchor(_gluttonyAnchorPosition, Quaternion.identity);
+        for (int i = 0; i < targets.Count; i++)
+            _state.WriteOrRefreshLink(targets[i]);
+        return _state.HasValidAnchor && _state.GetValidLinkedTargets().Count > 0;
+    }
+
+    private List<Enemy> CollectGluttonyCopyTargets()
+    {
+        List<Enemy> targets = new List<Enemy>();
+        if (owner == null) return targets;
+
+        float radiusSqr = _gluttonyPullRadius * _gluttonyPullRadius;
+        Vector3 origin = _gluttonyAnchorPosition;
+        IReadOnlyList<Enemy> enemies = EnemyRegistry.All;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy candidate = enemies[i];
+            if (candidate == null || candidate == owner || !owner.CanDamage(candidate)) continue;
+            Vector3 offset = candidate.transform.position - origin;
+            offset.y = 0f;
+            if (offset.sqrMagnitude <= radiusSqr)
+                targets.Add(candidate);
+        }
+        return targets;
+    }
+
+    private int CountGluttonyCopyTargets()
+    {
+        if (owner == null) return 0;
+        float radiusSqr = _gluttonyPullRadius * _gluttonyPullRadius;
+        Vector3 origin = _gluttonyAnchorPosition;
+        IReadOnlyList<Enemy> enemies = EnemyRegistry.All;
+        int count = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy candidate = enemies[i];
+            if (candidate == null || candidate == owner || !owner.CanDamage(candidate)) continue;
+            Vector3 offset = candidate.transform.position - origin;
+            offset.y = 0f;
+            if (offset.sqrMagnitude <= radiusSqr) count++;
+        }
+        return count;
     }
 
     private IEnumerator PullRoutine()
