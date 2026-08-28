@@ -394,6 +394,7 @@ public class CombatAbilityComponent : MonoBehaviour
             ClearEffectsForCorpse();
             return;
         }
+        if (TimeScaleManager.IsDomainActive(TimeDomain.Pause)) return;
         float now = EffectTime;
         for (int i = activeEffects.Count - 1; i >= 0; i--)
         {
