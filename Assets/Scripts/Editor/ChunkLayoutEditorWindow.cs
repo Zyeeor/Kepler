@@ -376,13 +376,13 @@ public class ChunkLayoutEditorWindow : EditorWindow
 
         if (hoverX >= 0)
         {
-            // 多格装饰刷子：悬停预览其 footprint 区域（仅内部合法位置，越界不预览）
+            // 多格装饰刷子：悬停预览其 footprint 区域（允许占用 Chunk 边沿，但不能越出布局网格）
             if (brush != null && TileSemantics.ResolveKind(brush) == TerrainKind.Decoration
                 && decorationFootprints.TryGetValue(brush, out var hoverFp)
                 && (hoverFp.x > 1 || hoverFp.y > 1))
             {
-                bool fpInside = hoverX >= 1 && hoverY >= 1
-                    && hoverX + hoverFp.x <= size - 1 && hoverY + hoverFp.y <= size - 1;
+                bool fpInside = hoverX >= 0 && hoverY >= 0
+                    && hoverX + hoverFp.x <= size && hoverY + hoverFp.y <= size;
                 if (fpInside)
                 {
                     var fpFirst = CellRect(gridRect, hoverX, hoverY);
@@ -479,10 +479,10 @@ public class ChunkLayoutEditorWindow : EditorWindow
     {
         if (target == null || brush == null) return;
         int size = target.size;
-        // 与程序生成一致：边沿保留给 Chunk 连通，固定布局也提示并拒绝跨边界。
-        if (x < 1 || y < 1 || x + footprint.x > size - 1 || y + footprint.y > size - 1)
+        // 允许多格装饰占用 Chunk 边沿；仍需保证 footprint 完整位于布局网格内，避免写入越界格。
+        if (x < 0 || y < 0 || x + footprint.x > size || y + footprint.y > size)
         {
-            ShowNotification(new GUIContent("多格装饰必须完整位于内部区域，不能占用 Chunk 边沿"));
+            ShowNotification(new GUIContent("多格装饰不能超出布局网格范围"));
             return;
         }
         for (int px = x; px < x + footprint.x; px++)
@@ -619,7 +619,7 @@ public class ChunkLayoutEditorWindow : EditorWindow
     {
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
-        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加；橡皮擦左键擦当前层）｜ 配置了多格占位的装饰自动铺整组 ｜ 右键擦整格/整组 ｜ 多格装饰不可跨 Chunk 边沿", MessageType.None);
+        EditorGUILayout.HelpBox("左键涂刷（地砖→底层 / 装饰→叠加；橡皮擦左键擦当前层）｜ 配置了多格占位的装饰自动铺整组 ｜ 右键擦整格/整组 ｜ 多格装饰允许占用 Chunk 边沿但不可越出网格", MessageType.None);
         if (GUILayout.Button("清空全部", GUILayout.Width(100f), GUILayout.Height(24f))) ClearAll();
         EditorGUILayout.EndHorizontal();
     }
