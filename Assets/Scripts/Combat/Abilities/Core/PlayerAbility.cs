@@ -206,9 +206,10 @@ public abstract class PlayerAbility : MonoBehaviour
             CombatEffectManager.PlayHitFeedback(hitFeedback, owner != null ? owner.transform : transform, victim);
             _hitFeedbackFiredThisAttack = true;
         }
-        if (!_hitAudioFiredThisAttack && !string.IsNullOrWhiteSpace(hitAudioName))
+        if (!_hitAudioFiredThisAttack)
         {
-            CombatAudioManager.Play(hitAudioName, target != null ? target.transform.position : transform.position);
+            string audioName = string.IsNullOrWhiteSpace(hitAudioName) ? nameof(SfxId.BodyHit) : hitAudioName;
+            CombatAudioManager.Play(audioName, target != null ? target.transform.position : transform.position);
             _hitAudioFiredThisAttack = true;
         }
         ApplyConfiguredEffectsTo(target.Combat);
@@ -229,6 +230,12 @@ public abstract class PlayerAbility : MonoBehaviour
             string ignoredReason;
             target.ApplyEffect(definition, owner != null ? owner.GetComponent<CombatAbilityComponent>() : null, abilityTags, out ignoredReason);
         }
+    }
+
+    /// <summary>Public hit settlement used by player-owned projectiles.</summary>
+    public void SettleHit(Enemy target, float amount)
+    {
+        DealDamageToEnemy(target, amount);
     }
 
     /// <summary>Apply burn from soul form (no possessed enemy to route through).</summary>

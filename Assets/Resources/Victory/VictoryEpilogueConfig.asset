@@ -14,10 +14,84 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   presentationPrefab: {fileID: 7700933737877148573, guid: b2a1bba4a40b22a49a33548da74cbafa,
     type: 3}
+  victoryFallbackFont: {fileID: 11400000, guid: a6251a0200b503f479139bd7f87a9244,
+    type: 2}
   firstMessage: "\u4F60\u5DF2\u8E0F\u8FC7\u4E03\u7F6A\u3002\n\u738B\u5EA7\u6B63\u5728\u7B49\u5F85\u5B83\u7684\u65B0\u4E3B\u4EBA\u3002"
   namePrompt: "\u7559\u4E0B\u4F60\u7684\u540D\u5B57"
   finalTitle: "\u5F11\u7F6A\u8005"
   finalCoronationLine: "\u4E8E\u4E03\u7F6A\u4E4B\u4E0A\uFF0C\u52A0\u5195\u4E3A\u738B\u3002"
+  useDynamicFinalTitle: 1
+  godBuildMinCards: 3
+  titlePools:
+  - sin: 1
+    tendencyTitles:
+    - "\u50B2\u6162\u884C\u8005"
+    - "\u9AD8\u5854\u4E4B\u738B"
+    - "\u51A0\u5195\u89CA\u89CE\u8005"
+    godBuildTitles:
+    - "\u50B2\u6162\u4E4B\u4E3B"
+    - "\u5929\u7A79\u4E4B\u51A0"
+    - "\u65E0\u5195\u4E4B\u738B"
+  - sin: 2
+    tendencyTitles:
+    - "\u6020\u60F0\u884C\u8005"
+    - "\u6C89\u7720\u4E4B\u51A0"
+    - "\u9759\u9ED8\u652F\u914D\u8005"
+    godBuildTitles:
+    - "\u6020\u60F0\u4E4B\u4E3B"
+    - "\u9759\u6B62\u738B\u5EA7"
+    - "\u65E0\u68A6\u4E4B\u738B"
+  - sin: 3
+    tendencyTitles:
+    - "\u66B4\u98DF\u884C\u8005"
+    - "\u65E0\u5E95\u4E4B\u53E3"
+    - "\u9965\u8352\u5148\u9A71"
+    godBuildTitles:
+    - "\u66B4\u98DF\u4E4B\u738B"
+    - "\u6DF1\u6E0A\u541E\u98DF\u8005"
+    - "\u9965\u6E34\u707E\u5384"
+  - sin: 4
+    tendencyTitles:
+    - "\u5AC9\u5992\u884C\u8005"
+    - "\u7AA5\u955C\u4E4B\u51A0"
+    - "\u5F71\u4E2D\u89CA\u89CE\u8005"
+    godBuildTitles:
+    - "\u5AC9\u5992\u4E4B\u4E3B"
+    - "\u4E07\u76F8\u7A83\u53D6\u8005"
+    - "\u593A\u5149\u4E4B\u738B"
+  - sin: 5
+    tendencyTitles:
+    - "\u66B4\u6012\u884C\u8005"
+    - "\u8D64\u7130\u4E4B\u5203"
+    - "\u6012\u6F6E\u5148\u9A71"
+    godBuildTitles:
+    - "\u66B4\u6012\u4E4B\u4E3B"
+    - "\u7329\u7EA2\u88C1\u51B3\u8005"
+    - "\u7EC8\u7109\u6012\u706B"
+  - sin: 6
+    tendencyTitles:
+    - "\u8D2A\u6B32\u884C\u8005"
+    - "\u91D1\u5370\u4E4B\u51A0"
+    - "\u4E07\u7269\u89CA\u89CE\u8005"
+    godBuildTitles:
+    - "\u8D2A\u6B32\u541B\u738B"
+    - "\u9EC4\u91D1\u66B4\u541B"
+    - "\u4E07\u7269\u6536\u5272\u8005"
+  - sin: 7
+    tendencyTitles:
+    - "\u6B32\u5FF5\u884C\u8005"
+    - "\u7EEF\u7EA2\u4E4B\u51A0"
+    - "\u5FC3\u9B44\u730E\u624B"
+    godBuildTitles:
+    - "\u6B32\u5FF5\u4E4B\u4E3B"
+    - "\u7EEF\u7EA2\u652F\u914D\u8005"
+    - "\u4E07\u8C61\u8BF1\u4E3B"
+  neutralTitlePool:
+  - "\u5F11\u7F6A\u8005"
+  - "\u4E03\u7F6A\u884C\u8005"
+  - "\u7F6A\u51A0\u7EE7\u627F\u8005"
+  - "\u738B\u5EA7\u89CA\u89CE\u8005"
+  - "\u7EC8\u5C40\u5E78\u5B58\u8005"
   maxNameLength: 16
   fadeToBlackDuration: 0.8
   firstBlackHoldDuration: 1

@@ -49,6 +49,7 @@ public class PlayerAbility_SoulBullet : PlayerAbility
         projectile.damage = damage;
         projectile.maxLifetime = projectileLifetime;
         projectile.isPlayerProjectile = true;
+        projectile.sourcePlayerAbility = this;
         projectile.hitEffectPrefab = hitEffectPrefab;
         projectile.hitEffectDuration = hitEffectDuration;
         projectile.ownerEnemy = PossessionManager.Instance != null ? PossessionManager.Instance.CurrentBody as Enemy : null;

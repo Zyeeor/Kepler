@@ -41,7 +41,7 @@ public class CardManager : SceneSingleton<CardManager>
     [Tooltip("Starter Gem 生成时刻（战斗开始后的秒数）。Pass v1：删除开局 2 Gem 后，战斗计时达到该值时生成 1 颗 Starter Gem（单次选卡）。")]
     [Min(0f)] public float starterGemTime = 30f;
     [Tooltip("Starter Gem 相对玩家锚点的生成偏移（前方，避免落在玩家身后永久丢失）。")]
-    public Vector3 starterGemOffset = new Vector3(0f, 0f, 1.5f);
+    public Vector3 starterGemOffset = new Vector3(0f, 0f, 2.75f);
     [Tooltip("开局宝石是否每颗触发一次单选。关闭时每颗宝石触发双选。")]
     public bool openingGemDoublePick = false;
     [Tooltip("精英掉落的每颗宝石是否触发双选。默认 false：每颗只触发一次单选，奖励总量由上面随机掉落的颗数决定。改 true 则每颗都是双选（总量翻倍）。")]
@@ -50,6 +50,8 @@ public class CardManager : SceneSingleton<CardManager>
     [Min(1)] public int eliteGemCountMin = 2;
     [Tooltip("精英击杀掉落的宝石数量上限（含）。等于下限则固定掉落该数量；大于下限则在区间内随机。若误配成小于下限，运行时自动回退为下限。")]
     [Min(1)] public int eliteGemCountMax = 2;
+    [Tooltip("每局精英击杀奖励的最大结算次数；0 = 不限。该次数按精英击杀奖励事件计，不按单颗宝石计。")]
+    [Min(0)] public int eliteKillCardRewardLimit = 6;
     [Tooltip("玩家进入该半径后自动拾取宝石；角色移动不依赖 Rigidbody，因此由宝石轮询距离。")]
     [Min(0.25f)] public float cardOfferGemPickupRadius = 1.25f;
 
@@ -84,6 +86,14 @@ public class CardManager : SceneSingleton<CardManager>
     [Min(1f)] public float cardOfferGemDropGravity = 18f;
     [Tooltip("掉落动画播完才可被拾取。关闭则宝石在空中就能被吸走。")]
     public bool gemPickupRequiresDropLanded = true;
+    [Tooltip("宝石最终落点到玩家的最低水平距离；运行时还会与拾取半径叠加安全余量取较大值。")]
+    [Min(0.25f)] public float gemPlayerSafeDistance = 2.25f;
+    [Tooltip("宝石落点相对拾取半径额外留出的水平安全余量。")]
+    [Min(0f)] public float gemPlayerClearance = 0.5f;
+    [Tooltip("宝石被玩家位置校正后优先落在该距离；仅当原始预期落点过近时生效。")]
+    [Min(0.25f)] public float gemPlayerPreferredDistance = 2.75f;
+    [Tooltip("掉落落地后保持可见、暂不允许拾取的时间（秒）。")]
+    [Min(0f)] public float gemPickupArmingDelay = 0.5f;
 
     [Tooltip("开局宝石相对出生点的散落位置；数量不足时使用默认左右偏移。")]
     public Vector3[] openingGemOffsets =
@@ -301,6 +311,7 @@ public class CardManager : SceneSingleton<CardManager>
         forward.Normalize();
 
         Vector3 gemPosition = anchor + forward * starterGemOffset.z + Vector3.up * starterGemOffset.y;
+        gemPosition = EnsureGemLandingDistanceFromPlayer(gemPosition, anchor);
         CardChoiceGemPickup gem = SpawnCardOfferGem(gemPosition, doublePick: false, keepPicks: false,
             waveIndex: -1, source: CardOfferGemSource.Starter);
         if (gem == null)
@@ -544,6 +555,60 @@ public class CardManager : SceneSingleton<CardManager>
         return delta.sqrMagnitude <= maxDistance * maxDistance;
     }
 
+    /// <summary>
+    /// 将过于靠近玩家的预期落点推到玩家可感知、需要主动走过去的位置。
+    /// 只校正水平 XZ 距离，保留调用方计算出的地面高度。
+    /// </summary>
+    Vector3 EnsureGemLandingDistanceFromPlayer(Vector3 candidate, Vector3 origin)
+    {
+        if (!TryGetPlayerAnchorPosition(out Vector3 playerPosition)) return candidate;
+
+        Vector3 fromPlayer = candidate - playerPosition;
+        fromPlayer.y = 0f;
+        float currentDistance = fromPlayer.magnitude;
+        float safeDistance = Mathf.Max(
+            Mathf.Max(0.25f, gemPlayerSafeDistance),
+            Mathf.Max(0.25f, cardOfferGemPickupRadius) + Mathf.Max(0f, gemPlayerClearance));
+        if (currentDistance >= safeDistance) return candidate;
+
+        float preferredDistance = Mathf.Max(safeDistance, Mathf.Max(0.25f, gemPlayerPreferredDistance));
+        Vector3 direction = currentDistance > 0.0001f ? fromPlayer / currentDistance : Vector3.zero;
+
+        // 精英刚好死在玩家脚下时，候选落点方向可能也接近零：优先使用死亡点相对玩家的方向，
+        // 再退回当前玩家朝向，保证宝石不会原地生成并立即被拾取。
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            Vector3 fromOrigin = origin - playerPosition;
+            fromOrigin.y = 0f;
+            if (fromOrigin.sqrMagnitude > 0.0001f)
+                direction = fromOrigin.normalized;
+        }
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            PossessionManager possession = PossessionManager.Instance;
+            if (possession != null && possession.CurrentBody != null)
+            {
+                direction = possession.CurrentBody.transform.forward;
+                direction.y = 0f;
+            }
+            else
+            {
+                SoulActor soul = FindObjectOfType<SoulActor>();
+                if (soul != null)
+                {
+                    direction = soul.transform.forward;
+                    direction.y = 0f;
+                }
+            }
+        }
+        if (direction.sqrMagnitude < 0.0001f) direction = Vector3.forward;
+        direction.Normalize();
+
+        Vector3 adjusted = playerPosition + direction * preferredDistance;
+        adjusted.y = candidate.y;
+        return adjusted;
+    }
+
     /// <summary>各来源宝石投放开关：关闭时该来源不生成宝石（由唯一入口 SpawnCardOfferGem 统一拦截）。</summary>
     public bool IsGemSourceEnabled(CardOfferGemSource source)
     {
@@ -612,12 +677,8 @@ public class CardManager : SceneSingleton<CardManager>
     /// </summary>
     public int ResolveEliteGemDropCount()
     {
-        const int fallback = 2;
-        int min = eliteGemCountMin;
-        int max = eliteGemCountMax;
-        if (min <= 0 && max <= 0) return fallback;
-        if (min <= 0) min = Mathf.Max(1, max);
-        if (max <= 0) max = min;
+        int min = Mathf.Max(1, eliteGemCountMin);
+        int max = Mathf.Max(1, eliteGemCountMax);
         if (max < min) max = min;          // 上限误配小于下限 → 按固定数量处理
         return max > min ? UnityEngine.Random.Range(min, max + 1) : min;
     }
@@ -652,6 +713,9 @@ public class CardManager : SceneSingleton<CardManager>
                 float radius = scatter * UnityEngine.Random.Range(0.7f, 1f);
                 landing = origin + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             }
+
+            // 精英死亡点靠近玩家时，不让随机落点直接落入拾取范围；改为推到玩家前方的可感知距离。
+            landing = EnsureGemLandingDistanceFromPlayer(landing, origin);
 
             CardChoiceGemPickup gem = SpawnCardOfferGem(landing, doublePick, keepPicks, waveIndex,
                 source, onChoiceCompleted);

@@ -92,6 +92,8 @@ public class AudioEventBinder : MonoBehaviour
         {
             PossessionManager.Instance.OnPossessionStarted -= HandlePossessionStarted;
             PossessionManager.Instance.OnPossessionStarted += HandlePossessionStarted;
+            PossessionManager.Instance.OnPossessionDetachedForSwitch -= HandlePossessionDetachedForSwitch;
+            PossessionManager.Instance.OnPossessionDetachedForSwitch += HandlePossessionDetachedForSwitch;
             PossessionManager.Instance.OnPossessionEndedEx -= HandlePossessionEndedEx;
             PossessionManager.Instance.OnPossessionEndedEx += HandlePossessionEndedEx;
         }
@@ -121,6 +123,7 @@ public class AudioEventBinder : MonoBehaviour
         if (PossessionManager.Instance != null)
         {
             PossessionManager.Instance.OnPossessionStarted -= HandlePossessionStarted;
+            PossessionManager.Instance.OnPossessionDetachedForSwitch -= HandlePossessionDetachedForSwitch;
             PossessionManager.Instance.OnPossessionEndedEx -= HandlePossessionEndedEx;
         }
         if (RunSession.Instance != null)
@@ -174,6 +177,11 @@ public class AudioEventBinder : MonoBehaviour
     void HandlePossessionStarted(MonsterActor body)
     {
         AudioManager.Instance?.Play(SfxId.PossessionStart);
+    }
+
+    void HandlePossessionDetachedForSwitch()
+    {
+        AudioManager.Instance?.Play(SfxId.PossessionEnd);
     }
 
     void HandlePossessionEndedEx(PossessionManager.PossessionEndReason reason)

@@ -17,6 +17,7 @@ public sealed class CardChoiceGemPickup : MonoBehaviour
     CardManager owner;
     Action onChoiceCompleted;
     float pickupRadius = 1.25f;
+    float pickupArmingRemaining;
     Vector3 originalScale = Vector3.one;
 
     public bool IsCollected { get; private set; }
@@ -46,6 +47,7 @@ public sealed class CardChoiceGemPickup : MonoBehaviour
         IsChoiceCompleted = false;
         IsDropping = false;
         IsFlying = false;
+        pickupArmingRemaining = 0f;
         originalScale = transform.localScale;
         if (originalScale == Vector3.zero) originalScale = Vector3.one;
         EnsurePickupCollider();
@@ -56,6 +58,13 @@ public sealed class CardChoiceGemPickup : MonoBehaviour
         if (owner == null || IsCollected || IsChoiceCompleted || IsFlying) return;
         // 掉落动画播完（落点确定）后才允许拾取，避免"还在空中就被吸走"。
         if (IsDropping) return;
+        // 落地后再留出短暂可见窗口，避免宝石刚落地就被玩家当前脚步直接吸走。
+        if (pickupArmingRemaining > 0f)
+        {
+            if (!TimeScaleManager.IsDomainActive(TimeDomain.Pause))
+                pickupArmingRemaining -= Time.unscaledDeltaTime;
+            return;
+        }
         // 已有宝石在飞/在选卡 → 本颗原地等待，必须等上一颗选完卡释放闸门。
         if (owner.IsCardOfferGemBusy()) return;
         // 只挡"暂停"域（选卡弹窗/暂停菜单），不挡子弹时间(BulletTime)/顿帧(HitStop)：
@@ -76,12 +85,13 @@ public sealed class CardChoiceGemPickup : MonoBehaviour
 
     /// <summary>
     /// 播放掉落动画：从掉落点（如精英怪死亡位置）弹射到周围散落点，抛物线 + 落地小反弹。
-    /// 动画期间不可拾取，落地后回调通知（落定即可被拾取）。
+    /// 动画期间不可拾取，落地后进入短暂拾取缓冲，再回调通知外部流程。
     /// </summary>
     internal void StartDrop(Vector3 from, Vector3 to, float groundY, Action onDropFinished)
     {
         if (IsChoiceCompleted) return;
         IsDropping = true;
+        pickupArmingRemaining = 0f;
 
         // 掉落途中不参与碰撞检测，但可以看见。
         Collider[] colliders = GetComponentsInChildren<Collider>(true);
@@ -138,6 +148,9 @@ public sealed class CardChoiceGemPickup : MonoBehaviour
         transform.position = new Vector3(position.x, groundY, position.z);
         transform.localScale = originalScale;
         IsDropping = false;
+        pickupArmingRemaining = owner != null
+            ? Mathf.Max(0f, owner.gemPickupArmingDelay)
+            : 0.5f;
         EnsurePickupCollider();
         onDropFinished?.Invoke();
     }

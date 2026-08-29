@@ -11,7 +11,9 @@ public class Projectile : MonoBehaviour
     public bool isPlayerProjectile = true;
     [Tooltip("Who fired this projectile (used for burn/lifesteal passives).")]
     public Enemy ownerEnemy;
-    [Tooltip("When set, hit settlement goes through the Ability (damage + Effects).")]
+    [Tooltip("When set, hit settlement goes through the player Ability (damage + hit audio).")]
+    public PlayerAbility sourcePlayerAbility;
+    [Tooltip("When set, hit settlement goes through the enemy Ability (damage + Effects).")]
     public EnemyAbility sourceAbility;
 
     [Header("Visual")]
@@ -81,6 +83,7 @@ public class Projectile : MonoBehaviour
             if (ownerEnemy != null && ownerEnemy.CanDamage(enemy))
             {
                 if (sourceAbility != null) sourceAbility.SettleHit(enemy, damage);
+                else if (sourcePlayerAbility != null) sourcePlayerAbility.SettleHit(enemy, damage);
                 else DealDamage(enemy);
                 OnHit();
                 return;
@@ -95,7 +98,16 @@ public class Projectile : MonoBehaviour
                 return;
             }
 
-            if (sourceAbility == null && isPlayerProjectile && hit.CompareTag("Enemy"))
+            if (sourceAbility == null && sourcePlayerAbility != null && isPlayerProjectile && hit.CompareTag("Enemy"))
+            {
+                if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
+                {
+                    sourcePlayerAbility.SettleHit(enemy, damage);
+                    OnHit();
+                    return;
+                }
+            }
+            if (sourceAbility == null && sourcePlayerAbility == null && isPlayerProjectile && hit.CompareTag("Enemy"))
             {
                 if (enemy != null && !enemy.isDowned && !enemy.isPossessed)
                 {
@@ -153,6 +165,7 @@ public class Projectile : MonoBehaviour
     {
         if (settled) return;
         settled = true;
+        sourcePlayerAbility = null;
         sourceAbility = null;
         ownerEnemy = null;
         VfxPool.ReleaseOrDestroy(gameObject);
