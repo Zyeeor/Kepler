@@ -149,6 +149,21 @@ public class AudioManager : MonoBehaviour
     /// <summary>清除 Phase/Wave/Override 层（返回主菜单等场景兜底）。</summary>
     public void ClearPhaseAndOverrides() => bgmController?.ClearPhaseAndOverrides();
 
+    /// <summary>进入 Victory Epilogue：复用 StageBgmMap 的结尾音乐层；未配置 Base 时停止当前音乐。</summary>
+    public void BeginVictoryEpilogue()
+    {
+        bgmController?.BeginVictoryEpilogue(stageBgmMap != null ? stageBgmMap.victoryEpilogueBase : null);
+    }
+
+    /// <summary>最终字幕消失进入最后黑幕：切换到 StageBgmMap 的 Exit 音乐层。</summary>
+    public void SetVictoryEpilogueExitBgm()
+    {
+        bgmController?.SetVictoryEpilogueExit(stageBgmMap != null ? stageBgmMap.victoryEpilogueExit : null);
+    }
+
+    /// <summary>结尾或场景切换结束时清除 Victory Epilogue 音乐层。</summary>
+    public void ClearVictoryEpilogue() => bgmController?.ClearVictoryEpilogue();
+
     /// <summary>BGM Duck 压栈（Voice 播放期间压低）。</summary>
     public void PushBgmDuck(float factor = 0.3f) => bgmController?.PushDuck(factor);
 

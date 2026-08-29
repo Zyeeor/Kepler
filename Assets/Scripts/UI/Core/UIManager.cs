@@ -53,6 +53,10 @@ public class UIManager : SceneSingleton<UIManager>
     [Header("Result")]
     [Tooltip("结算面板（胜利/失败）延迟弹出秒数：留出时间看最终战况/死亡动画。")]
     [Min(0f)] public float resultDelaySeconds = 2f;
+    [Tooltip("胜利时使用 Victory Epilogue；关闭后恢复旧 Win Result。Failure 永远不受此开关影响。")]
+    public bool useVictoryEpilogueForWin = true;
+    [Tooltip("Victory Epilogue 的唯一配置真源；为空时读取 Resources/Victory/VictoryEpilogueConfig，仍为空则使用运行时默认值。")]
+    public VictoryEpilogueConfig victoryEpilogueConfig;
 
     /// <summary>结算挂起计数（>0 时延迟弹结算面板；First Clear 八步序列等"结算前演出"用）。</summary>
     public static int ResultSuspendCount;
@@ -212,6 +216,11 @@ public class UIManager : SceneSingleton<UIManager>
         while (ResultSuspendCount > 0)
             yield return null;
         resultDelayCoroutine = null;
+        if (won && useVictoryEpilogueForWin)
+        {
+            VictoryEpilogueController.EnsureInstance(victoryEpilogueConfig).PlayFormalVictory(victoryEpilogueConfig);
+            yield break;
+        }
         ShowResult(won);
     }
 
@@ -256,6 +265,12 @@ public class UIManager : SceneSingleton<UIManager>
     /// </summary>
     public void ShowResult(bool won)
     {
+        if (won && useVictoryEpilogueForWin)
+        {
+            VictoryEpilogueController.EnsureInstance(victoryEpilogueConfig).PlayFormalVictory(victoryEpilogueConfig);
+            return;
+        }
+
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);

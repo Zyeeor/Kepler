@@ -54,6 +54,11 @@ public class BgmController : AudioChannelController
     int _currentWaveNumber;                                       // 当前玩家侧波次编号（1-based；0=未知）
     bool _wavesActive;                                            // 是否处于 Waves 阶段（未配置波次时保持当前曲，不回落 Scene 层）
     readonly List<BgmOverride> _bgmOverrideStack = new List<BgmOverride>(); // Override 层压栈
+    bool _victoryEpilogueActive;
+    BgmAction _victoryEpilogueAction = BgmAction.Stop;
+    AudioClip _victoryEpilogueClip;
+    float _victoryEpilogueFade;
+    float _victoryEpilogueVolume = 1f;
 
     protected override void EnsureSources()
     {
@@ -187,6 +192,9 @@ public class BgmController : AudioChannelController
         _currentWaveNumber = 0;
         _wavesActive = false;
         _bgmOverrideStack.Clear();
+        _victoryEpilogueActive = false;
+        _victoryEpilogueAction = BgmAction.Stop;
+        _victoryEpilogueClip = null;
         ReconcileBgm();
     }
 
@@ -320,6 +328,48 @@ public class BgmController : AudioChannelController
         ReconcileBgm();
     }
 
+    /// <summary>Victory Epilogue 进入/退出时的局部终态音乐层；资源来自 StageBgmMap，不创建第二个 AudioSource。</summary>
+    public void BeginVictoryEpilogue(StageBgmMap.Slot slot)
+    {
+        _victoryEpilogueActive = true;
+        ApplyVictoryEpilogueSlot(slot);
+        ReconcileBgm();
+    }
+
+    public void SetVictoryEpilogueExit(StageBgmMap.Slot slot)
+    {
+        _victoryEpilogueActive = true;
+        ApplyVictoryEpilogueSlot(slot);
+        ReconcileBgm();
+    }
+
+    public void ClearVictoryEpilogue()
+    {
+        _victoryEpilogueActive = false;
+        _victoryEpilogueAction = BgmAction.Stop;
+        _victoryEpilogueClip = null;
+        _victoryEpilogueFade = 0f;
+        _victoryEpilogueVolume = 1f;
+        _bgmStopped = false;
+        ReconcileBgm();
+    }
+
+    void ApplyVictoryEpilogueSlot(StageBgmMap.Slot slot)
+    {
+        _victoryEpilogueAction = BgmAction.Stop;
+        _victoryEpilogueClip = null;
+        _victoryEpilogueFade = 0f;
+        _victoryEpilogueVolume = 1f;
+        if (slot == null) return;
+        if (slot.action == BgmAction.Play && slot.clip != null)
+        {
+            _victoryEpilogueAction = BgmAction.Play;
+            _victoryEpilogueClip = slot.clip;
+            _victoryEpilogueFade = slot.fadeOverride;
+            _victoryEpilogueVolume = slot.volumeScale;
+        }
+    }
+
     /// <summary>清除基础层/Override 层（binder sceneLoaded 兜底：返回主菜单 EndRun 不广播阶段的场景）。</summary>
     public void ClearPhaseAndOverrides()
     {
@@ -332,6 +382,9 @@ public class BgmController : AudioChannelController
         _currentWaveNumber = 0;
         _wavesActive = false;
         _bgmOverrideStack.Clear();
+        _victoryEpilogueActive = false;
+        _victoryEpilogueAction = BgmAction.Stop;
+        _victoryEpilogueClip = null;
         ReconcileBgm();
     }
 
@@ -345,6 +398,12 @@ public class BgmController : AudioChannelController
     /// </summary>
     void ReconcileBgm()
     {
+        if (_victoryEpilogueActive)
+        {
+            ApplyVictoryEpilogueTarget();
+            return;
+        }
+
         bool terminal = _currentPhase == RunPhase.Result || _currentPhase == RunPhase.Failed;
 
         // 终态优先：Result/Failed 期间忽略 Override 栈，只看基础层目标
@@ -363,6 +422,19 @@ public class BgmController : AudioChannelController
             return;
         }
         ApplyBaseTarget();
+    }
+
+    void ApplyVictoryEpilogueTarget()
+    {
+        if (_victoryEpilogueAction == BgmAction.Play && _victoryEpilogueClip != null)
+        {
+            _bgmStopped = false;
+            _pendingFadeOverride = _victoryEpilogueFade;
+            PlayBgm(_victoryEpilogueClip, _victoryEpilogueVolume);
+            return;
+        }
+
+        StopBgmOnce();
     }
 
     /// <summary>应用基础层目标（Action 三态）。</summary>

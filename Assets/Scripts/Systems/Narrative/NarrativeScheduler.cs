@@ -107,7 +107,11 @@ public class NarrativeScheduler : MonoBehaviour
         // 先评 Access 推进规则（推进判定与 Cue 判定同帧一致）
         EvaluateAccessRules(evt, qualifier);
 
-        // First Clear 触发：RunWon + 未首通 → 启动八步序列（挂起普通 Cue 调度）
+        // Victory Epilogue 接管胜利表现时，旧 First Clear 不得并行弹出或播放普通结尾 Cue。
+        if (evt == NarrativeTriggerEvent.RunWon && VictoryEpilogueController.IsEnabled)
+            return;
+
+        // Legacy First Clear：仅在 Victory Epilogue 关闭时保留原八步序列。
         if (evt == NarrativeTriggerEvent.RunWon && !NarrativeProfileStore.FirstClearCompleted)
         {
             StartFirstClear();

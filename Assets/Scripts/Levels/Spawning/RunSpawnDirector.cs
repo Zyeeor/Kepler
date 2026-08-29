@@ -258,6 +258,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
 
     void Update()
     {
+        if (VictoryEpilogueController.IsPlaying) return;
         RunSession run = RunSession.Instance;
         if (run != null && run.IsBossMode)
         {

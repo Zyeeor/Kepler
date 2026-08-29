@@ -222,7 +222,8 @@ public class AudioEventBinder : MonoBehaviour
         var am = AudioManager.Instance;
         if (am == null) return;
         if (phase == RunPhase.Final) am.Play(SfxId.FinalBegin);
-        else if (phase == RunPhase.Result) am.Play(SfxId.FinalClear);
+        else if (phase == RunPhase.Result && !VictoryEpilogueController.IsEnabled)
+            am.Play(SfxId.FinalClear);
         am.SetPhaseBgm(phase); // Phase 层 BGM 请求（Opening/Tutorial 无映射 → 清 Phase 层回落 Scene 层）
     }
 
