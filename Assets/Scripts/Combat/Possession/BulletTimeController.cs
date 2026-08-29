@@ -15,6 +15,10 @@ public sealed class BulletTimeController : MonoBehaviour
     [Min(0.01f)] public float duration = 2f;
     [Range(0.05f, 1f)] public float timeScale = 0.2f;
 
+    [Header("Bullet Time Charges")]
+    [Tooltip("每具 Body 默认拥有的 Bullet Time Charge 次数。成功附身新 Body 刷新；E 使用 -1；0 时同 Body 不可再使用；换 Body 后重新刷新。Boss Reserve Body 同样刷新。")]
+    [Min(1)] public int bulletTimeChargesPerBody = 1;
+
     [Header("Damage Immunity Effect")]
     [Tooltip("Optional direct Effect asset. When empty, the Effect Tag is resolved from the Gameplay Tag Catalog/CardManager.")]
     public GameplayEffectDefinition damageImmunityEffect;
@@ -66,6 +70,11 @@ public sealed class BulletTimeController : MonoBehaviour
     public static float ConfiguredTimeScale
     {
         get { return Instance != null ? Mathf.Clamp(Instance.timeScale, 0.05f, 1f) : 0.2f; }
+    }
+
+    public static int ConfiguredChargesPerBody
+    {
+        get { return Instance != null ? Mathf.Max(1, Instance.bulletTimeChargesPerBody) : 1; }
     }
 
     public static BulletTimeController EnsureInstance()
@@ -178,29 +187,32 @@ public sealed class BulletTimeController : MonoBehaviour
             TimeScaleManager.Pop(TimeDomain.BulletTime);
     }
 
-    private void ApplyDamageImmunity(MonsterActor currentBody)
+    /// <summary>
+    /// Applies temporary damage immunity for a configurable duration. Used by the post-possess
+    /// protection (Pass v1 §7.5) — independent of Bullet Time: no slow motion, no BT charge cost.
+    /// </summary>
+    public void ApplyDamageImmunityForDuration(MonsterActor target, float duration)
     {
-        if (currentBody == null || currentBody.Combat == null || damageImmunityDuration <= 0f)
+        if (target == null || target.Combat == null || duration <= 0f)
             return;
-        if (currentBody.Combat.Tags.HasTag("State.Defense.DamageImmune"))
+        if (target.Combat.Tags.HasTag("State.Defense.DamageImmune"))
             return;
 
         GameplayEffectDefinition definition = ResolveDamageImmunityEffect();
         if (definition == null) return;
 
-        if (currentBody.Combat.TryGetEffectStacks(definition, out _))
+        if (target.Combat.TryGetEffectStacks(definition, out _))
             return;
 
-        if (!currentBody.Combat.ApplyEffect(
-            definition,
-            null,
-            null,
-            out string reason,
-            damageImmunityDuration,
-            -1))
+        if (!target.Combat.ApplyEffect(definition, null, null, out string reason, duration, -1))
         {
             Debug.LogWarning($"[BulletTime] Failed to apply damage immunity Effect: {reason}", this);
         }
+    }
+
+    private void ApplyDamageImmunity(MonsterActor currentBody)
+    {
+        ApplyDamageImmunityForDuration(currentBody, damageImmunityDuration);
     }
 
     private GameplayEffectDefinition ResolveDamageImmunityEffect()

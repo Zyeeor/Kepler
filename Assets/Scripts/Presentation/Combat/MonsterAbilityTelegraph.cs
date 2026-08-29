@@ -15,6 +15,7 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
     private static readonly int IndicatorIntensityId = Shader.PropertyToID("_IndicatorIntensity");
     private static readonly int IndicatorProgressId = Shader.PropertyToID("_IndicatorProgress");
     private static readonly int IndicatorShapeId = Shader.PropertyToID("_ShapeType");
+    private static readonly int IndicatorSectorAngleId = Shader.PropertyToID("_SectorAngle");
 
     private GameObject _indicatorObject;
     private Material _indicatorMaterial;
@@ -78,6 +79,21 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
                     geometry.width / IndicatorEdgeRadius,
                     1f);
                 SetIndicatorFloat(IndicatorShapeId, 1f);
+            }
+            else if (geometry.shape == EnemyIndicatorShape.Sector)
+            {
+                // 扇形预警（Pass v1 §13.2）：+X 指向 forward，正方形 scale = 半径 / 0.84，角度由 shader 的 _SectorAngle 控制。
+                // 注：length 存的是半径（与 Circle 的 radius 同语义），shader 里 distS=0.84 对应"中心到边中点"，
+                // 故 scale 需 ×2（与 Circle 的 radius*2f/0.84 一致），否则扇形半径只有预期一半。
+                _indicatorObject.transform.SetPositionAndRotation(
+                    pos,
+                    Quaternion.FromToRotation(Vector3.right, geometry.forward) * Quaternion.Euler(90f, 0f, 0f));
+                _indicatorObject.transform.localScale = new Vector3(
+                    geometry.length * 2f / IndicatorEdgeRadius,
+                    geometry.length * 2f / IndicatorEdgeRadius,
+                    1f);
+                SetIndicatorFloat(IndicatorShapeId, 2f);
+                SetIndicatorFloat(IndicatorSectorAngleId, Mathf.Max(1f, geometry.angle));
             }
             else
             {

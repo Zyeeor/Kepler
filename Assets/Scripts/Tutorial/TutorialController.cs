@@ -189,10 +189,11 @@ public class TutorialController : SceneSingleton<TutorialController>
 
         // 补查当前阶段：WaveManager.AutoStartRoutine 的 TransitionTo(Tutorial) 可能早于本组件 Start
         // （场景对象初始化序：协程 resume 先于部分 Start），导致 OnPhaseChanged 订阅错过 Tutorial 事件。
-        // 此处主动检查当前阶段，若已处于 Tutorial 且本局准入通过且开启自动附身则补启动开场载体流程
-        // （防重入由 openingCarrierStarted 保证；准入口径见 TutorialAllowedThisRun）。
+        // 此处主动检查当前阶段，若已处于 Tutorial 则补启动开场载体流程（防重入由 openingCarrierStarted 保证）。
+        // Pass v1：开场固定 Pride 载体为正式流程的一部分，不再依赖 autoPossessOpeningCarrier
+        // （autoPossessOpeningCarrier 只控制是否自动附身，关闭时刷出尸体由玩家亲手 Possess）。
         var session = RunSession.Instance;
-        if (session != null && session.CurrentPhase == RunPhase.Tutorial && TutorialAllowedThisRun && autoPossessOpeningCarrier)
+        if (session != null && session.CurrentPhase == RunPhase.Tutorial && !openingCarrierStarted)
             StartCoroutine(OpeningCarrierRoutine());
     }
 
@@ -233,9 +234,9 @@ public class TutorialController : SceneSingleton<TutorialController>
         // 阶段变化不做强制行为；Step 激活与否由事实判定驱动（Tutorial 阶段的 Step 用 startFacts 空配置）
         Debug.Log($"[TutorialController] 阶段 → {phase}");
 
-        // 新局进入 Tutorial 阶段：本局准入通过且开启自动附身时才启动开场载体流程
-        // （默认关闭 = 新游戏灵魂独立，玩家自行附身；开启 = 灵魂经正常附身飞行动画进入初始载体）
-        if (phase == RunPhase.Tutorial && TutorialAllowedThisRun && !openingCarrierStarted && autoPossessOpeningCarrier)
+        // 新局进入 Tutorial 阶段：刷出固定 Pride 开场载体（永久尸体）。
+        // autoPossessOpeningCarrier 仅控制是否自动附身；关闭时玩家亲手 Possess（Pass v1 正式流程）。
+        if (phase == RunPhase.Tutorial && !openingCarrierStarted)
             StartCoroutine(OpeningCarrierRoutine());
     }
 
@@ -298,8 +299,17 @@ public class TutorialController : SceneSingleton<TutorialController>
             // 载体以"永久附身等待尸体"出场（AI 休眠 + 附身窗口无限）——
             // BeginPossessionFlight 要求目标处于 Downed 可附身态，且避免活怪 AI 在附身动画期间攻击灵魂。
             actor.SpawnAsPermanentCorpse();
+            actor.MarkAsOpeningCarrier();
             lastCarrier = actor;
             lastCarrierRoot = carrier;
+
+            // Pass v1：autoPossessOpeningCarrier 关闭时，固定 Pride 载体保持为尸体，
+            // 由玩家 Soul 落地后亲手 RMB Possess（第一次 Possession 触发 Pre-Combat 门）。
+            if (!autoPossessOpeningCarrier)
+            {
+                Debug.Log("[TutorialController] 开场 Pride 载体已刷出为永久尸体，等待玩家亲手附身。");
+                yield break;
+            }
 
             var pm = PossessionManager.Instance;
             if (pm != null && pm.BeginPossessionFlight(actor))
@@ -647,6 +657,16 @@ public class TutorialController : SceneSingleton<TutorialController>
         promptQueue.Add(step);
         if (!queueRunning && queueRoutine == null)
             queueRoutine = StartCoroutine(PromptQueueRoutine());
+    }
+
+    /// <summary>
+    /// 公开一次性提示入口：按 Step ID 入队一条 queueDelivery 提示，供战斗系统触发机制向教学提示
+    /// （如 Pass v1 §2.6 首次正式选卡时的「罪印双刃」提示）。门控/幂等/持久化由 EnqueuePrompt 统一保证。
+    /// </summary>
+    public void ShowPrompt(string stepId)
+    {
+        if (string.IsNullOrEmpty(stepId)) return;
+        EnqueuePrompt(config != null ? config.FindStep(stepId) : null);
     }
 
     /// <summary>从待播队列中摘除指定 Step（若正在显示则不动）；附身事件用它保证"怪介绍先于按键提示"。</summary>

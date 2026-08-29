@@ -248,6 +248,14 @@ public class MonsterActor : Actor
     public bool playerDetected = false;
     /// <summary>Runtime-only body supplied by the Boss fight. It keeps an infinite possession window.</summary>
     public bool IsBossBattleReserveBody { get; private set; }
+    /// <summary>
+    /// Runtime-only Opening Carrier corpse (fixed Pride corpse at run start). It keeps an
+    /// infinite possession window and never enters the FIFO corpse queue or object pool.
+    /// The run-level Pre-Combat gate uses it to detect the first successful Possession.
+    /// </summary>
+    public bool IsOpeningCarrier { get; private set; }
+    /// <summary>当前 Body 剩余 Bullet Time Charge（Pass v1 §8.2：每 Body 默认 1 次，附身刷新，E 使用 -1）。</summary>
+    public int bulletTimeChargesRemaining;
     /// <summary>Current possessed-body scale used by ability visuals and hitboxes.</summary>
     public float PossessionCombatScaleMultiplier { get; private set; } = 1f;
     /// <summary>
@@ -1657,6 +1665,8 @@ public class MonsterActor : Actor
             ? Mathf.Clamp01(reservedHealth / reservedMaxHealth)
             : 1f;
         bool preserveEliteHealth = IsElite && reservedHealth > 0f;
+        // Pass v1 §9：Elite Possessed Body 不再保留残余 HP 比例，成功 Possess 后补满 Player Body HP。
+        preserveEliteHealth = false;
         if (corpseRoutine != null)
         {
             StopCoroutine(corpseRoutine);
@@ -1666,6 +1676,7 @@ public class MonsterActor : Actor
         isPossessed = true;
         isDowned = false;
         isWeakened = false;
+        IsOpeningCarrier = false;   // the Opening Carrier is consumed on first Possession
         transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
         // 恢复能力组件：SpawnAsPermanentCorpse（开场载体/刷尸体）与 BeginDisappearing 会禁用 EnemyAbility 组件，
 
@@ -1883,6 +1894,17 @@ public class MonsterActor : Actor
     }
 
     /// <summary>
+    /// Marks this permanent corpse as the run-start Opening Carrier (the fixed Pride corpse).
+    /// The run-level Pre-Combat gate reads this flag on the first successful Possession to
+    /// start combat timing. It must not be hard-coded to a specific Sin; callers decide the
+    /// carrier identity via the configured opening prefab.
+    /// </summary>
+    public void MarkAsOpeningCarrier()
+    {
+        IsOpeningCarrier = true;
+    }
+
+    /// <summary>
     /// Boss-only reserve body: it is a permanent corpse while unused, but keeps a real
     /// possessed-body HP pool so Boss damage can consume the slot instead of time decay.
     /// </summary>
@@ -1943,6 +1965,7 @@ public class MonsterActor : Actor
         BossReserveCorpseVisualFx reserveVisual = GetCachedReserveCorpseVisual();
         if (reserveVisual != null) reserveVisual.Deactivate();
         IsBossBattleReserveBody = false;
+        IsOpeningCarrier = false;
         isPossessed = false;
         isDowned = true;
         Body = BodyState.Fading;
@@ -2665,6 +2688,8 @@ public class MonsterActor : Actor
         }
         if ((cmd.Pressed & CommandButtons.Skill2) != 0) PlayerTriggerSkill();
         if ((cmd.Pressed & CommandButtons.Mobility) != 0) PlayerTriggerMobility();
+        if ((cmd.Pressed & CommandButtons.Skill3) != 0 && manager != null && manager.CurrentBody == this)
+            manager.TriggerBulletTime();
         if ((cmd.Pressed & CommandButtons.Release) != 0 && manager != null && manager.CurrentBody == this)
             manager.RequestRelease(force: false);
     }

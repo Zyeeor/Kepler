@@ -170,6 +170,7 @@ public class PlayerController : MonoBehaviour, IController
         if (GameInputBindings.GetDown(CommandButtons.Skill2)) cmd.Pressed |= CommandButtons.Skill2;
         if (GameInputBindings.GetDown(CommandButtons.Skill1)) cmd.Pressed |= CommandButtons.Skill1;
         if (GameInputBindings.GetDown(CommandButtons.Mobility)) cmd.Pressed |= CommandButtons.Mobility;
+        if (GameInputBindings.GetDown(CommandButtons.Skill3)) cmd.Pressed |= CommandButtons.Skill3;
         if (GameInputBindings.GetDown(CommandButtons.Release)) cmd.Pressed |= CommandButtons.Release;
 
         // 命令产出广播（教学输入事实转译；仅按钮按下帧触发，struct 按值传递零 GC）

@@ -12,13 +12,16 @@ public sealed class ContinuousSpawnEntry
     [Min(0.01f)] public float eliteHealthMultiplier = 2f;
     [Tooltip("精英攻击力系数。最终攻击力 = 基础攻击力 × 当前攻击曲线 × 此系数。")]
     [Min(0.01f)] public float eliteAttackMultiplier = 2f;
+    [Tooltip("击杀该精英后的选卡次数：1 = 单选（1 Gem → 1 次选卡）；2 = 双选（1 Gem → 连续 2 次选卡，复用 doublePick 机制）。")]
+    [Min(1)] public int eliteRewardPickCount = 1;
 
     public ContinuousSpawnEntry(SinType sin, float eliteSpawnTimeSeconds,
-        float eliteHealthMultiplier, float eliteAttackMultiplier)
+        float eliteHealthMultiplier, float eliteAttackMultiplier, int eliteRewardPickCount = 1)
     {
         this.sin = sin;
         this.eliteSpawnTimeSeconds = eliteSpawnTimeSeconds;
         this.eliteHealthMultiplier = eliteHealthMultiplier;
         this.eliteAttackMultiplier = eliteAttackMultiplier;
+        this.eliteRewardPickCount = eliteRewardPickCount;
     }
 }

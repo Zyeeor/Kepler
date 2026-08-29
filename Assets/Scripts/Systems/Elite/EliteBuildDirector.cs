@@ -825,14 +825,17 @@ public class EliteBuildDirector : MonoBehaviour
         Vector3 deathPosition = monster.transform.position;
         int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
 
-        // 掉落颗数由 CardManager 统一解析（下限=上限即固定数量，否则区间随机），
-        // 多颗沿死亡位置周围环形散落，每颗独立播"弹射散落"动画，落地后才可拾取。
-        int count = CardManager.Instance.ResolveEliteGemDropCount();
+        // Pass v1 §2.3：击杀奖励次数绑定 Elite Schedule Entry（按 Sin），不再固定掉落颗数。
+        // 每个精英掉 1 颗宝石；rewardPickCount >= 2 时该宝石复用 doublePick 机制（1 Gem → 连续 2 次选卡）。
+        int rewardPickCount = boundWaveManager != null
+            ? boundWaveManager.GetEliteRewardPickCount(monster.sinType)
+            : 1;
+        bool doublePick = rewardPickCount >= 2;
 
         int spawned = CardManager.Instance.SpawnCardOfferGemScatter(
             deathPosition,
-            count,
-            CardManager.Instance.eliteGemDoublePick,
+            1,
+            doublePick,
             false,
             waveIndex,
             CardOfferGemSource.Elite,

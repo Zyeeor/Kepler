@@ -36,6 +36,13 @@ public sealed class RunSpawnDirector : MonoBehaviour
     bool bossTimeReached;
 
     public float ActiveCombatSeconds { get; private set; }
+    /// <summary>
+    /// Pre-Combat gate: false until the player successfully Possesses the Opening Carrier
+    /// for the first time. While false, ActiveCombatSeconds does not advance, so Normal
+    /// Spawn, the Elite Schedule and the Starter Gem timer are all naturally frozen.
+    /// Boss mode skips this gate entirely.
+    /// </summary>
+    public bool CombatStarted { get; private set; }
     public float CurrentHealthMultiplier => EvaluateMultiplier(monsterHealthMultiplierByMinute, 1f);
     public float CurrentAttackMultiplier => EvaluateMultiplier(monsterAttackMultiplierByMinute, 1f);
     public bool BossSpawned => spawnedBossCount > 0;
@@ -285,6 +292,9 @@ public sealed class RunSpawnDirector : MonoBehaviour
         RunSession run = RunSession.Instance;
         if (run != null && run.CurrentPhase != RunPhase.Waves && run.CurrentPhase != RunPhase.Final) return false;
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.GameOver) return false;
+        // Pre-Combat gate: combat timing only advances after the first successful Possession.
+        // Boss mode bypasses the gate (no Opening Carrier flow).
+        if (!CombatStarted && !(run != null && run.IsBossMode)) return false;
         return Time.timeScale > 0.0001f;
     }
 
@@ -361,6 +371,14 @@ public sealed class RunSpawnDirector : MonoBehaviour
         BossDefeated = true;
     }
 
+    /// <summary>Opens the Pre-Combat gate. Called on the first successful Possession of the Opening Carrier.</summary>
+    public void MarkCombatStarted()
+    {
+        if (CombatStarted) return;
+        CombatStarted = true;
+        ActiveCombatSeconds = 0f;
+    }
+
     public void RestoreRuntime(float activeSeconds, bool bossSpawned, bool bossDefeated)
     {
         bossBattleReserveBodies.Clear();
@@ -368,6 +386,7 @@ public sealed class RunSpawnDirector : MonoBehaviour
         spawnedBossCount = bossSpawned ? 1 : 0;
         BossDefeated = bossDefeated;
         bossTimeReached = BossSpawned || ActiveCombatSeconds >= bossCombatTime;
+        CombatStarted = ActiveCombatSeconds > 0f || bossSpawned;
     }
 
     Vector3 GetBossBattleReserveCenter()

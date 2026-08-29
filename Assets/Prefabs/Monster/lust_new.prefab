@@ -131,7 +131,7 @@ MonoBehaviour:
     acceleration: 60
     deceleration: 80
     maxTenacity: 200
-    collisionDamage: 30
+    collisionDamage: 15
     attackSpeed: 1
   possessedStats:
     maxHealth: 200

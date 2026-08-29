@@ -32,6 +32,17 @@ public class SummonActor : Enemy
     private bool diving;
     private bool playerOrigin;
 
+    // ── Enemy-created Summon Global Cap（Pass v1 §5）──
+    // 只统计 AI Enemy 创建的 Summon（playerOrigin=false）；Possessed Player / Boss Minion /
+    // Boss Reserve / Corpse 不统计。Cap 可配置（MonsterSpawner.enemySummonCap）。
+    static readonly System.Collections.Generic.List<SummonActor> _activeEnemySummons =
+        new System.Collections.Generic.List<SummonActor>();
+    bool _registeredAsEnemySummon;
+
+    static int EnemySummonCap => MonsterSpawner.Instance != null
+        ? Mathf.Max(0, MonsterSpawner.Instance.enemySummonCap)
+        : 4;
+
     private float SimulationTime => playerOrigin ? Time.unscaledTime : Time.time;
     private float SimulationDeltaTime => playerOrigin ? Time.unscaledDeltaTime : Time.deltaTime;
 
@@ -71,6 +82,8 @@ public class SummonActor : Enemy
     {
         summoner = owner;
         playerOrigin = owner != null && owner.IsPlayerControlled;
+        // Pass v1 §5：AI Enemy 创建的 Summon 计入全局上限（Possessed Player 创建的不计）。
+        if (!playerOrigin) RegisterEnemySummon();
         lifetime = duration;
         explodeOnDeath = deathBlast;
         deathExplosionDamage = blastDamage;
@@ -89,6 +102,37 @@ public class SummonActor : Enemy
     {
         pursueNearestEnemy = enabled;
         pursuitAttackIntervalMultiplier = Mathf.Max(0.05f, attackIntervalMultiplier);
+    }
+
+    /// <summary>注册为 Enemy-created Summon；达到全局上限时回收最老 Enemy Summon（Pass v1 §5）。</summary>
+    void RegisterEnemySummon()
+    {
+        if (_registeredAsEnemySummon) return;
+        _activeEnemySummons.RemoveAll(s => s == null);
+        int cap = EnemySummonCap;
+        if (cap > 0)
+        {
+            while (_activeEnemySummons.Count >= cap && _activeEnemySummons.Count > 0)
+            {
+                SummonActor oldest = _activeEnemySummons[0];
+                _activeEnemySummons.RemoveAt(0);
+                if (oldest != null && oldest != this) Destroy(oldest.gameObject);
+            }
+        }
+        _activeEnemySummons.Add(this);
+        _registeredAsEnemySummon = true;
+    }
+
+    void UnregisterEnemySummon()
+    {
+        if (!_registeredAsEnemySummon) return;
+        _activeEnemySummons.Remove(this);
+        _registeredAsEnemySummon = false;
+    }
+
+    void OnDestroy()
+    {
+        UnregisterEnemySummon();
     }
 
     protected override void Update()

@@ -6,7 +6,7 @@ using UnityEngine;
 public sealed class BossSevenfoldActor : Enemy
 {
     public const int AbilityCount = 14;
-    const float DefaultBossMaxHealth = 7777f;
+    const float DefaultBossMaxHealth = 6500f;
     public bool IsDefeated { get; private set; }
     public bool CanAct { get; private set; }
     public BossCombatBrain CombatBrain { get; private set; }
@@ -14,8 +14,8 @@ public sealed class BossSevenfoldActor : Enemy
     public Transform teleportAnchor;
     public float baseBossMaxHealth = DefaultBossMaxHealth;
     public float normalDamageMultiplier = 1.65f;
-    public int minimumEscortCount = 3;
-    public float escortRefreshSeconds = 18f;
+    public int minimumEscortCount = 2;
+    public float escortRefreshSeconds = 20f;
     [Header("Boss Combat Scale")]
     [Tooltip("Uses the shared ability-scale pipeline for hitboxes, projectile visuals and summons.")]
     [Min(1f)] public float bossCombatScaleMultiplier = 2f;

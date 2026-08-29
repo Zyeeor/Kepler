@@ -17,9 +17,9 @@ MonoBehaviour:
     detectionRadius: 15
     basicAttackRange: 8
     skillAttackRange: 3.5
-    aiMinRange: 1.5
+    aiMinRange: 2.2
     rangeUnlocks: []
-    attackEagerness: 0.58
+    attackEagerness: 0.5
     decisionIntervalMin: 0.25
     decisionIntervalMax: 0.44
     skillPriority: 0.48
@@ -147,12 +147,12 @@ MonoBehaviour:
     skillAttackRange: 6
     aiMinRange: 2
     rangeUnlocks: []
-    attackEagerness: 0.5
+    attackEagerness: 0.56
     decisionIntervalMin: 0.3
     decisionIntervalMax: 0.5
     skillPriority: 0.58
-    aiMobilityChance: 0.24
-    chaseDuration: 0
+    aiMobilityChance: 0.32
+    chaseDuration: 1
     strafeChance: 0.4
     strafeIntervalMin: 0.3
     strafeIntervalMax: 0.9
