@@ -1,21 +1,21 @@
+using System;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using System.Collections.Generic;
 
 /// <summary>
 /// 卡牌图鉴组件（局外系统 §4）。
 ///
-/// 设计范式与 BuildView 一致：把它挂到任意 UI GameObject（如主菜单 Canvas 下的一个空物体）上，
-/// 该物体即拥有「显示卡牌图鉴」的能力；所有显示配置（卡片尺寸/间距/配色/字号等）
-/// 直接在本组件的 Inspector 上编辑，运行时改参数即时生效（OnValidate）。
+/// 图鉴由 Resources/SystemUI/CardArchivePanel Prefab 作为独立 Overlay 创建并跨场景常驻；
+/// 所有显示配置（卡片尺寸/间距/配色/字号等）直接在该 Prefab 的 Inspector 中编辑。
 ///
-/// 不依赖任何 Resources prefab，全部 UI 在 Start 时于自身 transform 下动态构建。
+/// 静态界面壳层从 Resources/SystemUI/CardArchivePanel Prefab 实例化；卡片网格仍在运行时按图鉴数据生成。
 /// 卡片渲染复用 choice1 预制体，走 CoreChoiceCard.Init() 标准入口并只读化，
 /// 保证图鉴中的卡面表现与选卡界面完全一致。
 ///
 /// 三态：Unknown=剪影(???) / Known=卡面但置灰 / Unlocked=完整+时间戳+次数+新解锁角标。
-/// 分类页签：全部 / 七宗罪 / 通用。进度分母取自 CardArchiveStore.ValidCardTotal。
+/// 分类页签：七宗罪。进度分母取自 CardArchiveStore.ValidCardTotal。
 /// </summary>
 public class CardArchivePanel : MonoBehaviour
 {
@@ -24,6 +24,14 @@ public class CardArchivePanel : MonoBehaviour
     [Header("数据源")]
     [Tooltip("卡片预制体（复用 choice1）。留空则自动取 CardLibrary.Instance.cardPrefab。")]
     [SerializeField] GameObject cardPrefab;
+    [Tooltip("未知卡剪影；在 CardArchivePanel Prefab 中指定。留空时使用问号占位。")]
+    [SerializeField] Sprite unknownCardSilhouette;
+
+    [Header("New Unlock Tint")]
+    [Tooltip("新解锁卡面右上角标记使用的 Sprite。")]
+    [SerializeField] Sprite cardNewUnlockTintSprite;
+    [Tooltip("存在新解锁卡时，对应分类页签右上角标记使用的 Sprite。")]
+    [SerializeField] Sprite filterNewUnlockTintSprite;
 
     [Header("面板尺寸")]
     [Tooltip("面板宽度（像素）。0 = 自动取父级宽度。")]
@@ -86,21 +94,64 @@ public class CardArchivePanel : MonoBehaviour
 
     // ───────────────────────── 运行时 ─────────────────────────
 
-    GameObject panelRoot;                 // 面板根（自身 transform 下）
-    RectTransform contentRoot;            // 卡片容器（Content）
-    ScrollRect scrollRect;
-    Button closeButton;
-    TextMeshProUGUI titleText, progressText, statusText;
-    RectTransform tabRow;
-    Image progressFill;
+    [Serializable]
+    public class TabVisualStyle
+    {
+        [Tooltip("该分类页签的 Image 节点。")]
+        public Image image;
+        [Tooltip("未选中态 Sprite；留空时使用 Card Filters.png 对应切片。")]
+        public Sprite normalSprite;
+        [Tooltip("选中态 Sprite；留空时使用 Card Filters.png 对应切片。")]
+        public Sprite selectedSprite;
+        public Color normalColor = Color.white;
+        public Color selectedColor = Color.white;
+    }
+
+    [Header("Visual Layout (Prefab)")]
+    [SerializeField] GameObject panelRoot;
+    [SerializeField] Image backgroundImage;
+    [SerializeField] RectTransform contentRoot;
+    [SerializeField] RectTransform scrollViewport;
+    [SerializeField] ScrollRect scrollRect;
+    [SerializeField] Button refreshButton;
+    [SerializeField] Button closeButton;
+
+    [Header("Tab Images")]
+    [Tooltip("顺序：傲慢、色欲、怠惰、暴怒、嫉妒、贪婪、暴食。每项可单独配置未选中态与选中态。")]
+    [SerializeField] TabVisualStyle[] tabStyles = new TabVisualStyle[7];
+
+    [SerializeField] TextMeshProUGUI titleText;
+    [SerializeField] TextMeshProUGUI progressText;
+    [SerializeField] TextMeshProUGUI statusText;
+    [SerializeField] RectTransform tabRow;
+    [SerializeField] Image progressFill;
+
+    const float HallFilterWidth = 131.2f;
+    const float HallFilterHeight = 46.4f;
+    const float HallFilterSpacing = 29.4f; // 荣誉殿堂筛选项间距的一半
+    const float HallFilterLeft = 90f;
+    const float HallFilterTop = -195f;
 
     readonly List<string> tabs = new List<string>();
-    string currentTab = "all";
+    string currentTab = "Pride";
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    readonly Dictionary<string, int> debugMockStates = new Dictionary<string, int>();
+    readonly HashSet<string> debugMockNewUnlocks = new HashSet<string>();
+#endif
+
+    Sprite archiveBackgroundSprite;
+    Sprite refreshSprite;
+    Sprite closeSprite;
+    readonly Sprite[,] filterSprites = new Sprite[7, 2];
     bool visible;
     bool built;
 
-    /// <summary>卡面显示宽度：策划指定则用指定值，否则按卡面内容实测比例推算。</summary>
-    float FaceWidth => cardFaceWidth > 0f ? cardFaceWidth : cardFaceHeight * Mathf.Max(0.1f, measuredAspect);
+    float refreshFaceWidth;
+
+    /// <summary>卡面显示宽度：每次刷新期间固定，避免实卡测量更新比例后改变后续未知占位尺寸。</summary>
+    float CalculatedFaceWidth => cardFaceWidth > 0f ? cardFaceWidth : cardFaceHeight * Mathf.Max(0.6f, measuredAspect);
+    float FaceWidth => refreshFaceWidth > 0f ? refreshFaceWidth : CalculatedFaceWidth;
 
     /// <summary>把 Vector4 的内边距配置转成 GridLayoutGroup 需要的 RectOffset。</summary>
     RectOffset PaddingRect => new RectOffset((int)padding.x, (int)padding.y, (int)padding.z, (int)padding.w);
@@ -128,47 +179,83 @@ public class CardArchivePanel : MonoBehaviour
     static readonly Color DefTrack = new Color(0.16f, 0.16f, 0.2f, 1f);
     static readonly Color DefFill = new Color(0.95f, 0.75f, 0.25f, 1f);
 
+    // 标准卡面可见内容比例（由 choice1 实测）。未知占位沿用此比例，保证两类视觉尺寸一致。
+    const float DefaultCardFaceAspect = 0.63125f;
     /// <summary>卡面内容实测宽高比，首次渲染后缓存，用于 cardFaceWidth=0 时推算宽度。</summary>
-    float measuredAspect = 0.625f;
+    float measuredAspect = DefaultCardFaceAspect;
     bool aspectMeasured;
 
     public System.Action onClose;
+    public static CardArchivePanel Instance { get; private set; }
 
-    // ───────────────────────── 静态获取（兼容既有调用方） ─────────────────────────
+    // ───────────────────────── 静态获取 ─────────────────────────
 
-    /// <summary>
-    /// 获取图鉴组件实例。
-    /// 优先复用场景中已挂载的实例（策划可直接在主界面挂本组件并配置参数）；
-    /// 没有则自动创建一个，挂到主 Canvas 下并铺满。
-    /// 与 BuildView 的自发现思路一致：挂上就能用，不挂也能自动兜底。
-    /// </summary>
     public static CardArchivePanel EnsureInstance()
     {
+        if (IsUsable(Instance)) return Instance;
+        DisposeInvalidInstance(Instance);
+
         var existing = FindObjectOfType<CardArchivePanel>();
-        if (existing != null) return existing;
+        if (IsUsable(existing)) return existing;
+        DisposeInvalidInstance(existing);
 
-        var canvas = FindObjectOfType<Canvas>();
-        if (canvas == null) { Debug.LogWarning("[CardArchivePanel] 场景中未找到 Canvas，无法创建图鉴。"); return null; }
+        var prefab = Resources.Load<CardArchivePanel>("SystemUI/CardArchivePanel");
+        if (prefab == null)
+            throw new InvalidOperationException("缺少 Resources/SystemUI/CardArchivePanel Prefab，无法创建卡牌收藏界面。");
 
-        var host = new GameObject(nameof(CardArchivePanel), typeof(RectTransform));
-        host.transform.SetParent(canvas.transform, false);
-        var hostRT = host.GetComponent<RectTransform>();
-        hostRT.anchorMin = Vector2.zero;
-        hostRT.anchorMax = Vector2.one;
-        hostRT.offsetMin = Vector2.zero;
-        hostRT.offsetMax = Vector2.zero;
+        var instance = Instantiate(prefab);
+        if (!IsUsable(instance))
+        {
+            DisposeInvalidInstance(instance);
+            throw new InvalidOperationException("CardArchivePanel Prefab 缺少必要的 UI 引用，无法创建卡牌收藏界面。");
+        }
 
-        var comp = host.AddComponent<CardArchivePanel>();
-        comp.Build();
-        return comp;
+        DontDestroyOnLoad(instance.gameObject);
+        return instance;
+    }
+
+    static bool IsUsable(CardArchivePanel panel) => panel != null && panel.enabled && panel.HasVisualLayout();
+
+    static void DisposeInvalidInstance(CardArchivePanel panel)
+    {
+        if (panel == null) return;
+        if (Instance == panel) Instance = null;
+        if (Application.isPlaying) Destroy(panel.gameObject);
+        else DestroyImmediate(panel.gameObject);
     }
 
     // ───────────────────────── 生命周期 ─────────────────────────
 
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
+        if (!HasVisualLayout())
+        {
+            Debug.LogError("[CardArchivePanel] CardArchivePanel Prefab 缺少必要的 UI 引用。", this);
+            enabled = false;
+            return;
+        }
+
+        built = true;
+        LoadSystemUISprites();
+        ApplyVisualAssets();
+        BindVisualLayoutEvents();
+        if (Application.isPlaying) panelRoot.SetActive(false);
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     void Start()
     {
-        // EnsureInstance 可能已提前 Build 过，此处仅在尚未构建时执行
-        if (!built && autoBuildOnStart) Build();
         if (startVisible) Show();
         else if (panelRoot != null) panelRoot.SetActive(false);
     }
@@ -182,28 +269,236 @@ public class CardArchivePanel : MonoBehaviour
 
     // ───────────────────────── 构建 ─────────────────────────
 
-    /// <summary>构建整个图鉴 UI（幂等：已构建则先清理）。</summary>
+    /// <summary>绑定 Prefab 静态布局，运行时仅刷新动态卡片数据。</summary>
     public void Build()
     {
-        if (built) Clear();
-        BuildPanel();
-        built = true;
-        // 构建完默认隐藏，由 Show() 控制显隐（避免刚创建就遮挡主菜单）
-        if (panelRoot != null) panelRoot.SetActive(startVisible);
+        EnsureBuilt();
     }
 
-    /// <summary>销毁已构建的 UI 并重新构建。</summary>
+    /// <summary>Prefab 布局由编辑器保存；运行时仅刷新动态卡片数据。</summary>
     public void Rebuild()
     {
-        Clear();
-        Build();
+        EnsureBuilt();
         if (visible) Refresh();
+    }
+
+    void EnsureBuilt()
+    {
+        if (built) return;
+        if (!HasVisualLayout())
+            throw new InvalidOperationException("CardArchivePanel 必须从 Resources/SystemUI/CardArchivePanel Prefab 实例化。");
+
+        built = true;
+        BindVisualLayoutEvents();
+    }
+
+    bool HasVisualLayout() =>
+        panelRoot != null && backgroundImage != null && contentRoot != null && scrollViewport != null && scrollRect != null &&
+        refreshButton != null && closeButton != null && tabStyles != null && tabStyles.Length == 7 &&
+        titleText != null && progressText != null && statusText != null && tabRow != null && progressFill != null;
+
+    void BindVisualLayoutEvents()
+    {
+        EnsureTabStyles();
+        ApplyResponsiveTabLayout();
+        scrollRect.viewport = scrollViewport;
+        scrollRect.content = contentRoot;
+        scrollRect.horizontal = true;
+        scrollRect.vertical = false;
+        refreshButton.onClick.AddListener(Refresh);
+        closeButton.onClick.AddListener(Hide);
+
+        tabs.Clear();
+        for (int i = 0; i < tabRow.childCount; i++)
+        {
+            var tab = tabRow.GetChild(i);
+            if (!tab.name.StartsWith("Tab_")) continue;
+            string tabKey = tab.name.Substring("Tab_".Length);
+            tabs.Add(tabKey);
+            var button = tab.GetComponent<Button>();
+            if (button == null) continue;
+            string captured = tabKey;
+            button.onClick.AddListener(() => { currentTab = captured; Refresh(); });
+        }
+    }
+
+    void OnRectTransformDimensionsChange()
+    {
+        if (built) ApplyResponsiveTabLayout();
+    }
+
+    void ApplyResponsiveTabLayout()
+    {
+        if (tabRow == null || panelRoot == null) return;
+        var rootRect = panelRoot.GetComponent<RectTransform>();
+        if (rootRect == null || rootRect.rect.width <= 1f) return;
+
+        float requiredWidth = HallFilterWidth * 7f + HallFilterSpacing * 6f;
+        float availableWidth = Mathf.Max(1f, rootRect.rect.width - HallFilterLeft * 2f);
+        float scale = Mathf.Min(1f, availableWidth / requiredWidth);
+        tabRow.localScale = Vector3.one * scale;
+    }
+
+    void LoadSystemUISprites()
+    {
+        archiveBackgroundSprite = Resources.Load<Sprite>("SystemUI/CA BG");
+
+        var func = Resources.Load<Sprite>("SystemUI/Func Buttons");
+        var funcTex = func != null ? func.texture : Resources.Load<Texture2D>("SystemUI/Func Buttons");
+        if (funcTex != null)
+        {
+            refreshSprite = Sprite.Create(funcTex, new Rect(0f, 0f, 66f, 66f), new Vector2(0.5f, 0.5f), 100f);
+            closeSprite = Sprite.Create(funcTex, new Rect(68f, 0f, 66f, 66f), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        var filter = Resources.Load<Sprite>("SystemUI/Card Filters");
+        var filterTex = filter != null ? filter.texture : Resources.Load<Texture2D>("SystemUI/Card Filters");
+        if (filterTex == null) return;
+
+        const float rowHeight = 52.75f;
+        const float textureHeight = 422f;
+        for (int row = 0; row < 7; row++)
+        {
+            float y = textureHeight - (row + 1) * rowHeight;
+            filterSprites[row, 0] = Sprite.Create(filterTex, new Rect(0f, y, 164f, rowHeight), new Vector2(0.5f, 0.5f), 100f);
+            filterSprites[row, 1] = Sprite.Create(filterTex, new Rect(164f, y, 164f, rowHeight), new Vector2(0.5f, 0.5f), 100f);
+        }
+    }
+
+    void ApplyVisualAssets()
+    {
+        if (backgroundImage != null && archiveBackgroundSprite != null)
+        {
+            backgroundImage.sprite = archiveBackgroundSprite;
+            backgroundImage.color = Color.white;
+        }
+        ApplyIconButton(refreshButton, refreshSprite);
+        ApplyIconButton(closeButton, closeSprite);
+        RefreshTabVisuals();
+    }
+
+    static void ApplyIconButton(Button button, Sprite sprite)
+    {
+        if (button == null || sprite == null) return;
+        button.image.sprite = sprite;
+        button.image.color = Color.white;
+        button.image.preserveAspect = true;
+    }
+
+    static int FilterRowFor(string key)
+    {
+        switch (key)
+        {
+            case "Pride": return 0;
+            case "Envy": return 1;
+            case "Sloth": return 2;
+            case "Lust": return 3;
+            case "Wrath": return 4;
+            case "Gluttony": return 5;
+            case "Greed": return 6;
+            default: return -1;
+        }
+    }
+
+    void RefreshTabVisuals()
+    {
+        EnsureTabStyles();
+        for (int i = 0; i < tabStyles.Length; i++)
+        {
+            var style = tabStyles[i];
+            var image = style != null ? style.image : null;
+            if (image == null) continue;
+
+            string key = image.transform.name.Substring("Tab_".Length);
+            int row = FilterRowFor(key);
+            bool selected = key == currentTab;
+            Sprite configuredSprite = selected ? style.selectedSprite : style.normalSprite;
+            Sprite fallbackSprite = row >= 0 ? filterSprites[row, selected ? 1 : 0] : null;
+            if (configuredSprite != null || fallbackSprite != null)
+                image.sprite = configuredSprite != null ? configuredSprite : fallbackSprite;
+            image.color = selected ? style.selectedColor : style.normalColor;
+            image.preserveAspect = true;
+        }
+    }
+
+    void EnsureTabStyles()
+    {
+        if (tabStyles == null || tabStyles.Length != 7)
+            Array.Resize(ref tabStyles, 7);
+        for (int i = 0; i < tabStyles.Length; i++)
+            if (tabStyles[i] == null) tabStyles[i] = new TabVisualStyle();
+    }
+
+    void RefreshTabNewUnlockTints()
+    {
+        if (tabStyles == null) return;
+        for (int i = 0; i < tabStyles.Length; i++)
+        {
+            var style = tabStyles[i];
+            if (style == null || style.image == null) continue;
+            var existing = style.image.transform.Find("NewUnlockTint");
+            if (existing != null)
+            {
+                if (Application.isPlaying) Destroy(existing.gameObject);
+                else DestroyImmediate(existing.gameObject);
+            }
+
+            string tab = style.image.transform.name.Substring("Tab_".Length);
+            if (HasUnreadNewCard(tab))
+                AddFilterNewUnlockTint(style.image.rectTransform);
+        }
+    }
+
+    bool HasUnreadNewCard(string tab)
+    {
+        var cards = CardsForTab(tab);
+        for (int i = 0; i < cards.Count; i++)
+        {
+            if (IsNewUnlock(cards[i].effectId)) return true;
+        }
+        return false;
+    }
+
+    void AddFilterNewUnlockTint(RectTransform parent)
+    {
+        if (parent == null || filterNewUnlockTintSprite == null) return;
+        var tint = new GameObject("NewUnlockTint", typeof(RectTransform), typeof(Image));
+        tint.transform.SetParent(parent, false);
+        var rt = tint.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(13f, 13f);
+        var image = tint.GetComponent<Image>();
+        image.sprite = filterNewUnlockTintSprite;
+        image.color = Color.white;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+    }
+
+    void AddNewUnlockTint(RectTransform parent, Sprite tintSprite, float size, float inset)
+    {
+        if (parent == null || tintSprite == null) return;
+        var tint = new GameObject("NewUnlockTint", typeof(RectTransform), typeof(Image));
+        tint.transform.SetParent(parent, false);
+        var rt = tint.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(1f, 1f);
+        rt.anchoredPosition = new Vector2(-inset, -inset);
+        rt.sizeDelta = new Vector2(size, size);
+        var image = tint.GetComponent<Image>();
+        image.sprite = tintSprite;
+        image.color = Color.white;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
     }
 
     void Clear()
     {
         if (panelRoot != null) { DestroyImmediate(panelRoot); panelRoot = null; }
-        contentRoot = null; scrollRect = null; closeButton = null;
+        backgroundImage = null;
+        contentRoot = null; scrollViewport = null; scrollRect = null;
+        refreshButton = closeButton = null;
+        tabStyles = null;
         titleText = progressText = statusText = null;
         tabRow = null; progressFill = null;
         built = false;
@@ -219,7 +514,6 @@ public class CardArchivePanel : MonoBehaviour
             case "Gluttony": return "暴食";
             case "Envy": return "嫉妒";
             case "Sloth": return "怠惰";
-            case "Universal": return "通用";
             default: return label;
         }
     }
@@ -358,6 +652,7 @@ public class CardArchivePanel : MonoBehaviour
         viewport.offsetMin = Vector2.zero;
         viewport.offsetMax = Vector2.zero;
         viewport.gameObject.AddComponent<RectMask2D>();
+        scrollViewport = viewport;
         // ⚠️ Viewport 必须有可接收射线的 Graphic，否则 ScrollRect 收不到拖拽事件、完全滑不动。
         // alpha 取极小值保证肉眼不可见，但 raycastTarget 必须为 true。
         var vpImg = viewport.gameObject.AddComponent<Image>();
@@ -386,32 +681,27 @@ public class CardArchivePanel : MonoBehaviour
         if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyToTree(panelRoot.transform);
     }
 
-    /// <summary>构建页签按钮（全部 / 七宗罪 / 通用）。</summary>
+    /// <summary>构建七罪页签按钮（仅旧版纯代码布局回退使用）。</summary>
     void BuildTabs()
     {
         if (tabRow == null) return;
         tabs.Clear();
-        tabs.Add("all");
         foreach (SinType s in System.Enum.GetValues(typeof(SinType)))
             if (s != SinType.None) tabs.Add(s.ToString());
-        tabs.Add("Universal");
 
         foreach (var t in tabs)
         {
             var btn = new GameObject("Tab_" + t, typeof(RectTransform));
             var brt = btn.GetComponent<RectTransform>();
             brt.SetParent(tabRow, false);
-            // 必须显式给尺寸：裸 GameObject 由 Image 自动补的 RectTransform 默认 100×100，
-            // 会超出页签行高度并在垂直居中后溢出遮挡统计文本与进度条。
             brt.sizeDelta = new Vector2(130, tabRowHeight - 8f);
             btn.AddComponent<Image>().color = EnsureColor(tabNormalColor, DefTabNormal);
             var b = btn.AddComponent<Button>();
-            var label = t == "all" ? "全部" : (t == "Universal" ? "通用" : t);
-            AddText(brt, label, EnsureSize(tabFontSize, 36), Vector2.zero, TextAlignmentOptions.Center, 130);
+            AddText(brt, t, EnsureSize(tabFontSize, 36), Vector2.zero, TextAlignmentOptions.Center, 130);
             var captured = t;
             b.onClick.AddListener(() => { currentTab = captured; Refresh(); });
         }
-    
+
         TranslateArchiveTabLabels();
     }
 
@@ -420,8 +710,11 @@ public class CardArchivePanel : MonoBehaviour
     public void Show()
     {
         bool wasVisible = visible;
-        if (!built) Build();
+        EnsureBuilt();
         panelRoot.SetActive(true);
+        panelRoot.transform.SetAsLastSibling();
+        Canvas.ForceUpdateCanvases();
+        ApplyResponsiveTabLayout();
         visible = true;
         // 新卡角标保留到卡牌真正查看后再清除，不在打开图鉴时全部清空。
         Refresh();
@@ -440,47 +733,120 @@ public class CardArchivePanel : MonoBehaviour
 
     public bool IsVisible() => visible;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    public void EnableDebugPreviewData()
+    {
+        if (GameManager.IsFormalFlow) return;
+
+        debugMockStates.Clear();
+        debugMockNewUnlocks.Clear();
+        var library = CardLibrary.Instance;
+        if (library == null || library.cards == null) return;
+
+        int index = 0;
+        for (int i = 0; i < library.cards.Count; i++)
+        {
+            var card = library.cards[i];
+            if (card == null || string.IsNullOrEmpty(card.effectId) || !library.IsEffectEnabled(card.effectId)) continue;
+            int state = index % 3;
+            debugMockStates[card.effectId] = state;
+            if (state == CardArchiveStore.Unlocked && index % 2 == 0)
+                debugMockNewUnlocks.Add(card.effectId);
+            index++;
+        }
+
+        Refresh();
+        Debug.Log($"[CardArchive] 已启用 {debugMockStates.Count} 张卡的开发 Mocking Data（仅内存，不写入图鉴存档）。");
+    }
+
+    public void DisableDebugPreviewData()
+    {
+        if (GameManager.IsFormalFlow || debugMockStates.Count == 0) return;
+        debugMockStates.Clear();
+        debugMockNewUnlocks.Clear();
+        Refresh();
+        Debug.Log("[CardArchive] 已关闭开发 Mocking Data，恢复真实图鉴数据。");
+    }
+
+    bool IsDebugPreviewActive => debugMockStates.Count > 0;
+#endif
+
+    int DisplayStateOf(string cardId)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (debugMockStates.TryGetValue(cardId, out int state)) return state;
+#endif
+        return CardArchiveStore.StateOf(cardId);
+    }
+
+    bool IsNewUnlock(string cardId)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (IsDebugPreviewActive) return debugMockNewUnlocks.Contains(cardId);
+#endif
+        var entry = CardArchiveStore.GetEntry(cardId);
+        return entry != null && entry.isNewUnread;
+    }
+
+    int DisplayUnlockedCount()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (IsDebugPreviewActive)
+        {
+            int count = 0;
+            foreach (var state in debugMockStates.Values)
+                if (state == CardArchiveStore.Unlocked) count++;
+            return count;
+        }
+#endif
+        return CardArchiveStore.UnlockedCount();
+    }
+
+    int DisplayTotalCount()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (IsDebugPreviewActive) return debugMockStates.Count;
+#endif
+        return CardArchiveStore.ValidCardTotal;
+    }
+
     public void Refresh()
     {
         TranslateArchiveTabLabels();
-        // currentTab 兜底：为空（序列化/AddComponent 时机导致）时按「全部」处理
-        if (string.IsNullOrEmpty(currentTab)) currentTab = "all";
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (!IsDebugPreviewActive)
+#endif
+            CardArchiveStore.SyncCurrentLibrary();
+        // currentTab 兜底：为空（序列化/AddComponent 时机导致）时按默认傲慢页处理。
+        if (string.IsNullOrEmpty(currentTab)) currentTab = "Pride";
         if (!built || contentRoot == null) return;
 
         // 清空（同步销毁，避免与同帧 Instantiate 叠加导致格子重复累积）
         for (int i = contentRoot.childCount - 1; i >= 0; i--)
             DestroyImmediate(contentRoot.GetChild(i).gameObject);
 
-        var grid = contentRoot.GetComponent<GridLayoutGroup>();
-        if (grid != null)
+        var horizontalLayout = contentRoot.GetComponent<HorizontalLayoutGroup>();
+        if (horizontalLayout != null)
         {
-            grid.cellSize = new Vector2(FaceWidth, cardFaceHeight + infoBarHeight);
-            grid.spacing = cardSpacing;
-            grid.padding = PaddingRect;
+            horizontalLayout.spacing = cardSpacing.x;
+            horizontalLayout.padding = PaddingRect;
         }
 
-        var entries = CardArchiveStore.AllEntries();
-        int shown = 0;
-        foreach (var e in entries)
+        var cards = CardsForCurrentTab();
+        refreshFaceWidth = CalculatedFaceWidth;
+        int knownCount = 0;
+        for (int i = 0; i < cards.Count; i++)
         {
-            if (!TabMatches(e)) continue;
-            RenderTile(e);
-            shown++;
+            var card = cards[i];
+            int state = DisplayStateOf(card.effectId);
+            if (state >= CardArchiveStore.Known) knownCount++;
+            RenderCatalogCard(card, state);
         }
 
-        int unknownCount = 0;
-        if (currentTab == "all")
-        {
-            unknownCount = Mathf.Max(0, CardArchiveStore.ValidCardTotal - entries.Count);
-            for (int i = 0; i < unknownCount; i++) RenderUnknown();
-        }
-
-        int unlocked = CardArchiveStore.UnlockedCount();
-        int totalAll = CardArchiveStore.ValidCardTotal;
+        int unlocked = DisplayUnlockedCount();
+        int totalAll = DisplayTotalCount();
         progressText.text = TextCatalog.Get("ui.archive.unlocked_count", unlocked, totalAll);
-        statusText.text = currentTab == "all"
-            ? TextCatalog.Get("ui.archive.page_count", shown, unknownCount)
-            : TextCatalog.Get("ui.archive.page_count_known", shown);
+        statusText.text = $"{SinDisplayName(currentTab)}：已知 {knownCount} / {cards.Count} 张";
         statusText.color = new Color(0.9f, 0.9f, 0.9f);
 
         if (progressFill != null)
@@ -491,84 +857,113 @@ public class CardArchivePanel : MonoBehaviour
         }
 
         UpdateTabHighlight();
+        RefreshTabNewUnlockTints();
 
         if (scrollRect != null)
         {
             Canvas.ForceUpdateCanvases();
             scrollRect.StopMovement();
-            scrollRect.normalizedPosition = new Vector2(0f, 1f);   // 回到顶部
+            scrollRect.normalizedPosition = new Vector2(0f, 0.5f); // 回到最左侧
         }
     
         // 新卡角标由卡牌实际查看流程清除，不在刷新列表时批量清除。
     }
 
-    bool TabMatches(CardArchiveEntry e)
+    List<CardData> CardsForCurrentTab() => CardsForTab(string.IsNullOrEmpty(currentTab) ? "Pride" : currentTab);
+
+    List<CardData> CardsForTab(string tab)
     {
-        // currentTab 可能因序列化/AddComponent 时机为空，统一兜底为 "all"，
-        // 否则空字符串匹配不到任何分类，会导致整页卡片渲染为 0 张。
-        string tab = string.IsNullOrEmpty(currentTab) ? "all" : currentTab;
-        if (tab == "all") return true;
-        if (tab == "Universal") return e.sin == "Universal" || string.IsNullOrEmpty(e.sin);
-        return e.sin == tab;
+        var result = new List<CardData>();
+        var library = CardLibrary.Instance;
+        if (library == null || library.cards == null) return result;
+
+        for (int i = 0; i < library.cards.Count; i++)
+        {
+            var card = library.cards[i];
+            if (card == null || string.IsNullOrEmpty(card.effectId) || !library.IsEffectEnabled(card.effectId)) continue;
+            if (card.monsterType != SinType.None && card.monsterType.ToString() == tab)
+                result.Add(card);
+        }
+        return result;
+    }
+
+    static string SinDisplayName(string tab)
+    {
+        switch (tab)
+        {
+            case "Pride": return "傲慢";
+            case "Lust": return "色欲";
+            case "Sloth": return "怠惰";
+            case "Wrath": return "暴怒";
+            case "Envy": return "嫉妒";
+            case "Greed": return "贪婪";
+            case "Gluttony": return "暴食";
+            default: return "卡牌";
+        }
     }
 
     void UpdateTabHighlight()
     {
-        if (tabRow == null) return;
-        foreach (Transform tab in tabRow)
-        {
-            bool selected = tab.name == "Tab_" + currentTab;
-            var img = tab.GetComponent<Image>();
-            if (img != null)
-                img.color = selected ? EnsureColor(tabSelectedColor, DefTabSelected)
-                                     : EnsureColor(tabNormalColor, DefTabNormal);
-            var txt = tab.GetComponentInChildren<TMP_Text>(true);
-            if (txt != null)
-            {
-                txt.color = selected ? new Color(0.15f, 0.12f, 0.08f) : new Color(0.85f, 0.85f, 0.85f);
-                txt.fontStyle = selected ? FontStyles.Bold : FontStyles.Normal;
-            }
-        }
+        RefreshTabVisuals();
     }
 
     // ───────────────────────── 卡片渲染 ─────────────────────────
 
-    void RenderTile(CardArchiveEntry e)
+    void RenderCatalogCard(CardData card, int state)
     {
-        // 图鉴对玩家只展示两态：未解锁（含历史“已见过”状态）与已解锁。
-        int displayState = CardArchiveStore.IsUnlocked(e.cardId) ? e.state : 0;
-        var tile = new GameObject("Card_" + e.cardId, typeof(RectTransform));
-        var trt = tile.GetComponent<RectTransform>();
-        trt.SetParent(contentRoot, false);
-        trt.sizeDelta = new Vector2(FaceWidth, cardFaceHeight + infoBarHeight);
+        var tile = CreateCardTile("Card_" + card.effectId);
+        if (state >= CardArchiveStore.Known)
+            RenderCardFace(tile.gameObject, card, state);
+        else
+            RenderUnknownSilhouette(tile, card);
 
-        var card = CardLibrary.Instance != null ? CardLibrary.Instance.FindCard(e.cardId) : null;
-        if (card != null && displayState != 0)
-            RenderCardFace(tile, card, displayState);
-
-        BuildInfoBar(trt, e);
+        if (IsNewUnlock(card.effectId))
+            AddNewUnlockTint(tile, cardNewUnlockTintSprite, 44f, 8f);
     }
 
-    void RenderUnknown()
+    RectTransform CreateCardTile(string name)
     {
-        var tile = new GameObject("Unknown", typeof(RectTransform));
+        var tile = new GameObject(name, typeof(RectTransform), typeof(RectMask2D));
         var trt = tile.GetComponent<RectTransform>();
         trt.SetParent(contentRoot, false);
-        trt.sizeDelta = new Vector2(FaceWidth, cardFaceHeight + infoBarHeight);
+        trt.sizeDelta = new Vector2(FaceWidth, cardFaceHeight);
+        var layout = tile.AddComponent<LayoutElement>();
+        layout.minWidth = layout.preferredWidth = FaceWidth;
+        layout.minHeight = layout.preferredHeight = cardFaceHeight;
+        return trt;
+    }
 
-        // 剪影：大号问号居中卡面区（不泄露卡面/效果）
-        var q = AddText(trt, "？", 64, new Vector2(0, infoBarHeight * 0.5f), TextAlignmentOptions.Center, 120);
-        q.color = new Color(0.32f, 0.32f, 0.38f);
-        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(q, FontSlots.Default);
+    void RenderUnknownSilhouette(RectTransform tile, CardData card)
+    {
+        var silhouette = new GameObject("UnknownSilhouette", typeof(RectTransform), typeof(Image));
+        var silhouetteRt = silhouette.GetComponent<RectTransform>();
+        silhouetteRt.SetParent(tile, false);
+        silhouetteRt.anchorMin = new Vector2(0f, 0f);
+        silhouetteRt.anchorMax = new Vector2(1f, 1f);
+        silhouetteRt.offsetMin = Vector2.zero;
+        silhouetteRt.offsetMax = Vector2.zero;
+        var image = silhouette.GetComponent<Image>();
+        image.sprite = unknownCardSilhouette;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
 
-        BuildInfoBar(trt, new CardArchiveEntry { state = 0, cardName = null });
+        if (unknownCardSilhouette != null)
+        {
+            image.color = Color.white;
+            return;
+        }
+
+        image.color = new Color(0.08f, 0.08f, 0.12f, 0.92f);
+        var question = AddText(silhouetteRt, "？", 64, Vector2.zero, TextAlignmentOptions.Center, 120);
+        question.color = new Color(0.42f, 0.42f, 0.48f);
+        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(question, FontSlots.Default);
     }
 
     /// <summary>卡片底部信息条：卡名 / 状态 / 次数（Unlocked）。与卡面区上下分离，互不遮挡。</summary>
     void BuildInfoBar(RectTransform tile, CardArchiveEntry e)
     {
-        // 图鉴对玩家只展示两态：未解锁（含历史“已见过”状态）与已解锁。
-        int displayState = CardArchiveStore.IsUnlocked(e.cardId) ? e.state : 0;
+        // 三态展示：未知为剪影；已知和已解锁均展示卡面，其中已知保留灰度区分。
+        int displayState = !string.IsNullOrEmpty(e.cardId) ? CardArchiveStore.StateOf(e.cardId) : CardArchiveStore.Unknown;
         var barGO = new GameObject("InfoBar", typeof(RectTransform));
         var barRT = barGO.GetComponent<RectTransform>();
         barRT.SetParent(tile, false);
@@ -664,7 +1059,11 @@ public class CardArchivePanel : MonoBehaviour
         if (cc.cardText != null) cc.cardText.gameObject.SetActive(false);
         if (cc.descriptionText != null) cc.descriptionText.gameObject.SetActive(false);
         var choiceCard = inst.GetComponent<ChoiceCard>();
-        if (choiceCard != null) Destroy(choiceCard);
+        if (choiceCard != null)
+        {
+            if (Application.isPlaying) Destroy(choiceCard);
+            else DestroyImmediate(choiceCard);
+        }
 
         foreach (var img in inst.GetComponentsInChildren<Image>(true))
             img.raycastTarget = false;   // 只读：不响应点击
@@ -699,11 +1098,21 @@ public class CardArchivePanel : MonoBehaviour
         // 记录卡面内容真实比例，供 cardFaceWidth=0 时推算格子宽度
         if (!aspectMeasured) { measuredAspect = bounds.width / bounds.height; aspectMeasured = true; }
 
-        float scale = Mathf.Min(FaceWidth / bounds.width, cardFaceHeight / bounds.height);
+        float scale = Mathf.Min(tileRT.rect.width / bounds.width, tileRT.rect.height / bounds.height);
         faceRT.localScale = Vector3.one * scale;
         var scaled = MeasureVisibleBounds(measureRoot, tileRT);
-        // 对齐卡面区中心（tile 上部 cardFaceHeight 区域，底部 infoBarHeight 留给信息条）
-        faceRT.anchoredPosition += new Vector2(0f, infoBarHeight * 0.5f) - scaled.center;
+
+        // 二次约束实际可见包围盒：卡预制体边框可能比初始测量略宽，
+        // 修正后与未知占位共享完全相同的 tile 尺寸。
+        float fitCorrection = Mathf.Min(tileRT.rect.width / scaled.width, tileRT.rect.height / scaled.height);
+        if (fitCorrection < 1f)
+        {
+            faceRT.localScale *= fitCorrection;
+            scaled = MeasureVisibleBounds(measureRoot, tileRT);
+        }
+
+        // 卡片不再保留底部信息条，卡面居中填满整个 tile。
+        faceRT.anchoredPosition -= scaled.center;
     }
 
     GameObject ResolvePrefab()
@@ -721,7 +1130,9 @@ public class CardArchivePanel : MonoBehaviour
         bool any = false;
         foreach (var img in root.GetComponentsInChildren<Image>(false))
         {
-            if (!img.enabled || img.sprite == null) continue;
+            // 图鉴只按真正可见的卡面图层测量：模板中透明的交互/占位 Image
+            // 不能参与包围盒，否则会把真实卡面缩小到未知占位之内。
+            if (!img.enabled || img.sprite == null || img.color.a <= 0.001f) continue;
             img.rectTransform.GetWorldCorners(corners);
             for (int i = 0; i < 4; i++)
             {

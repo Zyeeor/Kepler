@@ -95,7 +95,343 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: Card Filters_0
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 368
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c0a3ef997a7615f40992e2bdfa572c6b
+      internalID: -1409928180
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_1
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 368
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b05524535c88ccc408bb238cff2dace3
+      internalID: 711466533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_2
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 317
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5beed29a8032762418c26aedb9961cf6
+      internalID: -1918835825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_3
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 266
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2de4afa21ceb3584ea57a4f241d77bbe
+      internalID: -675010855
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_4
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 215
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 27cef45a6e9977f448cc459328ecd320
+      internalID: 423218394
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_5
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 164
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 27695d894e585fd409bbfc6d45f32915
+      internalID: -581418150
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_6
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 113
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b77046242285b764a9c768f8d41dff60
+      internalID: -1181500086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_7
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 62
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: de443295cc0336844bd587fb3528f1d9
+      internalID: 220072418
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_8
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 11
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15f0964c3cae7a940a401e7eb9092871
+      internalID: -941885003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_9
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 317
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08d9fb246202f544aa63702ca634cf9a
+      internalID: 232237726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_10
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 266
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b323b2d49e3a8cc46b6873a620ee6083
+      internalID: -765165558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_11
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 215
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 624d8656c6eac704680504cf74b132fd
+      internalID: 1938799403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_12
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 164
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 13ba7cc962b4a764b89b95ef23da1f12
+      internalID: -497362634
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_13
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 113
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: df2b38041abb46b4fb864a02ae419f16
+      internalID: 893518225
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_14
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 62
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2e77cb7a1d2b2784ca490fddac262f9c
+      internalID: 1883977197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Card Filters_15
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 11
+        width: 65
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cb962c7d1230d9d4c9367e48bbf11d11
+      internalID: -2028122646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -106,7 +442,23 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Card Filters_0: -1409928180
+      Card Filters_1: 711466533
+      Card Filters_10: -765165558
+      Card Filters_11: 1938799403
+      Card Filters_12: -497362634
+      Card Filters_13: 893518225
+      Card Filters_14: 1883977197
+      Card Filters_15: -2028122646
+      Card Filters_2: -1918835825
+      Card Filters_3: -675010855
+      Card Filters_4: 423218394
+      Card Filters_5: -581418150
+      Card Filters_6: -1181500086
+      Card Filters_7: 220072418
+      Card Filters_8: -941885003
+      Card Filters_9: 232237726
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -113,6 +113,51 @@ public static class CardArchiveStore
         if (changed) Persist();
     }
 
+    /// <summary>
+    /// 将当前有效 CardLibrary 同步到图鉴基础数据。
+    /// 新卡以 Unknown 状态加入；已有条目的已知/解锁状态与历史统计保持不变。
+    /// </summary>
+    public static int SyncCurrentLibrary()
+    {
+        var library = CardLibrary.Instance;
+        if (library == null || library.cards == null) return 0;
+
+        int validCount = 0;
+        bool changed = false;
+        for (int i = 0; i < library.cards.Count; i++)
+        {
+            var card = library.cards[i];
+            if (card == null || string.IsNullOrEmpty(card.effectId) || !library.IsEffectEnabled(card.effectId)) continue;
+            validCount++;
+
+            if (!Map.TryGetValue(card.effectId, out var entry))
+            {
+                entry = new CardArchiveEntry { cardId = card.effectId, state = Unknown };
+                Map[card.effectId] = entry;
+                changed = true;
+            }
+
+            string cardName = card.ResolveCardName();
+            string description = card.ResolveDescription();
+            string sin = card.monsterType == SinType.None ? "Universal" : card.monsterType.ToString();
+            if (entry.cardName != cardName || entry.description != description || entry.sin != sin)
+            {
+                entry.cardName = cardName;
+                entry.description = description;
+                entry.sin = sin;
+                changed = true;
+            }
+        }
+
+        if (MetaProfileStore.ValidCardTotal != validCount)
+        {
+            MetaProfileStore.ValidCardTotal = validCount;
+            changed = true;
+        }
+        if (changed) Persist();
+        return validCount;
+    }
+
     public static List<CardArchiveEntry> AllEntries() => new List<CardArchiveEntry>(Map.Values);
 
     // ── 进度分母：当前有效 Card 总数（排除禁用/删除）。

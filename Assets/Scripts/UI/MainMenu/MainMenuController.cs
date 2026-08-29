@@ -102,7 +102,7 @@ public class MainMenuController : MonoBehaviour
 
     /// <summary>
     /// 荣誉殿堂入口：克隆设置按钮生成（与主菜单美术按钮同风格、零场景编辑），
-    /// 面板本体为纯代码 UI（HallOfFamePanel.EnsureInstance 自建 Overlay Canvas）。
+    /// 面板本体由 HallOfFamePanel Prefab 作为独立 Overlay 创建。
     /// </summary>
     void EnsureHallOfFameEntry()
     {
@@ -146,10 +146,8 @@ public class MainMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 卡牌图鉴入口：
-    /// 1) 面板组件挂载到主菜单 Canvas 下（宿主铺满 Canvas），策划可在 Inspector 直接调参数；
-    /// 2) 入口按钮优先使用场景中已摆放的 CardArchiveButton（策划自制、可自由调样式/位置），
-    ///    找不到时才克隆设置按钮兜底（零场景编辑也能用）。
+    /// 卡牌图鉴入口：面板由 CardArchivePanel Prefab 作为独立 Overlay 创建；
+    /// 入口按钮优先使用场景中已摆放的 CardArchiveButton，找不到时克隆设置按钮兜底。
     /// </summary>
     void EnsureCardArchiveEntry()
     {
@@ -207,36 +205,11 @@ public class MainMenuController : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// 把图鉴组件挂到主菜单 Canvas 下：已挂载则复用，否则创建宿主（铺满 Canvas）并 AddComponent。
-    /// 宿主挂在 Canvas 下而非 DDOL 游离对象，便于策划在编辑器里选中调参。
-    /// </summary>
+    /// <summary>从 Resources/SystemUI/CardArchivePanel Prefab 创建独立 Overlay 图鉴。</summary>
     void EnsureCardArchivePanel()
     {
-        if (cardArchivePanel != null) return;
-
-        // 优先复用场景中/主菜单下已有的组件实例
-        cardArchivePanel = GetComponentInChildren<CardArchivePanel>(true);
-        if (cardArchivePanel == null)
-            cardArchivePanel = FindObjectOfType<CardArchivePanel>();
-
-        if (cardArchivePanel != null) return;
-
-        var canvas = GetComponentInParent<Canvas>();
-        if (canvas == null) canvas = FindObjectOfType<Canvas>();
-        if (canvas == null) { Debug.LogWarning("[MainMenu] 未找到 Canvas，无法挂载卡牌图鉴。"); return; }
-
-        var host = new GameObject(nameof(CardArchivePanel), typeof(RectTransform));
-        host.transform.SetParent(canvas.transform, false);
-        var hostRT = host.GetComponent<RectTransform>();
-        hostRT.anchorMin = Vector2.zero;
-        hostRT.anchorMax = Vector2.one;
-        hostRT.offsetMin = Vector2.zero;
-        hostRT.offsetMax = Vector2.zero;
-
-        cardArchivePanel = host.AddComponent<CardArchivePanel>();
-        // 显式构建：AddComponent 后 Start 要等下一帧，这里立即建好，避免首次点击时还没构建
-        cardArchivePanel.Build();
+        if (cardArchivePanel != null && cardArchivePanel.enabled) return;
+        cardArchivePanel = CardArchivePanel.EnsureInstance();
     }
 
     public void OnCardArchive()
@@ -258,6 +231,20 @@ public class MainMenuController : MonoBehaviour
 
     void Update()
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (!GameManager.IsFormalFlow && Input.GetKeyDown(KeyCode.F8))
+        {
+            EnsureCardArchivePanel();
+            if (cardArchivePanel != null)
+            {
+                cardArchivePanel.EnableDebugPreviewData();
+                OnCardArchive();
+            }
+        }
+        if (!GameManager.IsFormalFlow && Input.GetKeyDown(KeyCode.F9) && cardArchivePanel != null)
+            cardArchivePanel.DisableDebugPreviewData();
+#endif
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (settingsPanel != null && settingsPanel.IsVisible())
