@@ -6851,7 +6851,7 @@ MonoBehaviour:
   guideMode: 0
   linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
     type: 3}
-  noMonsterVisibleSeconds: 5
+  noMonsterVisibleSeconds: 1.25
   noPossessableMonsterSeconds: 5
   pulseTravelTime: 0.5
   pulseHoldTime: 0.5

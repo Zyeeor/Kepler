@@ -11,6 +11,8 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
     public float range = 1f;
     public float angle = 100f;
     public float damageAmount = 40f;
+    [Tooltip("Possessed Player 专属基础伤害（Pass v1.1 §4：Devour 100→60）。>0 时附身玩家使用此值，Enemy 版仍用 damage 字段（保持 100）。")]
+    public float possessedDamageOverride = 60f;
     [Tooltip("Delay between the Devour cast and its Enemy damage / consume resolution.")]
     public float hitDelay = 0.5f;
     [Range(0f, 1f)] public float executeHealthFraction = 0.2f;
@@ -163,7 +165,7 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
 
     private void ConsumeEnemy(Enemy target)
     {
-        float damageToDeal = damage > 0f ? damage : damageAmount;
+        float damageToDeal = ResolveDamageAmount();
         if (IsUpgradeUnlocked("GL-S02") && target.maxHealth > 0f &&
             target.currentHealth / target.maxHealth < GetCardParameter("ExecuteThreshold", executeHealthFraction))
         {
@@ -299,6 +301,14 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             return true;
         }
         return false;
+    }
+
+    private float ResolveDamageAmount()
+    {
+        // Pass v1.1 §4：Possessed Player 与 Enemy 伤害分离（Enemy 保持 100，Possessed 用 override）。
+        if (owner != null && owner.isPossessed && possessedDamageOverride > 0f)
+            return possessedDamageOverride;
+        return damage > 0f ? damage : damageAmount;
     }
 
     private void CacheOwnerState()

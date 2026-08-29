@@ -15,6 +15,8 @@ public class EnemyAbility_GreedBlackOil : EnemyAbility
     public float oilLifetime = 4f;
     public float allySpeedMultiplier = 1.5f;
     public float enemySlowMultiplier = 0.5f;
+    [Tooltip("Enemy Greed（未附身）黑油减速玩家身体时的移速倍率（Pass v1.1 §1：0.7 = 保留约 70% 移速）。Possessed Greed 减速敌人仍沿用 enemySlowMultiplier，不受本字段影响。")]
+    public float enemyOilPlayerSlowMultiplier = 0.7f;
     public float segmentSpacing = 1.1f;
     public GameObject oilZonePrefab;
     public GameObject oilTrailVfxPrefab;
@@ -100,6 +102,7 @@ public class EnemyAbility_GreedBlackOil : EnemyAbility
             width,
             allySpeedMultiplier,
             enemySlowMultiplier,
+            enemyOilPlayerSlowMultiplier,
             enemySlow,
             oilTrailVfxPrefab,
             burningOilVfxPrefab);

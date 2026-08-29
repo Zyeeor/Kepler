@@ -15,6 +15,8 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
     public float secondBiteDelay = 0.5f;
     public float blastRadius = 2.2f;
     public float damageAmount = 20f;
+    [Tooltip("Possessed Player 专属基础伤害（Pass v1.1 §4：Abyss Maw 100→70）。>0 时附身玩家使用此值，Enemy 版仍用 damage 字段（保持 100）。")]
+    public float possessedDamageOverride = 70f;
     public float pairedOffset = 2.2f;
     public GameObject telegraphPrefab;
     [Tooltip("Local position offset applied to each telegraph Prefab instance after its rotation.")]
@@ -77,7 +79,7 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         bool pairedMaws = consumeOverfed && IsUpgradeUnlocked("GL-A01");
         bool enlarged = _state != null && _state.TryConsumeHuntStepEmpower();
         float radius = blastRadius * (enlarged ? 2f : 1f);
-        float dmg = damage > 0f ? damage : damageAmount;
+        float dmg = ResolveDamageAmount();
 
         Vector3 forward = owner.transform.forward;
         forward.y = 0f;
@@ -237,6 +239,14 @@ public class EnemyAbility_GluttonyAbyssMaw : EnemyAbility
         PlayVfx(vfx);
         StopVfxLooping(vfx);
         Destroy(vfx, Mathf.Max(0.01f, blastVfxDuration));
+    }
+
+    private float ResolveDamageAmount()
+    {
+        // Pass v1.1 §4：Possessed Player 与 Enemy 伤害分离（Enemy 保持 100，Possessed 用 override）。
+        if (owner != null && owner.isPossessed && possessedDamageOverride > 0f)
+            return possessedDamageOverride;
+        return damage > 0f ? damage : damageAmount;
     }
 
     private void CacheOwnerState()

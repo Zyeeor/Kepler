@@ -32,6 +32,13 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     [Range(0f, 1f)] public float lockLineMinWidthMultiplier = 0.35f;
     [Tooltip("前摇期间 Lock 警示线的颜色（偏弱，可用透明度区分强弱；为空则沿用 beamMaterial 默认）。")]
     public Material lockLineMaterial;
+
+    [Header("Enemy Lock Range Cap (Pass v1.1 §3)")]
+    [Tooltip("Enemy/Elite 激光锁定距离安全上限（米）。最终锁定 Range = min(当前 EffectiveRange, 此值)，0 表示不封顶。仅作用于非 Boss、非附身的 Enemy；Player 版与 Boss 版不受影响。")]
+    [Min(0f)] public float enemyLaserTargetRangeCap = 15f;
+    [Tooltip("Beam 期间玩家超出此距离（米）即断束。建议 16–17m（略高于锁定上限，留出走位余量）。0 表示不断束。仅作用于非 Boss、非附身的 Enemy。")]
+    [Min(0f)] public float enemyLaserBreakRange = 17f;
+
     public GameplayEffectDefinition markEffect;
     public GameplayEffectDefinition laserHitEffect;
 
@@ -164,6 +171,18 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         ReleaseLockLine();
     }
 
+    /// <summary>
+    /// Pass v1.1 §3：前摇期间玩家离开合法锁定范围（= min(EffectiveRange, cap)）即取消本次施放。
+    /// 仅作用于非 Boss、非附身的 Enemy；Player 版不进入前摇，Boss 版不受上限约束。
+    /// </summary>
+    protected override bool ShouldCancelEnemyTelegraph()
+    {
+        if (owner == null || owner.isPossessed || owner is BossSevenfoldActor || owner.targetPlayer == null)
+            return false;
+        float dist = Vector3.Distance(owner.transform.position, owner.targetPlayer.position);
+        return dist > GetEffectiveRange();
+    }
+
     /// <summary>生成本次 Cast 的 Lock 警示线，或更新其位置/朝向/宽度（复用 Beam 的 LineRenderer 承载）。</summary>
     void RefreshLockLine(float progress)
     {
@@ -272,9 +291,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
 
         Vector3 origin = GetBeamOrigin();
         Vector3 aimPoint = owner.isPossessed ? GetAimPoint(origin) : GetEnemyTrackedAimPoint(origin);
-        if (!owner.isPossessed && IsEnemyTargetLost(origin))
+        if (!owner.isPossessed && (IsEnemyTargetLost(origin) || IsEnemyOutOfBreakRange(origin)))
         {
             // Pass v1 §13.3：玩家甩掉激光（绕侧/横移超速）→ 本次 Cast 结束，下次 Cast 重新锁定。
+            // Pass v1.1 §3：Beam 期间玩家超出 Break Range（断束）同样结束本次 Cast。
             StopLaser();
             currentCooldown = EffectiveCooldown;
             return;
@@ -437,7 +457,12 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         if (IsUpgradeUnlocked("EN-TG01"))
             range += GetCardParameter("AttackRangeBonus", 4f);
         // Boss visual scale must not turn Envy's beam into a longer threat.
-        return owner is BossSevenfoldActor ? range : ScaleAbilityRadius(range);
+        float effective = owner is BossSevenfoldActor ? range : ScaleAbilityRadius(range);
+        // Pass v1.1 §3：Enemy/Elite 视觉缩放会把 15m 放大到 ~30m（叠加 EN-TG01 快照可达 ~38m），
+        // 造成全图锁人。此处对非 Boss、非附身的 Enemy 锁定距离封顶；Player 版与 Boss 版不受影响。
+        if (owner != null && !owner.isPossessed && !(owner is BossSevenfoldActor) && enemyLaserTargetRangeCap > 0f)
+            effective = Mathf.Min(effective, enemyLaserTargetRangeCap);
+        return effective;
     }
 
     private Vector3 GetBeamOrigin()
@@ -506,6 +531,19 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         toPlayer.y = 0f;
         if (toPlayer.sqrMagnitude < 0.0001f) return false;
         return Vector3.Angle(_enemyBeamDirection, toPlayer.normalized) > 90f;
+    }
+
+    /// <summary>
+    /// Pass v1.1 §3：Beam 期间玩家超出 Break Range（建议 16–17m）即断束。
+    /// 仅作用于非 Boss、非附身的 Enemy；Player 版与 Boss 版不受影响。
+    /// </summary>
+    private bool IsEnemyOutOfBreakRange(Vector3 origin)
+    {
+        if (owner == null || owner.isPossessed || owner is BossSevenfoldActor || owner.targetPlayer == null)
+            return false;
+        if (enemyLaserBreakRange <= 0f) return false;
+        float dist = Vector3.Distance(origin, owner.targetPlayer.position);
+        return dist > enemyLaserBreakRange;
     }
 
     private Enemy FindNearestEnemy(Vector3 origin, float range)
