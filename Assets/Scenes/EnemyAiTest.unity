@@ -1454,7 +1454,7 @@ MonoBehaviour:
     eliteSpawnTimeSeconds: 150
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 1.25
-    eliteRewardPickCount: 2
+    eliteRewardPickCount: 1
   - sin: 4
     eliteSpawnTimeSeconds: 200
     eliteHealthMultiplier: 2
@@ -1464,7 +1464,7 @@ MonoBehaviour:
     eliteSpawnTimeSeconds: 250
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 1.25
-    eliteRewardPickCount: 2
+    eliteRewardPickCount: 1
   - sin: 6
     eliteSpawnTimeSeconds: 300
     eliteHealthMultiplier: 2
@@ -1479,6 +1479,7 @@ MonoBehaviour:
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
   continuousSpawnMaxCountsByMinute: 0500000006000000080000000a0000000b0000000c0000000e000000
+  elitePresentNormalSpawnMultiplier: 0.65
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -15471,8 +15472,8 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 1
-  bootToMainMenu: 1
-  useFormalFlow: 1
+  bootToMainMenu: 0
+  useFormalFlow: 0
   enableA1ShadowOptimization: 1
   enableA2TrailOptimization: 1
   enableA3AnimatorCulling: 1
@@ -15518,14 +15519,22 @@ MonoBehaviour:
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 0}
   maxRerollsPerCard: 1
+  focusAssistProbability: 0.65
   cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
     type: 3}
   openingGemCount: 0
+  starterGemTime: 30
+  starterGemOffset: {x: 0, y: 0, z: 1.5}
   openingGemDoublePick: 0
   eliteGemDoublePick: 1
   eliteGemCountMin: 2
   eliteGemCountMax: 2
   cardOfferGemPickupRadius: 1.25
+  enableOpeningGems: 1
+  enableStarterGem: 1
+  enableWaveGems: 1
+  enableEliteGems: 1
+  enableDebugGem: 1
   cardOfferGemAttractSeconds: 0.35
   cardOfferGemAttractHeight: 0.8
   cardOfferGemAttractEndScale: 0
@@ -15639,6 +15648,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   duration: 2
   timeScale: 0.2
+  bulletTimeChargesPerBody: 1
   damageImmunityEffect: {fileID: 0}
   effectCatalog: {fileID: 0}
   damageImmunityEffectTag: Effect.Defense.DamageImmune
@@ -16365,6 +16375,7 @@ MonoBehaviour:
   screenEdgeSpawnOffset: 2
   upkeepInterval: 0.25
   corpseDissipationThreshold: 5
+  enemySummonCap: 4
   showGizmos: 0
   logSpawns: 0
   showDebugHud: 0
@@ -16490,34 +16501,42 @@ MonoBehaviour:
     eliteSpawnTimeSeconds: 30
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 2
     eliteSpawnTimeSeconds: 90
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 3
     eliteSpawnTimeSeconds: 150
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 4
     eliteSpawnTimeSeconds: 210
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 5
     eliteSpawnTimeSeconds: 270
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 6
     eliteSpawnTimeSeconds: 330
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 7
     eliteSpawnTimeSeconds: 390
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
   continuousSpawnMaxCountsByMinute: 0a000000140000001e000000
+  elitePresentNormalSpawnMultiplier: 0.65
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -23377,11 +23396,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: envy_new
-      objectReference: {fileID: 0}
-    - target: {fileID: 8386951206399651659, guid: 845d0fb0457a78545be6d70c95ef3342,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

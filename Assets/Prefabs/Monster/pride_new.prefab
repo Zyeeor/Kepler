@@ -830,7 +830,7 @@ MonoBehaviour:
   collisionDamage: 0
   attackSpeed: 1
   aiConfig: {fileID: 11400000, guid: c80c3c411699e8240b398334bee5bc7a, type: 2}
-  aiConfigId: Pride_new
+  aiConfigId: Greed_new
   forceDebugRanges: 0
   detectRangeColor: {r: 1, g: 0.75, b: 0.1, a: 0.9}
   basicRangeColor: {r: 1, g: 0.15, b: 0.15, a: 0.9}
@@ -848,6 +848,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  bulletTimeChargesRemaining: 0
   aiActiveOverride: 1
   aliveY: 1
   corpseY: 0.7
@@ -2207,9 +2208,9 @@ MonoBehaviour:
   - effectId: Pride.BlinkCountPlusTwo
     unlocked: 0
   - effectId: PR-S01
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-X01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

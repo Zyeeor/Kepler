@@ -24,7 +24,7 @@ using UnityEngine.UI;
 ///     ——切分（SpriteMode=Multiple + 坐标）属美术侧 Sprite Editor 操作，此前维持运行时估测裁剪。
 ///
 /// 装配：主菜单经 MainMenuController 克隆设置按钮注入入口（零场景编辑）；
-/// 面板本体从 Resources/UI/HallOfFamePanel Prefab 实例化，常驻跨场景。
+/// 面板本体从 Resources/SystemUI/HallOfFamePanel Prefab 实例化，常驻跨场景。
 /// 调试：F6 直接开关（仅非正式流程；CardProgressPanel 同款门禁）。
 /// </summary>
 public class HallOfFamePanel : MonoBehaviour
@@ -136,9 +136,9 @@ public class HallOfFamePanel : MonoBehaviour
         var existing = FindObjectOfType<HallOfFamePanel>();
         if (existing != null) return existing; // Awake 已注册 Instance
 
-        var prefab = Resources.Load<HallOfFamePanel>("UI/HallOfFamePanel");
+        var prefab = Resources.Load<HallOfFamePanel>("SystemUI/HallOfFamePanel");
         if (prefab == null)
-            throw new InvalidOperationException("缺少 Resources/UI/HallOfFamePanel Prefab，无法创建荣誉殿堂界面。");
+            throw new InvalidOperationException("缺少 Resources/SystemUI/HallOfFamePanel Prefab，无法创建荣誉殿堂界面。");
 
         var instance = Instantiate(prefab);
         DontDestroyOnLoad(instance.gameObject);
@@ -892,7 +892,7 @@ public class HallOfFamePanel : MonoBehaviour
             BindVisualLayoutEvents();
             return;
         }
-        throw new InvalidOperationException("HallOfFamePanel 必须从 Resources/UI/HallOfFamePanel Prefab 实例化。");
+        throw new InvalidOperationException("HallOfFamePanel 必须从 Resources/SystemUI/HallOfFamePanel Prefab 实例化。");
     }
 
     void BuildUI()

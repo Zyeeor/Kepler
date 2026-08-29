@@ -191,7 +191,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         Vector3 origin = GetBeamOrigin();
         Vector3 target = owner.targetPlayer.position + Vector3.up;
         Vector3 dir = target - origin;
-        float dist = dir.magnitude;
+        // 距离 = 本体→目标的实际距离，夹到有效射程：目标移动时长度动态变化，且绝不越界。
+        float dist = Mathf.Min(dir.magnitude, GetEffectiveRange());
         if (dist < 0.01f) return;
 
         Quaternion rot = Quaternion.LookRotation(dir.normalized, Vector3.up) * Quaternion.Euler(beamRotationOffset);
@@ -200,8 +201,9 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         {
             _lockLineVfx = SpawnVfxTracked(beamPrefab, origin, rot, -1f);
             if (_lockLineVfx == null) return;
-            // 记录基准 z 缩放（已含 OwnerCombatScaleMultiplier），后续每帧用它乘长度比，避免持续对象反复累乘。
-            _lockLineBaseScaleZ = _lockLineVfx.transform.localScale.z;
+            // 基准 z 取 prefab 原始缩放（不含 ScaleAbilityObject 施加的 OwnerCombatScaleMultiplier）：
+            // 后续每帧用「基准 z × 长度比」赋值，既避免持续对象反复累乘，也保证长度不随体型放大。
+            _lockLineBaseScaleZ = beamPrefab.transform.localScale.z;
         }
         else
         {
@@ -579,10 +581,15 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         if (vfx == null) return;
 
         // 光束由本地空间 LineRenderer 承载（蓝-激光 等，本地 0→authoredLength）。
-        // 按 authoredLength 归一化，使终点精确落在 targetPos（怪物→目标两点，不穿透 / 不越界）。
+        // 距离 = 本体→目标的实际距离，夹到有效射程：目标移动时长度动态变化，且绝不越界超过 max range。
+        float dist = Mathf.Min(dir.magnitude, GetEffectiveRange());
         float authoredLength = ResolveBeamAuthoredLength(vfx);
+        // 长度用「prefab 原始 z × 长度比」绝对值赋值：SpawnVfxTracked 的 ScaleAbilityObject
+        // 已把整条 scale 乘过 OwnerCombatScaleMultiplier，若继续累乘会让光束长度随怪物体型放大、
+        // 超过目标距离与 max range。x/y 仍保留体型缩放（只影响粗细），z 精确落在 dist 处。
+        float baseZ = beamPrefab.transform.localScale.z;
         Vector3 scale = vfx.transform.localScale;
-        scale.z *= dir.magnitude / Mathf.Max(0.01f, authoredLength);
+        scale.z = baseZ * (dist / Mathf.Max(0.01f, authoredLength));
         vfx.transform.localScale = scale;
 
         // EN-A05 外显：连续连接伤害爬升时按比例加宽整条激光，封顶到 rampWidthMultiplier。
