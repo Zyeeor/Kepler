@@ -519,6 +519,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  bulletTimeChargesRemaining: 0
   aiActiveOverride: 1
   aliveY: -0.05
   corpseY: 0.2
