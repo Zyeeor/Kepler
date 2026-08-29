@@ -1490,7 +1490,7 @@ MonoBehaviour:
   - effectId: EN-A03
     unlocked: 0
   - effectId: EN-A05
-    unlocked: 1
+    unlocked: 0
   - effectId: EN-R01
     unlocked: 0
   vfxPrefab: {fileID: 0}
@@ -1553,6 +1553,9 @@ MonoBehaviour:
   markWriteRatio: 0.2
   markGraceDuration: 0
   maxConnectDuration: 1
+  enemyTrackingTurnSpeed: 100
+  lockLineMinWidthMultiplier: 0.35
+  lockLineMaterial: {fileID: 0}
   markEffect: {fileID: 11400000, guid: d35abb93af99477880e7abb901d8ffd6, type: 2}
   laserHitEffect: {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
   rampMaxDamagePerSecond: 50
@@ -1748,6 +1751,7 @@ MonoBehaviour:
   suppressPossessionDrain: 0
   isPossessed: 0
   playerDetected: 0
+  bulletTimeChargesRemaining: 0
   aiActiveOverride: 1
   aliveY: 0
   corpseY: 0.8

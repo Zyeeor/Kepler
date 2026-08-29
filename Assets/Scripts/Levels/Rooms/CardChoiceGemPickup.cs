@@ -239,4 +239,6 @@ public enum CardOfferGemSource
     Wave = 1,
     Elite = 2,
     Debug = 3,
+    /// <summary>Pass v1：战斗计时到达 starterGemTime 的 Starter Gem 投放（与 Wave 分开开关控制）。</summary>
+    Starter = 4,
 }

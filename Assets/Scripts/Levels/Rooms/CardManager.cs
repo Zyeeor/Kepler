@@ -53,6 +53,18 @@ public class CardManager : SceneSingleton<CardManager>
     [Tooltip("玩家进入该半径后自动拾取宝石；角色移动不依赖 Rigidbody，因此由宝石轮询距离。")]
     [Min(0.25f)] public float cardOfferGemPickupRadius = 1.25f;
 
+    [Header("Card Offer Gem 投放开关（各来源独立）")]
+    [Tooltip("开局在出生点附近投放宝石（openingGemCount 颗）。关闭后开局不再生成宝石。")]
+    public bool enableOpeningGems = true;
+    [Tooltip("战斗计时达到 starterGemTime 时投放 Starter Gem（1 颗单选）。")]
+    public bool enableStarterGem = true;
+    [Tooltip("每波清场后投放波次选卡宝石。")]
+    public bool enableWaveGems = true;
+    [Tooltip("精英击杀后投放击杀奖励宝石。关闭后精英不再掉落宝石（也不消耗击杀奖励次数）。")]
+    public bool enableEliteGems = true;
+    [Tooltip("调试来源宝石（debugDoublePickOnStart 等）。")]
+    public bool enableDebugGem = true;
+
     [Header("Card Offer Gem Attract")]
     [Tooltip("进入拾取半径后，宝石飘向玩家的动画时长（秒）。动画播完才打开选卡界面并暂停游戏。")]
     [Min(0f)] public float cardOfferGemAttractSeconds = 0.35f;
@@ -256,7 +268,7 @@ public class CardManager : SceneSingleton<CardManager>
 
         // Starter Gem（Pass v1）：战斗计时达到 starterGemTime 时生成 1 颗单选宝石。
         // 依赖 RunSpawnDirector.CombatStarted（首次 Possess 后才开始计时），自然满足 Pre-Combat 门。
-        if (!starterGemSpawned && starterGemTime > 0f
+        if (!starterGemSpawned && enableStarterGem && starterGemTime > 0f
             && RunSpawnDirector.Instance != null && RunSpawnDirector.Instance.CombatStarted
             && RunSpawnDirector.Instance.ActiveCombatSeconds >= starterGemTime
             && !(session != null && session.IsBossMode))
@@ -290,7 +302,7 @@ public class CardManager : SceneSingleton<CardManager>
 
         Vector3 gemPosition = anchor + forward * starterGemOffset.z + Vector3.up * starterGemOffset.y;
         CardChoiceGemPickup gem = SpawnCardOfferGem(gemPosition, doublePick: false, keepPicks: false,
-            waveIndex: -1, source: CardOfferGemSource.Wave);
+            waveIndex: -1, source: CardOfferGemSource.Starter);
         if (gem == null)
             Debug.LogWarning("[CardManager] Starter Gem 生成失败。");
         else
@@ -532,6 +544,20 @@ public class CardManager : SceneSingleton<CardManager>
         return delta.sqrMagnitude <= maxDistance * maxDistance;
     }
 
+    /// <summary>各来源宝石投放开关：关闭时该来源不生成宝石（由唯一入口 SpawnCardOfferGem 统一拦截）。</summary>
+    public bool IsGemSourceEnabled(CardOfferGemSource source)
+    {
+        switch (source)
+        {
+            case CardOfferGemSource.Opening: return enableOpeningGems;
+            case CardOfferGemSource.Starter: return enableStarterGem;
+            case CardOfferGemSource.Wave: return enableWaveGems;
+            case CardOfferGemSource.Elite: return enableEliteGems;
+            case CardOfferGemSource.Debug: return enableDebugGem;
+            default: return true;
+        }
+    }
+
     /// <summary>生成一颗选卡宝石；正式选卡的唯一生成入口。</summary>
     public CardChoiceGemPickup SpawnCardOfferGem(Vector3 position, bool doublePick, bool keepPicks,
         int waveIndex, CardOfferGemSource source, Action onChoiceCompleted = null)
@@ -540,6 +566,13 @@ public class CardManager : SceneSingleton<CardManager>
         if (run != null && run.IsBossMode)
         {
             Debug.Log("[CardManager] Boss 模式不生成选卡宝石。");
+            return null;
+        }
+        // 投放开关：开局/Starter/波次/精英/调试各自独立，全部经本入口生成，故在此一处拦截即可。
+        if (!IsGemSourceEnabled(source))
+        {
+            Debug.Log($"[CardManager] 宝石投放已关闭：source={source}，跳过生成（可在 CardManager 的 "
+                + "Card Offer Gem 投放开关 中开启）。");
             return null;
         }
         if (cardOfferGemPrefab == null)
