@@ -1366,7 +1366,61 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.3
+      value: 0.35
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.5
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 2
+      value: 0.65
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 3
+      value: 0.82
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 4
+      value: 0.98
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 5
+      value: 1.12
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 6
+      value: 1.22
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -1375,7 +1429,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 7
-      value: 1.35
+      value: 1.28
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -1387,37 +1441,44 @@ MonoBehaviour:
     m_RotationOrder: 4
   continuousSpawnOrder:
   - sin: 1
-    eliteSpawnTimeSeconds: 90
-    eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
+    eliteSpawnTimeSeconds: 50
+    eliteHealthMultiplier: 1.5
+    eliteAttackMultiplier: 1.15
+    eliteRewardPickCount: 1
   - sin: 2
-    eliteSpawnTimeSeconds: 165
-    eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
+    eliteSpawnTimeSeconds: 100
+    eliteHealthMultiplier: 1.75
+    eliteAttackMultiplier: 1.2
+    eliteRewardPickCount: 1
   - sin: 3
-    eliteSpawnTimeSeconds: 225
+    eliteSpawnTimeSeconds: 150
     eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
+    eliteAttackMultiplier: 1.25
+    eliteRewardPickCount: 2
   - sin: 4
-    eliteSpawnTimeSeconds: 270
+    eliteSpawnTimeSeconds: 200
     eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
+    eliteAttackMultiplier: 1.25
+    eliteRewardPickCount: 1
   - sin: 5
+    eliteSpawnTimeSeconds: 250
+    eliteHealthMultiplier: 2
+    eliteAttackMultiplier: 1.25
+    eliteRewardPickCount: 2
+  - sin: 6
     eliteSpawnTimeSeconds: 300
     eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
-  - sin: 6
-    eliteSpawnTimeSeconds: 330
-    eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
+    eliteAttackMultiplier: 1.25
+    eliteRewardPickCount: 1
   - sin: 7
-    eliteSpawnTimeSeconds: 360
+    eliteSpawnTimeSeconds: 350
     eliteHealthMultiplier: 2
-    eliteAttackMultiplier: 2
+    eliteAttackMultiplier: 1.25
+    eliteRewardPickCount: 1
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
-  continuousSpawnMaxCountsByMinute: 0400000006000000080000000a0000000c0000000e00000010000000
+  continuousSpawnMaxCountsByMinute: 0500000006000000080000000a0000000b0000000c0000000e000000
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -15459,7 +15520,7 @@ MonoBehaviour:
   maxRerollsPerCard: 1
   cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
     type: 3}
-  openingGemCount: 2
+  openingGemCount: 0
   openingGemDoublePick: 0
   eliteGemDoublePick: 1
   eliteGemCountMin: 2
@@ -16294,7 +16355,7 @@ MonoBehaviour:
   minSpawnDistanceToPlayer: 10
   maxSpawnDistanceToPlayer: 25
   minSpawnPointSeparation: 6
-  eliteSpawnScreenDiameterFraction: 0.25
+  eliteSpawnScreenDiameterFraction: 0.65
   eliteSpawnSamples: 32
   eliteSpawnFallbackRadiusFraction: 0.75
   invalidSpawnRelocationRadius: 6

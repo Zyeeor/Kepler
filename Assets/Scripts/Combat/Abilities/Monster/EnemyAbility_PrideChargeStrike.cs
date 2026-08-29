@@ -60,6 +60,37 @@ public class EnemyAbility_PrideChargeStrike : EnemyAbility
     }
 
     /// <summary>
+    /// Pass v1 §13.1：Enemy 使用时的矩形冲锋路径 Telegraph——长度 = 实际 Charge Distance，
+    /// 宽度 = 真实 Damage Hitbox（hitRadius×2），方向 = 实际冲锋方向。玩家版不受影响。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        float length = ScaleAbilityRadius(chargeDistance);
+        float width = ScaleAbilityRadius(hitRadius * 2f);
+        if (length <= 0f || width <= 0f) return default;
+
+        Vector3 forward = ResolveIndicatorForward();
+        Vector3 center = owner.transform.position + forward * (length * 0.5f);
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Rect,
+            center = center,
+            forward = forward,
+            length = length,
+            width = width,
+            isValid = true
+        };
+    }
+
+    /// <summary>Pride Charge 冲锋方向 = owner.forward（与 DashRoutine 的 Enemy 路径一致）。</summary>
+    protected override Vector3 ResolveIndicatorForward()
+    {
+        Vector3 fwd = owner != null ? owner.transform.forward : transform.forward;
+        fwd.y = 0f;
+        return fwd.sqrMagnitude > 0.0001f ? fwd.normalized : Vector3.forward;
+    }
+
+    /// <summary>
     /// 蓄力中或冲刺中视为释放未结束：附身代价致死时先把这一刀冲完（含落地判定），再结算死亡。
     /// </summary>
     public override bool IsActivationInProgress => isCharging || isDashing;

@@ -80,6 +80,11 @@ public class PlayerHealth : MonoBehaviour
         // 注意：编辑器直接 Play 的兜底路径（InitWorldSeed）不置 HasActiveRun，该调试路径下灵魂不再衰减。
         var session = RunSession.Instance;
         if (session == null || !session.HasActiveRun || isDead) return;
+        // Pre-Combat gate (Pass v1): Soul HP decay only starts after the first Possession
+        // of the Opening Carrier. Boss mode bypasses this gate.
+        if (RunSpawnDirector.Instance != null && !RunSpawnDirector.Instance.CombatStarted
+            && !session.IsBossMode)
+            return;
         decayTimer += Time.deltaTime;
         if (decayTimer >= decayInterval)
         {

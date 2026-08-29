@@ -6,7 +6,8 @@ Shader "Possession/MonsterTelegraphIndicator"
         _IndicatorIntensity ("Indicator Intensity", Range(0, 5)) = 1.1
         _IndicatorProgress ("Cast Progress", Range(0, 1)) = 0
         _RingWidth ("Ring Width", Range(0.01, 0.2)) = 0.045
-        _ShapeType ("Shape Type (0=Circle 1=Rect)", Float) = 0
+        _ShapeType ("Shape Type (0=Circle 1=Rect 2=Sector)", Float) = 0
+        _SectorAngle ("Sector Angle (degrees)", Float) = 100
     }
 
     SubShader
@@ -42,6 +43,7 @@ Shader "Possession/MonsterTelegraphIndicator"
                 half _IndicatorProgress;
                 half _RingWidth;
                 half _ShapeType;
+                half _SectorAngle;
             CBUFFER_END
 
             Varyings Vert(Attributes input)
@@ -61,6 +63,32 @@ Shader "Possession/MonsterTelegraphIndicator"
             {
                 float2 uvPoint = input.uv * 2.0 - 1.0;
                 float progress = saturate(_IndicatorProgress);
+
+                // ── Sector（前方扇形预警）：从原点沿 +X（forward）展开 _SectorAngle 度 ──
+                if (_ShapeType > 1.5)
+                {
+                    float distS = length(uvPoint);
+                    float angS = atan2(uvPoint.y, uvPoint.x);   // -π ~ π，+X 为 0
+                    float halfAngleS = radians(_SectorAngle) * 0.5;
+                    float angAbsS = abs(angS);
+
+                    // 圆弧边：仅扇形角度内显示，否则会在 distS=0.84 处形成一圈完整圆环（脚下红圈 bug）。
+                    float arcMask = step(angAbsS, halfAngleS);
+                    float edgeArc = SoftBand(distS, 0.84, _RingWidth) * arcMask;
+                    // 两侧直线边：在 angAbsS≈halfAngleS 处，仅半径内显示。
+                    float sideWidth = radians(max(_SectorAngle, 1.0)) * 0.06;
+                    float edgeSide = SoftBand(angAbsS, halfAngleS, sideWidth) * step(distS, 0.84);
+                    float edge = max(edgeArc, edgeSide);
+
+                    float insideS = (distS <= 0.84 && angAbsS <= halfAngleS) ? 1.0 : 0.0;
+                    float angNorm = angAbsS / max(0.001, halfAngleS);
+                    float spokesS = pow(saturate(cos(angNorm * 8.0) * 0.5 + 0.5), 6.0);
+                    float sweepS = 1.0 - smoothstep(progress - 0.07, progress + 0.07, distS);
+                    float innerPatternS = insideS * (spokesS * (0.08 + progress * 0.4) + sweepS * 0.24);
+                    float brightnessS = lerp(0.22, 1.15, progress) * (0.84 + 0.16 * sin(_Time.y * 9.0));
+                    float alphaS = saturate((edge * 1.3 + innerPatternS) * brightnessS * _IndicatorColor.a);
+                    return half4(_IndicatorColor.rgb * _IndicatorIntensity * brightnessS, alphaS);
+                }
 
                 // ── Rect（直线预警带）：长度沿 +X，宽度沿 +Y ──
                 if (_ShapeType > 0.5)

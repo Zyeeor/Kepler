@@ -208,6 +208,33 @@ public class CardArchivePanel : MonoBehaviour
         tabRow = null; progressFill = null;
         built = false;
     }
+    private static string TranslateArchiveTabLabel(string label)
+    {
+        switch (label)
+        {
+            case "Pride": return "傲慢";
+            case "Lust": return "色欲";
+            case "Wrath": return "愤怒";
+            case "Greed": return "贪婪";
+            case "Gluttony": return "暴食";
+            case "Envy": return "嫉妒";
+            case "Sloth": return "怠惰";
+            case "Universal": return "通用";
+            default: return label;
+        }
+    }
+
+    private void TranslateArchiveTabLabels()
+    {
+        if (tabRow == null) return;
+        var labels = tabRow.GetComponentsInChildren<TMPro.TMP_Text>(true);
+        for (var i = 0; i < labels.Length; i++)
+        {
+            if (labels[i] != null) labels[i].text = TranslateArchiveTabLabel(labels[i].text);
+        }
+    }
+
+
 
     void BuildPanel()
     {
@@ -384,6 +411,8 @@ public class CardArchivePanel : MonoBehaviour
             var captured = t;
             b.onClick.AddListener(() => { currentTab = captured; Refresh(); });
         }
+    
+        TranslateArchiveTabLabels();
     }
 
     // ───────────────────────── 显隐 / 刷新 ─────────────────────────
@@ -394,7 +423,7 @@ public class CardArchivePanel : MonoBehaviour
         if (!built) Build();
         panelRoot.SetActive(true);
         visible = true;
-        CardArchiveStore.MarkAllRead();   // 打开即视为已读（清除新解锁角标）
+        // 新卡角标保留到卡牌真正查看后再清除，不在打开图鉴时全部清空。
         Refresh();
         if (!wasVisible) AudioManager.Instance?.Play(SfxId.CardArchiveOpen);
     }
@@ -413,6 +442,7 @@ public class CardArchivePanel : MonoBehaviour
 
     public void Refresh()
     {
+        TranslateArchiveTabLabels();
         // currentTab 兜底：为空（序列化/AddComponent 时机导致）时按「全部」处理
         if (string.IsNullOrEmpty(currentTab)) currentTab = "all";
         if (!built || contentRoot == null) return;
@@ -468,6 +498,8 @@ public class CardArchivePanel : MonoBehaviour
             scrollRect.StopMovement();
             scrollRect.normalizedPosition = new Vector2(0f, 1f);   // 回到顶部
         }
+    
+        // 新卡角标由卡牌实际查看流程清除，不在刷新列表时批量清除。
     }
 
     bool TabMatches(CardArchiveEntry e)
@@ -503,14 +535,16 @@ public class CardArchivePanel : MonoBehaviour
 
     void RenderTile(CardArchiveEntry e)
     {
+        // 图鉴对玩家只展示两态：未解锁（含历史“已见过”状态）与已解锁。
+        int displayState = CardArchiveStore.IsUnlocked(e.cardId) ? e.state : 0;
         var tile = new GameObject("Card_" + e.cardId, typeof(RectTransform));
         var trt = tile.GetComponent<RectTransform>();
         trt.SetParent(contentRoot, false);
         trt.sizeDelta = new Vector2(FaceWidth, cardFaceHeight + infoBarHeight);
 
         var card = CardLibrary.Instance != null ? CardLibrary.Instance.FindCard(e.cardId) : null;
-        if (card != null && e.state != 0)
-            RenderCardFace(tile, card, e.state);
+        if (card != null && displayState != 0)
+            RenderCardFace(tile, card, displayState);
 
         BuildInfoBar(trt, e);
     }
@@ -533,6 +567,8 @@ public class CardArchivePanel : MonoBehaviour
     /// <summary>卡片底部信息条：卡名 / 状态 / 次数（Unlocked）。与卡面区上下分离，互不遮挡。</summary>
     void BuildInfoBar(RectTransform tile, CardArchiveEntry e)
     {
+        // 图鉴对玩家只展示两态：未解锁（含历史“已见过”状态）与已解锁。
+        int displayState = CardArchiveStore.IsUnlocked(e.cardId) ? e.state : 0;
         var barGO = new GameObject("InfoBar", typeof(RectTransform));
         var barRT = barGO.GetComponent<RectTransform>();
         barRT.SetParent(tile, false);
@@ -551,22 +587,22 @@ public class CardArchivePanel : MonoBehaviour
         line.pivot = new Vector2(0.5f, 1);
         line.anchoredPosition = Vector2.zero;
         line.sizeDelta = new Vector2(0, 2);
-        line.gameObject.AddComponent<Image>().color = e.state == 2
+        line.gameObject.AddComponent<Image>().color = displayState == 2
             ? new Color(0.8f, 0.65f, 0.25f, 0.85f)
             : new Color(0.5f, 0.5f, 0.55f, 0.6f);
 
         float w = FaceWidth;
-        string title = e.state == 0 ? "？？？" : (e.cardName ?? "？？？");
+        string title = displayState == 0 ? "？？？" : (e.cardName ?? "？？？");
         var titleTxt = AddText(barRT, title, EnsureSize((int)infoBarFontSizes.x, 18),
             new Vector2(0, infoBarHeight * 0.30f), TextAlignmentOptions.Center, w);
-        titleTxt.color = e.state == 0 ? new Color(0.55f, 0.55f, 0.55f) : Color.white;
+        titleTxt.color = displayState == 0 ? new Color(0.55f, 0.55f, 0.55f) : Color.white;
 
-        string desc = e.state == 0 ? "未解锁" : (e.state == 1 ? "已遇见 · 未获得" : "已获得");
+        string desc = displayState == 0 ? "未解锁" : (displayState == 1 ? "已遇见 · 未获得" : "已解锁");
         var descTxt = AddText(barRT, desc, EnsureSize((int)infoBarFontSizes.y, 18),
             new Vector2(0, -infoBarHeight * 0.02f), TextAlignmentOptions.Center, w);
         descTxt.color = new Color(0.85f, 0.85f, 0.85f);
 
-        if (e.state == 2)
+        if (displayState == 2)
         {
             var meta = AddText(barRT, $"×{e.selectedCount}  {UnixToDate(e.firstUnlockedAtUnix)}",
                 EnsureSize((int)infoBarFontSizes.z, 18), new Vector2(0, -infoBarHeight * 0.30f), TextAlignmentOptions.Center, w);
@@ -582,7 +618,7 @@ public class CardArchivePanel : MonoBehaviour
                 badge.anchoredPosition = new Vector2(-5, -5);
                 badge.sizeDelta = new Vector2(52, 24);
                 badge.gameObject.AddComponent<Image>().color = new Color(0.85f, 0.25f, 0.2f);
-                var bt = AddText(badge, "NEW", 14, Vector2.zero, TextAlignmentOptions.Center, 52);
+                var bt = AddText(badge, "新", 14, Vector2.zero, TextAlignmentOptions.Center, 52);
                 bt.color = Color.white;
                 bt.fontStyle = FontStyles.Bold;
             }
@@ -750,4 +786,6 @@ public class CardArchivePanel : MonoBehaviour
         var dt = System.DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
         return dt.ToString("yyyy-MM-dd");
     }
+
+
 }

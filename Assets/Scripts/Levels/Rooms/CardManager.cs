@@ -29,11 +29,19 @@ public class CardManager : SceneSingleton<CardManager>
     [Tooltip("每张卡（按槽位记）最多可刷新的次数：0 = 不限，1 = 每卡 1 次，N = 每卡 N 次。")]
     public int maxRerollsPerCard = 1;
 
+    [Header("Focus Assist")]
+    [Tooltip("Focus Assist 概率：已有明确最高 Investment 的 Sin 时，Monster-Type 槽约以此概率直接给该 Sin 的一张合法未获得卡；无 Investment 时优先当前 Possessed Body 对应 Sin。")]
+    [Range(0f, 1f)] public float focusAssistProbability = 0.65f;
+
     [Header("Card Offer Gems")]
     [Tooltip("卡牌选卡宝石 prefab（默认使用 Assets/Prefabs/Room/GEM.prefab）。所有正式选卡均先生成宝石，玩家拾取后才打开弹窗。")]
     public GameObject cardOfferGemPrefab;
     [Tooltip("新局出生点附近生成的宝石数量。")]
     [Min(0)] public int openingGemCount = 2;
+    [Tooltip("Starter Gem 生成时刻（战斗开始后的秒数）。Pass v1：删除开局 2 Gem 后，战斗计时达到该值时生成 1 颗 Starter Gem（单次选卡）。")]
+    [Min(0f)] public float starterGemTime = 30f;
+    [Tooltip("Starter Gem 相对玩家锚点的生成偏移（前方，避免落在玩家身后永久丢失）。")]
+    public Vector3 starterGemOffset = new Vector3(0f, 0f, 1.5f);
     [Tooltip("开局宝石是否每颗触发一次单选。关闭时每颗宝石触发双选。")]
     public bool openingGemDoublePick = false;
     [Tooltip("精英掉落的每颗宝石是否触发双选。默认 false：每颗只触发一次单选，奖励总量由上面随机掉落的颗数决定。改 true 则每颗都是双选（总量翻倍）。")]
@@ -82,6 +90,10 @@ public class CardManager : SceneSingleton<CardManager>
     readonly List<CardChoiceGemPickup> activeOfferGems = new List<CardChoiceGemPickup>();
     bool openingGemRoutineStarted;
     string openingGemRunId;
+    bool starterGemSpawned;
+
+    /// <summary>首次正式选卡已触发「罪印双刃」提示（Pass v1 §2.6，仅一次）。</summary>
+    bool reverseBDHintShown;
 
     /// <summary>
     /// 拾取流程互斥：当前正在"飘向玩家"或"选卡中"的宝石。
@@ -240,6 +252,56 @@ public class CardManager : SceneSingleton<CardManager>
             openingGemRunId = session != null ? session.RunId : null;
             Debug.Log("[CardManager] 开局宝石闸门开启，开始生成流程。" + DescribeOpeningGemGate());
             StartCoroutine(SpawnOpeningCardGemsWhenReady());
+        }
+
+        // Starter Gem（Pass v1）：战斗计时达到 starterGemTime 时生成 1 颗单选宝石。
+        // 依赖 RunSpawnDirector.CombatStarted（首次 Possess 后才开始计时），自然满足 Pre-Combat 门。
+        if (!starterGemSpawned && starterGemTime > 0f
+            && RunSpawnDirector.Instance != null && RunSpawnDirector.Instance.CombatStarted
+            && RunSpawnDirector.Instance.ActiveCombatSeconds >= starterGemTime
+            && !(session != null && session.IsBossMode))
+        {
+            starterGemSpawned = true;
+            SpawnStarterGem();
+        }
+    }
+
+    /// <summary>
+    /// 生成 Starter Gem（Pass v1）：在玩家前方生成 1 颗单选宝石，拾取后正常进行 1 次 Card Pick。
+    /// 复用现有 Gem Pickup / Attract 系统，不新增硬编码生成逻辑。
+    /// </summary>
+    void SpawnStarterGem()
+    {
+        if (RunSession.Instance != null && RunSession.Instance.IsBossMode) return;
+        if (!TryGetPlayerAnchorPosition(out Vector3 anchor)) return;
+
+        Vector3 forward = Vector3.forward;
+        PossessionManager pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody != null)
+            forward = pm.CurrentBody.transform.forward;
+        else
+        {
+            SoulActor soul = FindObjectOfType<SoulActor>();
+            if (soul != null) forward = soul.transform.forward;
+        }
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+        forward.Normalize();
+
+        Vector3 gemPosition = anchor + forward * starterGemOffset.z + Vector3.up * starterGemOffset.y;
+        CardChoiceGemPickup gem = SpawnCardOfferGem(gemPosition, doublePick: false, keepPicks: false,
+            waveIndex: -1, source: CardOfferGemSource.Wave);
+        if (gem == null)
+            Debug.LogWarning("[CardManager] Starter Gem 生成失败。");
+        else
+        {
+            // Pass v1 体验修复：直接 SpawnCardOfferGem 的宝石无掉落动画，玩家在战斗中难察觉，
+            // 且 1.5m 距离很快被吸附。改为从上方 1.5m 掉落到落点，给玩家可见的掉落提示。
+            if (gemPickupRequiresDropLanded)
+                gem.StartDrop(gemPosition + Vector3.up * 1.5f, gemPosition, gemPosition.y, null);
+
+            float combatTime = RunSpawnDirector.Instance != null ? RunSpawnDirector.Instance.ActiveCombatSeconds : 0f;
+            Debug.Log($"[CardManager] Starter Gem 已生成（战斗 {combatTime:F1}s）。");
         }
     }
 
@@ -542,8 +604,8 @@ public class CardManager : SceneSingleton<CardManager>
         if (desired == 0) return 0;
 
         float scatter = Mathf.Max(0f, cardOfferGemScatterRadius);
-        // 单颗不散开：直接落在掉落点，避免"随机偏离"让宝石跑到玩家够不着的地方。
-        if (desired == 1) scatter = 0f;
+        // 单颗也散开（Pass v1 bug fix）：精英击杀点就在玩家脚下，单颗若原地落下会立即进入拾取半径
+        // 被吸附 → 玩家看不到掉落过程、直接选卡。保留小散开让弹射动画可见、宝石落在玩家可拾取范围。
 
         // 环形均分 + 随机抖动：既保证多颗散得开，又不会每次都一样。
         float baseAngle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
@@ -631,6 +693,14 @@ public class CardManager : SceneSingleton<CardManager>
             doublePick: gem.DoublePick,
             keepPicks: gem.KeepPicks,
             waveIndex: gem.WaveIndex);
+
+        // Pass v1 §2.6：首次正式选卡打开时，仅显示一次「罪印双刃」提示（复用 Tutorial 队列）。
+        if (!reverseBDHintShown)
+        {
+            reverseBDHintShown = true;
+            if (TutorialController.Instance != null)
+                TutorialController.Instance.ShowPrompt("TUT-REVERSE-BD");
+        }
 
         if (!CoreChoiceUI.Instance.IsDrafting)
         {
@@ -784,8 +854,13 @@ public class CardManager : SceneSingleton<CardManager>
         CardData pickA = WeightedPick(poolA, rng, card =>
             card.category == CardCategory.GlobalSlot ? GlobalPityWeight() : 1f, offered);
 
-        // ── Slot B：Investment 轻度加权（§9/§6）──
-        CardData pickB = WeightedPick(poolB, rng, InvestmentWeight, offered);
+        // ── Slot B：Focus Assist（§2.5）优先，否则 Investment 轻度加权（§9/§6）──
+        CardData pickB = null;
+        SinType focusSin = ResolveFocusAssistSin();
+        if (focusSin != SinType.None && focusAssistProbability > 0f && rng.NextDouble() < focusAssistProbability)
+            pickB = WeightedPick(poolB, rng, card => card != null && card.monsterType == focusSin ? 1f : 0f, offered);
+        if (pickB == null)
+            pickB = WeightedPick(poolB, rng, InvestmentWeight, offered);
 
         // ── Slot C：Flex（排除本次已出现 ID，§9）──
         CardData pickC = WeightedPick(poolC, rng, card => 1f, offered);
@@ -837,6 +912,26 @@ public class CardManager : SceneSingleton<CardManager>
         if (card == null || card.monsterType == SinType.None) return 1f;
         investments.TryGetValue(card.monsterType, out int inv);
         return 1f + kInvestmentStep * Mathf.Min(inv, kInvestmentCap);
+    }
+
+    /// <summary>
+    /// Focus Assist（§2.5）：已有明确最高 Investment 的 Sin 时返回该 Sin；
+    /// 否则返回当前 Possessed Body 对应 Sin（无附身则 SinType.None）。不写死 Pride。
+    /// </summary>
+    SinType ResolveFocusAssistSin()
+    {
+        SinType best = SinType.None;
+        int bestInv = 0;
+        foreach (var kv in investments)
+        {
+            if (kv.Value > bestInv) { bestInv = kv.Value; best = kv.Key; }
+        }
+        if (best != SinType.None) return best;
+
+        PossessionManager pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody != null && pm.CurrentBody.sinType != SinType.None)
+            return pm.CurrentBody.sinType;
+        return SinType.None;
     }
 
     /// <summary>

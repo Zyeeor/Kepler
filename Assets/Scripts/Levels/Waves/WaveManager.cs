@@ -81,6 +81,10 @@ public class WaveManager : SceneSingleton<WaveManager>
     [Tooltip("同时存在的普通自动怪上限。数组 7 项依次对应第 0～1、1～2、…、6～7 分钟；精英不占用此上限。")]
     public List<int> continuousSpawnMaxCountsByMinute = new List<int> { 10, 20, 30, 30, 30, 30, 30 };
 
+    [Header("新逻辑：精英在场时普通怪速率")]
+    [Tooltip("场上至少存在 1 只活跃 Elite 时，普通怪生成速率乘数。无论 1 只还是多只 Elite 都只乘一次（不叠乘）；已存在普通怪不清理、Active Cap 不变；Elite 全部死亡后恢复原速率。")]
+    [Range(0f, 1f)] public float elitePresentNormalSpawnMultiplier = 0.65f;
+
     [Header("新逻辑：数值成长")]
     [Tooltip("Boss 前非 Boss 战斗时长（秒）。默认 7 分钟，倒计时从该值开始。")]
     [Min(1f)] public float nonBossDurationSeconds = 420f;
@@ -765,6 +769,9 @@ public class WaveManager : SceneSingleton<WaveManager>
             while (combatTime >= nextNormalTime && nextNormalTime < nonBossDurationSeconds)
             {
                 float rate = GetNormalSpawnRate(nextNormalTime);
+                // Pass v1 §4.4：场上至少 1 只活跃 Elite 时，普通怪速率 × 0.65（只乘一次，不叠乘）。
+                if (rate > 0f && HasActiveElite())
+                    rate *= elitePresentNormalSpawnMultiplier;
                 MonsterActor monster = null;
                 if (rate > 0f)
                 {
@@ -812,6 +819,18 @@ public class WaveManager : SceneSingleton<WaveManager>
         return Mathf.Max(0f, normalSpawnRateByMinute.Evaluate(Mathf.Clamp(time / 60f, 0f, 7f)));
     }
 
+    /// <summary>场上是否存在至少 1 只活跃 Elite（未倒地、未被附身、未退场）。Pass v1 §4.4 用。</summary>
+    bool HasActiveElite()
+    {
+        for (int i = 0; i < waveAlive.Count; i++)
+        {
+            MonsterActor m = waveAlive[i];
+            if (m != null && m.IsElite && !m.isDowned && !m.isPossessed && m.gameObject.activeInHierarchy)
+                return true;
+        }
+        return false;
+    }
+
     float NextNormalSpawnTime(float current)
     {
         float rate = GetNormalSpawnRate(current);
@@ -845,6 +864,23 @@ public class WaveManager : SceneSingleton<WaveManager>
             scheduleIndex,
             Mathf.Max(0.01f, entry.eliteHealthMultiplier),
             Mathf.Max(0.01f, entry.eliteAttackMultiplier)) ? 1 : 0;
+    }
+
+    /// <summary>
+    /// 查询某罪印精英的击杀选卡奖励次数（Pass v1 §2.3）。由 EliteBuildDirector 在精英 Fatal
+    /// 时读取，决定掉落宝石是单选还是双选。未配置该罪印时回退 1（单选）。
+    /// </summary>
+    public int GetEliteRewardPickCount(SinType sin)
+    {
+        if (continuousSpawnOrder != null)
+        {
+            for (int i = 0; i < continuousSpawnOrder.Count; i++)
+            {
+                ContinuousSpawnEntry entry = continuousSpawnOrder[i];
+                if (entry != null && entry.sin == sin) return Mathf.Max(1, entry.eliteRewardPickCount);
+            }
+        }
+        return 1;
     }
 
     IEnumerator RunCountKillWave(WaveConfig wave)

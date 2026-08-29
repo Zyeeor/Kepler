@@ -61,6 +61,35 @@ public class EnemyAbility_GluttonyDevour : EnemyAbility
             abilityTags.Add("Ability.Monster.Gluttony.Devour");
     }
 
+    /// <summary>
+    /// Pass v1 §13.2：Enemy 使用时的前方扇形 Telegraph——约 100°、范围对应当前真实 Devour 范围。
+    /// 玩家版不新增 Enemy 前摇（telegraph 仅 ShouldUseEnemyTelegraph 时启用，即 !isPossessed）。
+    /// </summary>
+    public override EnemyTelegraphGeometry GetEnemyTelegraphGeometry()
+    {
+        float radius = ScaleAbilityRadius(range * 2f);
+        if (radius <= 0f || angle <= 0f) return default;
+
+        Vector3 forward = ResolveIndicatorForward();
+        return new EnemyTelegraphGeometry
+        {
+            shape = EnemyIndicatorShape.Sector,
+            center = owner.transform.position,
+            forward = forward,
+            length = radius,
+            angle = angle,
+            isValid = true
+        };
+    }
+
+    /// <summary>Devour 扇形朝向 = owner.forward（与 FindNearestDevourTarget 的判定一致）。</summary>
+    protected override Vector3 ResolveIndicatorForward()
+    {
+        Vector3 fwd = owner != null ? owner.transform.forward : transform.forward;
+        fwd.y = 0f;
+        return fwd.sqrMagnitude > 0.0001f ? fwd.normalized : Vector3.forward;
+    }
+
     protected override void OnTrigger()
     {
         if (owner == null)

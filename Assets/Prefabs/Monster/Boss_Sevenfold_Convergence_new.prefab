@@ -770,10 +770,10 @@ MonoBehaviour:
   spawnDamageMultiplier: 1
   soulAnchorPoint: {fileID: 1364379106814527052}
   teleportAnchor: {fileID: 1364379106814527052}
-  baseBossMaxHealth: 8000
+  baseBossMaxHealth: 6500
   normalDamageMultiplier: 1.65
-  minimumEscortCount: 3
-  escortRefreshSeconds: 18
+  minimumEscortCount: 2
+  escortRefreshSeconds: 20
   bossCombatScaleMultiplier: 2
   teleportFarTriggerDistance: 16
   teleportEmergencyDistance: 24

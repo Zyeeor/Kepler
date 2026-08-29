@@ -15,6 +15,10 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public float minPossessTime = 1f;
     public float possessionDecayPercent = 0.05f;
     public float decayInterval = 1f;
+    [Tooltip("Body 死亡后的附身锁定秒数（Pass v1 §7.4 失败惩罚）。与主动 F 离身（无额外 CD）分离，不共用 possessCooldown。")]
+    [Min(0f)] public float bodyDeathPossessionLock = 1.5f;
+    [Tooltip("成功附身新 Body 后的伤害免疫秒数（Pass v1 §7.5）。独立于 Bullet Time：不 Slow Motion、不消耗 BT Charge。")]
+    [Min(0f)] public float postPossessDamageImmunityDuration = 0.25f;
 
     public enum SwitchState { Idle, Flying, Possessing, Releasing }
     public SwitchState State { get; private set; }
@@ -119,9 +123,8 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         // 技能烧血已把耐久扣到 0，死亡结算正等待该次技能判定完成：
         // 被动流逝不得在宽限窗口内抢先判死，否则技能仍会被打断。
         if (CurrentBody.IsAbilityCostDeathPending) return;
-        // Elite HP is not consumed by the passive possession timer. It can still be
-        // killed by explicit hostile damage, which goes through MonsterActor.TakeDamage.
-        if (CurrentBody.IsElite) return;
+        // Pass v1 §9：Elite Possessed Body 不再免疫普通 4% Max HP/s Body Decay。
+        // （旧规则：Elite HP 不被被动附身计时消耗，本轮移除。）
         if (CurrentBody.IsBossBattleReserveBody) return;
 
         if (decayInterval <= 0f) return;
@@ -226,6 +229,15 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             return false;
         }
 
+        // Pass v1 §7.2：Body→Body 主动换身至少控制当前 Body minPossessTime 秒（覆盖直接 Body→Body 切换，不只 F Release）。
+        // Boss 战切换模式豁免。
+        if (State == SwitchState.Possessing && !bossBattleSwitchMode
+            && Time.unscaledTime - possessStartTime < minPossessTime)
+        {
+            Debug.Log($"[Possession] Body→Body switch rejected: min possession time remaining={minPossessTime - (Time.unscaledTime - possessStartTime):F2}");
+            return false;
+        }
+
         if (soul == null) soul = FindObjectOfType<SoulActor>();
         if (soul == null)
         {
@@ -263,7 +275,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             return;
         }
 
-        CommitRelease(recycleBody: true, startCooldown: true);
+        CommitRelease(recycleBody: true, startCooldown: false);
     }
 
     /// <summary>
@@ -329,6 +341,9 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     public void TriggerBulletTime()
     {
         if (State != SwitchState.Possessing || CurrentBody == null) return;
+        // Pass v1 §8.2：Charge 检查，0 时同 Body 不可再使用（换 Body 后重新刷新）。
+        if (CurrentBody.bulletTimeChargesRemaining <= 0) return;
+        CurrentBody.bulletTimeChargesRemaining--;
         BulletTimeController.EnsureInstance().Trigger(CurrentBody);
     }
 
@@ -400,9 +415,23 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         }
 
         if (target.Combat != null) target.Combat.AddLooseTags(this, new[] { "State.Possession.Active", "State.Possession.Controlled" });
+
+        // Pre-Combat gate (Pass v1): the first successful Possession of the Opening Carrier
+        // starts the run combat clock. Runs through the Opening Carrier flow always satisfy
+        // this before any Normal Spawn / Elite Schedule / Starter Gem can fire.
+        if (target.IsOpeningCarrier && RunSpawnDirector.Instance != null)
+            RunSpawnDirector.Instance.MarkCombatStarted();
+
         target.OnPossessed();
         target.SetController(PlayerController.Instance);
         SetCameraTarget(target.transform);
+
+        // Pass v1 §7.5：Commit 后短暂免伤（独立于 Bullet Time，不 Slow Motion，不消耗 BT Charge）。
+        if (postPossessDamageImmunityDuration > 0f)
+            BulletTimeController.EnsureInstance().ApplyDamageImmunityForDuration(target, postPossessDamageImmunityDuration);
+
+        // Pass v1 §8.2：每 Body 默认 1 次 BT Charge，附身刷新（Boss Reserve Body 同样刷新）。
+        target.bulletTimeChargesRemaining = BulletTimeController.ConfiguredChargesPerBody;
 
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Show(target);
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.BindActor(target);
@@ -412,7 +441,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         OnPossessionStarted?.Invoke(target);
         nextPossessionIsDeathRelay = false;
         PossessionCommitted?.Invoke(target, reason, ++possessionTransactionId);
-        TriggerBulletTime();
+        // Pass v1 §8.1：移除 CommitPossession 后自动 Trigger Bullet Time（BT 改为 E 手动）。
     }
 
     private void DetachCurrentBodyForSwitch()
@@ -532,7 +561,9 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         MonsterActor dead = CurrentBody;
         nextPossessionIsDeathRelay = true;
         Debug.Log("[Possession] Possessed body died.");
-        CommitRelease(recycleBody: true, startCooldown: true, PossessionEndReason.BodyDied);
+        CommitRelease(recycleBody: true, startCooldown: false, PossessionEndReason.BodyDied);
+        // Pass v1 §7.4：Body 死亡作为失败惩罚，锁 bodyDeathPossessionLock 秒（独立于主动 F 离身，后者无额外 CD）。
+        CooldownRemaining = bodyDeathPossessionLock;
         OnBodyDiedWhilePossessing?.Invoke(dead);
     }
 

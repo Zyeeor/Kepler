@@ -230,6 +230,15 @@ public class PossessionBodyProvider : MonoBehaviour
     public void ProvideBody()
     {
         if (used) return;
+
+        // Pass v1 bug fix（§1.1/§1.3）：首次 Possess Pride（CombatStarted）之前，神龛不得提供随机躯体。
+        // 否则出生点神龛（RandomFromCatalog）会在玩家灵魂落地后立即刷出非傲慢尸体，干扰「开局固定 Pride Corpse」。
+        // 开场固定 Pride corpse 由 TutorialController.OpeningCarrierRoutine 单独负责；Boss 模式无此门。
+        var run = RunSession.Instance;
+        if (RunSpawnDirector.Instance != null && !RunSpawnDirector.Instance.CombatStarted
+            && !(run != null && run.IsBossMode))
+            return;
+
         var prefab = ResolveBodyPrefab();
         if (prefab == null) return;
 

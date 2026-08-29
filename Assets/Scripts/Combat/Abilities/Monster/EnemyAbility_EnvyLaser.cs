@@ -23,7 +23,15 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     [Tooltip("EN-R04 grace seconds after disconnect. 0 = clear immediately.")]
     public float markGraceDuration = 0f;
     [Tooltip("Baseline max continuous connect window. EN-A04 raises via ConnectDuration.")]
-    public float maxConnectDuration = 8f;
+    public float maxConnectDuration = 1f;
+
+    [Header("Enemy Tracking (Pass v1 §13.3)")]
+    [Tooltip("Enemy 版激光有限追踪的转向速度（°/s）。Beam 不再无限瞬时锁头；玩家可横移/绕侧甩掉，丢失目标后本次 Cast 结束。")]
+    [Min(1f)] public float enemyTrackingTurnSpeed = 100f;
+    [Tooltip("前摇期间动态 Lock 警示线的最细宽度倍数（progress=0 时），到 progress=1 时线性过渡到 1（真实 Beam 宽度）。")]
+    [Range(0f, 1f)] public float lockLineMinWidthMultiplier = 0.35f;
+    [Tooltip("前摇期间 Lock 警示线的颜色（偏弱，可用透明度区分强弱；为空则沿用 beamMaterial 默认）。")]
+    public Material lockLineMaterial;
     public GameplayEffectDefinition markEffect;
     public GameplayEffectDefinition laserHitEffect;
 
@@ -59,8 +67,13 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private float _hpCostTimer;
     private float _rampTimer;
     private GameObject _hitVfx;
+    private Vector3 _enemyBeamDirection;
     private readonly HashSet<Enemy> _connectedThisBurst = new HashSet<Enemy>();
     private readonly List<Enemy> _lastMarked = new List<Enemy>();
+
+    // Pass v1 §13.3：前摇动态 Lock 警示线（持续对象，前摇期间每帧更新位置/宽度，开火/取消时释放）。
+    private GameObject _lockLineVfx;
+    private float _lockLineBaseScaleZ = 1f;
 
     private void OnEnable()
     {
@@ -99,6 +112,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
                 ConsumeDeferredEnemyActivation();
                 if (!TryBeginActivationEffect()) return;
                 _isFiring = true;
+                _enemyBeamDirection = Vector3.zero;   // Pass v1 §13.3：本次 Cast 首帧指向玩家，同一 Cast 不立即重新锁回
                 _damageTimer = 0f;
                 _fireDuration = 0f;
                 _hpCostTimer = 0f;
@@ -129,6 +143,80 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     {
         if (!base.CanTrigger()) return false;
         return owner != null && (owner.isPossessed || owner.targetPlayer != null);
+    }
+
+    // ── Pass v1 §13.3：前摇动态 Lock 警示线（由弱到强，持续跟随玩家，开火时进入真实 Beam）──
+
+    protected override void OnEnemyTelegraphBegin()
+    {
+        // 前摇开始：从发射点连到玩家，初始最弱（细）。
+        RefreshLockLine(0f);
+    }
+
+    protected override void OnEnemyTelegraphTick(float progress)
+    {
+        // 前摇期间每帧跟随玩家并线性增强宽度，表现"锁定由弱到强"。
+        RefreshLockLine(progress);
+    }
+
+    protected override void OnEnemyTelegraphEnd()
+    {
+        ReleaseLockLine();
+    }
+
+    /// <summary>生成本次 Cast 的 Lock 警示线，或更新其位置/朝向/宽度（复用 Beam 的 LineRenderer 承载）。</summary>
+    void RefreshLockLine(float progress)
+    {
+        if (beamPrefab == null || owner == null || owner.targetPlayer == null) return;
+
+        Vector3 origin = GetBeamOrigin();
+        Vector3 target = owner.targetPlayer.position + Vector3.up;
+        Vector3 dir = target - origin;
+        float dist = dir.magnitude;
+        if (dist < 0.01f) return;
+
+        Quaternion rot = Quaternion.LookRotation(dir.normalized, Vector3.up) * Quaternion.Euler(beamRotationOffset);
+
+        if (_lockLineVfx == null)
+        {
+            _lockLineVfx = SpawnVfxTracked(beamPrefab, origin, rot, -1f);
+            if (_lockLineVfx == null) return;
+            // 记录基准 z 缩放（已含 OwnerCombatScaleMultiplier），后续每帧用它乘长度比，避免持续对象反复累乘。
+            _lockLineBaseScaleZ = _lockLineVfx.transform.localScale.z;
+        }
+        else
+        {
+            _lockLineVfx.transform.SetPositionAndRotation(origin, rot);
+        }
+
+        // 长度精确落在玩家位置（复用真实 Beam 的归一化逻辑）。
+        float authoredLength = ResolveBeamAuthoredLength(_lockLineVfx);
+        Vector3 scale = _lockLineVfx.transform.localScale;
+        scale.z = _lockLineBaseScaleZ * dist / Mathf.Max(0.01f, authoredLength);
+        _lockLineVfx.transform.localScale = scale;
+
+        // 由弱到强：宽度从 lockLineMinWidthMultiplier 线性过渡到 1（真实 Beam 宽度）。
+        float widthMult = Mathf.Lerp(lockLineMinWidthMultiplier, 1f, Mathf.Clamp01(progress));
+        ApplyBeamWidth(_lockLineVfx, widthMult);
+
+        if (lockLineMaterial != null)
+        {
+            foreach (ParticleSystem ps in _lockLineVfx.GetComponentsInChildren<ParticleSystem>())
+            {
+                ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
+                if (renderer != null) renderer.material = lockLineMaterial;
+            }
+        }
+    }
+
+    void ReleaseLockLine()
+    {
+        if (_lockLineVfx != null)
+        {
+            ReleaseVfx(_lockLineVfx, hitImpactDuration);
+            _lockLineVfx = null;
+            _lockLineBaseScaleZ = 1f;
+        }
     }
 
     /// <summary>持续开火中视为释放未结束：附身代价致死时等这束激光熄火后再死。</summary>
@@ -183,7 +271,14 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         }
 
         Vector3 origin = GetBeamOrigin();
-        Vector3 aimPoint = GetAimPoint(origin);
+        Vector3 aimPoint = owner.isPossessed ? GetAimPoint(origin) : GetEnemyTrackedAimPoint(origin);
+        if (!owner.isPossessed && IsEnemyTargetLost(origin))
+        {
+            // Pass v1 §13.3：玩家甩掉激光（绕侧/横移超速）→ 本次 Cast 结束，下次 Cast 重新锁定。
+            StopLaser();
+            currentCooldown = EffectiveCooldown;
+            return;
+        }
         bool pierceActive = IsPierceActive();
         float tickDamage = GetTickDamage();
 
@@ -378,6 +473,41 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         return origin + owner.transform.forward * range;
     }
 
+    /// <summary>
+    /// Pass v1 §13.3：Enemy 版有限追踪瞄准。Beam 以 enemyTrackingTurnSpeed 转向玩家，不再无限瞬时锁头；
+    /// 首次开火初始化指向玩家，之后每帧 RotateTowards 平滑追踪，玩家横移/绕侧可甩掉。
+    /// </summary>
+    private Vector3 GetEnemyTrackedAimPoint(Vector3 origin)
+    {
+        float range = GetEffectiveRange();
+        if (owner.targetPlayer == null)
+            return origin + _enemyBeamDirection * range;
+
+        Vector3 desired = owner.targetPlayer.position + Vector3.up - origin;
+        desired.y = 0f;
+        if (desired.sqrMagnitude < 0.0001f)
+            return origin + _enemyBeamDirection * range;
+        desired.Normalize();
+
+        if (_enemyBeamDirection.sqrMagnitude < 0.0001f)
+            _enemyBeamDirection = desired;
+
+        float maxAngle = Mathf.Max(0f, enemyTrackingTurnSpeed) * AbilityDeltaTime;
+        _enemyBeamDirection = Vector3.RotateTowards(_enemyBeamDirection, desired, maxAngle * Mathf.Deg2Rad, 0f);
+        if (_enemyBeamDirection.sqrMagnitude < 0.0001f) _enemyBeamDirection = desired;
+        return origin + _enemyBeamDirection.normalized * range;
+    }
+
+    /// <summary>玩家已甩掉激光：beam 方向与玩家方向夹角超过 90°（玩家绕到侧后方）。</summary>
+    private bool IsEnemyTargetLost(Vector3 origin)
+    {
+        if (owner == null || owner.targetPlayer == null) return owner != null && owner.targetPlayer == null;
+        Vector3 toPlayer = owner.targetPlayer.position + Vector3.up - origin;
+        toPlayer.y = 0f;
+        if (toPlayer.sqrMagnitude < 0.0001f) return false;
+        return Vector3.Angle(_enemyBeamDirection, toPlayer.normalized) > 90f;
+    }
+
     private Enemy FindNearestEnemy(Vector3 origin, float range)
     {
         Enemy nearest = null;
@@ -477,6 +607,8 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private void StopLaser()
     {
         _isFiring = false;
+        _enemyBeamDirection = Vector3.zero;   // Pass v1 §13.3：下次 Cast 重新锁定
+        ReleaseLockLine();                     // Pass v1 §13.3：兜底清理 Lock 线（开火中断等非 TelegraphEnd 路径）
         CombatAudioManager.StopCastLoop(_castLoop);
         _castLoop = default;
         EndActivationEffect();
@@ -507,6 +639,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     protected override void OnDisable()
     {
         if (_isFiring) StopLaser();
+        ReleaseLockLine();
         if (owner != null)
             EnvyMarkTarget.ClearMarksFromSource(owner);
         base.OnDisable();

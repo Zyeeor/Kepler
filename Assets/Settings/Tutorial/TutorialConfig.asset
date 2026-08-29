@@ -237,3 +237,19 @@ MonoBehaviour:
     nextStepId: 
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+  - id: TUT-REVERSE-BD
+    title: "\u7F6A\u5370\u53CC\u5203"
+    text: "\u7F6A\u5370\u4F1A\u540C\u65F6\u5F3A\u5316\u5BF9\u5E94\u654C\u4EBA\u4E0E\u9644\u8EAB\u540E\u7684\u80FD\u529B\u3002"
+    textKey: 
+    startFacts: 
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: 
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0

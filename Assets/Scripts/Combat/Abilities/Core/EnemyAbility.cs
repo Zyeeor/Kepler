@@ -7,7 +7,8 @@ using System;
 public enum EnemyIndicatorShape
 {
     Circle = 0,   // 圆形范围 AOE
-    Rect = 1      // 直线预警带（飞弹 / 冲锋 / 钩索）
+    Rect = 1,     // 直线预警带（飞弹 / 冲锋 / 钩索）
+    Sector = 2    // 前方扇形预警（吞噬等锥形范围）
 }
 
 /// <summary>敌人技能红圈预警的运行时几何描述。</summary>
@@ -16,9 +17,10 @@ public struct EnemyTelegraphGeometry
     public EnemyIndicatorShape shape;
     public Vector3 center;     // 世界空间中心
     public float radius;       // Circle 用
-    public Vector3 forward;    // Rect 用（世界空间水平方向）
-    public float length;       // Rect 用（沿 forward 全长）
+    public Vector3 forward;    // Rect / Sector 用（世界空间水平方向）
+    public float length;       // Rect 用（沿 forward 全长）/ Sector 用（半径）
     public float width;        // Rect 用（垂直 forward 全宽）
+    public float angle;        // Sector 用（全角，度）
     public bool isValid;
 }
 
@@ -303,6 +305,14 @@ public abstract class EnemyAbility : MonoBehaviour
 
     public bool IsEnemyTelegraphing => _enemyTelegraphRoutine != null;
 
+    /// <summary>
+    /// Telegraph 前摇生命周期钩子（Pass v1 §13.3）：供自驱动持续类技能（如 Envy 激光）
+    /// 在前摇期间追加自定义视觉（动态 Lock 线等）。三者对称配对，正常结束与取消都会走 End。
+    /// </summary>
+    protected virtual void OnEnemyTelegraphBegin() { }
+    protected virtual void OnEnemyTelegraphTick(float progress) { }
+    protected virtual void OnEnemyTelegraphEnd() { }
+
     protected virtual void Awake()
     {
         owner = GetComponentInParent<Enemy>();
@@ -552,6 +562,8 @@ public abstract class EnemyAbility : MonoBehaviour
         if (_enemyTelegraphVisual != null)
             _enemyTelegraphVisual.Begin(this, geometry, showIndicator);
 
+        OnEnemyTelegraphBegin();
+
         _enemyTelegraphRoutine = StartCoroutine(EnemyTelegraphRoutine());
     }
 
@@ -571,6 +583,7 @@ public abstract class EnemyAbility : MonoBehaviour
             elapsed += AbilityDeltaTime;
             if (_enemyTelegraphVisual != null)
                 _enemyTelegraphVisual.SetProgress(elapsed / duration);
+            OnEnemyTelegraphTick(elapsed / duration);
             yield return null;
         }
 
@@ -578,6 +591,7 @@ public abstract class EnemyAbility : MonoBehaviour
         if (_enemyTelegraphVisual != null) _enemyTelegraphVisual.End();
         if (owner != null) owner.EndAbilityTelegraph(this);
         _enemyTelegraphReady = UsesDeferredEnemyActivation;
+        OnEnemyTelegraphEnd();
         ExecuteTriggerImmediately(activationAlreadyStarted: true);
     }
 
@@ -591,6 +605,7 @@ public abstract class EnemyAbility : MonoBehaviour
         if (_enemyTelegraphVisual != null) _enemyTelegraphVisual.End();
         if (owner != null) owner.EndAbilityTelegraph(this);
         _enemyTelegraphReady = false;
+        OnEnemyTelegraphEnd();
         EndActivationEffect();
     }
 

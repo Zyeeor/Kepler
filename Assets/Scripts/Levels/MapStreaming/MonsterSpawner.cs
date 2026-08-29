@@ -33,8 +33,8 @@ public class MonsterSpawner : MonoBehaviour
     [Min(0f)] public float minSpawnPointSeparation = 6f;
 
     [Header("精英取点")]
-    [Tooltip("精英出生点到玩家的距离，占当前水平屏幕直径的比例。0.25 = 四分之一屏幕直径。")]
-    [Range(0.1f, 0.5f)] public float eliteSpawnScreenDiameterFraction = 0.25f;
+    [Tooltip("精英出生点到玩家的距离，占当前水平屏幕直径的比例。Pass v1 §4.5 调整为屏幕中圈 0.6-0.7。")]
+    [Range(0.1f, 0.8f)] public float eliteSpawnScreenDiameterFraction = 0.65f;
     [Tooltip("精英出生点在屏幕内目标半径附近的候选采样次数。")]
     [Range(8, 64)] public int eliteSpawnSamples = 32;
     [Tooltip("目标半径附近没有可走点时，允许收缩到目标半径的最低比例。")]
@@ -72,6 +72,10 @@ public class MonsterSpawner : MonoBehaviour
     [Header("尸体消散阈值")]
     [Tooltip("场上普通击杀尸体的数量阈值。超过后，最早进入队列的尸体开始现有消散倒计时；倒计时结束后才进入 Fading；0 = 保持原有击杀后自动倒计时。")]
     [Min(0)] public int corpseDissipationThreshold = 5;
+
+    [Header("敌人召唤上限")]
+    [Tooltip("AI Enemy 创建的 Summon 全局上限（Pass v1 §5）。只统计 AI Enemy 创建的 Summon；不限制 Possessed Player 创建的 Summon、Boss Minion、Boss Reserve、Corpse。达到上限回收最老 Enemy Summon。0 = 不限制。")]
+    [Min(0)] public int enemySummonCap = 4;
 
     [Header("调试")]
     [Tooltip("Scene 视图绘制每只已刷怪的位置圆点（绿=激活，蓝=休眠）。")]
@@ -563,7 +567,7 @@ public class MonsterSpawner : MonoBehaviour
         Vector3 player = GetPlayerPosition();
         Camera camera = GetMainCamera();
         float targetRadius = Mathf.Max(0.5f,
-            GetScreenDiameterWorldDistance() * Mathf.Clamp(eliteSpawnScreenDiameterFraction, 0.1f, 0.5f));
+            GetScreenDiameterWorldDistance() * Mathf.Clamp(eliteSpawnScreenDiameterFraction, 0.1f, 0.8f));
         float minimumRadius = targetRadius * Mathf.Clamp(eliteSpawnFallbackRadiusFraction, 0.5f, 1f);
         int samples = Mathf.Max(8, eliteSpawnSamples);
         float startAngle = Random01(WaveRandom) * Mathf.PI * 2f;
