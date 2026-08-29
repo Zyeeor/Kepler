@@ -15409,7 +15409,7 @@ MonoBehaviour:
   gameOverPanel: {fileID: 0}
   useFixedSeed: 0
   fixedSeed: 12345
-  forceTutorial: 0
+  forceTutorial: 1
   bootToMainMenu: 0
   useFormalFlow: 0
   enableA1ShadowOptimization: 1
