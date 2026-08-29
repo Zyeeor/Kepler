@@ -340,10 +340,19 @@ public class PossessionManager : SceneSingleton<PossessionManager>
 
     public void TriggerBulletTime()
     {
-        if (State != SwitchState.Possessing || CurrentBody == null) return;
+        if (State != SwitchState.Possessing || CurrentBody == null)
+        {
+            Debug.LogWarning($"[BT-Debug] TriggerBulletTime 被拦截：State={State}（需 Possessing），CurrentBody={(CurrentBody != null ? CurrentBody.displayName : "NULL")}。");
+            return;
+        }
         // Pass v1 §8.2：Charge 检查，0 时同 Body 不可再使用（换 Body 后重新刷新）。
-        if (CurrentBody.bulletTimeChargesRemaining <= 0) return;
+        if (CurrentBody.bulletTimeChargesRemaining <= 0)
+        {
+            Debug.LogWarning($"[BT-Debug] TriggerBulletTime 被拦截：bulletTimeChargesRemaining={CurrentBody.bulletTimeChargesRemaining}（本 Body 已用完，换身后刷新）。");
+            return;
+        }
         CurrentBody.bulletTimeChargesRemaining--;
+        Debug.Log($"[BT-Debug] TriggerBulletTime 触发成功，剩余 charge={CurrentBody.bulletTimeChargesRemaining}。");
         BulletTimeController.EnsureInstance().Trigger(CurrentBody);
     }
 

@@ -13,12 +13,14 @@ public class StageBgmMapEditor : UnityEditor.Editor
     static readonly string[] PhaseKeys =
     {
         "combat", "choice", "final", "result", "fail", "soul", "elite",
+        "victoryEpilogueBase", "victoryEpilogueExit",
     };
 
     static readonly string[] PhaseLabels =
     {
         "combat 统一波次曲", "choice 选卡", "final Final", "result 结算胜",
         "fail 结算败", "soul 灵魂态", "elite 精英",
+        "victory Base 胜利进入", "victory Exit 最终黑幕",
     };
 
     public override void OnInspectorGUI()

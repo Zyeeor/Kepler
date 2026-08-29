@@ -63,6 +63,17 @@ public enum SfxId
     // 怪物技能施放音已拆出（MonsterSkillAudioConfig，七罪×技能类别），不在此枚举内。
     // 召唤物（无人机/木灵）攻击音也已拆入 MonsterSkillAudioConfig 无人机条目。
     // 编号 27/28 = Shrine 神龛，29/30 已随技能音效拆分弃用（按约定不复用），新成员从 37 起追加。
+
+    // ── Victory Epilogue 结尾演出（语义事件；Clip 仍由 SfxBank 配置）──
+    VictoryEpilogueEnter = 37,
+    VictoryEpilogueFirstTextReveal = 38,
+    VictoryEpilogueNameInputReveal = 39,
+    VictoryEpilogueNameConfirm = 40,
+    VictoryEpilogueFinalReveal = 41,
+    VictoryEpilogueFinalTitleReveal = 42,
+    VictoryEpilogueFinalNameReveal = 43,
+    VictoryEpilogueFinalCoronationReveal = 44,
+    VictoryEpilogueExitBlack = 45,
 }
 
 /// <summary>音效类别（SfxBank 编辑器分区显示 + 策划配置导航用；不影响运行时行为）。</summary>
@@ -154,6 +165,18 @@ public class SfxBank : ScriptableObject
             case SfxId.BuildExpand:
             case SfxId.BuildCollapse:
                 return SfxCategory.UI;
+
+            // Victory Epilogue 结尾演出
+            case SfxId.VictoryEpilogueEnter:
+            case SfxId.VictoryEpilogueFirstTextReveal:
+            case SfxId.VictoryEpilogueNameInputReveal:
+            case SfxId.VictoryEpilogueNameConfirm:
+            case SfxId.VictoryEpilogueFinalReveal:
+            case SfxId.VictoryEpilogueFinalTitleReveal:
+            case SfxId.VictoryEpilogueFinalNameReveal:
+            case SfxId.VictoryEpilogueFinalCoronationReveal:
+            case SfxId.VictoryEpilogueExitBlack:
+                return SfxCategory.GameEvent;
 
             // Combat 战斗
             case SfxId.BodyHit:

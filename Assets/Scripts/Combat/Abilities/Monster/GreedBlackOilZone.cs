@@ -16,6 +16,8 @@ public class GreedBlackOilZone : MonoBehaviour
     public float width = 1.5f;
     public float allySpeedMultiplier = 1.5f;
     public float enemySlowMultiplier = 0.5f;
+    [Tooltip("Enemy Greed（未附身）黑油减速玩家身体时的移速倍率（Pass v1.1 §1）。Possessed Greed 减速敌人仍用 enemySlowMultiplier。")]
+    public float enemyOilPlayerSlowMultiplier = 0.7f;
     public bool applyEnemySlow;
     public bool isBurning;
     public GameObject normalVfxPrefab;
@@ -45,6 +47,7 @@ public class GreedBlackOilZone : MonoBehaviour
         float oilWidth,
         float allyMult,
         float enemyMult,
+        float enemyOilPlayerMult,
         bool enemySlow,
         GameObject normalVfx,
         GameObject burningVfx)
@@ -56,6 +59,7 @@ public class GreedBlackOilZone : MonoBehaviour
         width = Mathf.Max(0.2f, oilWidth);
         allySpeedMultiplier = Mathf.Max(0.01f, allyMult);
         enemySlowMultiplier = Mathf.Clamp(enemyMult, 0.01f, 1f);
+        enemyOilPlayerSlowMultiplier = Mathf.Clamp(enemyOilPlayerMult, 0.01f, 1f);
         applyEnemySlow = enemySlow;
         normalVfxPrefab = normalVfx;
         burningVfxPrefab = burningVfx;
@@ -244,7 +248,10 @@ public class GreedBlackOilZone : MonoBehaviour
         // Enemy slow only with GR-M01, and only for legal enemies vs the oil owner.
         if (!applyEnemySlow || owner == null || monster == null) return;
         if (!owner.CanDamage(monster)) return;
-        combat.AddMoveSpeedMultiplier(this, enemySlowMultiplier);
+        // Pass v1.1 §1：Enemy Greed 减速玩家（0.70）与 Possessed Greed 减速敌人（0.50）分开，
+        // 只削弱 Enemy 侧，不误伤 Possessed Greed 的控制收益。
+        float slow = owner.isPossessed ? enemySlowMultiplier : enemyOilPlayerSlowMultiplier;
+        combat.AddMoveSpeedMultiplier(this, slow);
     }
 
     private void RefreshHighestModifiers(CombatAbilityComponent combat)

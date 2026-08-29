@@ -2688,8 +2688,15 @@ public class MonsterActor : Actor
         }
         if ((cmd.Pressed & CommandButtons.Skill2) != 0) PlayerTriggerSkill();
         if ((cmd.Pressed & CommandButtons.Mobility) != 0) PlayerTriggerMobility();
-        if ((cmd.Pressed & CommandButtons.Skill3) != 0 && manager != null && manager.CurrentBody == this)
-            manager.TriggerBulletTime();
+        if ((cmd.Pressed & CommandButtons.Skill3) != 0)
+        {
+            if (manager == null)
+                Debug.LogWarning("[BT-Debug] 按下了 E(Skill3)，但 PossessionManager.Instance 为 NULL。");
+            else if (manager.CurrentBody != this)
+                Debug.LogWarning($"[BT-Debug] 按下了 E(Skill3)，但 manager.CurrentBody={(manager.CurrentBody != null ? manager.CurrentBody.displayName : "NULL")} != 当前 body '{displayName}'（可能附身未完成或 IsPlayerControlled 判断异常）。");
+            else
+                manager.TriggerBulletTime();
+        }
         if ((cmd.Pressed & CommandButtons.Release) != 0 && manager != null && manager.CurrentBody == this)
             manager.RequestRelease(force: false);
     }

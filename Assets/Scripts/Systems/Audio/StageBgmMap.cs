@@ -63,6 +63,12 @@ public class StageBgmMap : ScriptableObject
     [Tooltip("Failed 失败曲；留空 = 复用 result 槽。")]
     public Slot fail;
 
+    [Header("Victory Epilogue 层（由结尾控制器接管，资源仍归本配置中心）")]
+    [Tooltip("进入 Victory Epilogue 时的音乐。Inherit/空 = 停止当前 BGM，不播放新曲。")]
+    public Slot victoryEpilogueBase;
+    [Tooltip("最终字幕消失进入最后黑幕时的音乐。Inherit/空 = 保持静音直到 MainMenu 接管。")]
+    public Slot victoryEpilogueExit;
+
     [Header("Override 层（状态覆盖，压栈优先于 Phase）")]
     [Tooltip("灵魂态曲（离身进入灵魂态 Push，附身 Pop）。")]
     public Slot soul;
@@ -114,6 +120,8 @@ public class StageBgmMap : ScriptableObject
         NormalizeSlot(final);
         NormalizeSlot(result);
         NormalizeSlot(fail);
+        NormalizeSlot(victoryEpilogueBase);
+        NormalizeSlot(victoryEpilogueExit);
         NormalizeSlot(soul);
         NormalizeSlot(elite);
         if (waveTiers != null)

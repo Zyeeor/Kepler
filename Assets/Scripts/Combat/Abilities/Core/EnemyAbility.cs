@@ -313,6 +313,12 @@ public abstract class EnemyAbility : MonoBehaviour
     protected virtual void OnEnemyTelegraphTick(float progress) { }
     protected virtual void OnEnemyTelegraphEnd() { }
 
+    /// <summary>
+    /// Pass v1.1 §3：前摇期间每帧校验，返回 true 立即取消本次 Telegraph（不释放技能）。
+    /// 供持续锁定类技能在目标越界（如玩家离开合法锁定范围）时中断施放。默认 false。
+    /// </summary>
+    protected virtual bool ShouldCancelEnemyTelegraph() { return false; }
+
     protected virtual void Awake()
     {
         owner = GetComponentInParent<Enemy>();
@@ -574,7 +580,8 @@ public abstract class EnemyAbility : MonoBehaviour
         while (elapsed < duration)
         {
             if (owner == null || owner.isDowned || owner.isPossessed
-                || !owner.IsAbilityTelegraphing || owner.ActiveAbilityTelegraph != this)
+                || !owner.IsAbilityTelegraphing || owner.ActiveAbilityTelegraph != this
+                || ShouldCancelEnemyTelegraph())
             {
                 CancelEnemyTelegraph();
                 yield break;

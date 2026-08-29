@@ -67,6 +67,7 @@ public abstract class Actor : MonoBehaviour, IActor
     /// </summary>
     protected virtual void Update()
     {
+        if (VictoryEpilogueController.IsPlaying) return;
         if (Controller == null) return;
 
         var ctx = new ActorContext
@@ -85,6 +86,7 @@ public abstract class Actor : MonoBehaviour, IActor
 
     protected virtual void FixedUpdate()
     {
+        if (VictoryEpilogueController.IsPlaying) return;
         if (!IsPlayerControlled) ExecuteMovement(in pendingCmd);
     }
 

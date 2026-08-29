@@ -147,6 +147,7 @@ public sealed class BossCombatBrain : MonoBehaviour
 
     void Update()
     {
+        if (VictoryEpilogueController.IsPlaying) return;
         if (owner == null || owner.IsDefeated || !owner.CanAct) return;
         Vector3 targetPosition = owner.GetBossTargetPosition();
         if (owner.IsAbilitySequenceLocked) return;

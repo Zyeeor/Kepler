@@ -95,7 +95,7 @@
 Owner 实测报 5 个 bug，本轮修复 4 个 + 1 个待验证：
 
 1. **开局多了非傲慢尸体** → 出生点神龛 `RageStatue.prefab`（`mode=RandomFromCatalog`）在玩家灵魂落地后立即刷随机躯体。修复：`PossessionBodyProvider.ProvideBody` 加 Pre-Combat 门（`!CombatStarted` 且非 Boss 模式时 return），开场固定 Pride corpse 只由 TutorialController 负责。
-2. **E 无子弹时间** → 代码链路已完整核对（PlayerController.Tick 采集 Skill3 → MonsterActor.ExecuteButtons → TriggerBulletTime → charge 检查 → BulletTimeController.Trigger），静态无断点。**需 PlayMode 验证**，可能为运行时焦点/输入问题。
+2. **E 无子弹时间** → 代码链路已完整核对（PlayerController.Tick 采集 Skill3 → Actor.Update 调 ExecuteButtons → MonsterActor.ExecuteButtons Skill3 分支 → PossessionManager.TriggerBulletTime → charge 检查 → BulletTimeController.Trigger），静态无断点。**已加 [BT-Debug] 诊断日志**（ExecuteButtons 按下帧 + TriggerBulletTime 两个拦截分支），Owner 下次 PlayMode 按 E 时 Console 会明确显示断点：①manager 为 NULL ②CurrentBody != this ③State 非 Possessing ④charge 用完 ⑤成功触发。
 3. **首次刷宝石看不到** → Starter Gem 直接 SpawnCardOfferGem 无掉落动画，战斗中难察觉。修复：`SpawnStarterGem` 加 `StartDrop`（从上方 1.5m 掉落）。
 4. **精英宝石不显示直接选卡** → 单颗精英宝石 `scatter=0` 落在玩家脚下立即被吸附。修复：`SpawnCardOfferGemScatter` 单颗也散开（保留弹射动画）。
 5. **暴食扇形脚下多红圈** → shader Sector 分支 `edgeArc` 无角度限制，在 distS=0.84 处画了整圈圆环。修复：`MonsterTelegraphIndicator.shader` Sector 分支加 `arcMask = step(angAbsS, halfAngleS)` + 侧边 `step(distS, 0.84)`。
@@ -127,3 +127,89 @@ Owner 实测报 5 个 bug，本轮修复 4 个 + 1 个待验证：
 - ✅ Unity MCP 连通，已执行 4 次 AssetDatabase.Refresh，**全部编译通过（无 CS error、无 shader error）**。
 - 仅有历史遗留 warnings（CS0114/CS0252/CS0618/CS0219/CS0414 等，改动前已存在）+ Inspector 瞬态异常（外部编辑 YAML 后重载）。
 - ⚠️ PlayMode 验证需用户在 Unity 编辑器里跑（MD §18 的运行时验收项），本会话仅做编译级验证。
+
+---
+
+# Global Playable Pass v1.1 — Feedback Patch（Owner 第一轮实机反馈，2026-08-29）
+
+> 唯一真源：`D:/开普勒/八月正式开发/调参/Possession_Global_Playable_Pass_v1.1_Feedback_Patch.md`
+> 范围：仅 4 个体验问题，其余全部沿用 v1，不重做、不顺手改其他项。
+
+## 4 项改动结论
+
+| # | 问题 | 根因 | 改动 |
+|---|---|---|---|
+| 1 | Greed Black Oil Enemy 减速过强 | `enemySlowMultiplier=0.5`（speedMultiplier 语义=保留50%移速），Enemy/Possessed 共用同一字段 | 拆出 `enemyOilPlayerSlowMultiplier=0.7`（Enemy 减速玩家身体），`enemySlowMultiplier=0.5` 保留给 Possessed Greed |
+| 2 | 开局找不到怪 | 寻敌轨迹逻辑已完整正确，仅触发延迟 `noMonsterVisibleSeconds=5` 过长 | 场景 `EnemyAiTest.unity` guideMode:0（Monsters）`noMonsterVisibleSeconds` 5→1.25 |
+| 3 | Elite Envy Laser 全图锁人 | `eliteVisualScaleMultiplier=2f` 经 `ScaleAbilityRadius` 把 15m 放大到 ~30m（叠加 EN-TG01 快照 ~38m） | 加 `enemyLaserTargetRangeCap=15`、`enemyLaserBreakRange=17`，前摇越界取消 + Beam 越界断束 |
+| 4 | Gluttony Possessed 伤害过高 | `AbyssMaw.damage=100`、`Devour.damage=100`，Enemy/Possessed 共用 | 拆出 `possessedDamageOverride`（AbyssMaw 70 / Devour 60），Enemy 保持 100 |
+
+## 修改文件清单
+
+- `Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_GreedBlackOil.cs` — 新增 `enemyOilPlayerSlowMultiplier=0.7f`，SpawnOil→Initialize 传参
+- `Assets/Scripts/Combat/Abilities/Monster/GreedBlackOilZone.cs` — 新增 `enemyOilPlayerSlowMultiplier`，Initialize 加参+clamp，ApplyTo 按 `owner.isPossessed` 分流
+- `Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_GluttonyAbyssMaw.cs` — 新增 `possessedDamageOverride=70f` + `ResolveDamageAmount()`
+- `Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_GluttonyDevour.cs` — 新增 `possessedDamageOverride=60f` + `ResolveDamageAmount()`，ConsumeEnemy 改走 override
+- `Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_EnvyLaser.cs` — 新增 `enemyLaserTargetRangeCap=15f`/`enemyLaserBreakRange=17f`，GetEffectiveRange 封顶，`ShouldCancelEnemyTelegraph` override，`IsEnemyOutOfBreakRange` 断束
+- `Assets/Scripts/Combat/Abilities/Core/EnemyAbility.cs` — 新增 `protected virtual bool ShouldCancelEnemyTelegraph()` 钩子 + TelegraphRoutine 每帧校验
+- `Assets/Scenes/EnemyAiTest.unity` — guideMode:0 `noMonsterVisibleSeconds` 5→1.25
+
+## 新增可配字段（v1.1）
+
+| 字段 | 文件 | 默认值 | 说明 |
+|---|---|---|---|
+| enemyOilPlayerSlowMultiplier | EnemyAbility_GreedBlackOil.cs / GreedBlackOilZone.cs | 0.7f | Enemy Greed 减速玩家身体移速倍率（保留70%）；Possessed 仍用 enemySlowMultiplier=0.5 |
+| possessedDamageOverride | EnemyAbility_GluttonyAbyssMaw.cs | 70f | Possessed Abyss Maw 伤害（Enemy 保持 damage=100） |
+| possessedDamageOverride | EnemyAbility_GluttonyDevour.cs | 60f | Possessed Devour 伤害（Enemy 保持 damage=100） |
+| enemyLaserTargetRangeCap | EnemyAbility_EnvyLaser.cs | 15f | Enemy/Elite 激光锁定距离安全上限（0=不封顶；非 Boss、非附身才生效） |
+| enemyLaserBreakRange | EnemyAbility_EnvyLaser.cs | 17f | Beam 期间玩家超此距离断束（0=不断束；非 Boss、非附身才生效） |
+| ShouldCancelEnemyTelegraph() | EnemyAbility.cs | virtual | 前摇每帧越界校验钩子（默认 false） |
+
+## v1.1 编译验证状态
+- ⚠️ 本会话 Unity Editor **未打开**，`assets-refresh`（AssetDatabase.Refresh）超时、Console 日志为空，**无法完成编译级验证**。
+- 新字段均为 C# 默认值，prefab YAML 未改动（`greed_new`/`envy_new`/`gluttony_new` 仍保留原值）；Unity 打开后新字段会以默认值序列化生效。
+- PlayMode 验收需用户在 Unity 里跑：①Black Oil 玩家被减速后约 70% 移速 ②开局 1.25s 无怪即显白色轨迹 ③Elite Envy 锁定 ≤15m、玩家跑出 ~17m 断束 ④Possessed Gluttony Devour 60 / Abyss Maw 70。
+
+---
+
+## v1.1 之后追加：Envy 视觉回退（同日 Owner 第二轮指令，2026-08-29 晚）
+
+**Owner 拍板**：删掉前摇红色 Lock 预测线（`RefreshLockLine` 系列），激光视觉长度恢复到 v1 时代（即精英视觉拉伸仍 ×2）。v1.1 §3 的 15m 封顶 + 17m 断束数值**保留不动**。
+
+### 改动
+- `Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_EnvyLaser.cs`：
+  - 删 `lockLineMinWidthMultiplier` / `lockLineMaterial` 字段
+  - 删 `_lockLineVfx` / `_lockLineBaseScaleZ` 私有字段
+  - 删 `OnEnemyTelegraphBegin/Tick/End` 三个 override
+  - 删 `RefreshLockLine()` / `ReleaseLockLine()`
+  - 删 `StopLaser()` / `OnDisable()` 中的 `ReleaseLockLine()` 调用
+  - SpawnBeamVfx 视觉长度逻辑回退：`scale.z *= dir.magnitude / authoredLength`（保留 `ScaleAbilityObject` ×2 放大）——精英瞄准 15m 时激光视觉 ≈ 30m；伤害锁定距离仍由 GetEffectiveRange 限制 ≤15m
+- `Assets/Prefabs/Monster/envy_new.prefab`：删 `lockLineMinWidthMultiplier: 0.35` / `lockLineMaterial: {fileID: 0}` 两行
+
+### 效果
+- 视觉：精英 Envy 激光视觉 ≈ 30m（与 v1 同），不再有"射穿目标"的视觉违和（因为视觉长度本来就该长，锁定距离由 GetEffectiveRange 严格 ≤15m，不会真打到 30m 外的目标）。
+- 数值：瞄准距离 15m、Beam 期间 17m 断束、前摇越界取消 Cast——全部 v1.1 §3 约束仍生效。
+- Lock 线（红条）已无残留，全库 grep 无 `lockLine` / `RefreshLock` / `ReleaseLock` 引用。
+
+## v1.1 之后追加：Envy AI 版"穿过玩家"修复（Owner 第三轮指令，2026-08-29 深夜）
+
+**Owner 拍板**：普通怪 + 精英怪都不得"穿"过目标；激光穿透是 EN-A03（`IsPierceActive`）卡牌单独控制的功能，视觉层不得因体型缩放而穿透。只修 AI 版（`!owner.isPossessed`），玩家附身版（Possessed Player 用 Envy）保持不动。
+
+### 真值定位
+- "穿过"根因有两个独立来源：
+  1. `GetEnemyTrackedAimPoint` 返回 `origin + dir × range`（固定 15m），不随玩家实际距离变化 → 玩家站 5m 时光柱画到 15m，穿过。
+  2. `SpawnBeamVfx` 的 `scale.z *= dir.magnitude / authoredLength` 累乘，叠加 `ScaleAbilityObject`（Elite `CombatScaleMultiplier=2`）把 z 再放大 → 精英视觉 = 2× 终点距离。
+- prefab 根 `蓝-激光` `localScale.z = 1`（实测），baseZ 基准取 `beamPrefab.transform.localScale.z`。
+
+### 改动（`Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_EnvyLaser.cs`，仅 AI 版）
+- `GetEnemyTrackedAimPoint`：新增 `float playerDist = desired.magnitude;`，返回 `origin + _enemyBeamDirection.normalized * Mathf.Min(playerDist, range)` —— 终点缩到玩家水平距离（对齐玩家版 `GetAimPoint` 的实际距离语义）。
+- `SpawnBeamVfx`：AI 版（`!owner.isPossessed`）用 `scale.z = beamPrefab.transform.localScale.z * (dir.magnitude / authoredLength)` 绝对值赋值；玩家版保持 `*= 累乘` 不变。
+
+### 效果
+- 普通 AI Envy：光柱终点 = 玩家距离，不再穿过。
+- 精英 AI Envy：z 不再被 CombatScaleMultiplier ×2，光柱精确落在 beamEnd（玩家/命中点），不再穿。
+- 软锁手感保留（`enemyTrackingTurnSpeed=100°/s` 平滑转向不变）；伤害距离兜底不变；玩家附身版不受影响。
+- 穿透仍由 EN-A03 `IsPierceActive`（`ResolveBeamHits` 的 pierce 分支）单独控制。
+
+### 编译验证
+- Unity Editor 未打开，未做编译级验证。两处改动均为纯算术/条件分支，无新增字段/引用，C# 语法层安全。

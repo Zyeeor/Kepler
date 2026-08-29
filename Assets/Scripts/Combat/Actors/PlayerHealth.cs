@@ -170,6 +170,10 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount, bool playHitFlash = true)
     {
+        // Victory Epilogue uses realtime presentation and must not be interrupted by unscaled combat damage.
+        // This only applies while the shared epilogue controller is actively presenting; normal Failure remains unchanged.
+        if (VictoryEpilogueController.IsPlaying) return;
+
         // While possessing a body the soul is suppressed and must not take hit flash/damage;
         // combat targets the possessed MonsterActor instead.
         var soul = GetComponent<SoulActor>();

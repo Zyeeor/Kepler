@@ -491,13 +491,14 @@ MonoBehaviour:
       value: 4
     category: 2
     monsterType: 4
-    foregroundSprite: {fileID: 21300000, guid: 33353b4e4cb802e47a06fbc3a1134c7d, type: 3}
+    foregroundSprite: {fileID: 21300000, guid: ef7f276e185257d4b94e658bbdb2fbd8, type: 3}
     hideForegroundLayer: 0
-    extraForegroundSprites: []
+    extraForegroundSprites:
+    - {fileID: 21300000, guid: 33353b4e4cb802e47a06fbc3a1134c7d, type: 3}
     middlegroundSprite: {fileID: 0}
     hideMiddlegroundLayer: 0
     extraMiddlegroundSprites: []
-    backgroundSprite: {fileID: 21300000, guid: 24d3b2a0bf536e144a514caeb115ba9d, type: 3}
+    backgroundSprite: {fileID: 0}
     hideBackgroundLayer: 0
     extraBackgroundSprites: []
     borderSprite: {fileID: 21300000, guid: dcffc9a71482a1d4cb4fa41deb5c81ee, type: 3}

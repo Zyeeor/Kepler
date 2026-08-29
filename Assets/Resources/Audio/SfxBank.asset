@@ -251,3 +251,66 @@ MonoBehaviour:
     pitch: 1
     channel: 1
     prefer3D: 1
+  - id: 37
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 38
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 39
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 40
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 41
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 42
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 43
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 44
+    clip: {fileID: 8300000, guid: e31a21c6564d60144846f4bc7290380a, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 45
+    clip: {fileID: 0}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
