@@ -38,6 +38,9 @@ public class MonsterSkillIconConfig : ScriptableObject
         public Sprite icon;
         [Tooltip("该怪物该槽位图标的显示颜色。")]
         public Color iconColor = Color.white;
+        [TextArea(2, 6)]
+        [Tooltip("该怪物该槽位（普攻/技能/位移）的文字描述，可被悬浮提示/教学面板/卡牌介绍等任意处引用。")]
+        public string description;
 
     }
 
@@ -50,6 +53,9 @@ public class MonsterSkillIconConfig : ScriptableObject
         public Sprite icon;
         [Tooltip("怪物身份图标的显示颜色。")]
         public Color iconColor = Color.white;
+        [TextArea(2, 6)]
+        [Tooltip("该怪物身份的文字描述，可被悬浮提示/教学面板/荣誉殿堂等任意处引用。")]
+        public string description;
     }
 
     [Serializable]
@@ -59,6 +65,9 @@ public class MonsterSkillIconConfig : ScriptableObject
         public PlayerSlot slot = PlayerSlot.BasicAttack;
         [Tooltip("该玩家槽位的 HUD 图片；留空则保留场景中的默认图片。")]
         public Sprite icon;
+        [TextArea(2, 6)]
+        [Tooltip("该玩家槽位的文字描述，可被悬浮提示/教学面板等任意处引用。")]
+        public string description;
     }
 
 
@@ -113,6 +122,47 @@ public class MonsterSkillIconConfig : ScriptableObject
         icon = null;
         BuildCache();
         return playerCache.TryGetValue(slot, out icon) && icon != null;
+    }
+
+    /// <summary>查询怪物附身态指定槽位（普攻/技能/位移）的文字描述。命中且描述非空返回 true。</summary>
+    public bool TryGetMonsterDescription(SinType sin, MonsterSlot slot, out string description)
+    {
+        description = null;
+        if (sin == SinType.None) return false;
+        BuildCache();
+        if (!monsterCache.TryGetValue((sin, slot), out MonsterEntry entry)) return false;
+        description = entry.description;
+        return !string.IsNullOrEmpty(description);
+    }
+
+    /// <summary>查询怪物身份的文字描述。命中且描述非空返回 true。</summary>
+    public bool TryGetMonsterIdentityDescription(SinType sin, out string description)
+    {
+        description = null;
+        if (sin == SinType.None) return false;
+        BuildCache();
+        if (!monsterIdentityCache.TryGetValue(sin, out MonsterIdentityEntry entry)) return false;
+        description = entry.description;
+        return !string.IsNullOrEmpty(description);
+    }
+
+    /// <summary>查询灵魂态玩家指定槽位的文字描述。命中且描述非空返回 true。</summary>
+    public bool TryGetPlayerDescription(PlayerSlot slot, out string description)
+    {
+        description = null;
+        BuildCache();
+        if (!playerCache.TryGetValue(slot, out Sprite _)) return false;
+        // 复用 playerCache 的存在性判断，但实际 description 需从 playerEntries 里读：
+        if (playerEntries == null) return false;
+        foreach (var entry in playerEntries)
+        {
+            if (entry != null && entry.slot == slot)
+            {
+                description = entry.description;
+                return !string.IsNullOrEmpty(description);
+            }
+        }
+        return false;
     }
 
     /// <summary>按图标 sprite 反查其配置颜色（用于卡片/卡面等区域：CardLibrary 的 image 已替换为本配置的技能图标）。

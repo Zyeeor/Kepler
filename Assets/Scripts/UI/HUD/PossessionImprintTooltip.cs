@@ -17,6 +17,7 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
     void Awake()
     {
         CacheReferences();
+        EnsureTextRefs();
         DisableRaycasts();
     }
 
@@ -27,6 +28,25 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
         parentRect = panelRect != null ? panelRect.parent as RectTransform : null;
         canvas = panel.GetComponentInParent<Canvas>();
         canvasRect = canvas != null ? canvas.transform as RectTransform : null;
+    }
+
+    /// <summary>
+    /// titleText / effectText 未配置时，从 panel 子节点按名字自动找 "Title" / "Effect" 文本。
+    /// 这样即使场景里 PossessionImprintTooltip 的字段引用为空，hover 也能正确写入文字。
+    /// </summary>
+    void EnsureTextRefs()
+    {
+        if (panel == null) return;
+        if (titleText != null && effectText != null) return;
+
+        Text[] texts = panel.GetComponentsInChildren<Text>(true);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            Text t = texts[i];
+            if (t == null) continue;
+            if (titleText == null && t.name.Equals("Title", System.StringComparison.OrdinalIgnoreCase)) titleText = t;
+            else if (effectText == null && t.name.Equals("Effect", System.StringComparison.OrdinalIgnoreCase)) effectText = t;
+        }
     }
 
     void DisableRaycasts()
@@ -54,6 +74,7 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
             DisableRaycasts();
             panel.transform.SetAsLastSibling();
         }
+        EnsureTextRefs();
         if (titleText != null) titleText.text = title ?? string.Empty;
         if (effectText != null) effectText.text = effect ?? string.Empty;
         visible = true;

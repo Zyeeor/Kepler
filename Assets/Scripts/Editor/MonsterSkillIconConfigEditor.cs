@@ -102,6 +102,7 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
                 EditorGUILayout.PropertyField(identity.FindPropertyRelative("icon"), GUIContent.none);
                 EditorGUILayout.PropertyField(identity.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
                 EditorGUILayout.EndHorizontal();
+                EditorGUILayout.PropertyField(identity.FindPropertyRelative("description"), new GUIContent("描述"));
             }
             else
             {
@@ -130,6 +131,7 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
                     EditorGUILayout.PropertyField(entry.FindPropertyRelative("icon"), GUIContent.none);
                     EditorGUILayout.PropertyField(entry.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
                     EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("description"), new GUIContent("描述"));
 
                 }
                 else
@@ -164,6 +166,7 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
                 EditorGUILayout.LabelField(PlayerSlotNames[slot], GUILayout.Width(72));
                 EditorGUILayout.PropertyField(entry.FindPropertyRelative("icon"), GUIContent.none);
                 EditorGUILayout.EndHorizontal();
+                EditorGUILayout.PropertyField(entry.FindPropertyRelative("description"), new GUIContent("描述"));
             }
             else
             {

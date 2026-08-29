@@ -1680,6 +1680,8 @@ MonoBehaviour:
   minPossessTime: 1
   possessionDecayPercent: 0.04
   decayInterval: 1
+  bodyDeathPossessionLock: 1.5
+  postPossessDamageImmunityDuration: 0.25
 --- !u!4 &216610167
 Transform:
   m_ObjectHideFlags: 0
@@ -9337,6 +9339,7 @@ MonoBehaviour:
   screenEdgeSpawnOffset: 2
   upkeepInterval: 0.25
   corpseDissipationThreshold: 5
+  enemySummonCap: 4
   showGizmos: 0
   logSpawns: 0
   showDebugHud: 0
@@ -17262,7 +17265,7 @@ PrefabInstance:
     - target: {fileID: 237825726053667382, guid: b30793652b68d5e4db709d1665e0d3f3,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6902850646138165401, guid: b30793652b68d5e4db709d1665e0d3f3,
         type: 3}
@@ -18077,7 +18080,7 @@ PrefabInstance:
     - target: {fileID: 7299026679510338987, guid: 46df1b33623c493681a5cf633b8fdc40,
         type: 3}
       propertyPath: aiConfigId
-      value: Envy_new
+      value: Greed_new
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19724,14 +19727,22 @@ MonoBehaviour:
   cardLibrary: {fileID: 11400000, guid: 811f73ed94ed8bb49972ca303234e07b, type: 2}
   gameplayTagCatalog: {fileID: 11400000, guid: f16753855c04a438eb9ae4fe1c54da4d, type: 2}
   maxRerollsPerCard: 1
+  focusAssistProbability: 0.65
   cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
     type: 3}
   openingGemCount: 2
+  starterGemTime: 30
+  starterGemOffset: {x: 0, y: 0, z: 1.5}
   openingGemDoublePick: 0
   eliteGemDoublePick: 0
   eliteGemCountMin: 2
   eliteGemCountMax: 2
   cardOfferGemPickupRadius: 2
+  enableOpeningGems: 1
+  enableStarterGem: 1
+  enableWaveGems: 1
+  enableEliteGems: 1
+  enableDebugGem: 1
   cardOfferGemAttractSeconds: 0.35
   cardOfferGemAttractHeight: 0.8
   cardOfferGemAttractEndScale: 0
@@ -19915,34 +19926,42 @@ MonoBehaviour:
     eliteSpawnTimeSeconds: 90
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 2
     eliteSpawnTimeSeconds: 165
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 3
     eliteSpawnTimeSeconds: 225
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 4
     eliteSpawnTimeSeconds: 270
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 5
     eliteSpawnTimeSeconds: 300
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 6
     eliteSpawnTimeSeconds: 330
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   - sin: 7
     eliteSpawnTimeSeconds: 360
     eliteHealthMultiplier: 2
     eliteAttackMultiplier: 2
+    eliteRewardPickCount: 1
   directionalReplacementEnabled: 1
   sectorReplacementDistance: 0
   sectorReplacementCountPerTrigger: 1
   continuousSpawnMaxCountsByMinute: 0400000006000000080000000a0000000c0000000e00000010000000
+  elitePresentNormalSpawnMultiplier: 0.65
   nonBossDurationSeconds: 420
   monsterHealthMultiplierByMinute:
     serializedVersion: 2
@@ -21623,89 +21642,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ccfe57e3a23d2b24584ac09f7333c19c, type: 3}
---- !u!1001 &1611918046506368975
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2560896938858465871, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_Name
-      value: RoomNew1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2560896938858465871, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7355288330893931973, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.36
-      objectReference: {fileID: 0}
-    - target: {fileID: 7355288330893931973, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.06
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8701444915350373660, guid: 29c01bc6b8b922040b1dd8794a7713e6,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 29c01bc6b8b922040b1dd8794a7713e6, type: 3}
 --- !u!1001 &1820462069617879303
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22402,7 +22338,6 @@ SceneRoots:
   - {fileID: 872445435}
   - {fileID: 1279087851}
   - {fileID: 499935253}
-  - {fileID: 1611918046506368975}
   - {fileID: 216610167}
   - {fileID: 753820585}
   - {fileID: 438339684}
