@@ -51,9 +51,20 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Panels to hide when sub panel opens")]
     public GameObject mainMenuPanel;
+
+    [Header("Play Panel（点 Play 后打开的二级面板）")]
+    [Tooltip("主面板上的 Play 入口按钮。点击后隐藏主面板并打开 Play Panel。")]
+    public Button playButton;
+    [Tooltip("Play Panel 根节点。留空则运行时自动创建（与 mainMenuPanel 同级、同区域）。")]
+    public GameObject playPanel;
+    [Tooltip("Play Panel 内的按钮容器（自动垂直布局）。留空则使用 playPanel 自身。")]
+    public Transform playPanelButtonRoot;
+    [Tooltip("Play Panel 的返回按钮（回到主面板）。留空则运行时自动创建。")]
+    public Button playPanelBackButton;
+
     private bool subPanelOpened = false;
+    private bool playPanelOpened = false;
     private Button bossModeButton;
-    private bool modeSelectionVisible = true;
 
     void Start()
     {
@@ -65,9 +76,17 @@ public class MainMenuController : MonoBehaviour
         if (settingsPanel != null) settingsPanel.Init();
         if (confirmDialog != null) confirmDialog.Init();
 
-        // 继续按钮：有存档才可点（每帧监听存档文件状态）
+        // 新游戏按钮（Play Panel 内）：直接触发新游戏，不再经过"普通模式"选择层
+        if (startGameButton != null)
+        {
+            startGameButton.onClick.RemoveAllListeners();
+            startGameButton.onClick.AddListener(OnStartGame);
+        }
+
+        // 继续按钮：有存档才可点
         if (continueGameButton != null)
         {
+            continueGameButton.onClick.RemoveAllListeners();
             continueGameButton.onClick.AddListener(OnContinueGame);
             continueGameButton.interactable = SaveCoordinator.HasSaveFile;
         }
@@ -80,24 +99,138 @@ public class MainMenuController : MonoBehaviour
         }
 
         if (quitGameButton != null)
+        {
+            quitGameButton.onClick.RemoveAllListeners();
             quitGameButton.onClick.AddListener(OnQuitGame);
+        }
 
         // 按钮文案统一走 TextCatalog（场景 TMP 英文初值仅作兜底）
-        if (startGameButtonText != null) startGameButtonText.text = TextCatalog.Get("ui.mainmenu.start");
+        if (startGameButtonText != null) startGameButtonText.text = TextCatalog.Get("ui.mainmenu.new_game");
         if (continueGameButton != null)
         {
             var t = continueGameButton.GetComponentInChildren<TMPro.TMP_Text>();
-            if (t != null) t.text = TextCatalog.Get("ui.mainmenu.continue");
+            if (t != null) t.text = TextCatalog.Get("ui.mainmenu.continue_last_game");
         }
         if (settingsButtonText != null) settingsButtonText.text = TextCatalog.Get("ui.mainmenu.settings");
         if (quitGameButtonText != null) quitGameButtonText.text = TextCatalog.Get("ui.mainmenu.quit");
 
-        EnsureBossModeButton();
-        ShowModeSelection();
         EnsureHallOfFameEntry();
         EnsureCardArchiveEntry();
+        // Play Panel：把「新游戏/继续上次游戏/荣誉殿堂/卡牌图鉴」四个入口收进去，
+        // 主面板只保留 Play 入口（+ Boss模式 / 设置 / 退出）。
+        EnsurePlayPanel();
+        EnsurePlayButton();
+        ShowMainPanel();
 
         ShowCursor();
+    }
+
+    // ───────────────── Play Panel（二级面板） ─────────────────
+
+    /// <summary>显示主面板（首屏）：Play Panel 收起，主面板只留 Play / Boss模式 / 设置 / 退出。</summary>
+    void ShowMainPanel()
+    {
+        playPanelOpened = false;
+        if (playPanel != null) playPanel.SetActive(false);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+        if (bossModeButton != null) bossModeButton.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 确保 Play Panel 就绪：容器缺失时自动创建（与 mainMenuPanel 同级、同区域），
+    /// 把四个游戏入口按钮收进面板并做垂直布局，最后默认隐藏。
+    /// </summary>
+    void EnsurePlayPanel()
+    {
+        if (playPanel == null)
+        {
+            Transform parent = mainMenuPanel != null ? mainMenuPanel.transform.parent : transform;
+            var go = new GameObject("PlayPanel", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            playPanel = go;
+        }
+
+        // 置顶：Play Panel 要盖住首屏（PlayVideoPanel 等），否则下层按钮会透出来与面板按钮重叠。
+        playPanel.transform.SetAsLastSibling();
+
+        if (playPanelButtonRoot == null)
+            playPanelButtonRoot = playPanel.transform;
+
+        // 四个游戏入口：新游戏 / 继续上次游戏 / 荣誉殿堂 / 卡牌图鉴
+        MoveToPlayPanel(startGameButton);
+        MoveToPlayPanel(continueGameButton);
+        MoveToPlayPanel(hallOfFameButton);
+        MoveToPlayPanel(cardArchiveButton);
+
+        playPanel.SetActive(false);
+    }
+
+    void MoveToPlayPanel(Button button)
+    {
+        if (button == null || playPanelButtonRoot == null) return;
+        if (button.transform.parent == playPanelButtonRoot) return;
+        // 不再自动添加/调整任何 LayoutGroup：按钮沿用自身 RectTransform（anchor/pivot/anchoredPosition），
+        // 布局完全交给场景或策划在 playPanel 上配置的布局组件决定。
+        button.transform.SetParent(playPanelButtonRoot, false);
+        button.gameObject.SetActive(true);
+    }
+
+    void EnsurePlayButton()
+    {
+        if (playButton != null) return;
+
+        // 只复用场景里已摆放的 Play 按钮（如 MainCanvas/PlayVideoPanel/Play）。
+        // 不再自动克隆——只有场景里实际配置的 button 才会成为 Play 入口。
+        var existing = FindButtonByName("Play", true);
+        if (existing != null)
+        {
+            playButton = existing;
+            existing.gameObject.SetActive(true);
+            existing.onClick.RemoveAllListeners();
+            existing.onClick.AddListener(OpenPlayPanel);
+            if (FontRegistry.Instance != null)
+                FontRegistry.Instance.ApplyToTree(existing.transform);
+            return;
+        }
+
+        Debug.LogWarning("[MainMenu] 场景中未找到名为 'Play' 的按钮。Play 入口未配置，请在 MainMenuController.playButton 字段或场景里拖入。");
+    }
+
+    /// <summary>点 Play：关掉主面板，打开 Play Panel（四个游戏入口）。</summary>
+    public void OpenPlayPanel()
+    {
+        // 先关主面板再置位 playPanelOpened：HideActivePanel 依赖该标志判断"当前活动面板"，
+        // 若先置位会把即将打开的 Play Panel 又关掉、而主面板没收起（两面板同时显示）。
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        playPanelOpened = true;
+        // Play 入口本身也收起（它可能挂在首屏 PlayVideoPanel 下，不随 mainMenuPanel 隐藏）
+        if (playButton != null) playButton.gameObject.SetActive(false);
+        if (playPanel != null) playPanel.SetActive(true);
+        if (continueGameButton != null)
+            continueGameButton.interactable = SaveCoordinator.HasSaveFile;
+        ShowCursor();
+    }
+
+    /// <summary>Play Panel 返回：关掉 Play Panel，恢复主面板与 Play 入口。</summary>
+    public void ClosePlayPanel()
+    {
+        playPanelOpened = false;
+        if (playPanel != null) playPanel.SetActive(false);
+        if (playButton != null) playButton.gameObject.SetActive(true);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+        ShowCursor();
+    }
+
+    /// <summary>子面板（设置/确认框/荣誉殿堂/图鉴）打开时隐藏当前活动面板（主面板或 Play Panel）。</summary>
+    void HideActivePanel()
+    {
+        if (playPanelOpened && playPanel != null) playPanel.SetActive(false);
+        else if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
     }
 
     /// <summary>
@@ -140,7 +273,7 @@ public class MainMenuController : MonoBehaviour
     public void OnHallOfFame()
     {
         if (hallOfFamePanel == null) hallOfFamePanel = HallOfFamePanel.EnsureInstance();
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        HideActivePanel();
         subPanelOpened = true;
         hallOfFamePanel.Show();
     }
@@ -216,7 +349,7 @@ public class MainMenuController : MonoBehaviour
     {
         EnsureCardArchivePanel();   // 缺失时按需补挂（如场景切换后宿主被销毁）
         if (cardArchivePanel == null) return;
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        HideActivePanel();
         subPanelOpened = true;
         cardArchivePanel.onClose = OnCardArchiveClosed;
         cardArchivePanel.Show();
@@ -224,9 +357,16 @@ public class MainMenuController : MonoBehaviour
 
     void OnCardArchiveClosed()
     {
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
-        subPanelOpened = false;
+        RestoreActivePanel();
         ShowCursor();
+    }
+
+    /// <summary>子面板关闭后恢复来源面板：从 Play Panel 打开的回 Play Panel，否则回主面板。</summary>
+    void RestoreActivePanel()
+    {
+        subPanelOpened = false;
+        if (playPanel != null) playPanel.SetActive(playPanelOpened);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(!playPanelOpened);
     }
 
     void Update()
@@ -259,81 +399,15 @@ public class MainMenuController : MonoBehaviour
             {
                 cardArchivePanel.Hide();
             }
-            else if (!modeSelectionVisible && !subPanelOpened)
+            else if (hallOfFamePanel != null && hallOfFamePanel.IsVisible())
             {
-                ShowModeSelection();
+                hallOfFamePanel.Hide();
             }
-        }
-    }
-
-    /// <summary>
-    /// 首屏只显示模式选择：复用现有开始按钮作为普通模式，并运行时复制一个 Boss 模式按钮，
-    /// 避免修改现有 MainMenu 场景布局与美术资源。
-    /// </summary>
-    void EnsureBossModeButton()
-    {
-        if (bossModeButton != null || startGameButton == null) return;
-
-        Transform parent = startGameButton.transform.parent;
-        if (parent == null) return;
-        GameObject clone = Instantiate(startGameButton.gameObject, parent);
-        clone.name = "BossModeButton";
-        clone.SetActive(true);
-
-        RectTransform cloneRect = clone.GetComponent<RectTransform>();
-        RectTransform continueRect = continueGameButton != null
-            ? continueGameButton.GetComponent<RectTransform>() : null;
-        if (cloneRect != null && continueRect != null)
-            cloneRect.anchoredPosition = continueRect.anchoredPosition;
-        else if (cloneRect != null)
-            cloneRect.anchoredPosition += Vector2.down * 100f;
-
-        bossModeButton = clone.GetComponent<Button>();
-        if (bossModeButton == null) return;
-        // 克隆按钮只保留场景持久化外观，不复用开始/继续的运行时监听。
-        bossModeButton.onClick.RemoveAllListeners();
-        bossModeButton.onClick.AddListener(OnStartBossGame);
-        SetButtonLabel(bossModeButton, "Boss模式");
-        if (FontRegistry.Instance != null)
-            FontRegistry.Instance.ApplyToTree(clone.transform);
-    }
-
-    /// <summary>显示首屏的普通模式 / Boss 模式选择。</summary>
-    void ShowModeSelection()
-    {
-        modeSelectionVisible = true;
-        if (startGameButton != null)
-        {
-            startGameButton.gameObject.SetActive(true);
-            startGameButton.onClick.RemoveListener(OnStartGame);
-            startGameButton.onClick.RemoveListener(OnSelectNormalMode);
-            startGameButton.onClick.AddListener(OnSelectNormalMode);
-            SetButtonLabel(startGameButton, "普通模式");
-        }
-        if (continueGameButton != null)
-            continueGameButton.gameObject.SetActive(false);
-        if (bossModeButton != null)
-            bossModeButton.gameObject.SetActive(true);
-    }
-
-    /// <summary>进入普通模式菜单，恢复原有开始 / 继续入口。</summary>
-    public void OnSelectNormalMode()
-    {
-        modeSelectionVisible = false;
-        if (bossModeButton != null)
-            bossModeButton.gameObject.SetActive(false);
-        if (startGameButton != null)
-        {
-            startGameButton.gameObject.SetActive(true);
-            startGameButton.onClick.RemoveListener(OnSelectNormalMode);
-            startGameButton.onClick.RemoveListener(OnStartGame);
-            startGameButton.onClick.AddListener(OnStartGame);
-            SetButtonLabel(startGameButton, TextCatalog.Get("ui.mainmenu.start"));
-        }
-        if (continueGameButton != null)
-        {
-            continueGameButton.gameObject.SetActive(true);
-            continueGameButton.interactable = SaveCoordinator.HasSaveFile;
+            else if (playPanelOpened)
+            {
+                // Play Panel 打开时 ESC 返回主面板
+                ClosePlayPanel();
+            }
         }
     }
 
@@ -350,7 +424,7 @@ public class MainMenuController : MonoBehaviour
         if (SaveCoordinator.HasSaveFile && confirmDialog != null)
         {
             Debug.Log("MainMenu: OnStartGame - save exists, showing confirm");
-            if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+            HideActivePanel();
             subPanelOpened = true;
             confirmDialog.Show(TextCatalog.Get("ui.mainmenu.newgame_title"), TextCatalog.Get("ui.mainmenu.newgame_message"), OnStartNewGameConfirmed, OnDialogCancel);
         }
@@ -394,7 +468,7 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("MainMenu: OnSettings CALLED. settingsPanel null? " + (settingsPanel == null));
         if (settingsPanel != null)
         {
-            if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+            HideActivePanel();
             subPanelOpened = true;
             settingsPanel.Show();
             Debug.Log("MainMenu: Settings.Show() called. IsVisible=" + settingsPanel.IsVisible());
@@ -406,7 +480,7 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("MainMenu: OnQuitGame CALLED");
         if (confirmDialog != null)
         {
-            if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+            HideActivePanel();
             subPanelOpened = true;
             confirmDialog.Show(TextCatalog.Get("ui.mainmenu.quit_title"), TextCatalog.Get("ui.mainmenu.quit_message"), OnQuitConfirmed, OnDialogCancel);
         }
@@ -419,13 +493,12 @@ public class MainMenuController : MonoBehaviour
     private void OnDialogCancel()
     {
         // callback when user hits Cancel or ESC
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
-        subPanelOpened = false;
+        RestoreActivePanel();
     }
 
     void LateUpdate()
     {
-        // Reopen main menu when sub panel closes
+        // 子面板全部关闭后恢复来源面板（主面板 或 Play Panel）
         if (subPanelOpened)
         {
             bool sVisible = settingsPanel != null && settingsPanel.IsVisible();
@@ -434,8 +507,7 @@ public class MainMenuController : MonoBehaviour
             bool aVisible = cardArchivePanel != null && cardArchivePanel.IsVisible();
             if (!sVisible && !cVisible && !hVisible && !aVisible)
             {
-                if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
-                subPanelOpened = false;
+                RestoreActivePanel();
             }
         }
     }

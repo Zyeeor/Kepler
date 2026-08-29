@@ -10,12 +10,19 @@ public sealed class GameplayTooltipTarget : MonoBehaviour, IPointerEnterHandler,
     EnemyAbility enemyAbility;
     PlayerAbility playerAbility;
     CardData card;
+    string monsterName;
+    string monsterDescription;
 
     void Awake()
     {
+        // 需要一个 raycast target 接收 IPointerEnter/Exit：复用已有 Image（不破坏其 color，仅打开 raycastTarget），
+        // 没有 Image 时才新增并用 Color.clear。仅当 GameObject 上没有 Image 时才清色，避免覆盖主图标颜色。
         Image hitArea = GetComponent<Image>();
-        if (hitArea == null) hitArea = gameObject.AddComponent<Image>();
-        hitArea.color = Color.clear;
+        if (hitArea == null)
+        {
+            hitArea = gameObject.AddComponent<Image>();
+            hitArea.color = Color.clear;
+        }
         hitArea.raycastTarget = true;
     }
 
@@ -43,6 +50,18 @@ public sealed class GameplayTooltipTarget : MonoBehaviour, IPointerEnterHandler,
         card = value;
         enemyAbility = null;
         playerAbility = null;
+        monsterName = null;
+        monsterDescription = null;
+    }
+
+    /// <summary>绑定怪物身份（enemy icon 用）：悬浮时显示怪物显示名与描述。</summary>
+    public void BindMonster(string name, string description)
+    {
+        monsterName = name;
+        monsterDescription = description;
+        enemyAbility = null;
+        playerAbility = null;
+        card = null;
     }
 
     public void ClearBinding()
@@ -50,6 +69,8 @@ public sealed class GameplayTooltipTarget : MonoBehaviour, IPointerEnterHandler,
         enemyAbility = null;
         playerAbility = null;
         card = null;
+        monsterName = null;
+        monsterDescription = null;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -71,6 +92,9 @@ public sealed class GameplayTooltipTarget : MonoBehaviour, IPointerEnterHandler,
 
         if (playerAbility != null)
             resolvedTooltip.Show(playerAbility.abilityName, BuildAbilityDescription(playerAbility));
+
+        if (!string.IsNullOrEmpty(monsterName))
+            resolvedTooltip.Show(monsterName, monsterDescription ?? string.Empty);
     }
 
     public void OnPointerExit(PointerEventData eventData)

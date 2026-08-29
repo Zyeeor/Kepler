@@ -1573,7 +1573,7 @@ MonoBehaviour:
   beamRotationOffset: {x: 0, y: 0, z: 0}
   hitImpactPrefab: {fileID: 7331713304514311016, guid: da80e150793fe574f92041b77ee612dd,
     type: 3}
-  hitImpactDuration: 0.3
+  hitImpactDuration: 1
 --- !u!1 &7991665340424427666
 GameObject:
   m_ObjectHideFlags: 0
