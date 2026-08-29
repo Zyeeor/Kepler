@@ -28,10 +28,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     [Header("Enemy Tracking (Pass v1 §13.3)")]
     [Tooltip("Enemy 版激光有限追踪的转向速度（°/s）。Beam 不再无限瞬时锁头；玩家可横移/绕侧甩掉，丢失目标后本次 Cast 结束。")]
     [Min(1f)] public float enemyTrackingTurnSpeed = 100f;
-    [Tooltip("前摇期间动态 Lock 警示线的最细宽度倍数（progress=0 时），到 progress=1 时线性过渡到 1（真实 Beam 宽度）。")]
-    [Range(0f, 1f)] public float lockLineMinWidthMultiplier = 0.35f;
-    [Tooltip("前摇期间 Lock 警示线的颜色（偏弱，可用透明度区分强弱；为空则沿用 beamMaterial 默认）。")]
-    public Material lockLineMaterial;
 
     [Header("Enemy Lock Range Cap (Pass v1.1 §3)")]
     [Tooltip("Enemy/Elite 激光锁定距离安全上限（米）。最终锁定 Range = min(当前 EffectiveRange, 此值)，0 表示不封顶。仅作用于非 Boss、非附身的 Enemy；Player 版与 Boss 版不受影响。")]
@@ -77,10 +73,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private Vector3 _enemyBeamDirection;
     private readonly HashSet<Enemy> _connectedThisBurst = new HashSet<Enemy>();
     private readonly List<Enemy> _lastMarked = new List<Enemy>();
-
-    // Pass v1 §13.3：前摇动态 Lock 警示线（持续对象，前摇期间每帧更新位置/宽度，开火/取消时释放）。
-    private GameObject _lockLineVfx;
-    private float _lockLineBaseScaleZ = 1f;
 
     private void OnEnable()
     {
@@ -152,25 +144,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         return owner != null && (owner.isPossessed || owner.targetPlayer != null);
     }
 
-    // ── Pass v1 §13.3：前摇动态 Lock 警示线（由弱到强，持续跟随玩家，开火时进入真实 Beam）──
-
-    protected override void OnEnemyTelegraphBegin()
-    {
-        // 前摇开始：从发射点连到玩家，初始最弱（细）。
-        RefreshLockLine(0f);
-    }
-
-    protected override void OnEnemyTelegraphTick(float progress)
-    {
-        // 前摇期间每帧跟随玩家并线性增强宽度，表现"锁定由弱到强"。
-        RefreshLockLine(progress);
-    }
-
-    protected override void OnEnemyTelegraphEnd()
-    {
-        ReleaseLockLine();
-    }
-
     /// <summary>
     /// Pass v1.1 §3：前摇期间玩家离开合法锁定范围（= min(EffectiveRange, cap)）即取消本次施放。
     /// 仅作用于非 Boss、非附身的 Enemy；Player 版不进入前摇，Boss 版不受上限约束。
@@ -181,63 +154,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             return false;
         float dist = Vector3.Distance(owner.transform.position, owner.targetPlayer.position);
         return dist > GetEffectiveRange();
-    }
-
-    /// <summary>生成本次 Cast 的 Lock 警示线，或更新其位置/朝向/宽度（复用 Beam 的 LineRenderer 承载）。</summary>
-    void RefreshLockLine(float progress)
-    {
-        if (beamPrefab == null || owner == null || owner.targetPlayer == null) return;
-
-        Vector3 origin = GetBeamOrigin();
-        Vector3 target = owner.targetPlayer.position + Vector3.up;
-        Vector3 dir = target - origin;
-        // 距离 = 本体→目标的实际距离，夹到有效射程：目标移动时长度动态变化，且绝不越界。
-        float dist = Mathf.Min(dir.magnitude, GetEffectiveRange());
-        if (dist < 0.01f) return;
-
-        Quaternion rot = Quaternion.LookRotation(dir.normalized, Vector3.up) * Quaternion.Euler(beamRotationOffset);
-
-        if (_lockLineVfx == null)
-        {
-            _lockLineVfx = SpawnVfxTracked(beamPrefab, origin, rot, -1f);
-            if (_lockLineVfx == null) return;
-            // 基准 z 取 prefab 原始缩放（不含 ScaleAbilityObject 施加的 OwnerCombatScaleMultiplier）：
-            // 后续每帧用「基准 z × 长度比」赋值，既避免持续对象反复累乘，也保证长度不随体型放大。
-            _lockLineBaseScaleZ = beamPrefab.transform.localScale.z;
-        }
-        else
-        {
-            _lockLineVfx.transform.SetPositionAndRotation(origin, rot);
-        }
-
-        // 长度精确落在玩家位置（复用真实 Beam 的归一化逻辑）。
-        float authoredLength = ResolveBeamAuthoredLength(_lockLineVfx);
-        Vector3 scale = _lockLineVfx.transform.localScale;
-        scale.z = _lockLineBaseScaleZ * dist / Mathf.Max(0.01f, authoredLength);
-        _lockLineVfx.transform.localScale = scale;
-
-        // 由弱到强：宽度从 lockLineMinWidthMultiplier 线性过渡到 1（真实 Beam 宽度）。
-        float widthMult = Mathf.Lerp(lockLineMinWidthMultiplier, 1f, Mathf.Clamp01(progress));
-        ApplyBeamWidth(_lockLineVfx, widthMult);
-
-        if (lockLineMaterial != null)
-        {
-            foreach (ParticleSystem ps in _lockLineVfx.GetComponentsInChildren<ParticleSystem>())
-            {
-                ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
-                if (renderer != null) renderer.material = lockLineMaterial;
-            }
-        }
-    }
-
-    void ReleaseLockLine()
-    {
-        if (_lockLineVfx != null)
-        {
-            ReleaseVfx(_lockLineVfx, hitImpactDuration);
-            _lockLineVfx = null;
-            _lockLineBaseScaleZ = 1f;
-        }
     }
 
     /// <summary>持续开火中视为释放未结束：附身代价致死时等这束激光熄火后再死。</summary>
@@ -514,6 +430,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         desired.y = 0f;
         if (desired.sqrMagnitude < 0.0001f)
             return origin + _enemyBeamDirection * range;
+        float playerDist = desired.magnitude;   // Pass v1.1：玩家水平距离，用于把光柱终点缩到玩家身上而非固定 max range。
         desired.Normalize();
 
         if (_enemyBeamDirection.sqrMagnitude < 0.0001f)
@@ -522,7 +439,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         float maxAngle = Mathf.Max(0f, enemyTrackingTurnSpeed) * AbilityDeltaTime;
         _enemyBeamDirection = Vector3.RotateTowards(_enemyBeamDirection, desired, maxAngle * Mathf.Deg2Rad, 0f);
         if (_enemyBeamDirection.sqrMagnitude < 0.0001f) _enemyBeamDirection = desired;
-        return origin + _enemyBeamDirection.normalized * range;
+        return origin + _enemyBeamDirection.normalized * Mathf.Min(playerDist, range);
     }
 
     /// <summary>玩家已甩掉激光：beam 方向与玩家方向夹角超过 90°（玩家绕到侧后方）。</summary>
@@ -581,15 +498,17 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         if (vfx == null) return;
 
         // 光束由本地空间 LineRenderer 承载（蓝-激光 等，本地 0→authoredLength）。
-        // 距离 = 本体→目标的实际距离，夹到有效射程：目标移动时长度动态变化，且绝不越界超过 max range。
-        float dist = Mathf.Min(dir.magnitude, GetEffectiveRange());
+        // 按 authoredLength 归一化，使终点精确落在 targetPos 的 z 投影。
+        // Pass v1.1：AI 版（非附身）用 prefab 原始 z 绝对值赋值，光柱长度精确 = dir.magnitude，
+        // 不随 Elite 的 CombatScaleMultiplier（=2）把 z 也放大——否则精英激光视觉 = 2× 终点距离、穿过目标。
+        // 穿透效果由 EN-A03（IsPierceActive）卡牌单独控制，视觉层不得因体型缩放而"穿"。
+        // 附身玩家版保持 *= 累乘（Player Envy 视觉与历史一致，不受本改动影响）。
         float authoredLength = ResolveBeamAuthoredLength(vfx);
-        // 长度用「prefab 原始 z × 长度比」绝对值赋值：SpawnVfxTracked 的 ScaleAbilityObject
-        // 已把整条 scale 乘过 OwnerCombatScaleMultiplier，若继续累乘会让光束长度随怪物体型放大、
-        // 超过目标距离与 max range。x/y 仍保留体型缩放（只影响粗细），z 精确落在 dist 处。
-        float baseZ = beamPrefab.transform.localScale.z;
         Vector3 scale = vfx.transform.localScale;
-        scale.z = baseZ * (dist / Mathf.Max(0.01f, authoredLength));
+        if (owner != null && !owner.isPossessed && beamPrefab != null)
+            scale.z = beamPrefab.transform.localScale.z * (dir.magnitude / Mathf.Max(0.01f, authoredLength));
+        else
+            scale.z *= dir.magnitude / Mathf.Max(0.01f, authoredLength);
         vfx.transform.localScale = scale;
 
         // EN-A05 外显：连续连接伤害爬升时按比例加宽整条激光，封顶到 rampWidthMultiplier。
@@ -653,7 +572,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     {
         _isFiring = false;
         _enemyBeamDirection = Vector3.zero;   // Pass v1 §13.3：下次 Cast 重新锁定
-        ReleaseLockLine();                     // Pass v1 §13.3：兜底清理 Lock 线（开火中断等非 TelegraphEnd 路径）
         CombatAudioManager.StopCastLoop(_castLoop);
         _castLoop = default;
         EndActivationEffect();
@@ -684,7 +602,6 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     protected override void OnDisable()
     {
         if (_isFiring) StopLaser();
-        ReleaseLockLine();
         if (owner != null)
             EnvyMarkTarget.ClearMarksFromSource(owner);
         base.OnDisable();

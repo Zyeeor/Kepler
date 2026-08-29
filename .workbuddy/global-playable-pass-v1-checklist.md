@@ -169,3 +169,47 @@ Owner 实测报 5 个 bug，本轮修复 4 个 + 1 个待验证：
 - ⚠️ 本会话 Unity Editor **未打开**，`assets-refresh`（AssetDatabase.Refresh）超时、Console 日志为空，**无法完成编译级验证**。
 - 新字段均为 C# 默认值，prefab YAML 未改动（`greed_new`/`envy_new`/`gluttony_new` 仍保留原值）；Unity 打开后新字段会以默认值序列化生效。
 - PlayMode 验收需用户在 Unity 里跑：①Black Oil 玩家被减速后约 70% 移速 ②开局 1.25s 无怪即显白色轨迹 ③Elite Envy 锁定 ≤15m、玩家跑出 ~17m 断束 ④Possessed Gluttony Devour 60 / Abyss Maw 70。
+
+---
+
+## v1.1 之后追加：Envy 视觉回退（同日 Owner 第二轮指令，2026-08-29 晚）
+
+**Owner 拍板**：删掉前摇红色 Lock 预测线（`RefreshLockLine` 系列），激光视觉长度恢复到 v1 时代（即精英视觉拉伸仍 ×2）。v1.1 §3 的 15m 封顶 + 17m 断束数值**保留不动**。
+
+### 改动
+- `Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_EnvyLaser.cs`：
+  - 删 `lockLineMinWidthMultiplier` / `lockLineMaterial` 字段
+  - 删 `_lockLineVfx` / `_lockLineBaseScaleZ` 私有字段
+  - 删 `OnEnemyTelegraphBegin/Tick/End` 三个 override
+  - 删 `RefreshLockLine()` / `ReleaseLockLine()`
+  - 删 `StopLaser()` / `OnDisable()` 中的 `ReleaseLockLine()` 调用
+  - SpawnBeamVfx 视觉长度逻辑回退：`scale.z *= dir.magnitude / authoredLength`（保留 `ScaleAbilityObject` ×2 放大）——精英瞄准 15m 时激光视觉 ≈ 30m；伤害锁定距离仍由 GetEffectiveRange 限制 ≤15m
+- `Assets/Prefabs/Monster/envy_new.prefab`：删 `lockLineMinWidthMultiplier: 0.35` / `lockLineMaterial: {fileID: 0}` 两行
+
+### 效果
+- 视觉：精英 Envy 激光视觉 ≈ 30m（与 v1 同），不再有"射穿目标"的视觉违和（因为视觉长度本来就该长，锁定距离由 GetEffectiveRange 严格 ≤15m，不会真打到 30m 外的目标）。
+- 数值：瞄准距离 15m、Beam 期间 17m 断束、前摇越界取消 Cast——全部 v1.1 §3 约束仍生效。
+- Lock 线（红条）已无残留，全库 grep 无 `lockLine` / `RefreshLock` / `ReleaseLock` 引用。
+
+## v1.1 之后追加：Envy AI 版"穿过玩家"修复（Owner 第三轮指令，2026-08-29 深夜）
+
+**Owner 拍板**：普通怪 + 精英怪都不得"穿"过目标；激光穿透是 EN-A03（`IsPierceActive`）卡牌单独控制的功能，视觉层不得因体型缩放而穿透。只修 AI 版（`!owner.isPossessed`），玩家附身版（Possessed Player 用 Envy）保持不动。
+
+### 真值定位
+- "穿过"根因有两个独立来源：
+  1. `GetEnemyTrackedAimPoint` 返回 `origin + dir × range`（固定 15m），不随玩家实际距离变化 → 玩家站 5m 时光柱画到 15m，穿过。
+  2. `SpawnBeamVfx` 的 `scale.z *= dir.magnitude / authoredLength` 累乘，叠加 `ScaleAbilityObject`（Elite `CombatScaleMultiplier=2`）把 z 再放大 → 精英视觉 = 2× 终点距离。
+- prefab 根 `蓝-激光` `localScale.z = 1`（实测），baseZ 基准取 `beamPrefab.transform.localScale.z`。
+
+### 改动（`Assets/Scripts/Combat/Abilities/Monster/EnemyAbility_EnvyLaser.cs`，仅 AI 版）
+- `GetEnemyTrackedAimPoint`：新增 `float playerDist = desired.magnitude;`，返回 `origin + _enemyBeamDirection.normalized * Mathf.Min(playerDist, range)` —— 终点缩到玩家水平距离（对齐玩家版 `GetAimPoint` 的实际距离语义）。
+- `SpawnBeamVfx`：AI 版（`!owner.isPossessed`）用 `scale.z = beamPrefab.transform.localScale.z * (dir.magnitude / authoredLength)` 绝对值赋值；玩家版保持 `*= 累乘` 不变。
+
+### 效果
+- 普通 AI Envy：光柱终点 = 玩家距离，不再穿过。
+- 精英 AI Envy：z 不再被 CombatScaleMultiplier ×2，光柱精确落在 beamEnd（玩家/命中点），不再穿。
+- 软锁手感保留（`enemyTrackingTurnSpeed=100°/s` 平滑转向不变）；伤害距离兜底不变；玩家附身版不受影响。
+- 穿透仍由 EN-A03 `IsPierceActive`（`ResolveBeamHits` 的 pierce 分支）单独控制。
+
+### 编译验证
+- Unity Editor 未打开，未做编译级验证。两处改动均为纯算术/条件分支，无新增字段/引用，C# 语法层安全。

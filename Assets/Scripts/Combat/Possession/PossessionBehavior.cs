@@ -12,6 +12,8 @@ public class PossessionBehavior : MonoBehaviour
     [Tooltip("Maximum middle-click possession targeting distance.")]
 
     public float maxTargetDistance = 100f;
+    [Tooltip("Nearest valid corpse fallback range when mouse ray and aim assist find no target.")]
+    [Min(0f)] public float nearestCorpseFallbackRange = 15f;
     [Tooltip("Log every middle-click target resolution attempt for possession debugging.")]
 
     public bool enableDebugLogs = true;
@@ -42,10 +44,7 @@ public class PossessionBehavior : MonoBehaviour
         Log($"Ray mouse={Input.mousePosition:F0}, origin={aimRay.origin:F2}, direction={aimRay.direction:F2}, hits={hits.Length}, state={manager.State}");
 
         if (hits.Length == 0)
-        {
-            Log("Rejected: ray hit no collider.");
-            return false;
-        }
+            Log("Ray hit no collider; continuing to aim assist and nearest-corpse fallback.");
 
         for (int i = 0; i < hits.Length; i++)
         {
@@ -73,7 +72,13 @@ public class PossessionBehavior : MonoBehaviour
             return manager.BeginPossessionFlight(assistedTarget);
         }
 
-        Log("Rejected: no valid corpse collider was found on the ray.");
+        if (TryFindNearestCorpseFallback(out MonsterActor fallbackTarget, out float fallbackDistance))
+        {
+            Log($"Nearest-corpse fallback selected monster='{fallbackTarget.displayName}', distance={fallbackDistance:F2}m. {fallbackTarget.GetPossessionDebugState()}");
+            return manager.BeginPossessionFlight(fallbackTarget);
+        }
+
+        Log("Rejected: no valid corpse was found by mouse ray, aim assist, or nearest-corpse fallback.");
         return false;
     }
 
@@ -97,6 +102,31 @@ public class PossessionBehavior : MonoBehaviour
 
             selected = candidate;
             selectedMissDistance = missDistance;
+        }
+
+        return selected != null;
+    }
+
+    private bool TryFindNearestCorpseFallback(out MonsterActor selected, out float selectedDistance)
+    {
+        selected = null;
+        selectedDistance = float.MaxValue;
+
+        Vector3 playerPosition = manager.CurrentBody != null
+            ? manager.CurrentBody.transform.position
+            : (PlayerController.Instance != null ? PlayerController.Instance.transform.position : Vector3.zero);
+        float fallbackRange = Mathf.Max(0f, nearestCorpseFallbackRange);
+        float fallbackRangeSqr = fallbackRange * fallbackRange;
+
+        foreach (MonsterActor candidate in FindObjectsOfType<MonsterActor>(true))
+        {
+            if (!manager.ValidatePossessionTarget(candidate, out _)) continue;
+
+            float distanceSqr = (candidate.transform.position - playerPosition).sqrMagnitude;
+            if (distanceSqr > fallbackRangeSqr || distanceSqr >= selectedDistance * selectedDistance) continue;
+
+            selected = candidate;
+            selectedDistance = Mathf.Sqrt(distanceSqr);
         }
 
         return selected != null;
