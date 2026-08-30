@@ -60,7 +60,11 @@ public class HallOfFamePanel : MonoBehaviour
     [Header("Visual Layout (Prefab)")]
     [SerializeField] GameObject panelRoot;
     [SerializeField] Button refreshButton;
+    [Tooltip("刷新按钮图标；不指定时回退 Func Buttons.png 运行时切图（左半，估测 rect）。")]
+    [SerializeField] Sprite refreshIconSprite;
     [SerializeField] Button closeButton;
+    [Tooltip("关闭按钮图标；不指定时回退 Func Buttons.png 运行时切图（右半，估测 rect）。")]
+    [SerializeField] Sprite closeIconSprite;
     [SerializeField] Button[] sortButtons;
 
     [Header("Sort Button Styles")]
@@ -69,6 +73,10 @@ public class HallOfFamePanel : MonoBehaviour
     {
         new SortButtonStyle(), new SortButtonStyle(), new SortButtonStyle(), new SortButtonStyle()
     };
+
+    [Header("Entry Background Overrides")]
+    [Tooltip("每条记录未展开时的背景图，按七宗罪顺序 0~6 = 傲慢/嫉妒/怠惰/色欲/暴怒/暴食/贪婪；不指定时回退 Tips.png 运行时切图（同名对应罪别）。")]
+    [SerializeField] Sprite[] entryBackgroundOverrides = new Sprite[7];
 
     [SerializeField] TMP_Text statusLabel;
     [SerializeField] TMP_Text emptyLabel;
@@ -85,6 +93,8 @@ public class HallOfFamePanel : MonoBehaviour
     [SerializeField] Transform contentRoot;
     [SerializeField] ScrollRect scrollRect;
     [SerializeField] Scrollbar verticalScrollbar;
+    [Tooltip("每条记录卡片相对其所在格子的四边内缩；用于控制卡片在展示区域内的具体位置，不影响格子本身的高度分配（高度按内缩后的卡片宽度保持原始图片比例反推，再加回上下留白）。")]
+    [SerializeField] RectOffset entryPadding; // 不要给 RectOffset 字段写 C# 初始化器——其属性 setter 在 MonoBehaviour 构造期调用会抛异常；留空由 Unity 序列化系统给默认 (0,0,0,0)。
 
     // 分页（开发案 §2）
     [SerializeField] Button prevButton;
@@ -328,18 +338,14 @@ public class HallOfFamePanel : MonoBehaviour
 
     void ApplyVisualAssets()
     {
-        if (panelRoot != null)
-        {
-            var rootImage = panelRoot.GetComponent<Image>();
-            if (rootImage != null && horBgSprite != null)
-            {
-                rootImage.sprite = horBgSprite;
-                rootImage.color = Color.white;
-            }
-        }
+        // 背景图不再由代码按固定路径 Resources.Load 强制覆盖——直接使用 Prefab 里
+        // PanelRoot 自身 Image 组件已经配好的贴图/颜色，换背景图只需要在 Prefab 里改，
+        // 不会再被这里的代码在运行时悄悄换回旧图。
 
-        ApplyIconButton(refreshButton, funcRefreshSprite);
-        ApplyIconButton(closeButton, funcCloseSprite);
+        // 刷新/关闭图标优先用 Prefab 里手动指定的 Sprite（策划可自选换图）；
+        // 未指定时回退 Func Buttons.png 运行时切图，保证旧配置不受影响。
+        ApplyIconButton(refreshButton, refreshIconSprite != null ? refreshIconSprite : funcRefreshSprite);
+        ApplyIconButton(closeButton, closeIconSprite != null ? closeIconSprite : funcCloseSprite);
         ApplyIconButton(prevButton, pageLeftSprite);
         ApplyIconButton(nextButton, pageRightSprite);
         RefreshSortButtons();
@@ -1093,18 +1099,37 @@ public class HallOfFamePanel : MonoBehaviour
         emptyLabel.gameObject.SetActive(false);
     }
 
-    /// <summary>列表条目行：可点击整行展开详情（开发案 §2.1）+ 左侧罪别彩条（开发案 §5）。</summary>
+    /// <summary>
+    /// 列表条目行：可点击整行展开详情（开发案 §2.1）+ 左侧罪别彩条（开发案 §5）。
+    /// 行根节点（go）只负责在 VerticalLayoutGroup 里占位/接收点击，不直接承载视觉内容——
+    /// 视觉卡片（背景图+遮罩+文字）挂在子节点 Card 上，按 entryPadding 相对行格子四边内缩，
+    /// 这样可以在 Inspector 里配置 Padding 来控制卡片在其所在展示格子内的具体位置，
+    /// 不需要改代码。卡片高度按内缩后的宽度保持素材原始宽高比反推，
+    /// 再加回上下 Padding 得到整行（含留白）实际占用的高度，避免图片被拉伸变形。
+    /// </summary>
     GameObject MakeEntryRow(HallOfFameEntry entry)
     {
-        var go = new GameObject(EntryRowName(entry), typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
-        var img = go.GetComponent<Image>();
+        var go = new GameObject(EntryRowName(entry), typeof(RectTransform), typeof(Button), typeof(LayoutElement));
         var le = go.GetComponent<LayoutElement>();
+
+        var cardGo = new GameObject("Card", typeof(RectTransform), typeof(Image));
+        cardGo.transform.SetParent(go.transform, false);
+        var cardRt = (RectTransform)cardGo.transform;
+        cardRt.anchorMin = Vector2.zero;
+        cardRt.anchorMax = Vector2.one;
+        cardRt.offsetMin = new Vector2(entryPadding.left, entryPadding.bottom);
+        cardRt.offsetMax = new Vector2(-entryPadding.right, -entryPadding.top);
+        var img = cardGo.GetComponent<Image>();
+
         // Tips sprite 作条目卡背景（已含左侧罪别彩条 + 中部怪物菱形图标，无需单独叠彩条）。
-        // 行宽由 VerticalLayoutGroup 控制，行高按当前切片原始宽高比计算，避免拉伸变形。
+        // 行宽由 VerticalLayoutGroup 控制，卡片高度按内缩后宽度对原始切片宽高比计算，避免拉伸变形。
+        // 优先用 Prefab 里按罪别配置的 entryBackgroundOverrides，未配置才回退 Tips.png 运行时切图。
         int tipIdx = SinTipsSpriteIndex(entry.sin);
-        if (tipIdx >= 0 && tipIdx < tipsSprites.Length && tipsSprites[tipIdx] != null)
+        Sprite entryBg = tipIdx >= 0 && tipIdx < entryBackgroundOverrides.Length ? entryBackgroundOverrides[tipIdx] : null;
+        if (entryBg == null && tipIdx >= 0 && tipIdx < tipsSprites.Length) entryBg = tipsSprites[tipIdx];
+        if (entryBg != null)
         {
-            img.sprite = tipsSprites[tipIdx];
+            img.sprite = entryBg;
             img.color = Color.white;
             img.type = Image.Type.Simple;
             img.preserveAspect = false;
@@ -1113,15 +1138,16 @@ public class HallOfFamePanel : MonoBehaviour
             var layout = contentRoot != null ? contentRoot.GetComponent<VerticalLayoutGroup>() : null;
             float contentWidth = contentRect != null ? contentRect.rect.width : img.sprite.rect.width;
             float rowWidth = Mathf.Max(1f, contentWidth - (layout != null ? layout.padding.horizontal : 0));
-            float rowHeight = rowWidth * img.sprite.rect.height / img.sprite.rect.width;
-            le.minHeight = rowHeight;
-            le.preferredHeight = rowHeight;
+            float cardWidth = Mathf.Max(1f, rowWidth - entryPadding.horizontal);
+            float cardHeight = cardWidth * img.sprite.rect.height / img.sprite.rect.width;
+            le.minHeight = cardHeight + entryPadding.vertical;
+            le.preferredHeight = le.minHeight;
         }
         else
         {
             img.color = new Color(1f, 1f, 1f, 0.10f); // sprite 缺失兜底
-            le.minHeight = 150f;
-            le.preferredHeight = 150f;
+            le.minHeight = 150f + entryPadding.vertical;
+            le.preferredHeight = le.minHeight;
         }
         var button = go.GetComponent<Button>();
         button.targetGraphic = img;
@@ -1130,14 +1156,14 @@ public class HallOfFamePanel : MonoBehaviour
 
         // 半透明深色遮罩（开发案 §5：横幅上叠加遮罩，确保文字与数据清晰可读）
         var maskGo = new GameObject("Mask", typeof(RectTransform), typeof(Image));
-        maskGo.transform.SetParent(go.transform, false);
+        maskGo.transform.SetParent(cardGo.transform, false);
         Stretch(maskGo.GetComponent<RectTransform>());
         var maskImg = maskGo.GetComponent<Image>();
         maskImg.color = new Color(0f, 0f, 0f, 0.45f);
         maskImg.raycastTarget = false;
 
         // 折叠行只显示怪物完整称号与当前排序指标，详细来源局/战绩仅在展开行展示。
-        var nameText = MakeText(go.transform, EpithetName(entry), 30, new Color(0.95f, 0.95f, 0.98f));
+        var nameText = MakeText(cardGo.transform, EpithetName(entry), 30, new Color(0.95f, 0.95f, 0.98f));
         var nameRt = nameText.rectTransform;
         nameRt.anchorMin = new Vector2(0f, 0f);
         nameRt.anchorMax = new Vector2(0.64f, 1f);
@@ -1147,7 +1173,7 @@ public class HallOfFamePanel : MonoBehaviour
         nameText.enableWordWrapping = false;
         nameText.overflowMode = TextOverflowModes.Ellipsis;
 
-        var sortText = MakeText(go.transform, SortSummary(entry), 28, new Color(1f, 0.84f, 0.56f));
+        var sortText = MakeText(cardGo.transform, SortSummary(entry), 28, new Color(1f, 0.84f, 0.56f));
         var sortRt = sortText.rectTransform;
         sortRt.anchorMin = new Vector2(0.64f, 0f);
         sortRt.anchorMax = new Vector2(1f, 1f);

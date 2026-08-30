@@ -11,8 +11,9 @@ using UnityEngine.UI;
 /// 所有显示配置（卡片尺寸/间距/配色/字号等）直接在该 Prefab 的 Inspector 中编辑。
 ///
 /// 静态界面壳层从 Resources/SystemUI/CardArchivePanel Prefab 实例化；卡片网格仍在运行时按图鉴数据生成。
-/// 卡片渲染复用 choice1 预制体，走 CoreChoiceCard.Init() 标准入口并只读化，
-/// 保证图鉴中的卡面表现与选卡界面完全一致。
+/// 卡片渲染使用独立的 Resources/SystemUI/CardArchiveTile Prefab（CardArchiveTileView），
+/// 不复用局内选卡 UI（choice1/CoreChoiceCard）——两者内部图层画布尺寸不一致，曾导致图鉴卡片
+/// 大小互相不统一；CardArchiveTile 的外框在未知/已知/已解锁三态下共享同一张素材与画布比例。
 ///
 /// 三态：Unknown=剪影(???) / Known=卡面但置灰 / Unlocked=完整+时间戳+次数+新解锁角标。
 /// 分类页签：七宗罪。进度分母取自 CardArchiveStore.ValidCardTotal。
@@ -22,9 +23,9 @@ public class CardArchivePanel : MonoBehaviour
     // ───────────────────────── 配置（Inspector） ─────────────────────────
 
     [Header("数据源")]
-    [Tooltip("卡片预制体（复用 choice1）。留空则自动取 CardLibrary.Instance.cardPrefab。")]
-    [SerializeField] GameObject cardPrefab;
-    [Tooltip("未知卡剪影；在 CardArchivePanel Prefab 中指定。留空时使用问号占位。")]
+    [Tooltip("图鉴专用卡片预制体（Resources/SystemUI/CardArchiveTile）。留空则运行时自动 Resources.Load。")]
+    [SerializeField] GameObject tilePrefab;
+    [Tooltip("未知卡占位图；也作为已知/已解锁卡的外框素材（三态共用同一画布）。留空时使用问号占位。")]
     [SerializeField] Sprite unknownCardSilhouette;
 
     [Header("New Unlock Tint")]
@@ -114,13 +115,16 @@ public class CardArchivePanel : MonoBehaviour
     [SerializeField] RectTransform scrollViewport;
     [SerializeField] ScrollRect scrollRect;
     [SerializeField] Button refreshButton;
+    [Tooltip("刷新按钮图标；不指定时回退 Func Buttons.png 运行时切图。")]
+    [SerializeField] Sprite refreshIconSprite;
     [SerializeField] Button closeButton;
+    [Tooltip("关闭按钮图标；不指定时回退 Func Buttons.png 运行时切图。")]
+    [SerializeField] Sprite closeIconSprite;
 
     [Header("Tab Images")]
     [Tooltip("顺序：傲慢、色欲、怠惰、暴怒、嫉妒、贪婪、暴食。每项可单独配置未选中态与选中态。")]
     [SerializeField] TabVisualStyle[] tabStyles = new TabVisualStyle[7];
 
-    [SerializeField] TextMeshProUGUI titleText;
     [SerializeField] TextMeshProUGUI progressText;
     [SerializeField] TextMeshProUGUI statusText;
     [SerializeField] RectTransform tabRow;
@@ -140,18 +144,31 @@ public class CardArchivePanel : MonoBehaviour
     readonly HashSet<string> debugMockNewUnlocks = new HashSet<string>();
 #endif
 
-    Sprite archiveBackgroundSprite;
     Sprite refreshSprite;
     Sprite closeSprite;
     readonly Sprite[,] filterSprites = new Sprite[7, 2];
+
+    // ───────────────────────── 卡牌详情 overlay（Prefab 实例化，懒加载） ─────────────────────────
+    RectTransform cardInfoRoot;
+    CardInfoOverlayView cardInfoView;
     bool visible;
     bool built;
 
     float refreshFaceWidth;
 
     /// <summary>卡面显示宽度：每次刷新期间固定，避免实卡测量更新比例后改变后续未知占位尺寸。</summary>
-    float CalculatedFaceWidth => cardFaceWidth > 0f ? cardFaceWidth : cardFaceHeight * Mathf.Max(0.6f, measuredAspect);
+    float CalculatedFaceWidth => cardFaceWidth > 0f ? cardFaceWidth : cardFaceHeight * Mathf.Max(0.3f, ReferenceAspect);
     float FaceWidth => refreshFaceWidth > 0f ? refreshFaceWidth : CalculatedFaceWidth;
+
+    /// <summary>
+    /// tile 宽高比的基准：以未知卡占位图（unknownCardSilhouette）自身宽高比为准——
+    /// CardArchiveTile 预制体（见 RenderCard）的外框在未知/已知/已解锁三态下共享同一张素材、
+    /// 同一块画布，天然保证基准恒定，不再让 tile 尺寸跟着某张具体卡的实测内容走。
+    /// 没有占位图时退回旧的经验值兜底。
+    /// </summary>
+    float ReferenceAspect => unknownCardSilhouette != null
+        ? unknownCardSilhouette.rect.width / unknownCardSilhouette.rect.height
+        : DefaultCardFaceAspect;
 
     /// <summary>把 Vector4 的内边距配置转成 GridLayoutGroup 需要的 RectOffset。</summary>
     RectOffset PaddingRect => new RectOffset((int)padding.x, (int)padding.y, (int)padding.z, (int)padding.w);
@@ -179,11 +196,8 @@ public class CardArchivePanel : MonoBehaviour
     static readonly Color DefTrack = new Color(0.16f, 0.16f, 0.2f, 1f);
     static readonly Color DefFill = new Color(0.95f, 0.75f, 0.25f, 1f);
 
-    // 标准卡面可见内容比例（由 choice1 实测）。未知占位沿用此比例，保证两类视觉尺寸一致。
+    // ReferenceAspect 取不到未知占位图时的经验兜底值（由 choice1 实测）。
     const float DefaultCardFaceAspect = 0.63125f;
-    /// <summary>卡面内容实测宽高比，首次渲染后缓存，用于 cardFaceWidth=0 时推算宽度。</summary>
-    float measuredAspect = DefaultCardFaceAspect;
-    bool aspectMeasured;
 
     public System.Action onClose;
     public static CardArchivePanel Instance { get; private set; }
@@ -256,6 +270,14 @@ public class CardArchivePanel : MonoBehaviour
 
     void Start()
     {
+        // Prefab 里静态摆放的 TMP 文本（标题/进度/状态/页签）字体只在编辑器工具 ApplyAllToActiveScene()
+        // 批量替换时才会被设成含中文字形的字体；该工具只扫描"当前活动场景"的根物体，扫不到
+        // Resources 下的 Prefab 资产本身，导致这个面板的中文一直显示成方块。这里强制在运行时
+        // 对整个面板子树套用 Default 槽字体，和 RenderCard 里对卡面子树套用 Card 槽字体是同一套逻辑。
+        // ⚠️ 必须放在 Start()（而非 Awake()）：TMP_Text 自身的 OnEnable 在同一帧内于所有组件的
+        // Awake() 之后运行，会用序列化数据重新同步内部字体状态，把 Awake() 里刚设置的字体覆盖掉；
+        // Start() 保证发生在整个场景当帧全部 Awake/OnEnable 结束之后，第一帧渲染之前，不会有闪烁。
+        if (panelRoot != null && FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(panelRoot.transform, FontSlots.Default);
         if (startVisible) Show();
         else if (panelRoot != null) panelRoot.SetActive(false);
     }
@@ -292,10 +314,13 @@ public class CardArchivePanel : MonoBehaviour
         BindVisualLayoutEvents();
     }
 
+    // 标题从动态 TMP 文本换成了美术图（Title 节点现在是 CATitle.png 的 Image，无 TMP 组件），
+    // 所以这里不再把 titleText 作为必需引用——继续要求它会导致 HasVisualLayout 恒为 false，
+    // EnsureInstance() 每次都抛异常，整个面板永远建不起来。
     bool HasVisualLayout() =>
         panelRoot != null && backgroundImage != null && contentRoot != null && scrollViewport != null && scrollRect != null &&
         refreshButton != null && closeButton != null && tabStyles != null && tabStyles.Length == 7 &&
-        titleText != null && progressText != null && statusText != null && tabRow != null && progressFill != null;
+        progressText != null && statusText != null && tabRow != null && progressFill != null;
 
     void BindVisualLayoutEvents()
     {
@@ -341,8 +366,6 @@ public class CardArchivePanel : MonoBehaviour
 
     void LoadSystemUISprites()
     {
-        archiveBackgroundSprite = Resources.Load<Sprite>("SystemUI/CA BG");
-
         var func = Resources.Load<Sprite>("SystemUI/Func Buttons");
         var funcTex = func != null ? func.texture : Resources.Load<Texture2D>("SystemUI/Func Buttons");
         if (funcTex != null)
@@ -367,13 +390,11 @@ public class CardArchivePanel : MonoBehaviour
 
     void ApplyVisualAssets()
     {
-        if (backgroundImage != null && archiveBackgroundSprite != null)
-        {
-            backgroundImage.sprite = archiveBackgroundSprite;
-            backgroundImage.color = Color.white;
-        }
-        ApplyIconButton(refreshButton, refreshSprite);
-        ApplyIconButton(closeButton, closeSprite);
+        // 背景图和刷新/关闭图标都不再由代码按固定路径 Resources.Load 强制覆盖——直接使用
+        // Prefab 里已经配好的贴图/颜色，换图只需要在 Prefab 里改，不会被这里的代码在运行时
+        // 悄悄换回旧图（同 HallOfFamePanel 的修复思路）。
+        ApplyIconButton(refreshButton, refreshIconSprite != null ? refreshIconSprite : refreshSprite);
+        ApplyIconButton(closeButton, closeIconSprite != null ? closeIconSprite : closeSprite);
         RefreshTabVisuals();
     }
 
@@ -436,6 +457,11 @@ public class CardArchivePanel : MonoBehaviour
         {
             var style = tabStyles[i];
             if (style == null || style.image == null) continue;
+
+            // 挂在页签按钮本身（style.image）上，而不是它的 Label 子物体：Label 这个 GameObject
+            // 在 Prefab 里是关着的（m_IsActive: 0，具体原因未知，可能是本地化占位），挂在它下面
+            // 的子物体不会渲染，红点会直接不可见——所以仍然挂在保证处于激活状态的按钮节点上，
+            // 只是把 Label 的 TMP_Text 传进去用于计算文字实际宽高（见 AddFilterNewUnlockTint）。
             var existing = style.image.transform.Find("NewUnlockTint");
             if (existing != null)
             {
@@ -445,7 +471,10 @@ public class CardArchivePanel : MonoBehaviour
 
             string tab = style.image.transform.name.Substring("Tab_".Length);
             if (HasUnreadNewCard(tab))
-                AddFilterNewUnlockTint(style.image.rectTransform);
+            {
+                var label = style.image.transform.Find("Label");
+                AddFilterNewUnlockTint(style.image.rectTransform, label != null ? label.GetComponent<TMPro.TMP_Text>() : null);
+            }
         }
     }
 
@@ -459,7 +488,15 @@ public class CardArchivePanel : MonoBehaviour
         return false;
     }
 
-    void AddFilterNewUnlockTint(RectTransform parent)
+    /// <summary>
+    /// parent：页签按钮本体（激活状态，安全的挂载点）。label：按钮里的文字（可能是禁用状态，
+    /// 只用来读取文本尺寸，不作为挂载点）。按钮本身比"傲慢"这类两字文案宽得多（HorizontalLayoutGroup
+    /// 把 7 个页签撑成等宽），文字在按钮里是居中对齐的——如果直接把红点锚定到按钮的右上角，
+    /// 会落在文字右侧一大截空白之外，而不是紧贴文字本身的右上角。这里用 TMP 的
+    /// GetPreferredValues() 量出文字的真实渲染宽高（这个方法不依赖对象是否处于激活状态），
+    /// 换算出文字右上角相对按钮右上角的偏移量，让红点始终贴着文字走，不随按钮宽度或文案长短跑偏。
+    /// </summary>
+    void AddFilterNewUnlockTint(RectTransform parent, TMPro.TMP_Text label)
     {
         if (parent == null || filterNewUnlockTintSprite == null) return;
         var tint = new GameObject("NewUnlockTint", typeof(RectTransform), typeof(Image));
@@ -467,8 +504,17 @@ public class CardArchivePanel : MonoBehaviour
         var rt = tint.GetComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = new Vector2(13f, 13f);
+
+        Vector2 offset = Vector2.zero;
+        if (label != null)
+        {
+            var textSize = label.GetPreferredValues();
+            var buttonSize = parent.rect.size;
+            offset = new Vector2((textSize.x - buttonSize.x) * 0.5f, (textSize.y - buttonSize.y) * 0.5f);
+        }
+        rt.anchoredPosition = offset;
+
         var image = tint.GetComponent<Image>();
         image.sprite = filterNewUnlockTintSprite;
         image.color = Color.white;
@@ -476,14 +522,16 @@ public class CardArchivePanel : MonoBehaviour
         image.raycastTarget = false;
     }
 
-    void AddNewUnlockTint(RectTransform parent, Sprite tintSprite, float size, float inset)
+    void AddNewUnlockTint(RectTransform parent, Sprite tintSprite, float size)
     {
         if (parent == null || tintSprite == null) return;
         var tint = new GameObject("NewUnlockTint", typeof(RectTransform), typeof(Image));
         tint.transform.SetParent(parent, false);
         var rt = tint.GetComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-inset, -inset);
+        // 中心（而非自身右上角）与 slot 的右上角重合，跟 AddFilterNewUnlockTint 用同一套对齐方式。
+        rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = new Vector2(size, size);
         var image = tint.GetComponent<Image>();
         image.sprite = tintSprite;
@@ -499,7 +547,7 @@ public class CardArchivePanel : MonoBehaviour
         contentRoot = null; scrollViewport = null; scrollRect = null;
         refreshButton = closeButton = null;
         tabStyles = null;
-        titleText = progressText = statusText = null;
+        progressText = statusText = null;
         tabRow = null; progressFill = null;
         built = false;
     }
@@ -550,8 +598,8 @@ public class CardArchivePanel : MonoBehaviour
         float top = ph * 0.5f;      // 面板顶边（局部坐标）
         float cursor = top;          // 垂直排布游标，从顶边向下递减
 
-        // 标题
-        titleText = AddText(prt, "卡牌图鉴", EnsureSize(titleFontSize, 30), new Vector2(0, cursor - 40f), TextAlignmentOptions.Center, (int)pw - 40);
+        // 标题（纯代码回退布局专用；Prefab 正常路径下标题是美术图，不走这里）
+        AddText(prt, "卡牌图鉴", EnsureSize(titleFontSize, 30), new Vector2(0, cursor - 40f), TextAlignmentOptions.Center, (int)pw - 40);
         cursor -= 80f;
 
         // 标题下分隔线
@@ -810,8 +858,18 @@ public class CardArchivePanel : MonoBehaviour
         return CardArchiveStore.ValidCardTotal;
     }
 
+    bool fontFixApplied;
+
     public void Refresh()
     {
+        // 兜底：正常情况下 Start() 已经套用过 Default 槽字体（见 Start() 里的说明）；
+        // 这里再保险一次，避免任何生命周期时序意外（如 EnsureBuilt 走 Show() 触发而非 Awake）
+        // 导致标题/进度/状态文本停留在没有中文字形的默认字体上、显示成方块。
+        if (!fontFixApplied && panelRoot != null && FontRegistry.Instance != null)
+        {
+            FontRegistry.Instance.ApplyFontToTree(panelRoot.transform, FontSlots.Default);
+            fontFixApplied = true;
+        }
         TranslateArchiveTabLabels();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (!IsDebugPreviewActive)
@@ -912,51 +970,227 @@ public class CardArchivePanel : MonoBehaviour
     void RenderCatalogCard(CardData card, int state)
     {
         var tile = CreateCardTile("Card_" + card.effectId);
-        if (state >= CardArchiveStore.Known)
-            RenderCardFace(tile.gameObject, card, state);
-        else
-            RenderUnknownSilhouette(tile, card);
+        RenderCard(tile, card, state);
 
         if (IsNewUnlock(card.effectId))
-            AddNewUnlockTint(tile, cardNewUnlockTintSprite, 44f, 8f);
+            AddNewUnlockTint(tile, cardNewUnlockTintSprite, 44f);
+
+        // 点击卡面＝"查看过了"：清掉这张卡的新解锁角标；如果该页签下已经没有卡带角标，
+        // 顺带把页签自己的角标也摘掉（见 MarkCardViewed）。已知/已解锁的卡额外弹出详情
+        // overlay；未知卡（剪影）没有内容可看，不弹窗。
+        var clickCatcher = tile.Find("ClickCatcher")?.GetComponent<Button>();
+        if (clickCatcher != null)
+        {
+            string effectId = card.effectId;
+            int capturedState = state;
+            clickCatcher.onClick.AddListener(() =>
+            {
+                MarkCardViewed(effectId, tile);
+                if (capturedState >= CardArchiveStore.Known)
+                    ShowCardInfo(card, capturedState);
+            });
+        }
     }
 
     RectTransform CreateCardTile(string name)
     {
-        var tile = new GameObject(name, typeof(RectTransform), typeof(RectMask2D));
+        var tile = new GameObject(name, typeof(RectTransform));
         var trt = tile.GetComponent<RectTransform>();
         trt.SetParent(contentRoot, false);
         trt.sizeDelta = new Vector2(FaceWidth, cardFaceHeight);
         var layout = tile.AddComponent<LayoutElement>();
         layout.minWidth = layout.preferredWidth = FaceWidth;
         layout.minHeight = layout.preferredHeight = cardFaceHeight;
+
+        // 裁剪只作用在这层内容子物体上（卡面/占位图的出血内容需要在卡槽边缘被裁掉）；
+        // tile 本体不挂遮罩，新解锁角标（AddNewUnlockTint）挂在 tile 本体上才不会被这层
+        // 遮罩切掉骑在角上的那一半——角标要在裁剪层之上单独一层，不受它约束。
+        var content = new GameObject("Content", typeof(RectTransform), typeof(RectMask2D));
+        var contentRt = content.GetComponent<RectTransform>();
+        contentRt.SetParent(trt, false);
+        contentRt.anchorMin = Vector2.zero;
+        contentRt.anchorMax = Vector2.one;
+        contentRt.offsetMin = Vector2.zero;
+        contentRt.offsetMax = Vector2.zero;
+
+        // 透明的可点击层：卡面内部的图片都关掉了 raycastTarget（只读展示），需要单独一层
+        // 接收点击，用来判定"这张卡被查看过了"。铺满整个 tile，不挡卡面显示。
+        var clickCatcher = new GameObject("ClickCatcher", typeof(RectTransform), typeof(Image), typeof(Button));
+        var clickRt = clickCatcher.GetComponent<RectTransform>();
+        clickRt.SetParent(trt, false);
+        clickRt.anchorMin = Vector2.zero;
+        clickRt.anchorMax = Vector2.one;
+        clickRt.offsetMin = Vector2.zero;
+        clickRt.offsetMax = Vector2.zero;
+        var clickImg = clickCatcher.GetComponent<Image>();
+        clickImg.color = new Color(1f, 1f, 1f, 0.001f);
+        clickImg.raycastTarget = true;
+        var clickBtn = clickCatcher.GetComponent<Button>();
+        clickBtn.transition = Selectable.Transition.None;
+
+        // 悬停微放大：挂在实际接收射线的 ClickCatcher 上，缩放整个 tile（trt）。
+        var hover = clickCatcher.AddComponent<UICardHoverScale>();
+        hover.target = trt;
+
         return trt;
     }
 
-    void RenderUnknownSilhouette(RectTransform tile, CardData card)
+    /// <summary>
+    /// 卡面被点击查看后调用：清掉这张卡自己的新解锁角标（真实数据走
+    /// CardArchiveStore.MarkRead，调试预览数据走 debugMockNewUnlocks），
+    /// 再刷新一遍页签角标——该页签下如果已经没有带角标的卡，页签自己的角标也一并摘掉。
+    /// </summary>
+    void MarkCardViewed(string effectId, RectTransform tile)
     {
-        var silhouette = new GameObject("UnknownSilhouette", typeof(RectTransform), typeof(Image));
-        var silhouetteRt = silhouette.GetComponent<RectTransform>();
-        silhouetteRt.SetParent(tile, false);
-        silhouetteRt.anchorMin = new Vector2(0f, 0f);
-        silhouetteRt.anchorMax = new Vector2(1f, 1f);
-        silhouetteRt.offsetMin = Vector2.zero;
-        silhouetteRt.offsetMax = Vector2.zero;
-        var image = silhouette.GetComponent<Image>();
-        image.sprite = unknownCardSilhouette;
-        image.preserveAspect = true;
-        image.raycastTarget = false;
+        if (string.IsNullOrEmpty(effectId)) return;
 
-        if (unknownCardSilhouette != null)
+        bool wasNew = IsNewUnlock(effectId);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (IsDebugPreviewActive)
+            debugMockNewUnlocks.Remove(effectId);
+        else
+#endif
+            CardArchiveStore.MarkRead(effectId);
+        if (!wasNew) return;
+
+        var existing = tile.Find("NewUnlockTint");
+        if (existing != null)
         {
-            image.color = Color.white;
-            return;
+            if (Application.isPlaying) Destroy(existing.gameObject);
+            else DestroyImmediate(existing.gameObject);
         }
 
-        image.color = new Color(0.08f, 0.08f, 0.12f, 0.92f);
-        var question = AddText(silhouetteRt, "？", 64, Vector2.zero, TextAlignmentOptions.Center, 120);
-        question.color = new Color(0.42f, 0.42f, 0.48f);
-        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToText(question, FontSlots.Default);
+        RefreshTabNewUnlockTints();
+    }
+
+    // ───────────────────────── 卡牌详情 overlay ─────────────────────────
+
+    /// <summary>点开已知/已解锁卡片时弹出的详情面板：已知只显示名称，已解锁额外显示效果说明。</summary>
+    void ShowCardInfo(CardData card, int state)
+    {
+        if (card == null) return;
+        EnsureCardInfoOverlay();
+
+        cardInfoRoot.gameObject.SetActive(true);
+        cardInfoRoot.SetAsLastSibling();
+
+        var artHost = cardInfoView.ArtHost;
+        for (int i = artHost.childCount - 1; i >= 0; i--)
+        {
+            var child = artHost.GetChild(i);
+            if (Application.isPlaying) Destroy(child.gameObject); else DestroyImmediate(child.gameObject);
+        }
+        var prefab = ResolveTilePrefab();
+        if (prefab != null)
+        {
+            // ArtHost 挂了 AspectRatioFitter（WidthControlsHeight），比例从卡面预制体自身的
+            // RectTransform 尺寸实时算出——不写死数字，预制体尺寸以后变了这里也跟着变，
+            // 保证任何分辨率下卡面都不会被拉伸变形。
+            var fitter = artHost.GetComponent<AspectRatioFitter>();
+            if (fitter != null)
+            {
+                var prefabRt = (RectTransform)prefab.transform;
+                if (prefabRt.sizeDelta.y > 0.01f)
+                    fitter.aspectRatio = prefabRt.sizeDelta.x / prefabRt.sizeDelta.y;
+            }
+
+            var inst = Instantiate(prefab, artHost, false);
+            var rt = (RectTransform)inst.transform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.localScale = Vector3.one;
+            if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(inst.transform, FontSlots.Card);
+            var view = inst.GetComponent<CardArchiveTileView>();
+            if (view != null) view.Bind(card, state, unknownCardSilhouette);
+            foreach (var img in inst.GetComponentsInChildren<Image>(true)) img.raycastTarget = false;
+        }
+
+        cardInfoView.NameText.text = card.ResolveCardName();
+
+        bool unlocked = state >= CardArchiveStore.Unlocked;
+        cardInfoView.EffectSection.SetActive(unlocked);
+        if (unlocked) cardInfoView.EffectText.text = card.ResolveDescription() ?? "";
+    }
+
+    void HideCardInfo()
+    {
+        if (cardInfoRoot != null) cardInfoRoot.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 懒加载实例化卡牌详情 overlay——布局本身由 Resources/SystemUI/CardInfoOverlay Prefab
+    /// 决定（策划可在 Prefab 编辑模式下直接可视化调整边框、卡面区域、名称/效果框，跟卡牌图鉴
+    /// 主面板自身走 Prefab + 序列化引用是同一套思路），这里只挂到 panelRoot 下铺满全屏、
+    /// 补上运行时才能确定的关闭图标（Func Buttons 图集切片是运行时用 Sprite.Create 切出来的，
+    /// 不是可序列化进 Prefab 的资产），并把点背景/点右上角关闭都接到 HideCardInfo。
+    /// </summary>
+    void EnsureCardInfoOverlay()
+    {
+        if (cardInfoRoot != null) return;
+
+        var prefab = Resources.Load<GameObject>("SystemUI/CardInfoOverlay");
+        if (prefab == null) { Debug.LogError("[CardArchive] 缺少 Resources/SystemUI/CardInfoOverlay Prefab。"); return; }
+
+        var inst = Instantiate(prefab, panelRoot.transform, false);
+        var box = (RectTransform)inst.transform;
+        box.anchorMin = Vector2.zero;
+        box.anchorMax = Vector2.one;
+        box.offsetMin = Vector2.zero;
+        box.offsetMax = Vector2.zero;
+        cardInfoRoot = box;
+
+        cardInfoView = inst.GetComponent<CardInfoOverlayView>();
+        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(box, FontSlots.Default);
+
+        var backgroundBtn = inst.GetComponent<Button>();
+        if (backgroundBtn != null) backgroundBtn.onClick.AddListener(HideCardInfo);
+
+        // 关闭图标优先用 Prefab 里配置的 closeIconSprite，不配置时才回退运行时切图（同 CardArchivePanel/HallOfFamePanel 的思路）。
+        ApplyIconButton(cardInfoView.CloseButton, cardInfoView.CloseIconSprite != null ? cardInfoView.CloseIconSprite : closeSprite);
+        cardInfoView.CloseButton.onClick.AddListener(HideCardInfo);
+
+        cardInfoRoot.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 卡牌图鉴专用渲染入口：使用独立的 CardArchiveTile 预制体（CardArchiveTileView），
+    /// 不复用局内选卡 UI（choice1/CoreChoiceCard）。该预制体的外框（Frame）无论未知/已知/已解锁
+    /// 状态都用同一张素材（unknownCardSilhouette）、同一块画布比例，插画图层在这块固定画布内
+    /// 按统一比例锚定——不再依赖对任何单张卡内容的实测，从根上保证图鉴里所有卡片视觉大小一致。
+    /// </summary>
+    void RenderCard(RectTransform tile, CardData card, int state)
+    {
+        var prefab = ResolveTilePrefab();
+        if (prefab == null) return;
+
+        // 卡面实例化到带 RectMask2D 的 Content 子物体里（出血内容在卡槽边缘被裁掉）；
+        // 找不到时退回 tile 本体兜底，保证旧版/异常情况下依然能画出卡面。
+        var contentParent = tile.Find("Content") as RectTransform ?? tile;
+        var inst = Instantiate(prefab, contentParent, false);
+        inst.name = "CardArchiveTile";
+        var rt = (RectTransform)inst.transform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.localScale = Vector3.one;
+
+        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(inst.transform, FontSlots.Card);
+
+        var view = inst.GetComponent<CardArchiveTileView>();
+        if (view != null) view.Bind(card, state, unknownCardSilhouette);
+
+        foreach (var img in inst.GetComponentsInChildren<Image>(true))
+            img.raycastTarget = false;
+    }
+
+    GameObject ResolveTilePrefab()
+    {
+        if (tilePrefab != null) return tilePrefab;
+        tilePrefab = Resources.Load<GameObject>("SystemUI/CardArchiveTile");
+        return tilePrefab;
     }
 
     /// <summary>卡片底部信息条：卡名 / 状态 / 次数（Unlocked）。与卡面区上下分离，互不遮挡。</summary>
@@ -1018,132 +1252,6 @@ public class CardArchivePanel : MonoBehaviour
                 bt.fontStyle = FontStyles.Bold;
             }
         }
-    }
-
-    /// <summary>
-    /// 渲染卡面：完全复用 choice1 预制体，走 CoreChoiceCard.Init() 标准入口（与 BuildView 一致），
-    /// 再只读化（隐藏按钮/文本、禁射线）。Card 内部各层的 sprite/enabled/alpha
-    /// 一律交给 Init()→ApplyLayers() 决定，本方法绝不改动 Card 内部任何节点或颜色，
-    /// 以保证图鉴卡面与选卡界面表现完全一致。
-    ///
-    /// ⚠️ 切勿对 Card 内部节点做 alpha=0 / 删除 / 重父化：
-    ///    - background (1) 上挂着 Mask，alpha=0 会让模板失效，其下 background/middleground 子层被整片裁掉；
-    ///    - 移动/重父化子层会改变兄弟顺序，导致前后遮挡错乱。
-    /// 仅隐藏 Card 以外的兄弟节点（Image (1)/Image (2)/refresh/upgrade/description 等交互与主图节点）。
-    /// </summary>
-    void RenderCardFace(GameObject tile, CardData card, int state)
-    {
-        var prefab = ResolvePrefab();
-        if (prefab == null) return;
-
-        var inst = Instantiate(prefab, tile.transform);
-        inst.name = "CardFace";
-        var rt = inst.GetComponent<RectTransform>();
-        if (rt != null)
-        {
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero;
-            rt.localScale = Vector3.one;
-        }
-        if (FontRegistry.Instance != null) FontRegistry.Instance.ApplyFontToTree(inst.transform, FontSlots.Card);
-
-        // 与 BuildView 完全一致的标准渲染入口
-        var cc = inst.GetComponent<CoreChoiceCard>();
-        if (cc == null) cc = inst.AddComponent<CoreChoiceCard>();
-        cc.Init(0, card.ResolveCardName(), card.image, card.ResolveDescription() ?? "", null, null, card);
-
-        // 只读化
-        if (cc.confirmButton != null) cc.confirmButton.gameObject.SetActive(false);
-        if (cc.rerollButton != null) cc.rerollButton.gameObject.SetActive(false);
-        if (cc.cardText != null) cc.cardText.gameObject.SetActive(false);
-        if (cc.descriptionText != null) cc.descriptionText.gameObject.SetActive(false);
-        var choiceCard = inst.GetComponent<ChoiceCard>();
-        if (choiceCard != null)
-        {
-            if (Application.isPlaying) Destroy(choiceCard);
-            else DestroyImmediate(choiceCard);
-        }
-
-        foreach (var img in inst.GetComponentsInChildren<Image>(true))
-            img.raycastTarget = false;   // 只读：不响应点击
-
-        // 只隐藏 Card 以外的兄弟节点，Card 内部一律不动
-        var cardTf = inst.transform.Find("Card");
-        for (int i = 0; i < inst.transform.childCount; i++)
-        {
-            var child = inst.transform.GetChild(i);
-            if (child != cardTf) child.gameObject.SetActive(false);
-        }
-
-        // Known 置灰：仅改 RGB，保留原 alpha（绝不用 alpha 做隐藏）
-        if (state != 2)
-        {
-            foreach (var img in inst.GetComponentsInChildren<Image>(false))
-                img.color = new Color(0.55f, 0.55f, 0.55f, img.color.a);
-        }
-
-        // 等比缩放并居中到卡面区
-        FitCardFace(rt, cardTf, (RectTransform)tile.transform);
-    }
-
-    /// <summary>把卡面按实际内容包围盒等比缩放，撑满卡面区并居中（不截断、不溢出、不重叠）。</summary>
-    void FitCardFace(RectTransform faceRT, Transform cardTf, RectTransform tileRT)
-    {
-        if (faceRT == null || tileRT == null) return;
-        var measureRoot = (Transform)(cardTf != null ? cardTf : faceRT);
-        var bounds = MeasureVisibleBounds(measureRoot, tileRT);
-        if (bounds.width <= 1f || bounds.height <= 1f) return;
-
-        // 记录卡面内容真实比例，供 cardFaceWidth=0 时推算格子宽度
-        if (!aspectMeasured) { measuredAspect = bounds.width / bounds.height; aspectMeasured = true; }
-
-        float scale = Mathf.Min(tileRT.rect.width / bounds.width, tileRT.rect.height / bounds.height);
-        faceRT.localScale = Vector3.one * scale;
-        var scaled = MeasureVisibleBounds(measureRoot, tileRT);
-
-        // 二次约束实际可见包围盒：卡预制体边框可能比初始测量略宽，
-        // 修正后与未知占位共享完全相同的 tile 尺寸。
-        float fitCorrection = Mathf.Min(tileRT.rect.width / scaled.width, tileRT.rect.height / scaled.height);
-        if (fitCorrection < 1f)
-        {
-            faceRT.localScale *= fitCorrection;
-            scaled = MeasureVisibleBounds(measureRoot, tileRT);
-        }
-
-        // 卡片不再保留底部信息条，卡面居中填满整个 tile。
-        faceRT.anchoredPosition -= scaled.center;
-    }
-
-    GameObject ResolvePrefab()
-    {
-        if (cardPrefab != null) return cardPrefab;
-        return CardLibrary.Instance != null ? CardLibrary.Instance.cardPrefab : null;
-    }
-
-    /// <summary>测量 root 下所有可见 Image 在 space 本地空间的合并包围盒。</summary>
-    static Rect MeasureVisibleBounds(Transform root, RectTransform space)
-    {
-        var min = new Vector2(float.MaxValue, float.MaxValue);
-        var max = new Vector2(float.MinValue, float.MinValue);
-        var corners = new Vector3[4];
-        bool any = false;
-        foreach (var img in root.GetComponentsInChildren<Image>(false))
-        {
-            // 图鉴只按真正可见的卡面图层测量：模板中透明的交互/占位 Image
-            // 不能参与包围盒，否则会把真实卡面缩小到未知占位之内。
-            if (!img.enabled || img.sprite == null || img.color.a <= 0.001f) continue;
-            img.rectTransform.GetWorldCorners(corners);
-            for (int i = 0; i < 4; i++)
-            {
-                var p = (Vector2)space.InverseTransformPoint(corners[i]);
-                min = Vector2.Min(min, p);
-                max = Vector2.Max(max, p);
-                any = true;
-            }
-        }
-        if (!any) return new Rect(0f, 0f, 100f, 100f);
-        return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
     }
 
     // ───────────────────────── 工具 ─────────────────────────
