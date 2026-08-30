@@ -415,6 +415,13 @@ public abstract class EnemyAbility : MonoBehaviour
         CancelInvoke();
         currentCooldown = 0f;
         activeVfx = null;
+        // 池化复用前重置所有 upgrade 的 unlocked：上一局的卡牌解锁不得跨局残留，
+        // Spawn 后由 CardManager.ApplyAllUnlocksTo 按当前局已解锁效果重新应用。
+        if (upgrades != null)
+        {
+            foreach (var slot in upgrades)
+                if (slot != null) slot.unlocked = false;
+        }
     }
 
     /// <summary>Returns true if this ability can be triggered right now.</summary>

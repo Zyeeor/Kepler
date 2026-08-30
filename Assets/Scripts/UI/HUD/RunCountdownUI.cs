@@ -20,6 +20,12 @@ public sealed class RunCountdownUI : MonoBehaviour
     [Min(1f)] public float fontSize = 36f;
     public Color textColor = Color.white;
 
+    [Header("手动挂载（可选）")]
+    [Tooltip("手动指定倒计时文本（可选）。留空则运行时自动创建到右下角；手动挂载后位置由该对象控制，screenMargin 失效。")]
+    public TextMeshProUGUI labelOverride;
+    [Tooltip("手动指定字体（可选）。留空则使用 FontRegistry 默认字体。")]
+    public TMP_FontAsset fontOverride;
+
     TextMeshProUGUI label;
     int lastShownSeconds = -1;
 
@@ -75,6 +81,13 @@ public sealed class RunCountdownUI : MonoBehaviour
 
     void EnsureLabel()
     {
+        if (labelOverride != null)
+        {
+            label = labelOverride;
+            ApplyFont(label);
+            return;
+        }
+
         GameObject go = new GameObject("RunCountdownText", typeof(RectTransform), typeof(TextMeshProUGUI));
         RectTransform rect = (RectTransform)go.transform;
         rect.SetParent(transform, false);
@@ -91,8 +104,21 @@ public sealed class RunCountdownUI : MonoBehaviour
         label.color = textColor;
         label.raycastTarget = false;
         label.enableWordWrapping = false;
-        UiFontAssets.ApplyTo(label);
+        ApplyFont(label);
         label.text = FormatSeconds(Mathf.CeilToInt(durationSeconds));
+    }
+
+    void ApplyFont(TextMeshProUGUI target)
+    {
+        if (fontOverride != null)
+        {
+            target.font = fontOverride;
+            if (fontOverride.material != null) target.fontSharedMaterial = fontOverride.material;
+        }
+        else
+        {
+            UiFontAssets.ApplyTo(target);
+        }
     }
 
     void Update()

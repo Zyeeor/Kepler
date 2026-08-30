@@ -23,6 +23,12 @@ public class WaveTimerUI : MonoBehaviour
     [Tooltip("字号。")]
     public float fontSize = 44f;
 
+    [Header("手动挂载（可选）")]
+    [Tooltip("手动指定倒计时文本（可选）。留空则运行时自动创建到中上方；手动挂载后位置由该对象控制，yOffset 失效。")]
+    public TextMeshProUGUI labelOverride;
+    [Tooltip("手动指定字体（可选）。留空则使用 FontRegistry 默认字体。")]
+    public TMP_FontAsset fontOverride;
+
     private TextMeshProUGUI label;
     private int lastShownSeconds = -1;
 
@@ -41,6 +47,13 @@ public class WaveTimerUI : MonoBehaviour
     /// <summary>动态创建 TMP 倒计时文本（挂在所属 Canvas 下，中上方）。</summary>
     void EnsureLabel()
     {
+        if (labelOverride != null)
+        {
+            label = labelOverride;
+            ApplyFont(label);
+            return;
+        }
+
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
         {
@@ -63,8 +76,21 @@ public class WaveTimerUI : MonoBehaviour
         label.fontStyle = FontStyles.Bold;
         label.color = normalColor;
         label.raycastTarget = false;
-        UiFontAssets.ApplyTo(label);
+        ApplyFont(label);
         label.text = "";
+    }
+
+    void ApplyFont(TextMeshProUGUI target)
+    {
+        if (fontOverride != null)
+        {
+            target.font = fontOverride;
+            if (fontOverride.material != null) target.fontSharedMaterial = fontOverride.material;
+        }
+        else
+        {
+            UiFontAssets.ApplyTo(target);
+        }
     }
 
     void Update()

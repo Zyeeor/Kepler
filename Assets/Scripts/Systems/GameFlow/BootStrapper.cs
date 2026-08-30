@@ -21,6 +21,7 @@ public static class BootStrapper
         MonsterPool.EnsureInstance();         // 怪物对象池常驻（DDOL 在 Start 完成，跨场景复用）
         NarrativeScheduler.EnsureInstance();  // 叙事调度（Access/Cue/Scheduler 常驻）
         NarrativeEventBus.EnsureInstance();   // 叙事事件总线（归一化事件源）
+        GameCursorManager.Apply();            // 游戏内光标（纹理+热点，保证 built 版本可靠显示）
         Debug.Log("[BootStrapper] 常驻系统初始化序完成：RunSession → AudioManager → AudioSettingsManager → TimeScaleManager → MonsterPool → NarrativeScheduler → NarrativeEventBus。");
     }
 }

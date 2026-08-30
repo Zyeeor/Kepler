@@ -1241,6 +1241,35 @@ public class CardManager : SceneSingleton<CardManager>
         OnEffectUnlocked?.Invoke(data);   // Run Analytics：解锁广播（采集器统计 Card 投资）
     }
 
+    /// <summary>
+    /// 清空本局所有卡牌解锁，并把场上所有怪物技能的每一个 upgrade 全部取消勾选。
+    /// 供结束对局/退出游戏时调用，确保下一局从零开始（卡牌与技能构筑不跨局残留）。
+    /// </summary>
+    public void ResetAllUnlocks()
+    {
+        unlockedEffects.Clear();
+        investments.Clear();
+        knownTypes.Clear();
+        globalMissStreak = 0;
+        bossModeBuildsInitialized = false;
+
+        var abilities = FindObjectsOfType<EnemyAbility>(true);
+        int cleared = 0;
+        foreach (var a in abilities)
+        {
+            if (a == null || a.upgrades == null) continue;
+            foreach (var slot in a.upgrades)
+            {
+                if (slot != null && slot.unlocked)
+                {
+                    slot.unlocked = false;
+                    cleared++;
+                }
+            }
+        }
+        Debug.Log($"[CardManager] 已重置本局卡牌解锁与 {cleared} 个怪物技能 upgrade。");
+    }
+
     /// <summary>Investment 累计（§6）：取得该 Sin 的 Monster-Type / Type Growth 卡时 +1。</summary>
     void RecordInvestment(CardData data)
     {

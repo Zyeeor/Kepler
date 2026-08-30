@@ -8,6 +8,14 @@ public sealed class BossHealthBarUI : MonoBehaviour
     [Min(1f)] public float barWidth = 780f;
     [Min(1f)] public float barHeight = 32f;
 
+    [Header("布局调试")]
+    [Tooltip("血条面板锚点（决定停靠位置，如 (0.5,1)=顶部居中、(0.5,0)=底部居中）。")]
+    public Vector2 panelAnchor = new Vector2(0.5f, 1f);
+    [Tooltip("血条面板轴心。")]
+    public Vector2 panelPivot = new Vector2(0.5f, 1f);
+    [Tooltip("血条面板相对锚点的偏移（像素）。")]
+    public Vector2 panelOffset = new Vector2(0f, -22f);
+
     BossSevenfoldActor boss;
     GameObject panel;
     Image fill;
@@ -85,10 +93,10 @@ public sealed class BossHealthBarUI : MonoBehaviour
         panel = new GameObject("BossHealthBar", typeof(RectTransform));
         panel.transform.SetParent(transform, false);
         RectTransform panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = new Vector2(0.5f, 1f);
-        panelRect.anchorMax = new Vector2(0.5f, 1f);
-        panelRect.pivot = new Vector2(0.5f, 1f);
-        panelRect.anchoredPosition = new Vector2(0f, -22f);
+        panelRect.anchorMin = panelAnchor;
+        panelRect.anchorMax = panelAnchor;
+        panelRect.pivot = panelPivot;
+        panelRect.anchoredPosition = panelOffset;
         panelRect.sizeDelta = new Vector2(barWidth + 112f, barHeight + 12f);
 
         CreateLabel(panel.transform);

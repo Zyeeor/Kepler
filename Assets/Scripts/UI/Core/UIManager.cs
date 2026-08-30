@@ -509,6 +509,9 @@ public class UIManager : SceneSingleton<UIManager>
         // 防止回到战斗场景后把上一次场景遗留的奖励卡误弹出来。
         EliteBuildDirector.Instance?.CancelPendingCardRewards();
         TimeScaleManager.ResetAll();   // 回主菜单：清空全部时间请求
+        // 返回主菜单不调 EndRun（保留进度供"继续"），但池化怪物（DDOL）必须清理，
+        // 否则下一局会复用旧怪（"退出把怪物带到主菜单/下一局又出现"）。
+        MonsterPool.Instance.ClearAll();
         SceneManager.LoadScene(homeSceneName);
     }
 

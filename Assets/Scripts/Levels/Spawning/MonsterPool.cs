@@ -167,6 +167,26 @@ public class MonsterPool : MonoBehaviour
     }
 
     /// <summary>
+    /// 清空对象池：销毁所有池化的怪物实例并清空映射。
+    /// 供 Restart / 结束对局调用，确保上一局回收的怪物被彻底销毁，不跨局复用。
+    /// 活跃怪物（不在池中）由场景重载统一销毁。
+    /// </summary>
+    public void ClearAll()
+    {
+        foreach (var kv in availableByPrefab)
+        {
+            var queue = kv.Value;
+            while (queue != null && queue.Count > 0)
+            {
+                var instance = queue.Dequeue();
+                if (instance != null) Destroy(instance);
+            }
+        }
+        availableByPrefab.Clear();
+        prefabByInstance.Clear();
+    }
+
+    /// <summary>
     /// 反查实例对应的 prefab 资产（存档等场景：prefabId 应存真实资产名，而非实例名，
     /// 实例名可能是 "X(Clone)" 或场景重命名后的 "X(1)"）。
     /// </summary>

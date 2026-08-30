@@ -254,6 +254,8 @@ public class RunSession : MonoBehaviour
         SaveCoordinator.DeleteSave();
         // Run Analytics：新局启动采集器并重置统计（常驻单例自动创建）
         RunStatsCollector.EnsureInstance().StartNewRun(RunId);
+        // 叙事调度 Run-local 状态复位（Access/Cue 计数/首通序列）：常驻 DDOL，不重置会把上一局叙事带入新局
+        NarrativeScheduler.Instance?.ResetForNewRun();
         CurrentPhase = RunPhase.Opening; // 新局从开场开始（Opening 占位直通，见 RunFlow）
         Debug.Log($"[RunSession] 新对局开始：worldSeed={WorldSeed}");
     }
@@ -576,6 +578,13 @@ public class RunSession : MonoBehaviour
         ContinuousNextNormalSpawnTime = 0f;
         ContinuousEliteSpawned.Clear();
         MonsterSnapshots.Clear();
+        // 清空怪物对象池：MonsterPool 为 DDOL 常驻，上一局死亡回收的池化怪物跨场景存活，
+        // Restart / 结束对局必须显式销毁，否则新局会复用旧怪（表现为"上一局怪物残留"）。
+        // 场上活跃怪物（挂场景根）由随后的场景重载统一销毁。
+        // 用 MonsterPool.Instance（静态常驻实例）而非 FindObjectOfType，避免 DDOL 场景对象漏检。
+        MonsterPool.Instance.ClearAll();
+        // 重置本局卡牌解锁与所有怪物技能的 upgrade（退出/结束对局时取消全部勾选）。
+        CardManager.Instance?.ResetAllUnlocks();
         if (!preserveNormalSave)
             SaveCoordinator.DeleteSave();
         Debug.Log(preserveNormalSave

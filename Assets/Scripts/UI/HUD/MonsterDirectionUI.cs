@@ -22,13 +22,6 @@ public class MonsterDirectionUI : MonoBehaviour
         Elites = 2,
     }
 
-    /// <summary>精英怪引导模式：Off=不引导；Always=只要场上有精英怪就持续显示额外引导线（与普通活怪引导线并存）。</summary>
-    public enum EliteGuideMode
-    {
-        Off = 0,
-        Always = 1,
-    }
-
     [Header("引导目标")]
     [Tooltip("Monsters = 非灵魂态时，视野内没有活怪则引导到最近活怪；Shrines = 灵魂态时，视野内没有可附身躯体则优先引导躯体，没有躯体才引导神龛；Elites = 精英生成后若在视野外则引导（每只只引导一次，引导期间普通怪引导让路）。")]
     public GuideTargetMode guideMode = GuideTargetMode.Monsters;
@@ -36,13 +29,6 @@ public class MonsterDirectionUI : MonoBehaviour
     [Header("引导线资源")]
     [Tooltip("引导线 Prefab 资产（Assets/Prefabs/VFX/MonsterGuideLine.prefab）：Root 挂 LineRenderer + 拖尾同款材质，子对象 PulseHead 为脉冲头光尘粒子；为空时运行时动态创建。")]
     public GameObject linePrefab;
-
-    [Header("精英怪引导")]
-    [Tooltip("精英怪引导模式：Off=关闭精英怪引导线；Always=场上出现精英怪时，额外显示一条指向精英怪的引导线（与普通活怪引导线并存）。")]
-    [FormerlySerializedAs("eliteGuideEnabled")]
-    public EliteGuideMode eliteGuideEnabled = EliteGuideMode.Always;
-    [Tooltip("精英怪引导线颜色（区分普通引导线，默认橙色）。")]
-    public Color eliteGuideColor = new Color(1.7f, 0.5f, 0.1f, 0.9f);
 
     [Header("触发条件")]
     [Tooltip("怪物模式：视野内连续无活怪的秒数；神龛模式：灵魂态且视野内连续无可附身躯体的秒数。")]
@@ -136,17 +122,6 @@ public class MonsterDirectionUI : MonoBehaviour
     readonly HashSet<MonsterActor> guidedElites = new HashSet<MonsterActor>();    // 已引导过的精英（每只只引导一次）
     bool eliteSubscribed;
 
-    // ── 精英怪额外引导线（与普通活怪引导线并存） ──
-    LineRenderer eliteLine;
-    Material eliteRuntimeMat;
-    ParticleSystem[] elitePulseParticles;
-    readonly List<MonsterActor> eliteMonsters = new List<MonsterActor>();
-    MonsterActor eliteLockedTarget;
-    Vector3 elitePulseOrigin;
-    Vector3 elitePulseTargetPos;
-    float elitePulseTime;
-    bool eliteAnchorsReady;
-
     void Awake()
     {
         BuildLine();
@@ -163,11 +138,6 @@ public class MonsterDirectionUI : MonoBehaviour
         {
             line.widthMultiplier = widthMultiplier;
             line.widthCurve = widthCurve;
-        }
-        if (eliteLine != null)
-        {
-            eliteLine.widthMultiplier = widthMultiplier;
-            eliteLine.widthCurve = widthCurve;
         }
     }
 
@@ -187,7 +157,6 @@ public class MonsterDirectionUI : MonoBehaviour
         }
 
         UpdateMonsterGuide();
-        UpdateEliteGuide();
     }
 
     void UpdateMonsterGuide()
@@ -636,128 +605,6 @@ public class MonsterDirectionUI : MonoBehaviour
         Hide();
     }
 
-    // ── 精英怪额外引导（与普通活怪引导线并存） ──
-
-    /// <summary>场上出现精英怪时，额外显示一条指向精英怪的引导线（独立于普通活怪引导）。</summary>
-    void UpdateEliteGuide()
-    {
-        if (eliteGuideEnabled == EliteGuideMode.Off || eliteLine == null) return;
-
-        // 自由灵魂态让路（同普通怪物引导）
-        if (IsFreeSoulState())
-        {
-            ResetEliteGuide();
-            return;
-        }
-
-        // 从已收集的活怪里筛出精英怪（复用 aliveMonsters，避免重复收集）
-        eliteMonsters.Clear();
-        for (int i = 0; i < aliveMonsters.Count; i++)
-        {
-            var m = aliveMonsters[i];
-            if (m != null && m.IsElite && IsTargetValid(m)) eliteMonsters.Add(m);
-        }
-
-        if (eliteMonsters.Count == 0)
-        {
-            ResetEliteGuide();
-            return;
-        }
-
-        // 锁定目标失效 → 解锁重锁
-        if (eliteLockedTarget != null && !IsTargetValid(eliteLockedTarget))
-        {
-            eliteLockedTarget = null;
-            eliteAnchorsReady = false;
-            elitePulseTime = 0f;
-        }
-
-        if (eliteLockedTarget == null)
-        {
-            eliteLockedTarget = FindNearestElite();
-            if (eliteLockedTarget == null)
-            {
-                ResetEliteGuide();
-                return;
-            }
-            elitePulseTime = 0f;
-            eliteAnchorsReady = false;
-            Debug.Log($"[MonsterDirectionUI] 锁定精英怪引导目标：{eliteLockedTarget.gameObject.name}@{eliteLockedTarget.transform.position}");
-        }
-
-        // 起点：同普通引导（附身怪脚底 / 玩家）
-        Vector3 origin;
-        var pm = PossessionManager.Instance;
-        if (pm != null && pm.CurrentBody != null) origin = pm.CurrentBody.transform.position;
-        else if (player != null) origin = player.position;
-        else origin = mainCamera != null ? mainCamera.transform.position : transform.position;
-
-        // 脉冲循环（复用节奏配置）
-        float oldPulseTime = elitePulseTime;
-        elitePulseTime += Time.deltaTime;
-        float cycle = pulseTravelTime + pulseHoldTime + pulseFadeTime + pulseCooldown;
-        if (elitePulseTime >= cycle) elitePulseTime -= cycle;
-
-        if (!eliteAnchorsReady || oldPulseTime > elitePulseTime)
-        {
-            elitePulseOrigin = origin;
-            elitePulseTargetPos = eliteLockedTarget.transform.position;
-            eliteAnchorsReady = true;
-        }
-        else if (followPlayerAfterFire)
-        {
-            elitePulseOrigin = origin;
-        }
-
-        if (elitePulseTime < pulseTravelTime)
-        {
-            ShowElitePulse(0f, Mathf.Clamp01(elitePulseTime / pulseTravelTime));
-        }
-        else if (elitePulseTime < pulseTravelTime + pulseHoldTime)
-        {
-            ShowElitePulse(0f, 1f);
-        }
-        else if (elitePulseTime < pulseTravelTime + pulseHoldTime + pulseFadeTime)
-        {
-            float fade = Mathf.Clamp01((elitePulseTime - pulseTravelTime - pulseHoldTime) / pulseFadeTime);
-            ShowElitePulse(fade, 1f);
-        }
-        else
-        {
-            HideElite();
-        }
-    }
-
-    void ResetEliteGuide()
-    {
-        eliteLockedTarget = null;
-        eliteAnchorsReady = false;
-        elitePulseTime = 0f;
-        HideElite();
-    }
-
-    MonsterActor FindNearestElite()
-    {
-        Vector3 origin;
-        var pm = PossessionManager.Instance;
-        if (pm != null && pm.CurrentBody != null) origin = pm.CurrentBody.transform.position;
-        else if (player != null) origin = player.position;
-        else origin = mainCamera != null ? mainCamera.transform.position : transform.position;
-
-        MonsterActor nearest = null;
-        float nearestSqr = float.MaxValue;
-        for (int i = 0; i < eliteMonsters.Count; i++)
-        {
-            var m = eliteMonsters[i];
-            if (!IsTargetValid(m)) continue;
-            float sqr = (m.transform.position - origin).sqrMagnitude;
-            if (sqr >= nearestSqr) continue;
-            nearestSqr = sqr;
-            nearest = m;
-        }
-        return nearest;
-    }
-
     void CollectPossessableMonstersFallback()
     {
         possessableBodies.Clear();
@@ -864,7 +711,7 @@ public class MonsterDirectionUI : MonoBehaviour
     void ShowPulse(float startT, float endT, float overallFade = 0f)
     {
         if (line == null) return;
-        if (RenderPulse(line, runtimeMat, pulseParticles, guideColor, pulseOrigin, pulseTargetPos, startT, endT))
+        if (RenderPulse(line, runtimeMat, pulseParticles, guideColor, pulseOrigin, pulseTargetPos, startT, endT, overallFade))
         {
             IsShowing = true;
         }
@@ -875,16 +722,9 @@ public class MonsterDirectionUI : MonoBehaviour
         }
     }
 
-    void ShowElitePulse(float startT, float endT)
-    {
-        if (eliteLine == null) return;
-        RenderPulse(eliteLine, eliteRuntimeMat, elitePulseParticles, eliteGuideColor,
-            elitePulseOrigin, elitePulseTargetPos, startT, endT);
-    }
-
     /// <summary>渲染一条引导脉冲：蛇形路径 + [startT,endT] 截取 + 脉冲头粒子。返回是否可见。</summary>
     bool RenderPulse(LineRenderer lr, Material mat, ParticleSystem[] particles, Color baseColor,
-        Vector3 a, Vector3 b, float startT, float endT)
+        Vector3 a, Vector3 b, float startT, float endT, float overallFade = 0f)
     {
         startT = Mathf.Clamp01(startT);
         endT = Mathf.Clamp01(endT);
@@ -972,12 +812,6 @@ public class MonsterDirectionUI : MonoBehaviour
         if (pulseParticles != null) StopPulseVfx(pulseParticles, true);
     }
 
-    void HideElite()
-    {
-        if (eliteLine != null) eliteLine.gameObject.SetActive(false);
-        if (elitePulseParticles != null) StopPulseVfx(elitePulseParticles, true);
-    }
-
     /// <summary>
     /// 构建引导线：优先 Instantiate 美术 Prefab 资产（渲染参数如对齐/阴影等在 Prefab 中配置，
     /// 美术可直接编辑资产）；为空时回退运行时动态创建。
@@ -989,13 +823,6 @@ public class MonsterDirectionUI : MonoBehaviour
             guideMode == GuideTargetMode.Shrines ? "ShrineGuideLine" : "MonsterGuideLine",
             guideColor, out runtimeMat, out pulseParticles);
         if (line != null) line.gameObject.SetActive(false);
-
-        if (eliteGuideEnabled != EliteGuideMode.Off)
-        {
-            eliteLine = BuildGuideLine(linePrefab, "EliteGuideLine", eliteGuideColor,
-                out eliteRuntimeMat, out elitePulseParticles);
-            if (eliteLine != null) eliteLine.gameObject.SetActive(false);
-        }
     }
 
     /// <summary>构建一条引导线（Prefab 或运行时兜底），返回 LineRenderer 并回填材质与脉冲头粒子。</summary>
@@ -1105,6 +932,5 @@ public class MonsterDirectionUI : MonoBehaviour
     {
         UnsubscribeEliteSpawn();
         if (runtimeMat != null) Destroy(runtimeMat);
-        if (eliteRuntimeMat != null) Destroy(eliteRuntimeMat);
     }
 }

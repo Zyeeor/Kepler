@@ -118,7 +118,7 @@ MonoBehaviour:
     showDebugRanges: 0
   - id: Greed_new
     detectionRadius: 15
-    basicAttackRange: 5
+    basicAttackRange: 8
     skillAttackRange: 6
     aiMinRange: 2
     rangeUnlocks: []

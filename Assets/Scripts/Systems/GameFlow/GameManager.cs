@@ -194,6 +194,7 @@ public class GameManager : MonoBehaviour
         // - 进主菜单：只销毁无 Showcase 标记的残留 Player（bug 残留），保留正规展示灵魂
         // - 进对局场景：销毁所有 DDOL Player（含展示灵魂，防双 Player 静态 Instance 竞争）
         PurgeDdolSouls(keepShowcase: scene.name == "MainMenu");
+        PurgeDdolMonsters();
         MonsterPreloadService preloadService = FindObjectOfType<MonsterPreloadService>(true);
         if (preloadService != null) preloadService.CancelPreload();
         ApplyPerformanceOptimizationsToScene();
@@ -212,6 +213,24 @@ public class GameManager : MonoBehaviour
             if (keepShowcase && s.GetComponent<SoulMenuShowcase>() != null) continue;
             Debug.LogWarning($"[GameManager] 清理 DDOL 残留玩家对象 '{s.gameObject.name}'（场景加载兜底）。");
             Destroy(s.gameObject);
+        }
+    }
+
+    /// <summary>
+    /// 清理 DontDestroyOnLoad 场景中残留的活跃怪物对象（防"退出战场把怪带到主菜单/下一局"）。
+    /// 池化怪物（inactive，挂在 MonsterPool 下）由 MonsterPool.ClearAll 处理，此处只兜底活跃残留。
+    /// </summary>
+    static void PurgeDdolMonsters()
+    {
+        var monsters = FindObjectsOfType<MonsterActor>(false); // 只找激活的怪物，避开池化怪物（inactive）
+        foreach (var m in monsters)
+        {
+            if (m == null) continue;
+            Transform root = m.transform.root;
+            GameObject target = root != null ? root.gameObject : m.gameObject;
+            if (target.scene.name != "DontDestroyOnLoad") continue;
+            Debug.LogWarning($"[GameManager] 清理 DDOL 残留怪物 '{target.name}'（场景加载兜底）。");
+            Destroy(target);
         }
     }
 
