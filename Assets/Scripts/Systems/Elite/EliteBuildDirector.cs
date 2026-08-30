@@ -100,7 +100,6 @@ public class EliteBuildDirector : MonoBehaviour
     EliteBuildCarrier lastEliteDamager;
     float lastEliteDamageTime = float.NegativeInfinity;
 
-    const int EliteKillCardRewardLimit = 6;
     const string DebugEliteRewardRunId = "__debug_elite_run__";
     string eliteRewardRunId;
     int eliteKillRewardCount;
@@ -814,27 +813,27 @@ public class EliteBuildDirector : MonoBehaviour
     void QueueEliteCardReward(MonsterActor monster)
     {
         EnsureEliteRewardRun();
-        if (string.IsNullOrEmpty(eliteRewardRunId) || eliteKillRewardCount >= EliteKillCardRewardLimit)
+        CardManager cardManager = CardManager.Instance;
+        if (string.IsNullOrEmpty(eliteRewardRunId) || monster == null || cardManager == null)
             return;
-        if (monster == null || CardManager.Instance == null)
-        {
-            Debug.LogError("[EliteBuildDirector] 精英击杀奖励无法生成宝石：MonsterActor 或 CardManager 缺失。", this);
+        if (cardManager.eliteKillCardRewardLimit > 0
+            && eliteKillRewardCount >= cardManager.eliteKillCardRewardLimit)
             return;
-        }
 
         Vector3 deathPosition = monster.transform.position;
         int waveIndex = boundWaveManager != null ? boundWaveManager.CurrentWaveIndex : -1;
 
-        // Pass v1 §2.3：击杀奖励次数绑定 Elite Schedule Entry（按 Sin），不再固定掉落颗数。
-        // 每个精英掉 1 颗宝石；rewardPickCount >= 2 时该宝石复用 doublePick 机制（1 Gem → 连续 2 次选卡）。
+        // Pass v1 §2.3：击杀奖励次数绑定 Elite Schedule Entry（按 Sin）；
+        // rewardPickCount >= 2 时每颗宝石复用 doublePick 机制（1 Gem → 连续 2 次选卡）。
         int rewardPickCount = boundWaveManager != null
             ? boundWaveManager.GetEliteRewardPickCount(monster.sinType)
             : 1;
         bool doublePick = rewardPickCount >= 2;
 
-        int spawned = CardManager.Instance.SpawnCardOfferGemScatter(
+        int eliteGemCount = cardManager.ResolveEliteGemDropCount();
+        int spawned = cardManager.SpawnCardOfferGemScatter(
             deathPosition,
-            1,
+            eliteGemCount,
             doublePick,
             false,
             waveIndex,
@@ -843,7 +842,10 @@ public class EliteBuildDirector : MonoBehaviour
         if (spawned == 0) return;
 
         eliteKillRewardCount++;
-        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{EliteKillCardRewardLimit} 只，"
+        string rewardLimitLabel = cardManager.eliteKillCardRewardLimit > 0
+            ? cardManager.eliteKillCardRewardLimit.ToString()
+            : "不限";
+        Debug.Log($"[EliteBuildDirector] 精英击杀奖励：第 {eliteKillRewardCount}/{rewardLimitLabel} 只，"
             + $"在 {deathPosition} 掉落 {spawned} 颗选卡宝石（每颗拾取后各结算一次选卡）。", this);
     }
 

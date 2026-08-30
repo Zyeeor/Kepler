@@ -25,6 +25,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     [Tooltip("Baseline max continuous connect window. EN-A04 raises via ConnectDuration.")]
     public float maxConnectDuration = 1f;
 
+    [Header("Player Hurt Audio")]
+    [Tooltip("Minimum seconds between PlayerHurt sounds caused by this laser. 0 = play on every valid damage tick.")]
+    [Min(0f)] public float playerHurtAudioInterval = 0.5f;
+
     [Header("Enemy Tracking (Pass v1 §13.3)")]
     [Tooltip("Enemy 版激光有限追踪的转向速度（°/s）。Beam 不再无限瞬时锁头；玩家可横移/绕侧甩掉，丢失目标后本次 Cast 结束。")]
     [Min(1f)] public float enemyTrackingTurnSpeed = 100f;
@@ -100,8 +104,11 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         if (owner.isPossessed)
             wantFire = Input.GetMouseButton(0) && !PlayerController.IsGameplayInputBlocked && Time.timeScale > 0f;
         else
-            wantFire = owner.targetPlayer != null
-                       && Vector3.Distance(owner.transform.position, owner.targetPlayer.position) <= GetEffectiveRange();
+        {
+            Transform playerTarget = GetEnemyPlayerTarget();
+            wantFire = playerTarget != null
+                       && Vector3.Distance(owner.transform.position, playerTarget.position) <= GetEffectiveRange();
+        }
 
         if (wantFire && CanTrigger())
         {
@@ -141,7 +148,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     public override bool CanTrigger()
     {
         if (!base.CanTrigger()) return false;
-        return owner != null && (owner.isPossessed || owner.targetPlayer != null);
+        return owner != null && (owner.isPossessed || GetEnemyPlayerTarget() != null);
     }
 
     /// <summary>
@@ -150,9 +157,11 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     /// </summary>
     protected override bool ShouldCancelEnemyTelegraph()
     {
-        if (owner == null || owner.isPossessed || owner is BossSevenfoldActor || owner.targetPlayer == null)
+        if (owner == null || owner.isPossessed || owner is BossSevenfoldActor)
             return false;
-        float dist = Vector3.Distance(owner.transform.position, owner.targetPlayer.position);
+        Transform playerTarget = GetEnemyPlayerTarget();
+        if (playerTarget == null) return false;
+        float dist = Vector3.Distance(owner.transform.position, playerTarget.position);
         return dist > GetEffectiveRange();
     }
 
@@ -236,21 +245,34 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             Enemy target = hitTargets[i];
             if (target == null) continue;
             anyLegalHit = true;
-            DealDamageTo(target, tickDamage);
+            DealDamageTo(target, tickDamage, playerHurtAudioInterval);
             ApplyMarkTo(target, dealDamage: true);
             _connectedThisBurst.Add(target);
             if (laserHitEffect != null && target.Combat != null)
                 target.Combat.ApplyEffect(laserHitEffect, owner.Combat, abilityTags, out _);
         }
 
-        if (!owner.isPossessed && owner.targetPlayer != null && hitTargets.Count == 0 && !blocked)
+        if (!owner.isPossessed && hitTargets.Count == 0 && !blocked)
         {
-            // AI beam aimed at player may miss colliders; still settle soul damage on line-of-sight range.
-            float dist = Vector3.Distance(origin, owner.targetPlayer.position);
-            if (dist <= GetEffectiveRange())
+            // AI beam may miss a collider; settle against the active possessed body first,
+            // otherwise fall back to the free soul target.
+            Transform playerTarget = GetEnemyPlayerTarget();
+            float dist = playerTarget != null
+                ? Vector3.Distance(origin, playerTarget.position)
+                : float.MaxValue;
+            if (playerTarget != null && dist <= GetEffectiveRange())
             {
-                PlayerHealth ph = owner.targetPlayer.GetComponent<PlayerHealth>();
-                if (ph != null) DealDamageToPlayer(ph, tickDamage);
+                PossessionManager pm = PossessionManager.Instance;
+                Enemy possessedBody = pm != null && pm.State == PossessionManager.SwitchState.Possessing
+                    ? pm.CurrentBody as Enemy
+                    : null;
+                if (possessedBody != null && owner.CanDamage(possessedBody))
+                    DealDamageTo(possessedBody, tickDamage, playerHurtAudioInterval);
+                else
+                {
+                    PlayerHealth ph = playerTarget.GetComponent<PlayerHealth>();
+                    if (ph != null) DealDamageToPlayer(ph, tickDamage, playerHurtAudioInterval);
+                }
             }
         }
 
@@ -305,7 +327,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             if (primaryHits.Contains(target)) continue;
             Vector3 end = target.transform.position + Vector3.up;
             SpawnBeamVfx(origin, end);
-            DealDamageTo(target, tickDamage);
+            DealDamageTo(target, tickDamage, playerHurtAudioInterval);
             ApplyMarkTo(target, dealDamage: true);
         }
     }
@@ -423,10 +445,11 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private Vector3 GetEnemyTrackedAimPoint(Vector3 origin)
     {
         float range = GetEffectiveRange();
-        if (owner.targetPlayer == null)
+        Transform playerTarget = GetEnemyPlayerTarget();
+        if (playerTarget == null)
             return origin + _enemyBeamDirection * range;
 
-        Vector3 desired = owner.targetPlayer.position + Vector3.up - origin;
+        Vector3 desired = playerTarget.position + Vector3.up - origin;
         desired.y = 0f;
         if (desired.sqrMagnitude < 0.0001f)
             return origin + _enemyBeamDirection * range;
@@ -445,8 +468,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     /// <summary>玩家已甩掉激光：beam 方向与玩家方向夹角超过 90°（玩家绕到侧后方）。</summary>
     private bool IsEnemyTargetLost(Vector3 origin)
     {
-        if (owner == null || owner.targetPlayer == null) return owner != null && owner.targetPlayer == null;
-        Vector3 toPlayer = owner.targetPlayer.position + Vector3.up - origin;
+        if (owner == null) return true;
+        Transform playerTarget = GetEnemyPlayerTarget();
+        if (playerTarget == null) return true;
+        Vector3 toPlayer = playerTarget.position + Vector3.up - origin;
         toPlayer.y = 0f;
         if (toPlayer.sqrMagnitude < 0.0001f) return false;
         return Vector3.Angle(_enemyBeamDirection, toPlayer.normalized) > 90f;
@@ -458,11 +483,23 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     /// </summary>
     private bool IsEnemyOutOfBreakRange(Vector3 origin)
     {
-        if (owner == null || owner.isPossessed || owner is BossSevenfoldActor || owner.targetPlayer == null)
+        if (owner == null || owner.isPossessed || owner is BossSevenfoldActor)
             return false;
-        if (enemyLaserBreakRange <= 0f) return false;
-        float dist = Vector3.Distance(origin, owner.targetPlayer.position);
+        Transform playerTarget = GetEnemyPlayerTarget();
+        if (playerTarget == null || enemyLaserBreakRange <= 0f) return false;
+        float dist = Vector3.Distance(origin, playerTarget.position);
         return dist > enemyLaserBreakRange;
+    }
+
+    private Transform GetEnemyPlayerTarget()
+    {
+        if (owner == null) return null;
+        PossessionManager pm = PossessionManager.Instance;
+        if (!owner.isPossessed && pm != null
+            && pm.State == PossessionManager.SwitchState.Possessing
+            && pm.CurrentBody != null)
+            return pm.CurrentBody.transform;
+        return owner.targetPlayer;
     }
 
     private Enemy FindNearestEnemy(Vector3 origin, float range)

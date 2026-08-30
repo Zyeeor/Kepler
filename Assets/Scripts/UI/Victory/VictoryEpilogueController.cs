@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -249,7 +250,7 @@ public sealed class VictoryEpilogueController : MonoBehaviour
     {
         _stage = VictoryEpilogueStage.FinalReveal;
         _finalStageGroup.gameObject.SetActive(true);
-        _finalTitleText.text = ResolveVictoryText(config.finalTitle, _finalTitleText);
+        _finalTitleText.text = ResolveVictoryText(ResolveFinalTitle(), _finalTitleText);
         _finalNameText.text = _playerName;
         _finalCoronationText.text = ResolveVictoryText(config.finalCoronationLine, _finalCoronationText);
         _finalTitleText.richText = false;
@@ -663,6 +664,159 @@ public sealed class VictoryEpilogueController : MonoBehaviour
         if (placeholderText != null) ApplyVictoryTextFont(placeholderText);
     }
 
+    string ResolveFinalTitle()
+    {
+        if (config == null || !config.useDynamicFinalTitle)
+            return config != null && !string.IsNullOrEmpty(config.finalTitle) ? config.finalTitle : "弑罪者";
+
+        RunStatsData data = GetTitleStats();
+        if (data != null)
+        {
+            SinType godBuildSin = FindGodBuildSin(data);
+            if (godBuildSin != SinType.None)
+            {
+                string godTitle = PickSinTitle(godBuildSin, true);
+                if (!string.IsNullOrEmpty(godTitle)) return godTitle;
+            }
+
+            SinType primarySin = FindPrimarySin(data);
+            if (primarySin != SinType.None)
+            {
+                string tendencyTitle = PickSinTitle(primarySin, false);
+                if (!string.IsNullOrEmpty(tendencyTitle)) return tendencyTitle;
+            }
+        }
+
+        string neutral = PickNeutralTitle();
+        return !string.IsNullOrEmpty(neutral) ? neutral
+            : (!string.IsNullOrEmpty(config.finalTitle) ? config.finalTitle : "弑罪者");
+    }
+
+    RunStatsData GetTitleStats()
+    {
+        string runId = RunSession.Instance != null ? RunSession.Instance.RunId : null;
+        if (_formalActive && !string.IsNullOrEmpty(runId))
+            return RunStatsStore.LoadRunStats(runId);
+
+        // Full/Final Preview 不制造正式结算；若当前场景正好有一局运行数据，允许预览使用它，
+        // 否则走通用随机词池，避免把旧局统计误套到新 Preview。
+        if (RunStatsCollector.Instance != null && RunStatsCollector.Instance.Current != null)
+            return RunStatsCollector.Instance.Current;
+        return null;
+    }
+
+    SinType FindGodBuildSin(RunStatsData data)
+    {
+        if (data == null || data.perSin == null) return SinType.None;
+        int bestCards = Mathf.Max(1, config != null ? config.godBuildMinCards : 3) - 1;
+        SinType bestSin = SinType.None;
+        string runId = data.runId;
+        foreach (var ps in data.perSin)
+        {
+            if (ps == null || ps.sin == SinType.None) continue;
+            int cards = ps.cardInvestmentCount;
+            HallOfFameEntry hof = FindHallOfFameEntry(runId, ps.sin);
+            if (hof != null) cards = Mathf.Max(cards, hof.bdCount);
+            if (cards > bestCards)
+            {
+                bestCards = cards;
+                bestSin = ps.sin;
+            }
+        }
+        return bestSin;
+    }
+
+    SinType FindPrimarySin(RunStatsData data)
+    {
+        if (data == null) return SinType.None;
+        TendencyScoreConfig scoreConfig = Resources.Load<TendencyScoreConfig>("Narrative/TendencyScoreConfig");
+        RunTendencyResult tendency = RunTendencyScorer.Score(data, scoreConfig);
+        if (tendency != null && tendency.primary != SinType.None)
+            return tendency.primary;
+
+        float bestScore = 0f;
+        SinType bestSin = SinType.None;
+        if (data.perSin == null) return bestSin;
+        foreach (var ps in data.perSin)
+        {
+            if (ps == null || ps.sin == SinType.None) continue;
+            float score = ps.controlSeconds + ps.possessionCount * 15f
+                + (ps.movementCount + ps.attackCount + ps.specialCount) * 2f
+                + ps.cardInvestmentCount * 25f + ps.kills * 5f;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestSin = ps.sin;
+            }
+        }
+        return bestSin;
+    }
+
+    static HallOfFameEntry FindHallOfFameEntry(string runId, SinType sin)
+    {
+        if (string.IsNullOrEmpty(runId) || sin == SinType.None || HallOfFameStore.Data == null)
+            return null;
+        string wire = RunStatsUtil.WireName(sin);
+        foreach (var entry in HallOfFameStore.Data.entries)
+            if (entry != null && entry.runId == runId && string.Equals(entry.sin, wire, System.StringComparison.OrdinalIgnoreCase))
+                return entry;
+        return null;
+    }
+
+    string PickSinTitle(SinType sin, bool godBuild)
+    {
+        List<string> titles = null;
+        if (config != null && config.titlePools != null)
+        {
+            foreach (var pool in config.titlePools)
+            {
+                if (pool == null || pool.sin != sin) continue;
+                titles = godBuild ? pool.godBuildTitles : pool.tendencyTitles;
+                if (titles != null && titles.Count > 0) break;
+            }
+        }
+        if (titles == null || titles.Count == 0)
+            titles = GetBuiltinTitles(sin, godBuild);
+        return PickTitle(titles);
+    }
+
+    string PickNeutralTitle()
+    {
+        List<string> titles = config != null ? config.neutralTitlePool : null;
+        if (titles == null || titles.Count == 0)
+            titles = GetBuiltinNeutralTitles();
+        return PickTitle(titles);
+    }
+
+    static string PickTitle(List<string> titles)
+    {
+        if (titles == null || titles.Count == 0) return null;
+        var valid = new List<string>();
+        foreach (string title in titles)
+            if (!string.IsNullOrEmpty(title) && !valid.Contains(title)) valid.Add(title);
+        return valid.Count == 0 ? null : valid[UnityEngine.Random.Range(0, valid.Count)];
+    }
+
+    static List<string> GetBuiltinTitles(SinType sin, bool godBuild)
+    {
+        switch (sin)
+        {
+            case SinType.Pride: return new List<string>(godBuild ? new[] { "傲慢之主", "天穹之冠", "无冕之王" } : new[] { "傲慢行者", "高塔之王", "冠冕觊觎者" });
+            case SinType.Sloth: return new List<string>(godBuild ? new[] { "怠惰之主", "静止王座", "无梦之王" } : new[] { "怠惰行者", "沉眠之冠", "静默支配者" });
+            case SinType.Gluttony: return new List<string>(godBuild ? new[] { "暴食之王", "深渊吞食者", "饥渴灾厄" } : new[] { "暴食行者", "无底之口", "饥荒先驱" });
+            case SinType.Envy: return new List<string>(godBuild ? new[] { "嫉妒之主", "万相窃取者", "夺光之王" } : new[] { "嫉妒行者", "窥镜之冠", "影中觊觎者" });
+            case SinType.Wrath: return new List<string>(godBuild ? new[] { "暴怒之主", "猩红裁决者", "终焉怒火" } : new[] { "暴怒行者", "赤焰之刃", "怒潮先驱" });
+            case SinType.Greed: return new List<string>(godBuild ? new[] { "贪欲君王", "黄金暴君", "万物收割者" } : new[] { "贪欲行者", "金印之冠", "万物觊觎者" });
+            case SinType.Lust: return new List<string>(godBuild ? new[] { "欲念之主", "绯红支配者", "万象诱主" } : new[] { "欲念行者", "绯红之冠", "心魄猎手" });
+            default: return new List<string>();
+        }
+    }
+
+    static List<string> GetBuiltinNeutralTitles()
+    {
+        return new List<string> { "弑罪者", "七罪行者", "罪冠继承者", "王座觊觎者", "终局幸存者" };
+    }
+
     static void ApplyVictoryTextFont(TMP_Text text)
     {
         if (text == null) return;
@@ -680,7 +834,7 @@ public sealed class VictoryEpilogueController : MonoBehaviour
         text.richText = false;
     }
 
-    static void ApplyTextFontForView(TMP_Text text)
+    void ApplyTextFontForView(TMP_Text text)
     {
         if (text == null) return;
         if (text.font == null)
@@ -690,17 +844,55 @@ public sealed class VictoryEpilogueController : MonoBehaviour
         text.richText = false;
     }
 
-    static string ResolveVictoryText(string value, TMP_Text target)
+    string ResolveVictoryText(string value, TMP_Text target)
     {
         if (string.IsNullOrEmpty(value)) return value;
-        TMP_FontAsset font = target != null && target.font != null
-            ? target.font
-            : (FontRegistry.Instance != null ? FontRegistry.Instance.DefaultFont : TMP_Settings.defaultFontAsset);
-        if (font == null) return value;
+        ApplyTextFontForView(target);
+        TMP_FontAsset font = target != null ? target.font : null;
+        if (font == null)
+            font = FontRegistry.Instance != null ? FontRegistry.Instance.DefaultFont : TMP_Settings.defaultFontAsset;
 
-        // Avoid a TMP missing-glyph box only when the manually selected view font lacks the character.
-        if (value.Contains("弑") && !font.HasCharacter('弑'))
-            return value.Replace("弑", "");
+        // 逐字检查整段文案：不能只检查“弑”，否则“冠冕觊觎者”等随机称号仍会出现缺字框。
+        bool hasMissingCharacter = font == null;
+        if (!hasMissingCharacter)
+        {
+            foreach (char ch in value)
+            {
+                if (!char.IsWhiteSpace(ch) && !font.HasCharacter(ch))
+                {
+                    hasMissingCharacter = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasMissingCharacter)
+        {
+            TMP_FontAsset fallback = config != null ? config.victoryFallbackFont : null;
+            bool fallbackComplete = fallback != null;
+            if (fallbackComplete)
+            {
+                foreach (char ch in value)
+                {
+                    if (!char.IsWhiteSpace(ch) && !fallback.HasCharacter(ch))
+                    {
+                        fallbackComplete = false;
+                        break;
+                    }
+                }
+            }
+
+            if (fallbackComplete && target != null)
+            {
+                target.font = fallback;
+                if (fallback.material != null)
+                    target.fontSharedMaterial = fallback.material;
+            }
+            else
+            {
+                Debug.LogWarning("[VictoryEpilogue] 当前字体缺少结束文案中的字形，且 victoryFallbackFont 未覆盖完整文本；请补充 TMP FontAsset。", target);
+            }
+        }
         return value;
     }
 

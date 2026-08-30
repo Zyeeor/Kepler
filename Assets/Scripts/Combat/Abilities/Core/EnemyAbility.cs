@@ -804,7 +804,7 @@ public abstract class EnemyAbility : MonoBehaviour
     }
 
     /// <summary>Helper: deal damage to a target via Enemy.ApplyDamageTo so it respects lifesteal etc.</summary>
-    protected void DealDamageTo(Enemy target, float amount)
+    protected void DealDamageTo(Enemy target, float amount, float playerHurtAudioInterval = 0f)
     {
         if (target == null || owner == null) return;
         // 战果回传归因（Meta §6.5）：精英能力命中玩家当前附身身体 → 先记录伤害来源再结算
@@ -815,12 +815,12 @@ public abstract class EnemyAbility : MonoBehaviour
             if (eliteSource != null) EliteBuildDirector.NoteEliteDamagedPlayer(eliteSource);
         }
         // Pass damage to owner's damage pipeline so passives (e.g. lifesteal) can react
-        owner.ApplyOffensiveDamage(target, amount);
+        owner.ApplyOffensiveDamage(target, amount, playerHurtAudioInterval);
         TryPlayHitFeedback(target != null ? target.transform : null);
         ApplyConfiguredEffectsTo(target.Combat);
     }
 
-    protected void DealDamageToPlayer(PlayerHealth player, float amount)
+    protected void DealDamageToPlayer(PlayerHealth player, float amount, float playerHurtAudioInterval = 0f)
     {
         if (player == null || owner == null || !owner.CanDamageSoul()) return;
         // 战果回传归因（Meta §6.5）：精英能力命中魂 → 先记录伤害来源再结算
@@ -828,7 +828,7 @@ public abstract class EnemyAbility : MonoBehaviour
         var eliteSource = EliteBuildCarrier.Get(owner);
         if (eliteSource != null) EliteBuildDirector.NoteEliteDamagedPlayer(eliteSource);
         if (!owner.isPossessed) amount *= Mathf.Max(0f, owner.spawnDamageMultiplier);
-        player.TakeDamage(amount);
+        player.TakeDamage(amount, hurtAudioInterval: playerHurtAudioInterval);
         TryPlayHitFeedback(player != null ? player.transform : null);
         ApplyConfiguredEffectsTo(player.GetComponent<CombatAbilityComponent>());
         // Also trigger lifesteal for the owner enemy
@@ -853,13 +853,14 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected void TryPlayHitAudio(Transform victim)
     {
-        if (_hitAudioFiredThisAttack || string.IsNullOrWhiteSpace(hitAudioName))
+        if (_hitAudioFiredThisAttack)
             return;
         // Play for possessed body skills and soul-routed hits; skip AI spam.
         if (owner == null || !owner.isPossessed)
             return;
+        string audioName = string.IsNullOrWhiteSpace(hitAudioName) ? nameof(SfxId.BodyHit) : hitAudioName;
         Vector3 pos = victim != null ? victim.position : owner.transform.position;
-        CombatAudioManager.Play(hitAudioName, pos);
+        CombatAudioManager.Play(audioName, pos);
         _hitAudioFiredThisAttack = true;
     }
 

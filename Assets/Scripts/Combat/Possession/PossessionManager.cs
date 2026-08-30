@@ -31,6 +31,8 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     /// <summary>Single post-commit event consumed by run-level systems. Transaction ids are idempotency keys.</summary>
     public event System.Action<MonsterActor, PossessionGrantReason, long> PossessionCommitted;
     public event System.Action OnPossessionEnded;
+    /// <summary>Body→Body 换身时旧身体离体；仅供换身表现层使用，不代表完整的灵魂态脱离。</summary>
+    public event System.Action OnPossessionDetachedForSwitch;
     public event System.Action<MonsterActor> OnBodyDiedWhilePossessing;
     /// <summary>附身结束（带原因细分；教学 TUT-05 用 VoluntaryRelease 判定"主动脱离"）。</summary>
     public event System.Action<PossessionEndReason> OnPossessionEndedEx;
@@ -38,7 +40,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
     /// <summary>附身结束原因（OnPossessionEndedEx 参数）。</summary>
     public enum PossessionEndReason
     {
-        /// <summary>玩家主动脱离（RequestRelease / 换身 Detach）。</summary>
+        /// <summary>玩家主动按 F 脱离（RequestRelease）；Body→Body 换身另发 OnPossessionDetachedForSwitch。</summary>
         VoluntaryRelease,
         /// <summary>附身中身体死亡（被迫脱离）。</summary>
         BodyDied,
@@ -479,6 +481,7 @@ public class PossessionManager : SceneSingleton<PossessionManager>
         if (PossessionHUD.Instance != null) PossessionHUD.Instance.Hide();
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.UnbindActor();
         SetCameraTarget(soul != null ? soul.transform : null);
+        OnPossessionDetachedForSwitch?.Invoke();
         if (GameManager.Instance != null) GameManager.Instance.SwitchState(GameManager.GameState.Soul);
     }
 

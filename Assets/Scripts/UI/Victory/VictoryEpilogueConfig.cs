@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -11,11 +14,29 @@ public class VictoryEpilogueConfig : ScriptableObject
     [Header("Content")]
     [Tooltip("手动布局 Prefab。打开它即可拖动位置、调字号、换字体和改颜色；为空时使用代码生成兜底。")]
     public VictoryEpilogueView presentationPrefab;
+    [Tooltip("可选：补齐项目默认 SDF 缺少的中文字形（例如“弑”）。为空时保留 Prefab 当前字体。")]
+    public TMP_FontAsset victoryFallbackFont;
     [TextArea(2, 4)] public string firstMessage = "你已踏过七罪。\n王座正在等待它的新主人。";
     public string namePrompt = "留下你的名字";
+    [Tooltip("无统计或规则未命中时的固定兜底称号。不要改成“罪者”，默认保持完整的“弑罪者”。")]
     public string finalTitle = "弑罪者";
     [TextArea(1, 2)] public string finalCoronationLine = "于七罪之上，加冕为王。";
+    [Tooltip("启用后，正式通关会根据本局已采集的 Per-Sin / 构筑数据选择称号；Preview 无本局统计时从通用词池随机。")]
+    public bool useDynamicFinalTitle = true;
+    [Min(1)] public int godBuildMinCards = 3;
+    [Tooltip("七宗罪称号池；每个池为空时使用代码内置默认词。列表中的词会随机抽取。")]
+    public List<VictoryTitlePool> titlePools = new List<VictoryTitlePool>();
+    [Tooltip("没有可用七宗罪倾向时的通用随机称号。")]
+    public List<string> neutralTitlePool = new List<string>();
     [Min(1)] public int maxNameLength = 16;
+
+    [Serializable]
+    public class VictoryTitlePool
+    {
+        public SinType sin;
+        public List<string> tendencyTitles = new List<string>();
+        public List<string> godBuildTitles = new List<string>();
+    }
 
     [Header("Opening Timing")]
     [Min(0f)] public float fadeToBlackDuration = 0.8f;

@@ -79,7 +79,8 @@ public sealed class VictoryEpilogueTunerWindow : EditorWindow
         DrawPreviewButtons();
         DrawPresentationPrefabSection();
         _scroll = EditorGUILayout.BeginScrollView(_scroll);
-        DrawProperties("Content / 文案", "firstMessage", "namePrompt", "finalTitle", "finalCoronationLine", "maxNameLength");
+        DrawProperties("Content / 文案", "firstMessage", "namePrompt", "finalTitle", "finalCoronationLine", "victoryFallbackFont", "maxNameLength");
+        DrawProperties("Dynamic Title / 动态称号", "useDynamicFinalTitle", "godBuildMinCards", "titlePools", "neutralTitlePool");
         DrawProperties("Opening Timing / 开场时序", "fadeToBlackDuration", "firstBlackHoldDuration", "firstTextFadeInDuration", "firstTextHoldBeforeInputDuration", "inputFieldFadeInDuration");
         DrawProperties("Coronation Timing / 加冕时序", "firstStageFadeOutDuration", "secondBlackHoldDuration", "finalTitleRevealDelay", "finalNameRevealDelay", "finalCoronationRevealDelay", "finalStageFadeInDuration", "finalStageHoldDuration");
         DrawProperties("Ending Timing / 结束时序", "finalStageFadeOutDuration", "finalBlackHoldDuration");
@@ -157,6 +158,11 @@ public sealed class VictoryEpilogueTunerWindow : EditorWindow
             case "namePrompt": return "Name Prompt / 姓名提示";
             case "finalTitle": return "Final Title / 最终称号";
             case "finalCoronationLine": return "Final Coronation Line / 加冕句";
+            case "victoryFallbackFont": return "Victory Fallback Font / 胜利补字字体";
+            case "useDynamicFinalTitle": return "Dynamic Title / 动态称号";
+            case "godBuildMinCards": return "God Build Min Cards / GodBuild最少卡数";
+            case "titlePools": return "Seven Sins Title Pools / 七宗罪称号池";
+            case "neutralTitlePool": return "Neutral Title Pool / 通用称号池";
             case "maxNameLength": return "Max Name Length / 名字最大长度";
             case "fadeToBlackDuration": return "Fade To Black / 淡入黑幕";
             case "firstBlackHoldDuration": return "First Black Hold / 第一段黑幕停留";

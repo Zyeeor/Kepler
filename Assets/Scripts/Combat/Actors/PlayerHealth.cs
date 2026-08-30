@@ -43,6 +43,7 @@ public class PlayerHealth : MonoBehaviour
     private IActor _trackedActor;
     private float _lastBurnAnchorX = -1f; // 火苗锚点缓存：血量比例未变时不重复触发布局
     private float _nextHealthSliderLookupTime;
+    private float _nextHurtAudioTime;
 
     void Awake()
     {
@@ -168,7 +169,7 @@ public class PlayerHealth : MonoBehaviour
 
     // ── 附身 HUD 已迁至 PossessionHUD（Show/Hide 统一走 PossessionHUD.Instance） ──
 
-    public void TakeDamage(float amount, bool playHitFlash = true)
+    public void TakeDamage(float amount, bool playHitFlash = true, float hurtAudioInterval = 0f)
     {
         // Victory Epilogue uses realtime presentation and must not be interrupted by unscaled combat damage.
         // This only applies while the shared epilogue controller is actively presenting; normal Failure remains unchanged.
@@ -186,7 +187,16 @@ public class PlayerHealth : MonoBehaviour
         if (combatState != null) amount = combatState.ModifyIncomingDamage(amount);
         if (amount <= 0f) return;
         currentHealth -= amount;
-        if (playHitFlash && visualFx != null) visualFx.PlayHitFlash();
+        if (playHitFlash)
+        {
+            if (visualFx != null) visualFx.PlayHitFlash();
+            if (hurtAudioInterval <= 0f || Time.time >= _nextHurtAudioTime)
+            {
+                CombatAudioManager.Play(nameof(SfxId.PlayerHurt), transform.position);
+                if (hurtAudioInterval > 0f)
+                    _nextHurtAudioTime = Time.time + hurtAudioInterval;
+            }
+        }
         if (currentHealth <= 0) { currentHealth = 0; Die(); }
         UpdateHealthUI();
     }
@@ -209,6 +219,7 @@ public class PlayerHealth : MonoBehaviour
     public void ResetHealth()
     {
         isDead = false;
+        _nextHurtAudioTime = 0f;
         currentHealth = soulMaxHealth;
         maxHealth = soulMaxHealth;
         UpdateHealthUI();

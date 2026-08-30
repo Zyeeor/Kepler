@@ -14320,6 +14320,8 @@ MonoBehaviour:
   settingsPanel: {fileID: 1292743563}
   confirmDialog: {fileID: 2090953901}
   resultDelaySeconds: 2
+  useVictoryEpilogueForWin: 1
+  victoryEpilogueConfig: {fileID: 0}
 --- !u!114 &1753544536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15144,10 +15146,10 @@ MonoBehaviour:
   focusAssistProbability: 0.65
   cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
     type: 3}
-  openingGemCount: 0
+  openingGemCount: 1
   starterGemTime: 30
-  starterGemOffset: {x: 0, y: 0, z: 1.5}
-  openingGemDoublePick: 0
+  starterGemOffset: {x: 0, y: 0, z: 2.75}
+  openingGemDoublePick: 1
   eliteGemDoublePick: 1
   eliteGemCountMin: 2
   eliteGemCountMax: 2
@@ -15165,6 +15167,10 @@ MonoBehaviour:
   cardOfferGemDropUpSpeed: 4
   cardOfferGemDropGravity: 18
   gemPickupRequiresDropLanded: 1
+  gemPlayerSafeDistance: 2.25
+  gemPlayerClearance: 0.5
+  gemPlayerPreferredDistance: 2.75
+  gemPickupArmingDelay: 0.5
   openingGemOffsets:
   - {x: -2, y: 0, z: 1.25}
   - {x: 2, y: 0, z: 1.25}

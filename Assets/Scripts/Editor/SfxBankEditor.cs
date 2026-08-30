@@ -12,6 +12,43 @@ public class SfxBankEditor : UnityEditor.Editor
 {
     static readonly SfxCategory[] SectionOrder = { SfxCategory.GameEvent, SfxCategory.UI, SfxCategory.Combat };
 
+    static readonly Dictionary<SfxCategory, SfxId[]> SectionIds = new Dictionary<SfxCategory, SfxId[]>
+    {
+        {
+            SfxCategory.GameEvent,
+            new[]
+            {
+                SfxId.WaveStart, SfxId.WaveClear, SfxId.AllWavesComplete,
+                SfxId.PossessionStart, SfxId.PossessionEnd, SfxId.PossessBodyDied,
+                SfxId.CorpseWindow, SfxId.SoulEnter, SfxId.SoulDeath,
+                SfxId.BulletTimeStart, SfxId.BulletTimeEnd, SfxId.FinalBegin,
+                SfxId.FinalClear, SfxId.FinalPhaseChange, SfxId.ShrineProximity,
+                SfxId.ShrineProvide, SfxId.VictoryEpilogueEnter,
+                SfxId.VictoryEpilogueFirstTextReveal, SfxId.VictoryEpilogueNameInputReveal,
+                SfxId.VictoryEpilogueNameConfirm, SfxId.VictoryEpilogueFinalReveal,
+                SfxId.VictoryEpilogueFinalTitleReveal, SfxId.VictoryEpilogueFinalNameReveal,
+                SfxId.VictoryEpilogueFinalCoronationReveal, SfxId.VictoryEpilogueExitBlack,
+            }
+        },
+        {
+            SfxCategory.UI,
+            new[]
+            {
+                SfxId.UiClick, SfxId.CardOpen, SfxId.CardSelect, SfxId.CardReroll,
+                SfxId.HallOfFameOpen, SfxId.HallOfFameClose, SfxId.CardArchiveOpen,
+                SfxId.CardArchiveClose, SfxId.BuildExpand, SfxId.BuildCollapse,
+            }
+        },
+        {
+            SfxCategory.Combat,
+            new[]
+            {
+                SfxId.BodyHit, SfxId.PlayerHurt, SfxId.EnemyFatal, SfxId.CorpseAvailable,
+                SfxId.TargetLock, SfxId.MovementLoop, SfxId.EliteSpawn, SfxId.Hazard,
+            }
+        },
+    };
+
     static readonly Dictionary<SfxCategory, string> SectionTitles = new Dictionary<SfxCategory, string>
     {
         { SfxCategory.GameEvent, "游戏事件音效（波次/附身/结算…）" },
@@ -46,15 +83,25 @@ public class SfxBankEditor : UnityEditor.Editor
 
         // 按类别收集条目（保持资产原顺序稳定）
         var byCategory = new Dictionary<SfxCategory, List<int>>();
-        var uncategorized = new List<int>();
+        var duplicateIds = new HashSet<SfxId>();
+        var seenIds = new HashSet<SfxId>();
         for (int i = 0; i < entriesProp.arraySize; i++)
         {
             var idProp = entriesProp.GetArrayElementAtIndex(i).FindPropertyRelative("id");
             var id = (SfxId)idProp.intValue;   // 显式编号枚举：必须用 intValue（enumValueIndex 是索引，与值不同）
+            if (id != SfxId.None && !seenIds.Add(id)) duplicateIds.Add(id);
             var cat = SfxBank.GetCategory(id);
-            if (id == SfxId.None) { uncategorized.Add(i); continue; }
+            if (id == SfxId.None) continue;
             if (!byCategory.ContainsKey(cat)) byCategory[cat] = new List<int>();
             byCategory[cat].Add(i);
+        }
+
+        if (duplicateIds.Count > 0)
+        {
+            EditorGUILayout.HelpBox(
+                "检测到重复音效 ID：" + string.Join(", ", new List<SfxId>(duplicateIds)) +
+                "。运行时只读取同 ID 的第一条，请删除重复条目后再配置。",
+                MessageType.Warning);
         }
 
         foreach (var cat in SectionOrder)
@@ -78,35 +125,79 @@ public class SfxBankEditor : UnityEditor.Editor
                 if (removeIndex >= 0)
                     entriesProp.DeleteArrayElementAtIndex(removeIndex);
             }
-            // 本区新增条目按钮：默认 id=None，选择后即归入对应区（id 决定分区，不强制指定）
-            if (GUILayout.Button($"＋ 在「{SectionTitles[cat]}」区新增条目"))
+
+            // 按固定 SfxId 提供缺失条目按钮，避免策划通过修改已有条目的 id 误造重复槽位。
+            if (SectionIds.TryGetValue(cat, out var expectedIds))
             {
-                entriesProp.arraySize++;
-                var e = entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1);
-                e.FindPropertyRelative("id").intValue = (int)SfxId.None;
-                e.FindPropertyRelative("volumeScale").floatValue = 1f;
-                e.FindPropertyRelative("pitch").floatValue = 1f;
-                e.FindPropertyRelative("channel").enumValueIndex = 0;
-                e.FindPropertyRelative("prefer3D").boolValue = true;
+                foreach (var expectedId in expectedIds)
+                {
+                    if (FindFirstEntryIndex(entriesProp, expectedId) >= 0) continue;
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(expectedId.ToString(), GUILayout.Width(170));
+                    if (GUILayout.Button("＋ 添加此槽位"))
+                        AddEntry(entriesProp, expectedId);
+                    EditorGUILayout.EndHorizontal();
+                }
             }
+
+            if (GUILayout.Button($"＋ 在「{SectionTitles[cat]}」区新增自定义条目"))
+                AddEntry(entriesProp, SfxId.None);
             EditorGUI.indentLevel--;
         }
 
-        if (uncategorized.Count > 0)
+        // 分类区可能在本轮 GUI 中删除条目，不能继续使用前面缓存的 uncategorized 索引。
+        // 重新按当前 SerializedProperty 反向遍历，避免删除分类条目后发生数组越界。
+        int currentUncategorizedCount = 0;
+        for (int i = 0; i < entriesProp.arraySize; i++)
+        {
+            if ((SfxId)entriesProp.GetArrayElementAtIndex(i).FindPropertyRelative("id").intValue == SfxId.None)
+                currentUncategorizedCount++;
+        }
+        if (currentUncategorizedCount > 0)
         {
             EditorGUILayout.Space();
-            EditorGUILayout.Foldout(true, $"未分类（id=None，{uncategorized.Count} 条）", true);
+            EditorGUILayout.Foldout(true, $"未分类（id=None，{currentUncategorizedCount} 条）", true);
             EditorGUI.indentLevel++;
             int removeIndex = -1;
-            foreach (var i in uncategorized)
-                if (DrawEntry(entriesProp.GetArrayElementAtIndex(i), i))
+            for (int i = entriesProp.arraySize - 1; i >= 0; i--)
+            {
+                var entry = entriesProp.GetArrayElementAtIndex(i);
+                if ((SfxId)entry.FindPropertyRelative("id").intValue != SfxId.None) continue;
+                if (DrawEntry(entry, i))
+                {
                     removeIndex = i;
+                    break;
+                }
+            }
             if (removeIndex >= 0)
                 entriesProp.DeleteArrayElementAtIndex(removeIndex);
             EditorGUI.indentLevel--;
         }
 
         serializedObject.ApplyModifiedProperties();
+    }
+
+    static int FindFirstEntryIndex(SerializedProperty entriesProp, SfxId id)
+    {
+        for (int i = 0; i < entriesProp.arraySize; i++)
+        {
+            var entry = entriesProp.GetArrayElementAtIndex(i);
+            if ((SfxId)entry.FindPropertyRelative("id").intValue == id)
+                return i;
+        }
+        return -1;
+    }
+
+    static void AddEntry(SerializedProperty entriesProp, SfxId id)
+    {
+        entriesProp.arraySize++;
+        var entry = entriesProp.GetArrayElementAtIndex(entriesProp.arraySize - 1);
+        entry.FindPropertyRelative("id").intValue = (int)id;
+        entry.FindPropertyRelative("volumeScale").floatValue = 1f;
+        entry.FindPropertyRelative("minInterval").floatValue = 0f;
+        entry.FindPropertyRelative("pitch").floatValue = 1f;
+        entry.FindPropertyRelative("channel").enumValueIndex = 0;
+        entry.FindPropertyRelative("prefer3D").boolValue = true;
     }
 
     /// <summary>绘制单条目：一行 = id 下拉 + clip 槽 + 删除；展开显示详细参数。</summary>

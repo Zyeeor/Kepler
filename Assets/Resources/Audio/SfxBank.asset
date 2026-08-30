@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - id: 1
-    clip: {fileID: 8300000, guid: 4f2503b9bbe56c8459da5dbd3cce75c6, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
@@ -28,14 +28,7 @@ MonoBehaviour:
     channel: 0
     prefer3D: 1
   - id: 3
-    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
-    volumeScale: 1
-    minInterval: 0
-    pitch: 1
-    channel: 0
-    prefer3D: 1
-  - id: 4
-    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
@@ -69,20 +62,13 @@ MonoBehaviour:
     pitch: 1
     channel: 1
     prefer3D: 1
-  - id: 9
-    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
-    volumeScale: 1
-    minInterval: 0
-    pitch: 1
-    channel: 0
-    prefer3D: 1
   - id: 10
-    clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
+    clip: {fileID: 8300000, guid: 60d26b9351049c54fbfe59397be5af32, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 0
-    prefer3D: 1
+    prefer3D: 0
   - id: 11
     clip: {fileID: 8300000, guid: 7f3b817abf11e9f459eb646a236569ce, type: 3}
     volumeScale: 1
@@ -91,21 +77,21 @@ MonoBehaviour:
     channel: 0
     prefer3D: 1
   - id: 12
-    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 0
     prefer3D: 1
   - id: 13
-    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 0
     prefer3D: 1
   - id: 14
-    clip: {fileID: 8300000, guid: 4f2503b9bbe56c8459da5dbd3cce75c6, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
@@ -119,14 +105,14 @@ MonoBehaviour:
     channel: 0
     prefer3D: 1
   - id: 16
-    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 0
     prefer3D: 1
   - id: 17
-    clip: {fileID: 8300000, guid: ba7dbd557d942f8409a308d8e6627d13, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
@@ -154,26 +140,26 @@ MonoBehaviour:
     channel: 0
     prefer3D: 1
   - id: 28
-    clip: {fileID: 8300000, guid: 71b1c3419ed713746ae6867189326203, type: 3}
+    clip: {fileID: 0}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 0
     prefer3D: 1
   - id: 19
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 4a774e0fd9eb93547b44ea0bd5c1ff71, type: 3}
     volumeScale: 1
     minInterval: 0
-    pitch: 1
+    pitch: 1.2
     channel: 0
-    prefer3D: 1
+    prefer3D: 0
   - id: 20
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 31985ad62c33db441a10676244b5336a, type: 3}
     volumeScale: 1
     minInterval: 0
-    pitch: 1
+    pitch: 0.85
     channel: 0
-    prefer3D: 1
+    prefer3D: 0
   - id: 21
     clip: {fileID: 0}
     volumeScale: 1
@@ -181,13 +167,13 @@ MonoBehaviour:
     pitch: 1
     channel: 0
     prefer3D: 1
-  - id: 22
-    clip: {fileID: 0}
+  - id: 9
+    clip: {fileID: 8300000, guid: 60d26b9351049c54fbfe59397be5af32, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1
     channel: 0
-    prefer3D: 1
+    prefer3D: 0
   - id: 23
     clip: {fileID: 0}
     volumeScale: 1
@@ -307,8 +293,29 @@ MonoBehaviour:
     pitch: 1
     channel: 0
     prefer3D: 0
+  - id: 4
+    clip: {fileID: 8300000, guid: 2fef4d02ab489564e90aa89a3942b036, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 0
+  - id: 0
+    clip: {fileID: 8300000, guid: c542ad8a4ecb2c84d9a6a3c5c5466884, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
+  - id: 0
+    clip: {fileID: 8300000, guid: c542ad8a4ecb2c84d9a6a3c5c5466884, type: 3}
+    volumeScale: 1
+    minInterval: 0
+    pitch: 1
+    channel: 0
+    prefer3D: 1
   - id: 45
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: c542ad8a4ecb2c84d9a6a3c5c5466884, type: 3}
     volumeScale: 1
     minInterval: 0
     pitch: 1

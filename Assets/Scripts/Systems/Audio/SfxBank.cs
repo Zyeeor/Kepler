@@ -44,7 +44,7 @@ public enum SfxId
 
     // ── Combat 战斗音效（战斗负责人直调；挂点见交接清单）──
     BodyHit = 19,
-    BodyDurabilityLow = 20,
+    PlayerHurt = 20,
     EnemyFatal = 21,
     CorpseAvailable = 22,
     TargetLock = 23,         // 锁定机制未实现，先占位
@@ -180,7 +180,7 @@ public class SfxBank : ScriptableObject
 
             // Combat 战斗
             case SfxId.BodyHit:
-            case SfxId.BodyDurabilityLow:
+            case SfxId.PlayerHurt:
             case SfxId.EnemyFatal:
             case SfxId.CorpseAvailable:
             case SfxId.TargetLock:

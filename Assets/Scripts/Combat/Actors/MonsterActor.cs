@@ -296,6 +296,9 @@ public class MonsterActor : Actor
     private bool payingAbilityCost;
     private EnemyAbility abilityCostPaymentSource;
     private bool playerDamageContext;
+    private bool _playHurtAudioOnNextDamage;
+    private float _hurtAudioIntervalForNextDamage;
+    private float _nextPlayerHurtAudioTime;
 
     private float possessionWindowEndsAt;
     private float hitStateEndsAt;
@@ -1430,10 +1433,19 @@ public class MonsterActor : Actor
         }
 
         EnterHitState();
-        if (isPossessed)
+        bool isCurrentPossessedBody = isPossessed
+            || (PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody == this);
+        if (isCurrentPossessedBody)
         {
             currentHealth -= amount;
             FlashDamage();
+            if (_playHurtAudioOnNextDamage
+                && (_hurtAudioIntervalForNextDamage <= 0f || Time.time >= _nextPlayerHurtAudioTime))
+            {
+                CombatAudioManager.Play(nameof(SfxId.PlayerHurt), transform.position);
+                if (_hurtAudioIntervalForNextDamage > 0f)
+                    _nextPlayerHurtAudioTime = Time.time + _hurtAudioIntervalForNextDamage;
+            }
             UpdateHealthUI();
             if (currentHealth <= 0)
             {
@@ -1567,7 +1579,7 @@ public class MonsterActor : Actor
         return true;
     }
 
-    public void ApplyOffensiveDamage(MonsterActor target, float amount)
+    public void ApplyOffensiveDamage(MonsterActor target, float amount, float playerHurtAudioInterval = 0f)
     {
         bool targetsBoss = target is BossSevenfoldActor;
         float authoredAmount = amount;
@@ -1593,14 +1605,26 @@ public class MonsterActor : Actor
             Debug.Log($"[BossDamage] Attack accepted: source={name}({GetType().Name}), authored={authoredAmount:F2}, afterOutgoing={afterOutgoingModifier:F2}, final={amount:F2}, sourcePossessed={isPossessed}, targetHp={target.currentHealth:F1}/{target.maxHealth:F1}", this);
         target.lastDamageSource = this;
         float healthBefore = target.currentHealth;
-        if (target.IsBossBattleReserveBody && target.isPossessed)
+        bool targetIsCurrentPossessedBody = target.isPossessed
+            || (PossessionManager.Instance != null && PossessionManager.Instance.CurrentBody == target);
+        target._playHurtAudioOnNextDamage = targetIsCurrentPossessedBody && !isPossessed;
+        target._hurtAudioIntervalForNextDamage = Mathf.Max(0f, playerHurtAudioInterval);
+        try
         {
-            if (!(this is BossSevenfoldActor)) return;
-            target.TakeBossDamage(amount);
+            if (target.IsBossBattleReserveBody && target.isPossessed)
+            {
+                if (!(this is BossSevenfoldActor)) return;
+                target.TakeBossDamage(amount);
+            }
+            else
+            {
+                target.TakeDamage(amount);
+            }
         }
-        else
+        finally
         {
-            target.TakeDamage(amount);
+            target._playHurtAudioOnNextDamage = false;
+            target._hurtAudioIntervalForNextDamage = 0f;
         }
         float actualDamage = Mathf.Clamp(healthBefore - target.currentHealth, 0f, amount);
         if (targetsBoss)
