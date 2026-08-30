@@ -41,6 +41,8 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
     [Header("Damage")]
     [HideInInspector] public float handDamage = 15f;
+    [Tooltip("Possessed Player 专属每只魔手基础伤害；Enemy 版本仍使用 damage / handDamage。")]
+    public float possessedDamageOverride = 18f;
 
     public float damageMultiplier = 1f;
 
@@ -270,7 +272,14 @@ public class EnemyAbility_GreedHands : EnemyAbility
 
     {
         if (target == null) return;
-        SettleHit(target, amount > 0f ? amount : damage);
+        SettleHit(target, amount > 0f ? amount : ResolveHandDamage());
+    }
+
+    private float ResolveHandDamage()
+    {
+        if (owner != null && owner.isPossessed && possessedDamageOverride > 0f)
+            return possessedDamageOverride;
+        return damage > 0f ? damage : handDamage;
     }
 
     public void SpawnDerivedHandsFromKill(Vector3 origin, GreedHandProjectile parent)
@@ -332,7 +341,7 @@ public class EnemyAbility_GreedHands : EnemyAbility
             this,
             owner,
             target,
-            (damage > 0f ? damage : handDamage) * damageMultiplier,
+            ResolveHandDamage() * damageMultiplier,
             retarget,
             spawnOnKill,
             flank,

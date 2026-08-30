@@ -38,6 +38,9 @@ public class EnemyAbility_WrathSlam : EnemyAbility
 
     private float _configuredDamage = 25f;
 
+    [Tooltip("Possessed Player 专属基础伤害；Enemy 版本仍使用 damage。")]
+    public float possessedDamageOverride = 35f;
+
     private void OnEnable()
     {
         type = AbilityType.BasicAttack;
@@ -125,7 +128,10 @@ public class EnemyAbility_WrathSlam : EnemyAbility
         float martyr = IsUpgradeUnlocked(CardMartyr) ? missingRatio : 0f;
         float damageScale = 1f + 0.5f * martyr;
         float radiusScale = 1f + 0.5f * martyr;
-        float slamDamage = _configuredDamage * damageScale;
+        float baseDamage = owner.isPossessed && possessedDamageOverride > 0f
+            ? possessedDamageOverride
+            : _configuredDamage;
+        float slamDamage = baseDamage * damageScale;
         float slamRadius = radius * radiusScale;
         float fieldRadius = burnRadius * radiusScale;
 

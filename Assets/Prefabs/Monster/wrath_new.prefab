@@ -420,6 +420,7 @@ MonoBehaviour:
   tickInterval: 0.5
   pullRadius: 5
   tickDamage: 12
+  possessedTickDamageOverride: 15
   pullStepMax: 1.2
   lightPullRatio: 1
   mediumPullRatio: 0.55
@@ -938,6 +939,7 @@ MonoBehaviour:
   burnEffect: {fileID: 11400000, guid: 4531f875d7d74cc2af0e3aec4f7039d4, type: 2}
   burnFieldObjectName: WrathBurnField
   baseCooldown: 2
+  possessedDamageOverride: 35
 --- !u!1 &1931754259273491143
 GameObject:
   m_ObjectHideFlags: 0

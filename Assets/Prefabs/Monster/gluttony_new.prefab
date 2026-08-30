@@ -110,6 +110,7 @@ MonoBehaviour:
   range: 2
   angle: 100
   damageAmount: 40
+  possessedDamageOverride: 50
   hitDelay: 0.5
   executeHealthFraction: 0.2
   firstDevourHeal: 50
@@ -1790,6 +1791,7 @@ MonoBehaviour:
   secondBiteDelay: 0.5
   blastRadius: 3
   damageAmount: 20
+  possessedDamageOverride: 60
   pairedOffset: 2.2
   telegraphPrefab: {fileID: 6594813534947665867, guid: d06ff5b71f4866d4e8efcd9915023859,
     type: 3}

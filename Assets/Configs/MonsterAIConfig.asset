@@ -50,7 +50,7 @@ MonoBehaviour:
     attackEagerness: 0.38
     decisionIntervalMin: 0.24
     decisionIntervalMax: 0.42
-    skillPriority: 0.55
+    skillPriority: 0.25
     aiMobilityChance: 0.38
     chaseDuration: 1
     strafeChance: 0.221
@@ -75,7 +75,7 @@ MonoBehaviour:
     attackEagerness: 0.52
     decisionIntervalMin: 0.28
     decisionIntervalMax: 0.48
-    skillPriority: 0.66
+    skillPriority: 0.3
     aiMobilityChance: 0.48
     chaseDuration: 1
     strafeChance: 0.4

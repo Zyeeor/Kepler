@@ -13,6 +13,8 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
     public float pullWindow = 0.60f;
     public float pullMaxDistance = 6f;
     public float pullDamage = 25f;
+    [Tooltip("Possessed Player 专属直接伤害；Enemy 版本仍使用 damage / pullDamage。")]
+    public float possessedDamageOverride = 32f;
     public float aimTurnSpeed = 720f;
     public GameObject tetherVfx;
     [Tooltip("tether prefab 的创作长度（粒子锥体长度），用于按 anchor→target 距离归一化缩放。")]
@@ -246,6 +248,8 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
         }
 
         float dmg = damage > 0f ? damage : pullDamage;
+        if (owner.isPossessed && possessedDamageOverride > 0f)
+            dmg = possessedDamageOverride;
         for (int i = 0; i < pulls.Count; i++)
         {
             PullTargetState state = pulls[i];

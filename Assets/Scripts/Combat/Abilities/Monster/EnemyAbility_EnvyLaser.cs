@@ -13,8 +13,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
 
     [Header("Laser")]
     public float maxRange = 15f;
-    [Tooltip("Baseline DPS before EN-A05 ramp (Canonical 2/sec).")]
+    [Tooltip("Enemy 版基础 DPS；Possessed Player 使用 possessedDamagePerSecond。")]
     public float damagePerSecond = 2f;
+    [Tooltip("Possessed Player 专属基础 DPS；Enemy 版本仍使用 damagePerSecond。")]
+    public float possessedDamagePerSecond = 80f;
     public float tickInterval = 0.25f;
     [Tooltip("Baseline Mark storage cap before EN-R01 (TUNABLE).")]
     public float markStorageCap = 100f;
@@ -380,12 +382,14 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
 
     private float GetTickDamage()
     {
-        float dps = damagePerSecond;
+        float dps = owner != null && owner.isPossessed && possessedDamagePerSecond > 0f
+            ? possessedDamagePerSecond
+            : damagePerSecond;
         float ramp = GetRampFactor();
         if (ramp > 0f)
         {
             float maxDps = GetCardParameter("RampMaxDps", rampMaxDamagePerSecond);
-            dps = Mathf.Lerp(damagePerSecond, maxDps, ramp);
+            dps = Mathf.Lerp(dps, maxDps, ramp);
         }
 
         return dps * tickInterval;
