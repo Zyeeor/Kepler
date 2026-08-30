@@ -285,9 +285,11 @@ public class MainMenuController : MonoBehaviour
     void EnsureCardArchiveEntry()
     {
         EnsureCardArchivePanel();
-        if (cardArchiveButton != null) return;
 
-        // 1) 优先：场景中已摆放好的按钮（含未激活的，便于策划先摆好再启用）
+        // 与 EnsureHallOfFameEntry 完全一致的写法：不依赖缓存的 cardArchiveButton 字段做提前
+        // return，每次都重新按名字在场景里查找 CardArchiveButton 并重新挂监听器。Play 模式下脚本
+        // 热重载只会保留 public 字段的序列化引用，运行时 onClick 监听器（非持久化）不会跟着存活，
+        // 之前"引用还在但点了没反应"就是因为提前 return 跳过了重新挂监听器这一步。
         var existing = FindButtonByName("CardArchiveButton", true);
         if (existing != null)
         {
@@ -304,7 +306,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         // 2) 兜底：克隆设置按钮
-        if (settingsButton == null) return;
+        if (cardArchiveButton != null || settingsButton == null) return;
 
         var clone = Instantiate(settingsButton.gameObject, settingsButton.transform.parent);
         clone.name = "CardArchiveButton";

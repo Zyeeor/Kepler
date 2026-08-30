@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 2da51e8d4cd318342b090dca49a2693c
+guid: d7e66e5fd611a414da4b874f2e39e1a2
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -100,19 +100,19 @@ TextureImporter:
       name: Func Buttons_0
       rect:
         serializedVersion: 2
-        x: 2
-        y: 2
-        width: 62
-        height: 62
+        x: 157
+        y: 595
+        width: 801
+        height: 818
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: a1a4e39d2f18c3280800000000000000
-      internalID: -9062225470149473766
+      spriteID: 34dad63ec4108b849985a64c01c87ca2
+      internalID: -103748562
       vertices: []
       indices: 
       edges: []
@@ -121,19 +121,19 @@ TextureImporter:
       name: Func Buttons_1
       rect:
         serializedVersion: 2
-        x: 70
-        y: 2
-        width: 62
-        height: 62
+        x: 1147
+        y: 605
+        width: 803
+        height: 797
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 9cef9591c5a7ae870800000000000000
-      internalID: 8712910965082554057
+      spriteID: d24e9c50d21cf60429b70502481a144e
+      internalID: -17030454
       vertices: []
       indices: 
       edges: []
@@ -141,7 +141,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 88ed3f6da4f11d74fba8fe668eb8ed5b
     internalID: 0
     vertices: []
     indices: 
@@ -149,8 +149,8 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Func Buttons_0: -9062225470149473766
-      Func Buttons_1: 8712910965082554057
+      Func Buttons_0: -103748562
+      Func Buttons_1: -17030454
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
