@@ -555,6 +555,7 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 64
   enemyCastHudScreenOffset: {x: 48, y: 44}
   maxRange: 2
@@ -1594,6 +1595,7 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 150}
   segmentDamage: 20
@@ -2228,6 +2230,7 @@ MonoBehaviour:
   enemyIndicatorIntensity: 1.1
   enemyIndicatorHeight: 0.05
   enemyIndicatorOffset: {x: 0, y: 0, z: 0}
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 230}
   projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,

@@ -28,6 +28,7 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
     private EnemyAbility _ability;
     private MonsterActor _owner;
     private bool _isShowing;
+    private float _currentProgress;
 
     private Canvas _hudCanvas;
     private RectTransform _hudCanvasRect;
@@ -62,55 +63,7 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
         _isShowing = true;
 
         EnsureIndicator(showIndicator);
-        if (showIndicator && _indicatorObject != null && _indicatorMaterial != null && geometry.isValid)
-        {
-            _indicatorObject.SetActive(true);
-            Vector3 pos = geometry.center + Vector3.up * Mathf.Max(0f, ability.enemyIndicatorHeight);
-
-            if (geometry.shape == EnemyIndicatorShape.Rect)
-            {
-                // 矩形预警带：Quad 的 +X（uv.x，长度方向）指向 forward，+Y（uv.y，宽度方向）水平垂直 forward，
-                // 法线朝上（Euler(90,0,0) 平躺）。edge 在 shader 里位于 0.84，故世界尺寸 = 目标 / 0.84。
-                _indicatorObject.transform.SetPositionAndRotation(
-                    pos,
-                    Quaternion.FromToRotation(Vector3.right, geometry.forward) * Quaternion.Euler(90f, 0f, 0f));
-                _indicatorObject.transform.localScale = new Vector3(
-                    geometry.length / IndicatorEdgeRadius,
-                    geometry.width / IndicatorEdgeRadius,
-                    1f);
-                SetIndicatorFloat(IndicatorShapeId, 1f);
-            }
-            else if (geometry.shape == EnemyIndicatorShape.Sector)
-            {
-                // 扇形预警（Pass v1 §13.2）：+X 指向 forward，正方形 scale = 半径 / 0.84，角度由 shader 的 _SectorAngle 控制。
-                // 注：length 存的是半径（与 Circle 的 radius 同语义），shader 里 distS=0.84 对应"中心到边中点"，
-                // 故 scale 需 ×2（与 Circle 的 radius*2f/0.84 一致），否则扇形半径只有预期一半。
-                _indicatorObject.transform.SetPositionAndRotation(
-                    pos,
-                    Quaternion.FromToRotation(Vector3.right, geometry.forward) * Quaternion.Euler(90f, 0f, 0f));
-                _indicatorObject.transform.localScale = new Vector3(
-                    geometry.length * 2f / IndicatorEdgeRadius,
-                    geometry.length * 2f / IndicatorEdgeRadius,
-                    1f);
-                SetIndicatorFloat(IndicatorShapeId, 2f);
-                SetIndicatorFloat(IndicatorSectorAngleId, Mathf.Max(1f, geometry.angle));
-            }
-            else
-            {
-                _indicatorObject.transform.SetPositionAndRotation(pos, Quaternion.Euler(90f, 0f, 0f));
-                float diameter = geometry.radius * 2f / IndicatorEdgeRadius;
-                _indicatorObject.transform.localScale = new Vector3(diameter, diameter, 1f);
-                SetIndicatorFloat(IndicatorShapeId, 0f);
-            }
-
-            SetIndicatorColor(ability.enemyIndicatorColor);
-            SetIndicatorFloat(IndicatorIntensityId, Mathf.Max(0f, ability.enemyIndicatorIntensity));
-            SetIndicatorFloat(IndicatorProgressId, 0f);
-        }
-        else if (_indicatorObject != null)
-        {
-            _indicatorObject.SetActive(false);
-        }
+        ApplyIndicatorGeometry(geometry, showIndicator);
 
         EnsureHud();
         ApplyHudIcon(ability);
@@ -123,11 +76,87 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
         SetProgress(0f);
     }
 
+    /// <summary>应用一次完整的 indicator 几何（含颜色/强度/进度重置）。Begin 时调用。</summary>
+    private void ApplyIndicatorGeometry(EnemyTelegraphGeometry geometry, bool showIndicator)
+    {
+        if (showIndicator && _indicatorObject != null && _indicatorMaterial != null && geometry.isValid)
+        {
+            _indicatorObject.SetActive(true);
+            ApplyIndicatorTransform(geometry);
+            SetIndicatorColor(_ability.enemyIndicatorColor);
+            SetIndicatorFloat(IndicatorIntensityId, Mathf.Max(0f, _ability.enemyIndicatorIntensity));
+            SetIndicatorFloat(IndicatorProgressId, 0f);
+        }
+        else if (_indicatorObject != null)
+        {
+            _indicatorObject.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 只更新 indicator 的世界位置/朝向/形状（不含颜色/强度/进度）。
+    /// 供「红条实时对齐实际发射方向」每帧刷新使用。
+    /// </summary>
+    public void RefreshGeometry(EnemyTelegraphGeometry geometry)
+    {
+        if (_ability == null || _indicatorObject == null || _indicatorMaterial == null) return;
+        if (!geometry.isValid)
+        {
+            _indicatorObject.SetActive(false);
+            return;
+        }
+        _indicatorObject.SetActive(true);
+        ApplyIndicatorTransform(geometry);
+    }
+
+    /// <summary>按几何更新 indicator 的世界位置/朝向/形状（Rect / Sector / Circle 三态）。</summary>
+    private void ApplyIndicatorTransform(EnemyTelegraphGeometry geometry)
+    {
+        Vector3 pos = geometry.center + Vector3.up * Mathf.Max(0f, _ability.enemyIndicatorHeight);
+
+        if (geometry.shape == EnemyIndicatorShape.Rect)
+        {
+            // 矩形预警带：Quad 的 +X（uv.x，长度方向）指向 forward，+Y（uv.y，宽度方向）水平垂直 forward，
+            // 法线朝上（Euler(90,0,0) 平躺）。edge 在 shader 里位于 0.84，故世界尺寸 = 目标 / 0.84。
+            _indicatorObject.transform.SetPositionAndRotation(
+                pos,
+                Quaternion.FromToRotation(Vector3.right, geometry.forward) * Quaternion.Euler(90f, 0f, 0f));
+            _indicatorObject.transform.localScale = new Vector3(
+                geometry.length / IndicatorEdgeRadius,
+                geometry.width / IndicatorEdgeRadius,
+                1f);
+            SetIndicatorFloat(IndicatorShapeId, 1f);
+        }
+        else if (geometry.shape == EnemyIndicatorShape.Sector)
+        {
+            // 扇形预警（Pass v1 §13.2）：+X 指向 forward，正方形 scale = 半径 / 0.84，角度由 shader 的 _SectorAngle 控制。
+            // 注：length 存的是半径（与 Circle 的 radius 同语义），shader 里 distS=0.84 对应"中心到边中点"，
+            // 故 scale 需 ×2（与 Circle 的 radius*2f/0.84 一致），否则扇形半径只有预期一半。
+            _indicatorObject.transform.SetPositionAndRotation(
+                pos,
+                Quaternion.FromToRotation(Vector3.right, geometry.forward) * Quaternion.Euler(90f, 0f, 0f));
+            _indicatorObject.transform.localScale = new Vector3(
+                geometry.length * 2f / IndicatorEdgeRadius,
+                geometry.length * 2f / IndicatorEdgeRadius,
+                1f);
+            SetIndicatorFloat(IndicatorShapeId, 2f);
+            SetIndicatorFloat(IndicatorSectorAngleId, Mathf.Max(1f, geometry.angle));
+        }
+        else
+        {
+            _indicatorObject.transform.SetPositionAndRotation(pos, Quaternion.Euler(90f, 0f, 0f));
+            float diameter = geometry.radius * 2f / IndicatorEdgeRadius;
+            _indicatorObject.transform.localScale = new Vector3(diameter, diameter, 1f);
+            SetIndicatorFloat(IndicatorShapeId, 0f);
+        }
+    }
+
     public void SetProgress(float progress)
     {
         if (!_isShowing) return;
 
         float value = Mathf.Clamp01(progress);
+        _currentProgress = value;
         SetIndicatorFloat(IndicatorProgressId, value);
 
         SetHudProgress(value);
@@ -137,13 +166,22 @@ public sealed class MonsterAbilityTelegraph : MonoBehaviour
     public void End()
     {
         _isShowing = false;
+        _currentProgress = 0f;
         if (_indicatorObject != null) _indicatorObject.SetActive(false);
         if (_hudRoot != null) _hudRoot.gameObject.SetActive(false);
     }
 
     private void LateUpdate()
     {
-        if (_isShowing) UpdateHudPosition();
+        if (!_isShowing) return;
+        UpdateHudPosition();
+        if (_ability != null && _ability.enemyTelegraphLiveAim)
+        {
+            // 引导剩余时间超过「提前锁定秒数」时才继续追踪；最后 lockLead 秒锁定方向，给玩家反应时间。
+            float remaining = _ability.enemyCastLeadTime * (1f - _currentProgress);
+            if (remaining > _ability.enemyTelegraphAimLockLead)
+                RefreshGeometry(_ability.GetEnemyTelegraphGeometry());
+        }
     }
 
     private void EnsureHud()

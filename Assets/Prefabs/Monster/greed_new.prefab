@@ -111,7 +111,7 @@ MonoBehaviour:
   oilLifetime: 8
   allySpeedMultiplier: 1.5
   enemySlowMultiplier: 0.5
-  enemyOilPlayerSlowMultiplier: 0.7
+  enemyOilPlayerSlowMultiplier: 0.8
   segmentSpacing: 1.1
   oilZonePrefab: {fileID: 0}
   oilTrailVfxPrefab: {fileID: 6942737686762418349, guid: ad84c96b8c743f24e808dec2e4cb4761,
@@ -840,7 +840,7 @@ MonoBehaviour:
   enemyCastHudScreenOffset: {x: -40, y: 200}
   maxDaggers: 6
   cardInventoryMax: 10
-  initialPossessedHands: 2
+  initialPossessedHands: 3
   regenInterval: 1
   daggerPrefab: {fileID: 86722928676623875, guid: dae508f48b41ab342b5e05b61222d99d,
     type: 3}
@@ -856,6 +856,7 @@ MonoBehaviour:
   homingTurnRate: 1080
   homingCurveStrength: 0.64
   handDamage: 10
+  possessedDamageOverride: 18
   damageMultiplier: 1
   impactVfxPrefab: {fileID: 1035977224672214417, guid: 1e69e3e21e6d86c45898d16044d351fa,
     type: 3}

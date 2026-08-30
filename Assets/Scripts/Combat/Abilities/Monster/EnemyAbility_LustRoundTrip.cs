@@ -13,6 +13,8 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
 {
     [Header("Round Trip")]
     public float segmentDamage = 20f;
+    [Tooltip("Possessed Player 专属每段伤害；Enemy 版本仍使用 damage / segmentDamage。")]
+    public float possessedDamageOverride = 25f;
     public float mistWidth = 1f;
     public float mistSpeed = 14f;
     public float mistRange = 8f;
@@ -175,7 +177,10 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         var anim = owner.GetActiveAnimator();
         if (anim != null && canMirror) anim.SetTrigger("Basic");
 
-        float dmg = (damage > 0f ? damage : segmentDamage) * damageMul;
+        float baseDamage = damage > 0f ? damage : segmentDamage;
+        if (owner.isPossessed && possessedDamageOverride > 0f)
+            baseDamage = possessedDamageOverride;
+        float dmg = baseDamage * damageMul;
         if (IsUpgradeUnlocked("LU-A04"))
             yield return SixWayRingRoundTripRoutine(origin, dmg);
         else

@@ -19,6 +19,8 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
     public float tickInterval = 0.5f;
     public float pullRadius = 5f;
     public float tickDamage = 12f;
+    [Tooltip("Possessed Player 专属每 Tick 伤害；Enemy 版本仍使用 tickDamage。")]
+    public float possessedTickDamageOverride = 15f;
     public float pullStepMax = 1.2f;
     public float lightPullRatio = 1f;
     public float mediumPullRatio = 0.55f;
@@ -187,7 +189,9 @@ public class EnemyAbility_WrathChainStorm : EnemyAbility
     {
         if (owner == null) return;
         Vector3 center = owner.transform.position;
-        float dmg = tickDamage > 0f ? tickDamage : damage;
+        float dmg = owner.isPossessed && possessedTickDamageOverride > 0f
+            ? possessedTickDamageOverride
+            : (tickDamage > 0f ? tickDamage : damage);
         float effectivePullRadius = ScaleAbilityRadius(pullRadius);
         CombatHitboxDebug.DrawSphere(drawHitboxes, center, effectivePullRadius, Mathf.Max(0.08f, tickInterval));
 

@@ -177,6 +177,11 @@ public abstract class EnemyAbility : MonoBehaviour
     [Min(0f)]
     [Tooltip("Rect 预警带宽度（垂直发射方向，世界米）。仅在 shape=Rect 时生效。")]
     public float enemyIndicatorWidth = 0f;
+    [Tooltip("引导/预警期间每帧重算红圈几何，让红条实时对齐技能的实际发射方向（而非 Begin 时快照一次）。关=旧行为（快照一次）。")]
+    public bool enemyTelegraphLiveAim = false;
+    [Min(0f)]
+    [Tooltip("红条提前锁定秒数：引导剩余时间 <= 此值时红条停止追踪、锁定方向，给玩家最后的反应时间。0=追踪到最后一刻。仅在 enemyTelegraphLiveAim 开启时生效。")]
+    public float enemyTelegraphAimLockLead = 0.2f;
 
     [Header("Enemy Cast HUD")]
     [Min(8f)]
@@ -287,6 +292,24 @@ public abstract class EnemyAbility : MonoBehaviour
     private Coroutine _enemyTelegraphRoutine;
     private MonsterAbilityTelegraph _enemyTelegraphVisual;
     private bool _enemyTelegraphReady;
+
+    /// <summary>
+    /// 蓄力型技能手动驱动红条时使用：返回（必要时创建）本怪物的 telegraph 表现组件。
+    /// 不改变基类默认的引导流程；仅作为子类自驱红条（如蓄力贯穿）的接入点。
+    /// </summary>
+    protected MonsterAbilityTelegraph EnemyTelegraphVisual
+    {
+        get
+        {
+            if (_enemyTelegraphVisual == null && owner != null)
+            {
+                _enemyTelegraphVisual = owner.GetComponent<MonsterAbilityTelegraph>();
+                if (_enemyTelegraphVisual == null)
+                    _enemyTelegraphVisual = owner.gameObject.AddComponent<MonsterAbilityTelegraph>();
+            }
+            return _enemyTelegraphVisual;
+        }
+    }
 
     /// <summary>
     /// Self-driven abilities (continuous beams / hold-to-charge shots) use this to defer

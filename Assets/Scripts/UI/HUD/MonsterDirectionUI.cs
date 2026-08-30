@@ -19,6 +19,7 @@ public class MonsterDirectionUI : MonoBehaviour
     {
         Monsters = 0,
         Shrines = 1,
+        Elites = 2,
     }
 
     /// <summary>精英怪引导模式：Off=不引导；Always=只要场上有精英怪就持续显示额外引导线（与普通活怪引导线并存）。</summary>
@@ -29,7 +30,7 @@ public class MonsterDirectionUI : MonoBehaviour
     }
 
     [Header("引导目标")]
-    [Tooltip("Monsters = 非灵魂态时，视野内没有活怪则引导到最近活怪；Shrines = 灵魂态时，视野内没有可附身躯体则优先引导躯体，没有躯体才引导神龛。")]
+    [Tooltip("Monsters = 非灵魂态时，视野内没有活怪则引导到最近活怪；Shrines = 灵魂态时，视野内没有可附身躯体则优先引导躯体，没有躯体才引导神龛；Elites = 精英生成后若在视野外则引导（每只只引导一次，引导期间普通怪引导让路）。")]
     public GuideTargetMode guideMode = GuideTargetMode.Monsters;
 
     [Header("引导线资源")]
@@ -58,6 +59,10 @@ public class MonsterDirectionUI : MonoBehaviour
     [Min(0.05f)] public float pulseFadeTime = 1f;
     [Tooltip("两道脉冲之间的冷却间隔（秒），值越大引导节奏越舒缓。")]
     [Min(0f)] public float pulseCooldown = 5f;
+
+    [Header("常驻引导")]
+    [Tooltip("true：锁定目标在视野外时引导线持续显示（不进入脉冲冷却），目标进入视野后按 pulseFadeTime 淡出；false：保留脉冲循环（推进→停留→消散→冷却）。")]
+    public bool persistentGuide = true;
 
     [Header("脉冲行为")]
     [Tooltip("脉冲发出后起点是否跟随玩家：false = 锁定发出瞬间的起点（玩家当时脚下），推进/停留/消散全程不跟随；true = 起点实时跟随玩家位置（终点始终锁定发出时的怪物位置）。")]
@@ -123,9 +128,13 @@ public class MonsterDirectionUI : MonoBehaviour
     float noPossessableMonsterTimer;
     float wavePhase;
     float pulseTime;
+    float guideFadeOut;         // 常驻引导淡出进度 0→1（0=全亮，1=全隐）
     Vector3 pulseOrigin;       // 当前脉冲发出瞬间锁定的起点（玩家当时脚下）
     Vector3 pulseTargetPos;    // 当前脉冲发出瞬间锁定的终点（怪物当时位置）
     bool anchorsReady;         // 脉冲锚点是否已采样（首道与每道新脉冲开始时采样）
+    readonly HashSet<MonsterActor> pendingElites = new HashSet<MonsterActor>();   // 已生成但尚未引导过的精英
+    readonly HashSet<MonsterActor> guidedElites = new HashSet<MonsterActor>();    // 已引导过的精英（每只只引导一次）
+    bool eliteSubscribed;
 
     // ── 精英怪额外引导线（与普通活怪引导线并存） ──
     LineRenderer eliteLine;
@@ -142,6 +151,8 @@ public class MonsterDirectionUI : MonoBehaviour
     {
         BuildLine();
         if (line != null) line.gameObject.SetActive(false);
+        if (guideMode == GuideTargetMode.Elites)
+            SubscribeEliteSpawn();
     }
 
     // 检查器修改（含 Play 模式）时实时同步宽度到运行中的引导线，
@@ -167,6 +178,11 @@ public class MonsterDirectionUI : MonoBehaviour
         if (guideMode == GuideTargetMode.Shrines)
         {
             UpdateShrineGuide();
+            return;
+        }
+        if (guideMode == GuideTargetMode.Elites)
+        {
+            UpdateEliteGuide();
             return;
         }
 
@@ -248,8 +264,9 @@ public class MonsterDirectionUI : MonoBehaviour
             }
         }
 
-        // 2) 有怪可见 → 隐藏并重置计时、解锁
-        if (anyInView)
+        // 2) 有怪可见 → 隐藏并重置计时、解锁。
+        // 常驻引导下仅在"未锁定"时据此停止引导；已锁定交由下方按"锁定目标是否进视野"处理。
+        if (anyInView && (!persistentGuide || LockedTarget == null))
         {
             noMonsterTimer = 0f;
             LockedTarget = null;
@@ -285,49 +302,8 @@ public class MonsterDirectionUI : MonoBehaviour
             }
         }
 
-        // 5) 已锁定目标：脉冲循环（推进 → 停留 → 消散 → 冷却 → 循环）
-        float oldPulseTime = pulseTime;
-        pulseTime += Time.deltaTime;
-        float cycle = pulseTravelTime + pulseHoldTime + pulseFadeTime + pulseCooldown;
-        if (pulseTime >= cycle) pulseTime -= cycle;
-
-        // 脉冲锚点采样：首道（anchorsReady=false）或每道新脉冲开始时（回绕：old > new）
-        // 锁定"发出瞬间"的起点（玩家当时脚下）与终点（怪物当时位置）。
-        // followPlayerAfterFire=true 时起点每帧实时更新（跟随玩家），终点始终锁定。
-        if (!anchorsReady || oldPulseTime > pulseTime)
-        {
-            pulseOrigin = origin;
-            pulseTargetPos = LockedTarget.transform.position;
-            anchorsReady = true;
-        }
-        else if (followPlayerAfterFire)
-        {
-            pulseOrigin = origin; // 起点实时跟随玩家/附身怪
-        }
-
-        if (pulseTime < pulseTravelTime)
-        {
-            // 推进阶段：光带从发出时脚底向发出时怪物位置推进（锚点已锁定）
-            float progress = Mathf.Clamp01(pulseTime / pulseTravelTime);
-            ShowPulse(0f, progress);
-        }
-        else if (pulseTime < pulseTravelTime + pulseHoldTime)
-        {
-            // 到达后停留：全亮（仍用锚点位置，不跟随怪物）
-            ShowPulse(0f, 1f);
-        }
-        else if (pulseTime < pulseTravelTime + pulseHoldTime + pulseFadeTime)
-        {
-            // 消散阶段：从发出端（玩家端 t=0）朝终点（怪物端 t=1）方向逐段熄灭——
-            // 起点端先消失，残余光带缩短向怪物端收拢，最后整条熄灭。
-            float fade = Mathf.Clamp01((pulseTime - pulseTravelTime - pulseHoldTime) / pulseFadeTime);
-            ShowPulse(fade, 1f);
-        }
-        else
-        {
-            // 冷却：隐藏，等下一道
-            Hide();
-        }
+        // 5) 已锁定目标：显示（常驻/脉冲由 UpdateGuideDisplay 统一处理）
+        UpdateGuideDisplay(origin, LockedTarget.transform.position, null);
     }
 
     void UpdateShrineGuide()
@@ -358,9 +334,11 @@ public class MonsterDirectionUI : MonoBehaviour
         }
 
         // 触发条件改为“视野内没有可附身躯体”，不再要求场上完全没有躯体。
+        // 常驻引导下仅在"未锁定"时据此停止引导；已锁定交由下方按"锁定目标是否进视野"处理。
         for (int i = 0; i < possessableBodies.Count; i++)
         {
-            if (IsPossessableBodyVisible(possessableBodies[i]))
+            if (IsPossessableBodyVisible(possessableBodies[i])
+                && (!persistentGuide || (lockedBody == null && lockedShrine == null)))
             {
                 ResetShrineGuide();
                 return;
@@ -444,42 +422,195 @@ public class MonsterDirectionUI : MonoBehaviour
         }
 
         Vector3 origin = GetGuideOrigin();
-        float oldPulseTime = pulseTime;
-        pulseTime += Time.deltaTime;
-        float cycle = pulseTravelTime + pulseHoldTime + pulseFadeTime + pulseCooldown;
-        if (pulseTime >= cycle) pulseTime -= cycle;
 
-        // 脉冲终点可以是躯体或神龛，起点沿用现有 followPlayerAfterFire 配置。
-        if (!anchorsReady || oldPulseTime > pulseTime)
+        // 已锁定目标：显示（常驻/脉冲统一处理；淡出完成后清空躯体/神龛锁定）
+        Vector3 targetPos = lockedBody != null
+            ? lockedBody.transform.position
+            : lockedShrine.GuideAnchorPosition;
+        UpdateGuideDisplay(origin, targetPos, () =>
+        {
+            lockedBody = null;
+            lockedShrine = null;
+        });
+    }
+
+    /// <summary>
+    /// 已锁定目标（活怪/躯体/神龛/精英）的引导显示：
+    /// persistentGuide=true 走常驻（目标视野外持续全亮，进视野按 pulseFadeTime 整体淡出后回调）；
+    /// false 走脉冲循环。origin=引导起点，targetPos=引导终点，onFadeComplete=常驻淡出完成回调
+    /// （在 LockedTarget 清空前调用，供 Shrines 清躯体/神龛锁定、Elites 标记已引导）。
+    /// </summary>
+    void UpdateGuideDisplay(Vector3 origin, Vector3 targetPos, System.Action onFadeComplete)
+    {
+        if (persistentGuide)
         {
             pulseOrigin = origin;
-            pulseTargetPos = lockedBody != null
-                ? lockedBody.transform.position
-                : lockedShrine.transform.position;
+            pulseTargetPos = targetPos;
             anchorsReady = true;
-        }
-        else if (followPlayerAfterFire)
-        {
-            pulseOrigin = origin;
-        }
 
-        if (pulseTime < pulseTravelTime)
-        {
-            ShowPulse(0f, Mathf.Clamp01(pulseTime / pulseTravelTime));
-        }
-        else if (pulseTime < pulseTravelTime + pulseHoldTime)
-        {
-            ShowPulse(0f, 1f);
-        }
-        else if (pulseTime < pulseTravelTime + pulseHoldTime + pulseFadeTime)
-        {
-            float fade = Mathf.Clamp01((pulseTime - pulseTravelTime - pulseHoldTime) / pulseFadeTime);
-            ShowPulse(fade, 1f);
+            if (IsInViewport(targetPos))
+            {
+                guideFadeOut += Time.deltaTime;
+                float fade = Mathf.Clamp01(guideFadeOut / Mathf.Max(0.05f, pulseFadeTime));
+                ShowPulse(0f, 1f, fade);
+                if (guideFadeOut >= Mathf.Max(0.05f, pulseFadeTime))
+                {
+                    guideFadeOut = 0f;
+                    noMonsterTimer = 0f;
+                    noPossessableMonsterTimer = 0f;
+                    anchorsReady = false;
+                    onFadeComplete?.Invoke();
+                    LockedTarget = null;
+                    Hide();
+                }
+            }
+            else
+            {
+                guideFadeOut = 0f;
+                ShowPulse(0f, 1f);
+            }
         }
         else
         {
-            Hide();
+            float oldPulseTime = pulseTime;
+            pulseTime += Time.deltaTime;
+            float cycle = pulseTravelTime + pulseHoldTime + pulseFadeTime + pulseCooldown;
+            if (pulseTime >= cycle) pulseTime -= cycle;
+
+            if (!anchorsReady || oldPulseTime > pulseTime)
+            {
+                pulseOrigin = origin;
+                pulseTargetPos = targetPos;
+                anchorsReady = true;
+            }
+            else if (followPlayerAfterFire)
+            {
+                pulseOrigin = origin;
+            }
+
+            if (pulseTime < pulseTravelTime)
+            {
+                ShowPulse(0f, Mathf.Clamp01(pulseTime / pulseTravelTime));
+            }
+            else if (pulseTime < pulseTravelTime + pulseHoldTime)
+            {
+                ShowPulse(0f, 1f);
+            }
+            else if (pulseTime < pulseTravelTime + pulseHoldTime + pulseFadeTime)
+            {
+                float fade = Mathf.Clamp01((pulseTime - pulseTravelTime - pulseHoldTime) / pulseFadeTime);
+                ShowPulse(fade, 1f);
+            }
+            else
+            {
+                Hide();
+            }
         }
+    }
+
+    // ── 精英引导（guideMode = Elites）──
+
+    void SubscribeEliteSpawn()
+    {
+        if (eliteSubscribed) return;
+        var director = EliteBuildDirector.Instance;
+        if (director == null) return;
+        director.OnEliteSpawned += HandleEliteSpawned;
+        eliteSubscribed = true;
+    }
+
+    void UnsubscribeEliteSpawn()
+    {
+        if (!eliteSubscribed) return;
+        var director = EliteBuildDirector.Instance;
+        if (director != null) director.OnEliteSpawned -= HandleEliteSpawned;
+        eliteSubscribed = false;
+    }
+
+    void HandleEliteSpawned(MonsterActor elite)
+    {
+        if (elite == null) return;
+        if (guidedElites.Contains(elite)) return;
+        pendingElites.Add(elite);
+    }
+
+    /// <summary>
+    /// 精英引导：精英生成（EliteBuildDirector.OnEliteSpawned）后，若其在视野外则引导；
+    /// 每只精英只引导一次。独立于怪物/神龛引导，不参与灵魂态/附身态互斥（可与其它引导线同时显示）。
+    /// </summary>
+    void UpdateEliteGuide()
+    {
+        if (!eliteSubscribed) SubscribeEliteSpawn();
+
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            ResetEliteGuide();
+            return;
+        }
+        if (player == null && PlayerController.Instance != null)
+            player = PlayerController.Instance.transform;
+
+        // 清理失效的待引导精英（死亡/被附身/销毁）
+        pendingElites.RemoveWhere(m => !IsTargetValid(m));
+
+        // 已锁定精英失效 → 标记已引导并解锁
+        if (LockedTarget != null && !IsTargetValid(LockedTarget))
+        {
+            guidedElites.Add(LockedTarget);
+            LockedTarget = null;
+            anchorsReady = false;
+            pulseTime = 0f;
+        }
+
+        // 未锁定：从待引导精英里挑一个视野外的引导
+        if (LockedTarget == null)
+        {
+            MonsterActor candidate = null;
+            foreach (var m in pendingElites)
+            {
+                if (IsInViewport(m.transform.position)) continue; // 视野内：玩家看得到，不引导
+                candidate = m;
+                break;
+            }
+
+            if (candidate != null)
+            {
+                pendingElites.Remove(candidate);
+                LockedTarget = candidate;
+                pulseTime = 0f;
+                anchorsReady = false;
+                Debug.Log($"[MonsterDirectionUI] 锁定精英引导目标：{candidate.gameObject.name}@{candidate.transform.position}");
+            }
+            else
+            {
+                Hide();
+                return;
+            }
+        }
+
+        // 已锁定：起点同怪物引导（附身怪脚底 / 玩家位置）
+        Vector3 origin;
+        var pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody != null)
+            origin = pm.CurrentBody.transform.position;
+        else if (player != null)
+            origin = player.position;
+        else
+            origin = mainCamera.transform.position;
+
+        UpdateGuideDisplay(origin, LockedTarget.transform.position, () =>
+        {
+            if (LockedTarget != null) guidedElites.Add(LockedTarget);
+        });
+    }
+
+    void ResetEliteGuide()
+    {
+        LockedTarget = null;
+        anchorsReady = false;
+        pulseTime = 0f;
+        Hide();
     }
 
     bool IsFreeSoulState()
@@ -652,6 +783,16 @@ public class MonsterDirectionUI : MonoBehaviour
             && vp.y >= kViewportMargin && vp.y <= 1f - kViewportMargin;
     }
 
+    /// <summary>世界坐标是否落入当前镜头视口（带边缘容差，防边缘闪烁）。</summary>
+    bool IsInViewport(Vector3 worldPos)
+    {
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null) return false;
+        Vector3 vp = mainCamera.WorldToViewportPoint(worldPos);
+        return vp.z > 0f && vp.x >= kViewportMargin && vp.x <= 1f - kViewportMargin
+            && vp.y >= kViewportMargin && vp.y <= 1f - kViewportMargin;
+    }
+
     MonsterActor FindNearestPossessableBody()
     {
         Vector3 origin = GetGuideOrigin();
@@ -720,7 +861,7 @@ public class MonsterDirectionUI : MonoBehaviour
     /// 锚点在脉冲发出瞬间采样，推进/停留/消散全程不跟随玩家/怪物移动。
     /// 若隐若现：呼吸正弦调制透明度（breatheAmount 控制明暗幅度）。
     /// </summary>
-    void ShowPulse(float startT, float endT)
+    void ShowPulse(float startT, float endT, float overallFade = 0f)
     {
         if (line == null) return;
         if (RenderPulse(line, runtimeMat, pulseParticles, guideColor, pulseOrigin, pulseTargetPos, startT, endT))
@@ -758,7 +899,8 @@ public class MonsterDirectionUI : MonoBehaviour
             float breathe = 1f;
             if (breatheAmount > 0f)
                 breathe = 1f + Mathf.Sin(Time.time * breatheSpeed * 2f * Mathf.PI) * breatheAmount * 0.5f;
-            mat.SetColor("_Color0", baseColor * brightness * advance * breathe);
+            float fadeMul = 1f - Mathf.Clamp01(overallFade);
+            runtimeMat.SetColor("_Color0", guideColor * brightness * advance * breathe * fadeMul);
         }
 
         Vector3 a2 = a + Vector3.up * heightOffset;
@@ -961,6 +1103,7 @@ public class MonsterDirectionUI : MonoBehaviour
 
     void OnDestroy()
     {
+        UnsubscribeEliteSpawn();
         if (runtimeMat != null) Destroy(runtimeMat);
         if (eliteRuntimeMat != null) Destroy(eliteRuntimeMat);
     }

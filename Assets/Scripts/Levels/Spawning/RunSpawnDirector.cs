@@ -378,6 +378,12 @@ public sealed class RunSpawnDirector : MonoBehaviour
         if (CombatStarted) return;
         CombatStarted = true;
         ActiveCombatSeconds = 0f;
+
+        // 开场补刷：附身开场载体后立即刷 1 只普通怪到屏幕外，
+        // 消除"附身后场上无怪 → 无怪引导线无目标"的开局真空期
+        // （连续刷怪首只普通怪约 3s 才出现，玩家会短暂看不到引导线）。
+        // 与开场载体同为 Pride，失败（Boss 模式 / prefab 未配置 / 刷怪点未就绪）静默。
+        SpawnScheduledMonster(SinType.Pride);
     }
 
     public void RestoreRuntime(float activeSeconds, bool bossSpawned, bool bossDefeated)

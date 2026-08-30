@@ -1548,6 +1548,7 @@ MonoBehaviour:
   enemyCastHudScreenOffset: {x: -40, y: 100}
   maxRange: 15
   damagePerSecond: 100
+  possessedDamagePerSecond: 40
   tickInterval: 0.01
   markStorageCap: 100
   markWriteRatio: 0.2

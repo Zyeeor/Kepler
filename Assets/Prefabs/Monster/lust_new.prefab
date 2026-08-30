@@ -790,6 +790,7 @@ MonoBehaviour:
   pullWindow: 0.6
   pullMaxDistance: 6
   pullDamage: 25
+  possessedDamageOverride: 32
   aimTurnSpeed: 720
   tetherVfx: {fileID: 2570147859077135225, guid: e51e3d7eacb6cce459292f6fedf1f156,
     type: 3}
@@ -987,9 +988,11 @@ MonoBehaviour:
   enemyIndicatorShape: 0
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 150}
   segmentDamage: 20
+  possessedDamageOverride: 35
   mistWidth: 1
   mistSpeed: 14
   mistRange: 8
