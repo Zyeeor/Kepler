@@ -286,6 +286,7 @@ MonoBehaviour:
   enemyIndicatorShape: 0
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 230}
   projectilePrefab: {fileID: 6184429437326209897, guid: 197c14d2f4ec8c64c85dcbe2e3861d47,
@@ -325,6 +326,7 @@ MonoBehaviour:
   maxRecoilOffset: {x: 0, y: 0, z: -0.4}
   recoilKickDuration: 0.05
   recoilReturnDuration: 0.15
+  telegraphDuringCharge: 1
   maxChargeTime: 2
   minChargeScale: 1
   maxChargeScale: 10

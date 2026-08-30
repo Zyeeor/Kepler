@@ -369,6 +369,7 @@ MonoBehaviour:
   enemyIndicatorShape: 0
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 150}
   maxRange: 2
@@ -1179,6 +1180,7 @@ MonoBehaviour:
   enemyIndicatorShape: 0
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
+  enemyTelegraphLiveAim: 1
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 40, y: 150}
   chargeDistance: 5

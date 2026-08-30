@@ -1548,12 +1548,13 @@ MonoBehaviour:
   enemyCastHudScreenOffset: {x: -40, y: 100}
   maxRange: 15
   damagePerSecond: 100
-  possessedDamagePerSecond: 80
+  possessedDamagePerSecond: 40
   tickInterval: 0.01
   markStorageCap: 100
   markWriteRatio: 0.2
   markGraceDuration: 0
   maxConnectDuration: 1
+  playerHurtAudioInterval: 0.5
   enemyTrackingTurnSpeed: 100
   enemyLaserTargetRangeCap: 15
   enemyLaserBreakRange: 17

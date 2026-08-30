@@ -6485,6 +6485,7 @@ GameObject:
   - component: {fileID: 1178878877}
   - component: {fileID: 1178878876}
   - component: {fileID: 1178878875}
+  - component: {fileID: 1178878878}
   m_Layer: 0
   m_Name: DirectLine
   m_TagString: Untagged
@@ -6508,13 +6509,13 @@ MonoBehaviour:
   linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
     type: 3}
   noMonsterVisibleSeconds: 5
-  noPossessableMonsterSeconds: 1
+  noPossessableMonsterSeconds: 5
   pulseTravelTime: 0.5
   pulseHoldTime: 0.5
   pulseFadeTime: 1
   pulseCooldown: 3
   followPlayerAfterFire: 0
-  guideColor: {r: 0.8238993, g: 0.79708666, b: 0.6658557, a: 0.627451}
+  guideColor: {r: 4.0, g: 3.2, b: 0.6, a: 0.85}
   brightness: 0.75
   breatheAmount: 0.35
   breatheSpeed: 2
@@ -6580,14 +6581,87 @@ MonoBehaviour:
   guideMode: 0
   linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
     type: 3}
-  noMonsterVisibleSeconds: 1.25
+  noMonsterVisibleSeconds: 1
   noPossessableMonsterSeconds: 5
   pulseTravelTime: 0.5
   pulseHoldTime: 0.5
   pulseFadeTime: 1
-  pulseCooldown: 5
+  pulseCooldown: 1
   followPlayerAfterFire: 0
   guideColor: {r: 3.8, g: 4.05, b: 4.6, a: 0.85}
+  brightness: 0.75
+  breatheAmount: 0.35
+  breatheSpeed: 2
+  widthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.025
+      value: 0.0526
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.55
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.88
+      value: 0.06
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  widthMultiplier: 3
+  heightOffset: 0.05
+  waveAmplitude: 0.2
+  waveCount: 3
+  waveSpeed: 1
+--- !u!114 &1178878878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178878874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890b837f12478884d9e089bf241730c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guideMode: 2
+  linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
+    type: 3}
+  noMonsterVisibleSeconds: 1
+  noPossessableMonsterSeconds: 1
+  pulseTravelTime: 0.5
+  pulseHoldTime: 0.5
+  pulseFadeTime: 1
+  pulseCooldown: 1
+  followPlayerAfterFire: 0
+  guideColor: {r: 4.2, g: 0.7, b: 0.7, a: 0.85}
   brightness: 0.75
   breatheAmount: 0.35
   breatheSpeed: 2
@@ -15096,8 +15170,8 @@ MonoBehaviour:
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 1
-  bootToMainMenu: 0
-  useFormalFlow: 0
+  bootToMainMenu: 1
+  useFormalFlow: 1
   enableA1ShadowOptimization: 1
   enableA2TrailOptimization: 1
   enableA3AnimatorCulling: 1
@@ -15153,6 +15227,7 @@ MonoBehaviour:
   eliteGemDoublePick: 1
   eliteGemCountMin: 2
   eliteGemCountMax: 2
+  eliteKillCardRewardLimit: 6
   cardOfferGemPickupRadius: 1.25
   enableOpeningGems: 1
   enableStarterGem: 1

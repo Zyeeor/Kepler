@@ -92,6 +92,36 @@ public class PossessionBodyProvider : MonoBehaviour
         }
     }
 
+    [System.NonSerialized] Vector3? cachedGuideAnchor;
+
+    /// <summary>
+    /// 引导线应指向的锚点：神龛可见几何（Renderer 包围盒）的底部中心（贴地）。
+    /// 不用 root transform.position——TileAsset 类 prefab 的 root 常带较大 localPosition 偏移，
+    /// 直接取 root 会让引导线指向雕像旁的空气。神龛为静态装饰，锚点计算一次后缓存。
+    /// 无 Renderer 时回退 transform.position。
+    /// </summary>
+    public Vector3 GuideAnchorPosition
+    {
+        get
+        {
+            if (cachedGuideAnchor.HasValue) return cachedGuideAnchor.Value;
+            var renderers = GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                cachedGuideAnchor = transform.position;
+                return cachedGuideAnchor.Value;
+            }
+            Bounds b = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                if (renderers[i] == null) continue;
+                b.Encapsulate(renderers[i].bounds);
+            }
+            cachedGuideAnchor = new Vector3(b.center.x, b.min.y, b.center.z);
+            return cachedGuideAnchor.Value;
+        }
+    }
+
     /// <summary>接近提示音是否已播（每次进入触发圈只播一次，离开后重置）。</summary>
     bool proximitySfxPlayed;
 

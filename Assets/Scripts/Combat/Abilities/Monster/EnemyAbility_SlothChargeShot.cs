@@ -44,6 +44,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     public float recoilReturnDuration = 0.15f;
 
     [Header("Charge")]
+    [Tooltip("开启后蓄力期间持续显示红条（实时跟随实际发射方向），发射瞬间消失；关闭则保持旧行为（蓄力前一次性引导红条）。")]
+    public bool telegraphDuringCharge = false;
     public float maxChargeTime = 2f;
     public float minChargeScale = 1f;
     public float maxChargeScale = 3f;
@@ -139,31 +141,16 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         {
             if (!isCharging)
             {
+                // 统一先走基类引导（0.8s 红条），引导完成后再进入蓄力。
+                // telegraphDuringCharge 开启时，蓄力期间红条继续贯穿（见 TryBeginCharge / UpdateChargeTelegraph），
+                // 因此即使蓄力随机到 0，红条也至少有引导时长兜底。
                 if (!TryPrepareDeferredEnemyActivation()) return;
                 ConsumeDeferredEnemyActivation();
-                if (!TryBeginActivationEffect()) return;
-                isCharging = true;
-                chargeTimer = 0f;
-                // AI 怪物：本次蓄力目标时长在 0 ~ maxChargeTime 之间随机（下限 0，可能立即出手），
-                // 蓄到即自动发射；玩家附身仍走按住/松开逻辑，不参与随机。
-                if (!owner.isPossessed)
-                    aiChargeTargetTime = Random.Range(0f, maxChargeTime);
-                currentCooldown = 0f;
-                owner.PayAbilityHpCost(this);
-
-                if (chargeVfxPrefab != null)
-                {
-                    Transform anchor = chargeVfxSpawnPoint != null ? chargeVfxSpawnPoint : owner.transform;
-                    chargeVfxInstance = Instantiate(chargeVfxPrefab, anchor);
-                    if (chargeVfxInstance != null)
-                    {
-                        chargeVfxInstance.transform.localPosition = chargeVfxPositionOffset;
-                        PlayVfx(chargeVfxInstance);
-                    }
-                }
+                if (!TryBeginCharge()) return;
             }
 
             chargeTimer += AbilityDeltaTime;
+            UpdateChargeTelegraph();
             if (chargeVfxInstance != null)
             {
                 float ct = Mathf.Clamp01(chargeTimer / Mathf.Max(0.01f, maxChargeTime));
@@ -183,6 +170,66 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             StartCoroutine(FireShotRoutine(chargeTimer));
             StopCharging();
         }
+    }
+
+    /// <summary>进入蓄力（公共初始化：activation effect、蓄力计时、HP 代价、蓄力 VFX，以及可选的红条）。</summary>
+    private bool TryBeginCharge()
+    {
+        if (!TryBeginActivationEffect()) return false;
+        isCharging = true;
+        chargeTimer = 0f;
+        // AI 怪物：本次蓄力目标时长在 0 ~ maxChargeTime 之间随机（下限 0，可能立即出手），
+        // 蓄到即自动发射；玩家附身仍走按住/松开逻辑，不参与随机。
+        if (!owner.isPossessed)
+            aiChargeTargetTime = Random.Range(0f, maxChargeTime);
+        currentCooldown = 0f;
+        owner.PayAbilityHpCost(this);
+
+        if (chargeVfxPrefab != null)
+        {
+            Transform anchor = chargeVfxSpawnPoint != null ? chargeVfxSpawnPoint : owner.transform;
+            chargeVfxInstance = Instantiate(chargeVfxPrefab, anchor);
+            if (chargeVfxInstance != null)
+            {
+                chargeVfxInstance.transform.localPosition = chargeVfxPositionOffset;
+                PlayVfx(chargeVfxInstance);
+            }
+        }
+
+        BeginChargeTelegraph();
+        return true;
+    }
+
+    /// <summary>开关2：蓄力开始时手动显示红条（仅 AI 非附身）。</summary>
+    private void BeginChargeTelegraph()
+    {
+        if (!telegraphDuringCharge || owner == null || owner.isPossessed || !enemyIndicatorEnabled) return;
+        MonsterAbilityTelegraph visual = EnemyTelegraphVisual;
+        if (visual == null) return;
+        visual.Begin(this, GetEnemyTelegraphGeometry(), true);
+    }
+
+    /// <summary>开关2：蓄力期间每帧刷新红条方向（跟随实际发射方向）；中途被附身/击倒则隐藏。</summary>
+    private void UpdateChargeTelegraph()
+    {
+        if (!telegraphDuringCharge || owner == null) return;
+        MonsterAbilityTelegraph visual = EnemyTelegraphVisual;
+        if (visual == null) return;
+        if (owner.isPossessed || owner.isDowned)
+        {
+            visual.End();
+            return;
+        }
+        visual.RefreshGeometry(GetEnemyTelegraphGeometry());
+        visual.SetProgress(Mathf.Clamp01(chargeTimer / Mathf.Max(0.01f, maxChargeTime)));
+    }
+
+    /// <summary>开关2：蓄力结束（发射/被打断）时隐藏红条。</summary>
+    private void EndChargeTelegraph()
+    {
+        if (!telegraphDuringCharge) return;
+        MonsterAbilityTelegraph visual = EnemyTelegraphVisual;
+        if (visual != null) visual.End();
     }
 
     IEnumerator FireShotRoutine(float chargeTime)
@@ -463,6 +510,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
     {
         isCharging = false;
+        EndChargeTelegraph();
         EndActivationEffect();
         chargeTimer = 0f;
         currentCooldown = EffectiveCooldown;
@@ -495,7 +543,9 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         forward.Normalize();
 
         float length = ScaleAbilityRadius(maxRange);
-        float width = ScaleAbilityRadius(projectileWidth);
+        // 红条宽跟随当前蓄力 scale，与 FireShot / ProjectileTravel 的实际判定盒宽一致（projectileWidth × scale）。
+        float chargeScale = Mathf.Lerp(minChargeScale, maxChargeScale, Mathf.Clamp01(chargeTimer / Mathf.Max(0.01f, maxChargeTime)));
+        float width = ScaleAbilityRadius(projectileWidth * chargeScale);
         return new EnemyTelegraphGeometry
         {
             shape = EnemyIndicatorShape.Rect,
