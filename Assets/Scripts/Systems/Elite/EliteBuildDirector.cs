@@ -350,7 +350,11 @@ public class EliteBuildDirector : MonoBehaviour
             if (scheduleIndex + 1 > reachedDeployCount) reachedDeployCount = scheduleIndex + 1;
         }
         if (run != null && run.IsBossMode) return false;
-        if (!eliteEnabled) return false;
+        if (!eliteEnabled)
+        {
+            Debug.LogWarning("[EliteBuildDirector] 精英系统总开关 eliteEnabled=false，跳过定时投放。");
+            return false;
+        }
         if (catalog == null)
             catalog = Resources.Load<EliteMonsterCatalog>("EliteMonsterCatalog");
         if (catalog == null || catalog.Find(sin) == null || catalog.Find(sin).prefab == null)
@@ -362,7 +366,10 @@ public class EliteBuildDirector : MonoBehaviour
         WaveManager wm = boundWaveManager != null ? boundWaveManager : FindObjectOfType<WaveManager>();
         MonsterSpawner spawner = MonsterSpawner.Instance;
         if (wm == null || spawner == null || spawner.TrackedMonsterCount >= spawner.maxCombatMonsters)
+        {
+            Debug.LogWarning($"[EliteBuildDirector] 定时投放被拦截：wm={(wm != null)}, spawner={(spawner != null)}, 在场={(spawner != null ? spawner.TrackedMonsterCount : -1)}/上限={(spawner != null ? spawner.maxCombatMonsters : -1)}。");
             return false;
+        }
 
         if (offlineDetected)
         {

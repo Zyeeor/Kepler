@@ -200,9 +200,13 @@ public class AbilityCooldownUI : MonoBehaviour
             if (skillIconRoot != null) skillIconRoot.gameObject.SetActive(false);
         }
 
-        BindAbilityTooltip(basicIconRoot, enemyBasicAbility, playerBasicAbility);
-        BindAbilityTooltip(skillIconRoot, enemySkillAbility, playerSkillAbility);
-        BindAbilityTooltip(possessIconRoot, enemyMobilityAbility, null);
+        SinType bodySin = currentEnemy != null ? currentEnemy.sinType : SinType.None;
+        BindIconHover(basicIconRoot, bodySin, MonsterSkillIconConfig.MonsterSlot.BasicAttack,
+            enemyBasicAbility, playerBasicAbility, MonsterSkillIconConfig.PlayerSlot.BasicAttack);
+        BindIconHover(skillIconRoot, enemySkillIconSin, MonsterSkillIconConfig.MonsterSlot.Skill,
+            enemySkillAbility, playerSkillAbility, MonsterSkillIconConfig.PlayerSlot.Possess);
+        BindIconHover(possessIconRoot, bodySin, MonsterSkillIconConfig.MonsterSlot.Mobility,
+            enemyMobilityAbility, null, MonsterSkillIconConfig.PlayerSlot.Possess);
 
         // Soul state keeps the possession icon; possessed state already assigns the same slot to mobility.
         if (trackingPlayer)
@@ -247,18 +251,93 @@ public class AbilityCooldownUI : MonoBehaviour
         }
     }
 
-    void BindAbilityTooltip(RectTransform root, EnemyAbility enemyAbility, PlayerAbility playerAbility)
+    /// <summary>给技能图标挂 hover 提示：优先显示 MonsterSkillIconConfig 对应槽位的 description，回退到能力详情。</summary>
+    void BindIconHover(RectTransform root, SinType sin, MonsterSkillIconConfig.MonsterSlot slot,
+        EnemyAbility enemyAbility, PlayerAbility playerAbility, MonsterSkillIconConfig.PlayerSlot playerSlot)
     {
         if (root == null) return;
-        GameplayTooltipTarget target = root.GetComponent<GameplayTooltipTarget>();
-        if (target == null) target = root.gameObject.AddComponent<GameplayTooltipTarget>();
-        target.SetTooltip(tooltip);
-        if (enemyAbility != null)
-            target.BindAbility(enemyAbility);
-        else if (playerAbility != null)
-            target.BindAbility(playerAbility);
+        var legacy = root.GetComponent<GameplayTooltipTarget>();
+        if (legacy != null) Destroy(legacy);
+
+        string title;
+        string desc = null;
+
+        if (!trackingPlayer && sin != SinType.None)
+        {
+            // 怪物态：title 用技能名，desc 用 MonsterSkillIconConfig 该槽位 description
+            title = enemyAbility != null && !string.IsNullOrWhiteSpace(enemyAbility.abilityName)
+                ? enemyAbility.abilityName : SlotDisplayName(slot);
+            if (iconConfig != null) iconConfig.TryGetMonsterDescription(sin, slot, out desc);
+            if (string.IsNullOrWhiteSpace(desc) && enemyAbility != null) desc = BuildEnemyAbilitySummary(enemyAbility);
+        }
         else
-            target.ClearBinding();
+        {
+            // 玩家态：title 用技能名，desc 用 PlayerEntry description
+            title = playerAbility != null && !string.IsNullOrWhiteSpace(playerAbility.abilityName)
+                ? playerAbility.abilityName : PlayerSlotDisplayName(playerSlot);
+            if (iconConfig != null) iconConfig.TryGetPlayerDescription(playerSlot, out desc);
+            if (string.IsNullOrWhiteSpace(desc) && playerAbility != null) desc = BuildPlayerAbilitySummary(playerAbility);
+        }
+
+        var hover = root.GetComponent<HoverTooltipText>();
+        if (hover == null) hover = root.gameObject.AddComponent<HoverTooltipText>();
+        hover.tooltip = tooltip;
+        hover.SetText(title, desc);
+    }
+
+    /// <summary>给身份图标挂 hover 提示：显示怪物显示名 + MonsterSkillIconConfig 身份 description。</summary>
+    void BindEnemyIconHover(SinType sin)
+    {
+        if (enemyIconRoot == null) return;
+        var legacy = enemyIconRoot.GetComponent<GameplayTooltipTarget>();
+        if (legacy != null) Destroy(legacy);
+
+        string title = currentEnemy != null && !string.IsNullOrWhiteSpace(currentEnemy.displayName)
+            ? currentEnemy.displayName : null;
+        string desc = null;
+        if (iconConfig != null) iconConfig.TryGetMonsterIdentityDescription(sin, out desc);
+
+        var hover = enemyIconRoot.GetComponent<HoverTooltipText>();
+        if (hover == null) hover = enemyIconRoot.gameObject.AddComponent<HoverTooltipText>();
+        hover.tooltip = tooltip;
+        hover.SetText(title, desc);
+    }
+
+    static string SlotDisplayName(MonsterSkillIconConfig.MonsterSlot slot)
+    {
+        switch (slot)
+        {
+            case MonsterSkillIconConfig.MonsterSlot.Skill: return "技能";
+            case MonsterSkillIconConfig.MonsterSlot.Mobility: return "位移";
+            default: return "普攻";
+        }
+    }
+
+    static string PlayerSlotDisplayName(MonsterSkillIconConfig.PlayerSlot slot)
+    {
+        return slot == MonsterSkillIconConfig.PlayerSlot.Possess ? "附身" : "灵魂普攻";
+    }
+
+    static string BuildEnemyAbilitySummary(EnemyAbility ability)
+    {
+        if (!string.IsNullOrWhiteSpace(ability.abilityDescription))
+            return ability.abilityDescription;
+        var lines = new System.Collections.Generic.List<string>();
+        if (ability.damage > 0f) lines.Add("伤害：" + ability.damage.ToString("0.##"));
+        if (ability.cooldown > 0f) lines.Add("冷却：" + ability.cooldown.ToString("0.##") + " 秒");
+        if (lines.Count == 0) lines.Add("施放该技能以触发其战斗效果。");
+        return string.Join("\n", lines);
+    }
+
+    static string BuildPlayerAbilitySummary(PlayerAbility ability)
+    {
+        if (!string.IsNullOrWhiteSpace(ability.abilityDescription))
+            return ability.abilityDescription;
+        var lines = new System.Collections.Generic.List<string>();
+        if (ability.damage > 0f) lines.Add("伤害：" + ability.damage.ToString("0.##"));
+        if (ability.cooldown > 0f) lines.Add("冷却：" + ability.cooldown.ToString("0.##") + " 秒");
+        if (lines.Count == 0) lines.Add("施放该技能以触发其战斗效果。");
+        return string.Join("\n", lines);
     }
 
     bool IsEnemySkillDisplayChanged()
@@ -323,6 +402,7 @@ public class AbilityCooldownUI : MonoBehaviour
             enemyIconImage.color = color;
         }
         enemyIconRoot.gameObject.SetActive(show);
+        BindEnemyIconHover(currentEnemy != null ? currentEnemy.sinType : SinType.None);
     }
 
     Sprite GetDefaultIcon(Image target)

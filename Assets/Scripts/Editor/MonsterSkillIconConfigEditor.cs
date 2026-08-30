@@ -67,12 +67,15 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
 
         var monsterEntries = serializedObject.FindProperty("monsterEntries");
         var identityEntries = serializedObject.FindProperty("monsterIdentityEntries");
+        var typeEntries = serializedObject.FindProperty("monsterTypeEntries");
         var playerEntries = serializedObject.FindProperty("playerEntries");
         var monsterMap = BuildMonsterMap(monsterEntries);
         var identityMap = BuildIdentityMap(identityEntries);
+        var typeMap = BuildTypeMap(typeEntries);
         var playerMap = BuildPlayerMap(playerEntries);
         var usedMonster = new HashSet<int>();
         var usedIdentity = new HashSet<int>();
+        var usedType = new HashSet<int>();
         var usedPlayer = new HashSet<int>();
 
 
@@ -117,6 +120,32 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
                 EditorGUILayout.EndHorizontal();
             }
 
+            // 怪物类型图片（区别于身份 icon）
+            int typeIndex;
+            if (typeMap.TryGetValue(sin, out typeIndex) && !usedType.Contains(typeIndex))
+            {
+                usedType.Add(typeIndex);
+                var typeEntry = typeEntries.GetArrayElementAtIndex(typeIndex);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("类型", GUILayout.Width(52));
+                EditorGUILayout.PropertyField(typeEntry.FindPropertyRelative("icon"), GUIContent.none);
+                EditorGUILayout.PropertyField(typeEntry.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.PropertyField(typeEntry.FindPropertyRelative("description"), new GUIContent("描述"));
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("类型", GUILayout.Width(52));
+                if (GUILayout.Button("＋ 添加条目"))
+                {
+                    typeEntries.arraySize++;
+                    var typeEntry = typeEntries.GetArrayElementAtIndex(typeEntries.arraySize - 1);
+                    typeEntry.FindPropertyRelative("sin").intValue = (int)sin;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+
             foreach (var slot in MonsterSlotOrder)
 
             {
@@ -152,6 +181,7 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
         }
 
         DrawStrayMonsterEntries(monsterEntries, usedMonster);
+        DrawStrayTypeEntries(typeEntries, usedType);
 
         EditorGUILayout.Space(8);
         EditorGUILayout.LabelField("玩家技能图标", EditorStyles.boldLabel);
@@ -210,6 +240,17 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
         return map;
     }
 
+    static Dictionary<SinType, int> BuildTypeMap(SerializedProperty entries)
+    {
+        var map = new Dictionary<SinType, int>();
+        for (int i = 0; i < entries.arraySize; i++)
+        {
+            var sin = (SinType)entries.GetArrayElementAtIndex(i).FindPropertyRelative("sin").intValue;
+            if (sin != SinType.None && !map.ContainsKey(sin)) map[sin] = i;
+        }
+        return map;
+    }
+
     static Dictionary<MonsterSkillIconConfig.PlayerSlot, int> BuildPlayerMap(SerializedProperty entries)
 
     {
@@ -239,6 +280,30 @@ public class MonsterSkillIconConfigEditor : UnityEditor.Editor
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("sin"), GUIContent.none, GUILayout.Width(110));
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("slot"), GUIContent.none, GUILayout.Width(110));
+            EditorGUILayout.PropertyField(entry.FindPropertyRelative("icon"), GUIContent.none);
+            EditorGUILayout.PropertyField(entry.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
+            if (GUILayout.Button("✕", GUILayout.Width(22))) removeIndex = index;
+            EditorGUILayout.EndHorizontal();
+        }
+
+        if (removeIndex >= 0) entries.DeleteArrayElementAtIndex(removeIndex);
+    }
+
+    static void DrawStrayTypeEntries(SerializedProperty entries, HashSet<int> used)
+    {
+        var stray = new List<int>();
+        for (int i = 0; i < entries.arraySize; i++)
+            if (!used.Contains(i)) stray.Add(i);
+        if (stray.Count == 0) return;
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField($"未识别类型条目（重复或 None，{stray.Count} 条）", EditorStyles.boldLabel);
+        int removeIndex = -1;
+        foreach (var index in stray)
+        {
+            var entry = entries.GetArrayElementAtIndex(index);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PropertyField(entry.FindPropertyRelative("sin"), GUIContent.none, GUILayout.Width(110));
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("icon"), GUIContent.none);
             EditorGUILayout.PropertyField(entry.FindPropertyRelative("iconColor"), GUIContent.none, GUILayout.Width(72));
             if (GUILayout.Button("✕", GUILayout.Width(22))) removeIndex = index;

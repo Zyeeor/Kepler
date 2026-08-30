@@ -15,7 +15,7 @@ MonoBehaviour:
   steps:
   - id: TUT-01
     title: "\u7075\u9B42\u79FB\u52A8"
-    text: "\u6309 WASD \u79FB\u52A8\u3002\u7075\u9B42\u5F62\u6001\u53EF\u4EE5\u81EA\u7531\u6F02\u79FB\u3002"
+    text: "\u6309 WASD \u79FB\u52A8\u3002\u7075\u9B42\u5F62\u6001\u6BD4\u8F83\u8106\u5F31"
     textKey: 
     startFacts: 
     completeFacts: 0b000000
@@ -45,6 +45,22 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 1
+  - id: TUT-GEM
+    title: "\u795E\u683C\u7CBE\u9B44"
+    text: "\u795E\u683C\u7CBE\u9B44\uFF0C \u6361\u8D77\u795E\u683C\u7CBE\u9B44\u53EF\u4EE5\u5347\u7EA7\u795E\u683C"
+    textKey: 
+    startFacts: 00000000
+    completeFacts: 
+    blocking: 0
+    remindInterval: 0
+    idleRemindSeconds: 0
+    queueDelivery: 1
+    displaySeconds: 3
+    timeoutSeconds: 0
+    persistAcrossRuns: 1
+    nextStepId: 
+    reacquireOnTargetLost: 1
+    protectCorpseDuringStep: 0
   - id: "TUT-MONSTER-\u50B2\u6162"
     title: "\u50B2\u6162\u7C7B\u602A\u7269"
     text: "\u64C5\u957F\u5251\u6C14\u3001\u7A81\u8FDB\u4E0E\u8FDE\u7EED\u65A9\u51FB\u3002\u4E0E\u5B83\u6B63\u9762\u5BF9\u653B\u65F6\uFF0C\u7559\u610F\u8FCE\u9762\u5251\u6C14\u3002"
@@ -159,7 +175,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-03A
     title: "\u666E\u901A\u653B\u51FB"
-    text: "\u6309\u3010{BASIC}\u3011\u666E\u901A\u653B\u51FB\u3002"
+    text: "\u6309\u3010{BASIC}\u3011\u666E\u901A\u653B\u51FB\u3002 \u6BCF\u4E2A\u602A\u7269\u6709\u4E0D\u540C\u7684\u666E\u653B\u65B9\u5F0F"
     textKey: 
     startFacts: 
     completeFacts: 06000000
@@ -175,7 +191,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-03B
     title: "\u6280\u80FD"
-    text: "\u6309\u3010{SKILL}\u3011\u91CA\u653E\u6280\u80FD\u3002"
+    text: "\u6309\u3010{SKILL}\u3011\u91CA\u653E\u6280\u80FD\u3002\u6BCF\u4E2A\u602A\u7269\u6709\u7279\u6B8A\u6280\u80FD"
     textKey: 
     startFacts: 
     completeFacts: 07000000
@@ -191,7 +207,7 @@ MonoBehaviour:
     protectCorpseDuringStep: 0
   - id: TUT-03C
     title: "\u4F4D\u79FB"
-    text: "\u6309\u3010{MOBILITY}\u3011\u4F4D\u79FB\u95EA\u907F\u3002"
+    text: "\u6309\u3010{MOBILITY}\u3011\u4F4D\u79FB\u95EA\u907F\u3002\u6BCF\u4E2A\u602A\u7269\u6709\u4E0D\u540C\u4F4D\u79FB\u65B9\u5F0F"
     textKey: 
     startFacts: 
     completeFacts: 05000000
@@ -238,8 +254,8 @@ MonoBehaviour:
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
   - id: TUT-REVERSE-BD
-    title: "\u7F6A\u5370\u53CC\u5203"
-    text: "\u7F6A\u5370\u4F1A\u540C\u65F6\u5F3A\u5316\u5BF9\u5E94\u654C\u4EBA\u4E0E\u9644\u8EAB\u540E\u7684\u80FD\u529B\u3002"
+    title: "\u7F6A\u5370"
+    text: "\u51FB\u6740\u654C\u4EBA\u83B7\u5F97\u7F6A\u5370\uFF0C\u53EF\u53E0\u52A0\u9644\u8EAB\u540E\u7684\u7EFC\u5408\u80FD\u529B"
     textKey: 
     startFacts: 
     completeFacts: 

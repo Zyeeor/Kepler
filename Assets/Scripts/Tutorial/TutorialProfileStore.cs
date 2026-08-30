@@ -58,6 +58,17 @@ public static class TutorialProfileStore
     /// <summary>新手引导是否已完成（仅第一局胜利 Result 结算后置 true；此后不再触发引导）。</summary>
     public static bool TutorialCompleted => Data.tutorialCompleted;
 
+    /// <summary>用户是否已主动跳过教程（跨 Run 持久化）。</summary>
+    public static bool SkippedByUser => Data.tutorialSkippedByUser;
+
+    /// <summary>标记用户主动跳过教程（幂等，跨 Run 持久化）。</summary>
+    public static void MarkSkippedByUser()
+    {
+        if (Data.tutorialSkippedByUser) return;
+        Data.tutorialSkippedByUser = true;
+        Save();
+    }
+
     /// <summary>标记新手引导完成（第一局胜利 Result 结算后调用；幂等）。失败/中途退出/重开不调用，故不算完成。</summary>
     public static void MarkTutorialCompleted()
     {

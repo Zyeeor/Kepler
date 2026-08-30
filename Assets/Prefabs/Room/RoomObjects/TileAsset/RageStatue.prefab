@@ -44,7 +44,7 @@ Light:
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 1, g: 0.46274507, b: 0.54600763, a: 1}
+  m_Color: {r: 0.46274507, g: 1, b: 0.980682, a: 1}
   m_Intensity: 15
   m_Range: 15
   m_SpotAngle: 30
@@ -193,6 +193,8 @@ MonoBehaviour:
   catalog: {fileID: 11400000, guid: d995378018fcd4aafa703c3e16e084e6, type: 2}
   spawnOffset: {x: 2, y: 0, z: 2}
   autoPossess: 0
+  audioEnabled: 1
+  audioProximityRadius: 3
   used: 0
 --- !u!1001 &7368235473711728357
 PrefabInstance:

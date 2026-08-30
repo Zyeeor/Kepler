@@ -158,6 +158,35 @@ MonoBehaviour:
     icon: {fileID: 21300000, guid: be76376acadc42f489809ae96edc1654, type: 3}
     iconColor: {r: 1, g: 0.66352195, b: 0.96213686, a: 1}
     description: "\u8272\u6B32 \xB7 \u7075\u5FF5\u5E08\uFF08\u951A\u70B9/\u8FDE\u63A5/\u6362\u4F4D/\u63A7\u5236\uFF09"
+  monsterTypeEntries:
+  - sin: 1
+    icon: {fileID: 21300000, guid: ae8b74c78475d3b48b4ed58f9f7adab4, type: 3}
+    iconColor: {r: 1, g: 1, b: 1, a: 1}
+    description: 
+  - sin: 7
+    icon: {fileID: 21300000, guid: ede1c16b7dbe18147958e47a951ce18e, type: 3}
+    iconColor: {r: 1, g: 1, b: 1, a: 1}
+    description: 
+  - sin: 5
+    icon: {fileID: 21300000, guid: 010a9696e9657114399c9575e798a2f4, type: 3}
+    iconColor: {r: 1, g: 1, b: 1, a: 1}
+    description: 
+  - sin: 6
+    icon: {fileID: 21300000, guid: 7db85a9a2b75b194981039d58290411f, type: 3}
+    iconColor: {r: 1, g: 1, b: 1, a: 1}
+    description: 
+  - sin: 3
+    icon: {fileID: 21300000, guid: 0bd41bedaeda890498c4c7680a619d42, type: 3}
+    iconColor: {r: 1, g: 1, b: 1, a: 1}
+    description: 
+  - sin: 4
+    icon: {fileID: 21300000, guid: 9691a309febea5e4c80f793201959ffe, type: 3}
+    iconColor: {r: 0.9025157, g: 0.92756295, b: 1, a: 1}
+    description: 
+  - sin: 2
+    icon: {fileID: 21300000, guid: d91851ecbe85d4c4c927fab93e61de56, type: 3}
+    iconColor: {r: 1, g: 1, b: 1, a: 1}
+    description: 
   playerEntries:
   - slot: 0
     icon: {fileID: 21300000, guid: 734f256fff243754fba144cc602c9b97, type: 3}

@@ -111,6 +111,7 @@ MonoBehaviour:
   oilLifetime: 8
   allySpeedMultiplier: 1.5
   enemySlowMultiplier: 0.5
+  enemyOilPlayerSlowMultiplier: 0.7
   segmentSpacing: 1.1
   oilZonePrefab: {fileID: 0}
   oilTrailVfxPrefab: {fileID: 6942737686762418349, guid: ad84c96b8c743f24e808dec2e4cb4761,
@@ -594,7 +595,7 @@ MonoBehaviour:
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
   possessionImprintMeteorSpeed: 2000
-  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorWidth: 10
   possessionImprintMeteorTailLength: 0.327
   possessionImprintMeteorGlow: 1.8
   possessionImprintMeteorColor: {r: 1, g: 0.88109434, b: 0.63836473, a: 1}
@@ -967,8 +968,8 @@ MonoBehaviour:
   enemyCastHudScreenOffset: {x: 0, y: 200}
   baseDuration: 1
   extendedDuration: 3
-  absorbPerHand: 40
-  absorbPerHandWithCard: 20
+  absorbPerHand: 60
+  absorbPerHandWithCard: 30
   guardEffect: {fileID: 11400000, guid: 2be85f8ee6054129b101b7f3dffbc266, type: 2}
   leftGuardHandVfxPrefab: {fileID: 8690902010666443938, guid: eca1500cd06dd67489d6ded7d66cc49b,
     type: 3}

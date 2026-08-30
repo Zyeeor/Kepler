@@ -323,7 +323,7 @@ MonoBehaviour:
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
   possessionImprintMeteorSpeed: 2000
-  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorWidth: 10
   possessionImprintMeteorTailLength: 0.327
   possessionImprintMeteorGlow: 1.8
   possessionImprintMeteorColor: {r: 1, g: 0.66352195, b: 0.96213686, a: 1}
@@ -794,13 +794,16 @@ MonoBehaviour:
   tetherVfx: {fileID: 2570147859077135225, guid: e51e3d7eacb6cce459292f6fedf1f156,
     type: 3}
   tetherVfxLength: 5
-  impactVfx: {fileID: 0}
+  impactVfx: {fileID: 8949070131204023080, guid: 01dc36019ed38604a829139b57515fd0,
+    type: 3}
+  impactVfxOffset: {x: 0, y: 0, z: 0}
   telegraphVfx: {fileID: 0}
   s05CollisionDistance: 0.75
   s05BlastDamage: 25
   s05BlastRadius: 2
   s05BlastVfx: {fileID: 7359114929232555418, guid: 9a171ea7b11eb654faefbe331490f1ce,
     type: 3}
+  s05BlastVfxOffset: {x: 0, y: 1, z: 0}
   s06Grace: 0.15
 --- !u!1 &4818909537390097845
 GameObject:
@@ -1008,6 +1011,7 @@ MonoBehaviour:
   a03Radius: 2.5
   a03BlastVfx: {fileID: 7359114929232555418, guid: 9a171ea7b11eb654faefbe331490f1ce,
     type: 3}
+  a03BlastVfxOffset: {x: 0, y: 1, z: 0}
 --- !u!1 &6718537225855363445
 GameObject:
   m_ObjectHideFlags: 0
@@ -1091,9 +1095,9 @@ MonoBehaviour:
   type: 0
   upgrades:
   - effectId: LU-M03
-    unlocked: 1
+    unlocked: 0
   - effectId: LU-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}
@@ -1154,7 +1158,8 @@ MonoBehaviour:
   m03BlastDelay: 0.15
   m03BlastDamage: 30
   m03BlastRadius: 2.5
-  m03BlastVfx: {fileID: 0}
+  m03BlastVfx: {fileID: 8949070131204023080, guid: 01dc36019ed38604a829139b57515fd0,
+    type: 3}
 --- !u!1 &7718348592882287749
 GameObject:
   m_ObjectHideFlags: 0

@@ -214,8 +214,11 @@ public class RunSession : MonoBehaviour
         Debug.Log($"[RunSession] 直接 Play 种子初始化：worldSeed={WorldSeed}（useFixedSeed={gm != null && gm.useFixedSeed}）。");
     }
 
-    /// <summary>开始新对局：随机地图种子（或编辑器配置的固定种子）、清空进度、清除旧存档。</summary>
-    public void BeginNewRun()
+    /// <summary>
+    /// 开始新对局：随机地图种子（或编辑器配置的固定种子）、清空进度、清除旧存档。
+    /// </summary>
+    /// <param name="fromMainMenu">true = 主菜单"新游戏"（触发新人引导）；false = Restart 重开（完整清空进度，但不触发新人引导）。</param>
+    public void BeginNewRun(bool fromMainMenu = true)
     {
         // 固定种子调试能力：GameManager 配置 useFixedSeed 时复用固定种子（便于复现同一张地图）
         var gm = GameManager.Instance;
@@ -246,7 +249,7 @@ public class RunSession : MonoBehaviour
         ContinuousEliteSpawned.Clear();
         HasActiveRun = true;
         RunId = NewRunId();
-        StartedFromMainMenu = true; // 主菜单"新游戏"：新人引导唯一合法触发入口
+        StartedFromMainMenu = fromMainMenu; // 主菜单"新游戏"=true（触发新人引导）；Restart 重开=false（不触发）
         OpeningCardGemsSpawned = false;
         SaveCoordinator.DeleteSave();
         // Run Analytics：新局启动采集器并重置统计（常驻单例自动创建）
@@ -554,7 +557,15 @@ public class RunSession : MonoBehaviour
         BossModeInitialImprintStacks = 0;
         CurrentPhase = RunPhase.Opening; // 回到初始（无会话语义）
         CompletedWaveIndex = -1;
+        PendingChoice = false;
+        ChoicePicks.Clear();
         UnlockedEffects.Clear();
+        GlobalMissStreak = 0;
+        SoulPosition = Vector3.zero;
+        SoulHealth = 0f;
+        SoulTime = 0f;
+        PossessedBody = null;
+        Corpses.Clear();
         RunId = null;
         PossessionImprintManager.EnsureInstance().EndRun();
         RunSpawnDirector.EnsureInstance().RestoreRuntime(0f, false, false);

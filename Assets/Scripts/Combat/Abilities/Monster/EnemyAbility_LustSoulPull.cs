@@ -18,6 +18,8 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
     [Tooltip("tether prefab 的创作长度（粒子锥体长度），用于按 anchor→target 距离归一化缩放。")]
     public float tetherVfxLength = 5f;
     public GameObject impactVfx;
+    [Tooltip("冲击 VFX 相对目标位置的偏移。")]
+    public Vector3 impactVfxOffset = Vector3.zero;
     public GameObject telegraphVfx;
 
     [Header("LU-S05")]
@@ -25,6 +27,8 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
     public float s05BlastDamage = 25f;
     public float s05BlastRadius = 2f;
     public GameObject s05BlastVfx;
+    [Tooltip("LU-S05 碰撞爆炸 VFX 相对爆炸点的偏移。")]
+    public Vector3 s05BlastVfxOffset = Vector3.zero;
 
     [Header("LU-S06")]
     public float s06Grace = 0.15f;
@@ -255,7 +259,7 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
                 DealDamageTo(state.enemy, dmg);
                 state.damaged = true;
                 if (impactVfx != null)
-                    Object.Instantiate(impactVfx, state.enemy.transform.position, Quaternion.identity);
+                    Object.Instantiate(impactVfx, state.enemy.transform.position + impactVfxOffset, Quaternion.identity);
             }
 
             if (state.previousController != null)
@@ -333,7 +337,7 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
             float dmg = GetCardParameter("CollisionDmg", s05BlastDamage);
             float radius = GetCardParameter("R", s05BlastRadius);
             if (s05BlastVfx != null)
-                Object.Instantiate(s05BlastVfx, pair.mid, Quaternion.identity);
+                Object.Instantiate(s05BlastVfx, pair.mid + s05BlastVfxOffset, Quaternion.identity);
             DamageEnemiesInSphere(pair.mid, radius, dmg, null, -1f);
             if (!owner.isPossessed)
                 TryDamagePlayerInRadius(pair.mid, radius, dmg, -1f);

@@ -59,6 +59,20 @@ public class MonsterSkillIconConfig : ScriptableObject
     }
 
     [Serializable]
+    public class MonsterTypeEntry
+    {
+        [Tooltip("怪物类型（七罪类型）。")]
+        public SinType sin = SinType.None;
+        [Tooltip("怪物类型图片（区别于身份 icon：用于选卡等展示怪物类型归属）。")]
+        public Sprite icon;
+        [Tooltip("怪物类型图标的显示颜色。")]
+        public Color iconColor = Color.white;
+        [TextArea(2, 6)]
+        [Tooltip("怪物类型的文字描述，可被选卡/图鉴等任意处引用。")]
+        public string description;
+    }
+
+    [Serializable]
     public class PlayerEntry
     {
         [Tooltip("灵魂态玩家 HUD 槽位。")]
@@ -79,12 +93,16 @@ public class MonsterSkillIconConfig : ScriptableObject
     [Tooltip("怪物身份条目：每种罪类型配置一张附身态显示图标及其颜色。")]
     public List<MonsterIdentityEntry> monsterIdentityEntries = new List<MonsterIdentityEntry>();
 
+    [Tooltip("怪物类型条目：每种罪类型配置一张类型图片及其颜色（区别于身份 icon，用于选卡展示怪物类型归属）。")]
+    public List<MonsterTypeEntry> monsterTypeEntries = new List<MonsterTypeEntry>();
+
     [Tooltip("玩家条目：配置 BasicAttack / Possess 两行。")]
 
     public List<PlayerEntry> playerEntries = new List<PlayerEntry>();
 
     Dictionary<(SinType, MonsterSlot), MonsterEntry> monsterCache;
     Dictionary<SinType, MonsterIdentityEntry> monsterIdentityCache;
+    Dictionary<SinType, MonsterTypeEntry> monsterTypeCache;
     Dictionary<PlayerSlot, Sprite> playerCache;
 
 
@@ -110,6 +128,19 @@ public class MonsterSkillIconConfig : ScriptableObject
         if (sin == SinType.None) return false;
         BuildCache();
         if (!monsterIdentityCache.TryGetValue(sin, out MonsterIdentityEntry entry)) return false;
+        icon = entry.icon;
+        color = entry.iconColor;
+        return icon != null;
+    }
+
+    /// <summary>查询怪物类型图片（区别于身份 icon，用于选卡等展示怪物类型归属）。</summary>
+    public bool TryGetMonsterType(SinType sin, out Sprite icon, out Color color)
+    {
+        icon = null;
+        color = Color.white;
+        if (sin == SinType.None) return false;
+        BuildCache();
+        if (!monsterTypeCache.TryGetValue(sin, out MonsterTypeEntry entry)) return false;
         icon = entry.icon;
         color = entry.iconColor;
         return icon != null;
@@ -179,12 +210,30 @@ public class MonsterSkillIconConfig : ScriptableObject
         return false;
     }
 
+    /// <summary>按技能图标 sprite 反查其文字描述（用于卡片主图 hover 提示）。命中且描述非空返回 true。</summary>
+    public bool TryGetDescriptionByIcon(Sprite icon, out string description)
+    {
+        description = null;
+        if (icon == null || monsterEntries == null) return false;
+        BuildCache();
+        foreach (var e in monsterEntries)
+        {
+            if (e != null && e.icon == icon && !string.IsNullOrEmpty(e.description))
+            {
+                description = e.description;
+                return true;
+            }
+        }
+        return false;
+    }
+
     void BuildCache()
     {
-        if (monsterCache != null && monsterIdentityCache != null && playerCache != null) return;
+        if (monsterCache != null && monsterIdentityCache != null && monsterTypeCache != null && playerCache != null) return;
 
         monsterCache = new Dictionary<(SinType, MonsterSlot), MonsterEntry>();
         monsterIdentityCache = new Dictionary<SinType, MonsterIdentityEntry>();
+        monsterTypeCache = new Dictionary<SinType, MonsterTypeEntry>();
         playerCache = new Dictionary<PlayerSlot, Sprite>();
 
 
@@ -206,6 +255,15 @@ public class MonsterSkillIconConfig : ScriptableObject
             {
                 if (entry == null || entry.sin == SinType.None) continue;
                 if (!monsterIdentityCache.ContainsKey(entry.sin)) monsterIdentityCache[entry.sin] = entry;
+            }
+        }
+
+        if (monsterTypeEntries != null)
+        {
+            foreach (var entry in monsterTypeEntries)
+            {
+                if (entry == null || entry.sin == SinType.None) continue;
+                if (!monsterTypeCache.ContainsKey(entry.sin)) monsterTypeCache[entry.sin] = entry;
             }
         }
 
@@ -244,6 +302,17 @@ public class MonsterSkillIconConfig : ScriptableObject
             }
         }
 
+        var typeSeen = new HashSet<SinType>();
+        if (monsterTypeEntries != null)
+        {
+            foreach (var entry in monsterTypeEntries)
+            {
+                if (entry == null || entry.sin == SinType.None) continue;
+                if (!typeSeen.Add(entry.sin))
+                    Debug.LogWarning($"[MonsterSkillIconConfig] 重复类型图标 sin={entry.sin}，运行时取首个，请清理资产。", this);
+            }
+        }
+
         var playerSeen = new HashSet<PlayerSlot>();
 
         if (playerEntries != null)
@@ -258,6 +327,7 @@ public class MonsterSkillIconConfig : ScriptableObject
 
         monsterCache = null;
         monsterIdentityCache = null;
+        monsterTypeCache = null;
         playerCache = null;
 
     }

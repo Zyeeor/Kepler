@@ -307,7 +307,16 @@ public class UIManager : SceneSingleton<UIManager>
         // （ResetGame 内部已 TimeScaleManager.ResetAll 清空全部时间请求）
         if (GameManager.Instance != null) GameManager.Instance.ResetGame();
         if (restartBossMode)
+        {
             session.BeginBossRun(bossStacks);
+        }
+        else
+        {
+            // 普通模式：Restart 走完整新局初始化（清空进度/卡牌/被动/尸体/附身态），
+            // 而非依赖场景重载后 InitWorldSeed 的"只初始化种子"兜底（那会残留上一局缓存）。
+            // fromMainMenu=false：不触发新人引导。
+            session.BeginNewRun(false);
+        }
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 方向引导脉冲：
@@ -20,6 +21,13 @@ public class MonsterDirectionUI : MonoBehaviour
         Shrines = 1,
     }
 
+    /// <summary>精英怪引导模式：Off=不引导；Always=只要场上有精英怪就持续显示额外引导线（与普通活怪引导线并存）。</summary>
+    public enum EliteGuideMode
+    {
+        Off = 0,
+        Always = 1,
+    }
+
     [Header("引导目标")]
     [Tooltip("Monsters = 非灵魂态时，视野内没有活怪则引导到最近活怪；Shrines = 灵魂态时，视野内没有可附身躯体则优先引导躯体，没有躯体才引导神龛。")]
     public GuideTargetMode guideMode = GuideTargetMode.Monsters;
@@ -27,6 +35,13 @@ public class MonsterDirectionUI : MonoBehaviour
     [Header("引导线资源")]
     [Tooltip("引导线 Prefab 资产（Assets/Prefabs/VFX/MonsterGuideLine.prefab）：Root 挂 LineRenderer + 拖尾同款材质，子对象 PulseHead 为脉冲头光尘粒子；为空时运行时动态创建。")]
     public GameObject linePrefab;
+
+    [Header("精英怪引导")]
+    [Tooltip("精英怪引导模式：Off=关闭精英怪引导线；Always=场上出现精英怪时，额外显示一条指向精英怪的引导线（与普通活怪引导线并存）。")]
+    [FormerlySerializedAs("eliteGuideEnabled")]
+    public EliteGuideMode eliteGuideEnabled = EliteGuideMode.Always;
+    [Tooltip("精英怪引导线颜色（区分普通引导线，默认橙色）。")]
+    public Color eliteGuideColor = new Color(1.7f, 0.5f, 0.1f, 0.9f);
 
     [Header("触发条件")]
     [Tooltip("怪物模式：视野内连续无活怪的秒数；神龛模式：灵魂态且视野内连续无可附身躯体的秒数。")]
@@ -112,6 +127,17 @@ public class MonsterDirectionUI : MonoBehaviour
     Vector3 pulseTargetPos;    // 当前脉冲发出瞬间锁定的终点（怪物当时位置）
     bool anchorsReady;         // 脉冲锚点是否已采样（首道与每道新脉冲开始时采样）
 
+    // ── 精英怪额外引导线（与普通活怪引导线并存） ──
+    LineRenderer eliteLine;
+    Material eliteRuntimeMat;
+    ParticleSystem[] elitePulseParticles;
+    readonly List<MonsterActor> eliteMonsters = new List<MonsterActor>();
+    MonsterActor eliteLockedTarget;
+    Vector3 elitePulseOrigin;
+    Vector3 elitePulseTargetPos;
+    float elitePulseTime;
+    bool eliteAnchorsReady;
+
     void Awake()
     {
         BuildLine();
@@ -127,10 +153,17 @@ public class MonsterDirectionUI : MonoBehaviour
             line.widthMultiplier = widthMultiplier;
             line.widthCurve = widthCurve;
         }
+        if (eliteLine != null)
+        {
+            eliteLine.widthMultiplier = widthMultiplier;
+            eliteLine.widthCurve = widthCurve;
+        }
     }
 
     void Update()
     {
+        wavePhase += Time.deltaTime * waveSpeed;   // 波动相位每帧推进一次（普通/精英两条引导线共用）
+
         if (guideMode == GuideTargetMode.Shrines)
         {
             UpdateShrineGuide();
@@ -138,6 +171,7 @@ public class MonsterDirectionUI : MonoBehaviour
         }
 
         UpdateMonsterGuide();
+        UpdateEliteGuide();
     }
 
     void UpdateMonsterGuide()
@@ -471,6 +505,128 @@ public class MonsterDirectionUI : MonoBehaviour
         Hide();
     }
 
+    // ── 精英怪额外引导（与普通活怪引导线并存） ──
+
+    /// <summary>场上出现精英怪时，额外显示一条指向精英怪的引导线（独立于普通活怪引导）。</summary>
+    void UpdateEliteGuide()
+    {
+        if (eliteGuideEnabled == EliteGuideMode.Off || eliteLine == null) return;
+
+        // 自由灵魂态让路（同普通怪物引导）
+        if (IsFreeSoulState())
+        {
+            ResetEliteGuide();
+            return;
+        }
+
+        // 从已收集的活怪里筛出精英怪（复用 aliveMonsters，避免重复收集）
+        eliteMonsters.Clear();
+        for (int i = 0; i < aliveMonsters.Count; i++)
+        {
+            var m = aliveMonsters[i];
+            if (m != null && m.IsElite && IsTargetValid(m)) eliteMonsters.Add(m);
+        }
+
+        if (eliteMonsters.Count == 0)
+        {
+            ResetEliteGuide();
+            return;
+        }
+
+        // 锁定目标失效 → 解锁重锁
+        if (eliteLockedTarget != null && !IsTargetValid(eliteLockedTarget))
+        {
+            eliteLockedTarget = null;
+            eliteAnchorsReady = false;
+            elitePulseTime = 0f;
+        }
+
+        if (eliteLockedTarget == null)
+        {
+            eliteLockedTarget = FindNearestElite();
+            if (eliteLockedTarget == null)
+            {
+                ResetEliteGuide();
+                return;
+            }
+            elitePulseTime = 0f;
+            eliteAnchorsReady = false;
+            Debug.Log($"[MonsterDirectionUI] 锁定精英怪引导目标：{eliteLockedTarget.gameObject.name}@{eliteLockedTarget.transform.position}");
+        }
+
+        // 起点：同普通引导（附身怪脚底 / 玩家）
+        Vector3 origin;
+        var pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody != null) origin = pm.CurrentBody.transform.position;
+        else if (player != null) origin = player.position;
+        else origin = mainCamera != null ? mainCamera.transform.position : transform.position;
+
+        // 脉冲循环（复用节奏配置）
+        float oldPulseTime = elitePulseTime;
+        elitePulseTime += Time.deltaTime;
+        float cycle = pulseTravelTime + pulseHoldTime + pulseFadeTime + pulseCooldown;
+        if (elitePulseTime >= cycle) elitePulseTime -= cycle;
+
+        if (!eliteAnchorsReady || oldPulseTime > elitePulseTime)
+        {
+            elitePulseOrigin = origin;
+            elitePulseTargetPos = eliteLockedTarget.transform.position;
+            eliteAnchorsReady = true;
+        }
+        else if (followPlayerAfterFire)
+        {
+            elitePulseOrigin = origin;
+        }
+
+        if (elitePulseTime < pulseTravelTime)
+        {
+            ShowElitePulse(0f, Mathf.Clamp01(elitePulseTime / pulseTravelTime));
+        }
+        else if (elitePulseTime < pulseTravelTime + pulseHoldTime)
+        {
+            ShowElitePulse(0f, 1f);
+        }
+        else if (elitePulseTime < pulseTravelTime + pulseHoldTime + pulseFadeTime)
+        {
+            float fade = Mathf.Clamp01((elitePulseTime - pulseTravelTime - pulseHoldTime) / pulseFadeTime);
+            ShowElitePulse(fade, 1f);
+        }
+        else
+        {
+            HideElite();
+        }
+    }
+
+    void ResetEliteGuide()
+    {
+        eliteLockedTarget = null;
+        eliteAnchorsReady = false;
+        elitePulseTime = 0f;
+        HideElite();
+    }
+
+    MonsterActor FindNearestElite()
+    {
+        Vector3 origin;
+        var pm = PossessionManager.Instance;
+        if (pm != null && pm.CurrentBody != null) origin = pm.CurrentBody.transform.position;
+        else if (player != null) origin = player.position;
+        else origin = mainCamera != null ? mainCamera.transform.position : transform.position;
+
+        MonsterActor nearest = null;
+        float nearestSqr = float.MaxValue;
+        for (int i = 0; i < eliteMonsters.Count; i++)
+        {
+            var m = eliteMonsters[i];
+            if (!IsTargetValid(m)) continue;
+            float sqr = (m.transform.position - origin).sqrMagnitude;
+            if (sqr >= nearestSqr) continue;
+            nearestSqr = sqr;
+            nearest = m;
+        }
+        return nearest;
+    }
+
     void CollectPossessableMonstersFallback()
     {
         possessableBodies.Clear();
@@ -567,32 +723,50 @@ public class MonsterDirectionUI : MonoBehaviour
     void ShowPulse(float startT, float endT)
     {
         if (line == null) return;
+        if (RenderPulse(line, runtimeMat, pulseParticles, guideColor, pulseOrigin, pulseTargetPos, startT, endT))
+        {
+            IsShowing = true;
+        }
+        else
+        {
+            IsShowing = false;
+            line.gameObject.SetActive(false);
+        }
+    }
+
+    void ShowElitePulse(float startT, float endT)
+    {
+        if (eliteLine == null) return;
+        RenderPulse(eliteLine, eliteRuntimeMat, elitePulseParticles, eliteGuideColor,
+            elitePulseOrigin, elitePulseTargetPos, startT, endT);
+    }
+
+    /// <summary>渲染一条引导脉冲：蛇形路径 + [startT,endT] 截取 + 脉冲头粒子。返回是否可见。</summary>
+    bool RenderPulse(LineRenderer lr, Material mat, ParticleSystem[] particles, Color baseColor,
+        Vector3 a, Vector3 b, float startT, float endT)
+    {
         startT = Mathf.Clamp01(startT);
         endT = Mathf.Clamp01(endT);
-        if (endT <= startT)
-        {
-            Hide();
-            return;
-        }
-        IsShowing = true;
-        line.gameObject.SetActive(true);
+        if (endT <= startT) return false;
+
+        lr.gameObject.SetActive(true);
 
         // 能量抵达感：停留/消散阶段全亮（endT==1 时 advance 最大）；叠加柔和呼吸
-        if (runtimeMat != null)
+        if (mat != null)
         {
             float advance = 0.55f + 0.45f * endT;
             float breathe = 1f;
             if (breatheAmount > 0f)
                 breathe = 1f + Mathf.Sin(Time.time * breatheSpeed * 2f * Mathf.PI) * breatheAmount * 0.5f;
-            runtimeMat.SetColor("_Color0", guideColor * brightness * advance * breathe);
+            mat.SetColor("_Color0", baseColor * brightness * advance * breathe);
         }
 
-        Vector3 a = pulseOrigin + Vector3.up * heightOffset;
-        Vector3 b = pulseTargetPos + Vector3.up * heightOffset;
+        Vector3 a2 = a + Vector3.up * heightOffset;
+        Vector3 b2 = b + Vector3.up * heightOffset;
 
         // 蛇形波动路径（全量生成，之后按 [startT, endT] 截取）
         int n = kSegments;
-        Vector3 dir = b - a;
+        Vector3 dir = b2 - a2;
         float len = dir.magnitude;
         if (len < 0.01f)
         {
@@ -605,12 +779,10 @@ public class MonsterDirectionUI : MonoBehaviour
         flat.Normalize();
         Vector3 normal = Vector3.Cross(flat, Vector3.up).normalized; // 水平面内法线
 
-        wavePhase += Time.deltaTime * waveSpeed;
-
         for (int i = 0; i <= n; i++)
         {
             float t = (float)i / n;
-            Vector3 basePos = Vector3.Lerp(a, b, t);
+            Vector3 basePos = Vector3.Lerp(a2, b2, t);
             float envelope = Mathf.Sin(Mathf.PI * t); // 两端 0、中间最大
             float wave = Mathf.Sin(t * waveCount * 2f * Mathf.PI + wavePhase);
             pathPoints[i] = basePos + normal * (wave * envelope * waveAmplitude);
@@ -622,28 +794,29 @@ public class MonsterDirectionUI : MonoBehaviour
         int first = Mathf.FloorToInt(startT * segCount);
         int last = Mathf.CeilToInt(endT * segCount);
         int visibleCount = Mathf.Max(2, last - first + 1);
-        line.positionCount = visibleCount;
+        lr.positionCount = visibleCount;
         for (int i = 0; i < visibleCount; i++)
-            line.SetPosition(i, pathPoints[first + i]);
+            lr.SetPosition(i, pathPoints[first + i]);
 
         // 脉冲头粒子：推进/停留阶段发射于脉冲尖端（每帧跟随推进位置），
         // 消散阶段停止发射（已发射光尘自然飘散，与引导线"从发出端消散"同步）。
-        if (pulseParticles != null && pulseParticles.Length > 0)
+        if (particles != null && particles.Length > 0)
         {
             if (startT > 0f)
             {
-                StopPulseVfx();
+                StopPulseVfx(particles);
             }
             else
             {
                 Vector3 headPos = GetPulseHeadPosition(pathPoints, n, endT);
-                for (int i = 0; i < pulseParticles.Length; i++)
+                for (int i = 0; i < particles.Length; i++)
                 {
-                    if (pulseParticles[i] != null) pulseParticles[i].transform.position = headPos;
+                    if (particles[i] != null) particles[i].transform.position = headPos;
                 }
-                PlayPulseVfx();
+                PlayPulseVfx(particles);
             }
         }
+        return true;
     }
 
     void Hide()
@@ -654,7 +827,13 @@ public class MonsterDirectionUI : MonoBehaviour
             if (line != null) line.gameObject.SetActive(false);
         }
         // 隐藏时清空脉冲头粒子，防循环粒子残留（项目 VFX 规范同款处理）
-        if (pulseParticles != null) StopPulseVfx(true);
+        if (pulseParticles != null) StopPulseVfx(pulseParticles, true);
+    }
+
+    void HideElite()
+    {
+        if (eliteLine != null) eliteLine.gameObject.SetActive(false);
+        if (elitePulseParticles != null) StopPulseVfx(elitePulseParticles, true);
     }
 
     /// <summary>
@@ -664,46 +843,64 @@ public class MonsterDirectionUI : MonoBehaviour
     /// </summary>
     void BuildLine()
     {
-        GameObject go;
-        if (linePrefab != null)
+        line = BuildGuideLine(linePrefab,
+            guideMode == GuideTargetMode.Shrines ? "ShrineGuideLine" : "MonsterGuideLine",
+            guideColor, out runtimeMat, out pulseParticles);
+        if (line != null) line.gameObject.SetActive(false);
+
+        if (eliteGuideEnabled != EliteGuideMode.Off)
         {
-            go = Instantiate(linePrefab, transform, false);
-            go.name = guideMode == GuideTargetMode.Shrines ? "ShrineGuideLine" : "MonsterGuideLine";
-            line = go.GetComponent<LineRenderer>();
+            eliteLine = BuildGuideLine(linePrefab, "EliteGuideLine", eliteGuideColor,
+                out eliteRuntimeMat, out elitePulseParticles);
+            if (eliteLine != null) eliteLine.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>构建一条引导线（Prefab 或运行时兜底），返回 LineRenderer 并回填材质与脉冲头粒子。</summary>
+    LineRenderer BuildGuideLine(GameObject prefab, string name, Color color,
+        out Material mat, out ParticleSystem[] particles)
+    {
+        GameObject go;
+        LineRenderer lr;
+        if (prefab != null)
+        {
+            go = Instantiate(prefab, transform, false);
+            go.name = name;
+            lr = go.GetComponent<LineRenderer>();
         }
         else
         {
-            go = new GameObject("MonsterGuideLine");
+            go = new GameObject(name);
             go.transform.SetParent(transform, false);
-            line = go.AddComponent<LineRenderer>();
-            line.useWorldSpace = true;
-            line.alignment = LineAlignment.TransformZ; // 世界单位宽度（拖尾同款；View 是像素语义，会失真）
+            lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+            lr.alignment = LineAlignment.TransformZ; // 世界单位宽度（拖尾同款；View 是像素语义，会失真）
         }
 
         // 动态参数来自检查器（其余渲染参数由美术在 Prefab 中配置）
-        line.widthMultiplier = widthMultiplier;
-        line.widthCurve = widthCurve;
+        lr.widthMultiplier = widthMultiplier;
+        lr.widthCurve = widthCurve;
 
-        // 材质模板：Prefab 自带 → URP 粒子 Unlit 兜底（仅动态创建路径无材质时）
-        Material template = line.sharedMaterial;
+        mat = null;
+        Material template = lr.sharedMaterial;
         if (template != null)
         {
-            runtimeMat = new Material(template);
+            mat = new Material(template);
             // ASE 主色属性 _Color0（HDR 语义）
-            runtimeMat.SetColor("_Color0", guideColor * brightness);
+            mat.SetColor("_Color0", color * brightness);
             // 覆盖常见颜色属性，确保克隆实例不被其它属性带偏
-            runtimeMat.SetColor("_BaseColor", Color.white);
-            runtimeMat.SetColor("_Color", Color.white);
-            line.sharedMaterial = runtimeMat;
+            mat.SetColor("_BaseColor", Color.white);
+            mat.SetColor("_Color", Color.white);
+            lr.sharedMaterial = mat;
         }
         else
         {
             var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader != null)
             {
-                runtimeMat = new Material(shader);
-                runtimeMat.SetColor("_BaseColor", guideColor * brightness);
-                line.sharedMaterial = runtimeMat;
+                mat = new Material(shader);
+                mat.SetColor("_BaseColor", color * brightness);
+                lr.sharedMaterial = mat;
             }
             else
             {
@@ -713,26 +910,27 @@ public class MonsterDirectionUI : MonoBehaviour
 
         // 脉冲头粒子：Prefab 子粒子系统（项目 VFX 规范：Root + 子粒子层），
         // 渲染材质复用同一克隆实例，颜色/呼吸与引导线同步。
-        pulseParticles = go.GetComponentsInChildren<ParticleSystem>(true);
-        if (runtimeMat != null)
+        particles = go.GetComponentsInChildren<ParticleSystem>(true);
+        if (mat != null)
         {
-            foreach (var ps in pulseParticles)
+            foreach (var ps in particles)
             {
                 if (ps == null) continue;
                 var psr = ps.GetComponent<ParticleSystemRenderer>();
-                if (psr != null) psr.sharedMaterial = runtimeMat;
+                if (psr != null) psr.sharedMaterial = mat;
             }
         }
+        return lr;
     }
 
     /// <summary>
     /// 播放脉冲头粒子（对齐项目 VFX 规范：EnemyAbility.PlayVfx 遍历子粒子系统 Play(true)）。
     /// </summary>
-    void PlayPulseVfx()
+    void PlayPulseVfx(ParticleSystem[] particles)
     {
-        for (int i = 0; i < pulseParticles.Length; i++)
+        for (int i = 0; i < particles.Length; i++)
         {
-            var ps = pulseParticles[i];
+            var ps = particles[i];
             if (ps != null && !ps.isPlaying) ps.Play(true);
         }
     }
@@ -741,11 +939,11 @@ public class MonsterDirectionUI : MonoBehaviour
     /// 停止脉冲头粒子发射：默认保留已发射粒子自然消散（与引导线"从发出端消散"同步）；
     /// clear=true 立即清空（隐藏时不留残留，防循环粒子残留——项目 StopVfxLooping 同目的）。
     /// </summary>
-    void StopPulseVfx(bool clear = false)
+    void StopPulseVfx(ParticleSystem[] particles, bool clear = false)
     {
-        for (int i = 0; i < pulseParticles.Length; i++)
+        for (int i = 0; i < particles.Length; i++)
         {
-            var ps = pulseParticles[i];
+            var ps = particles[i];
             if (ps == null) continue;
             if (clear) ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             else if (ps.isPlaying) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
@@ -764,5 +962,6 @@ public class MonsterDirectionUI : MonoBehaviour
     void OnDestroy()
     {
         if (runtimeMat != null) Destroy(runtimeMat);
+        if (eliteRuntimeMat != null) Destroy(eliteRuntimeMat);
     }
 }

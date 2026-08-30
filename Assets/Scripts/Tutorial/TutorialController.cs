@@ -19,6 +19,16 @@ public class TutorialController : SceneSingleton<TutorialController>
     /// <summary>是否有激活中的教学提示（叙事调度器高压门只读查询：关键教学提示不被旁白遮挡；含队列中待播提示）。</summary>
     public static bool HasActivePrompt => Instance != null && (Instance.activeSteps.Count > 0 || Instance.queueRunning);
 
+    /// <summary>Step 额外展示面板绑定（场景引用）。Step ID 对应 TutorialConfig 里的 step.id。</summary>
+    [System.Serializable]
+    public class StepExtraPanelBinding
+    {
+        [Tooltip("Step ID（对应 TutorialConfig 里该 Step 的 id）")]
+        public string stepId = "";
+        [Tooltip("该 Step 激活时同步显示的面板（场景对象）")]
+        public GameObject panel;
+    }
+
     [Header("配置")]
     [Tooltip("教学 Step 配置资产（策划编辑；留空 = 教学系统不工作，战斗不受影响）")]
     public TutorialConfig config;
@@ -36,6 +46,16 @@ public class TutorialController : SceneSingleton<TutorialController>
     public TutorialUI ui;
     [Tooltip("旧版教学 Banner 字体字段（兼容已有场景引用）；运行时实际统一使用 FontRegistry.default")]
     public TMPro.TMP_FontAsset bannerFont;
+
+    [Header("额外面板绑定")]
+    [Tooltip("Step ID → 额外面板 映射（场景引用）。对应 Step 激活时显示该面板，完成/隐藏时关闭。")]
+    public List<StepExtraPanelBinding> extraPanelBindings = new List<StepExtraPanelBinding>();
+
+    [Header("跳过按钮")]
+    [Tooltip("跳过教程按钮（Editor 配置；留空则无跳过入口）。点击后结束当前局所有剩余教程。")]
+    public UnityEngine.UI.Button skipTutorialButton;
+    [Tooltip("重新开始引导按钮（Editor 配置；跳过引导后出现）。点击后从头重放完整引导。")]
+    public UnityEngine.UI.Button newTutorialButton;
 
     TutorialProbes probes;
     readonly HashSet<TutorialFact> runSeenFacts = new HashSet<TutorialFact>();
@@ -155,6 +175,19 @@ public class TutorialController : SceneSingleton<TutorialController>
         started = true;
         pollRoutine = StartCoroutine(PollActiveSteps());
 
+        // 跳过/重看引导按钮：Editor 配置后自动接管点击
+        if (skipTutorialButton != null)
+        {
+            skipTutorialButton.onClick.RemoveAllListeners();
+            skipTutorialButton.onClick.AddListener(SkipTutorial);
+        }
+        if (newTutorialButton != null)
+        {
+            newTutorialButton.onClick.RemoveAllListeners();
+            newTutorialButton.onClick.AddListener(RestartTutorial);
+        }
+        SwapButtons(showSkip: true);   // 初始：显示跳过按钮，隐藏重看按钮
+
         // 静态态复位（防跨局残留）：开场载体 pending 标记清空
         OpeningCarrierPendingUntil = 0f;
 
@@ -212,6 +245,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         activeQueueStep = null;
         forceCompleteActiveQueue = false;
         if (ui != null) ui.Hide();
+        HideAllExtraPanels();
         StopAllCoroutines();
         // StopAllCoroutines 会杀掉正在运行的 PromptQueueRoutine 但不复位其 queueRunning 标记，
         // 必须手动复位，否则下方 EnqueuePrompt 因误判"队列仍在运行"而停摆、首条提示不显示。
@@ -626,6 +660,7 @@ public class TutorialController : SceneSingleton<TutorialController>
 
         if (ui != null)
             ui.ShowBanner(step.ResolveTitle(), ResolveText(step.ResolveBody()));
+        SetExtraPanel(step, true);
 
         Debug.Log($"[TutorialController] Step 激活：{step.id}（{step.title}），阻断={step.blocking}，超时={step.timeoutSeconds}s，提醒={step.remindInterval}s");
         TutorialTelemetry.StepActivated(step.id, step.blocking);
@@ -709,6 +744,7 @@ public class TutorialController : SceneSingleton<TutorialController>
 
             if (ui != null)
                 ui.ShowBanner(step.ResolveTitle(), ResolveText(step.ResolveBody()));
+            SetExtraPanel(step, true);
             Debug.Log($"[TutorialController] 队列提示开始：{step.id}（{step.title}），显示时长={step.displaySeconds}s");
 
             if (step.displaySeconds > 0f)
@@ -721,6 +757,7 @@ public class TutorialController : SceneSingleton<TutorialController>
                     RecordStepCompletion(step, "displayed");
 
                 if (ui != null) ui.Hide();
+                SetExtraPanel(step, false);
                 queuedPromptIds.Remove(step.id);
 
                 // 自动入队 nextStepId（怪介绍 → 按键提示链；此前定时分支缺此链，怪介绍后队列断流）
@@ -756,6 +793,7 @@ public class TutorialController : SceneSingleton<TutorialController>
 
             RecordStepCompletion(step, "fact");
             if (ui != null) ui.Hide();
+            SetExtraPanel(step, false);
             queuedPromptIds.Remove(step.id);
             Debug.Log($"[TutorialController] 队列提示结束（完成/超时）：{step.id}");
 
@@ -785,6 +823,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         // 统一结算：内存记忆 + 持久化（persistAcrossRuns）+ 埋点。
         // 本局内存记忆用于强制模式绕过 Profile 后防轮询重激活。
         RecordStepCompletion(step, reason);
+        SetExtraPanel(step, false);   // 完成的 Step 收起其额外面板
 
         // Banner 管理：并行 Step（NonBlocking 模式）下完成一个不隐藏整个 Banner，
         // 而是切换到另一个仍激活的 Step 文案；全部完成才隐藏。
@@ -795,6 +834,7 @@ public class TutorialController : SceneSingleton<TutorialController>
                 TutorialStepConfig next = null;
                 foreach (var kv in activeSteps) { next = kv.Value; break; }
                 ui.ShowBanner(next.ResolveTitle(), ResolveText(next.ResolveBody()));
+                SetExtraPanel(next, true);   // 切换到下一个激活 Step 时，同步打开其额外面板
             }
             else
             {
@@ -819,6 +859,96 @@ public class TutorialController : SceneSingleton<TutorialController>
         if (step.persistAcrossRuns)
             TutorialProfileStore.MarkStepCompleted(step.id);
         TutorialTelemetry.StepCompleted(step.id, reason);
+    }
+
+    /// <summary>按 Step ID 查找绑定的额外面板（找不到返回 null）。</summary>
+    GameObject FindExtraPanel(string stepId)
+    {
+        if (string.IsNullOrEmpty(stepId) || extraPanelBindings == null) return null;
+        for (int i = 0; i < extraPanelBindings.Count; i++)
+        {
+            var b = extraPanelBindings[i];
+            if (b != null && b.stepId == stepId) return b.panel;
+        }
+        return null;
+    }
+
+    /// <summary>统一管理 Step 的额外面板显隐：激活时显示，完成/隐藏时关闭。</summary>
+    void SetExtraPanel(TutorialStepConfig step, bool active)
+    {
+        if (step == null) return;
+        GameObject panel = FindExtraPanel(step.id);
+        if (panel == null) return;
+        if (panel.activeSelf != active)
+            panel.SetActive(active);
+    }
+
+    /// <summary>关闭所有额外面板（重置/强制重放清理用）。</summary>
+    void HideAllExtraPanels()
+    {
+        if (extraPanelBindings == null) return;
+        for (int i = 0; i < extraPanelBindings.Count; i++)
+        {
+            var b = extraPanelBindings[i];
+            if (b != null && b.panel != null && b.panel.activeSelf)
+                b.panel.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 跳过本局所有剩余教程：关闭提示与额外面板、清空激活/队列、标记本局所有 Step 完成（防重激活）、
+    /// 恢复波门并持久化"用户已跳过"标记。由 skipTutorialButton.onClick 调用。
+    /// </summary>
+    public void SkipTutorial()
+    {
+        // 关闭当前显示
+        if (ui != null) ui.Hide();
+        HideAllExtraPanels();
+
+        // 清空激活态与队列
+        activeSteps.Clear();
+        promptQueue.Clear();
+        queuedPromptIds.Clear();
+        currentBlockingStep = null;
+        activeQueueStep = null;
+        forceCompleteActiveQueue = false;
+
+        // 标记本局所有 Step 完成，防止 EvaluateAll / 事实事件重新激活
+        if (config != null)
+            for (int i = 0; i < config.steps.Count; i++)
+                if (config.steps[i] != null) runCompletedStepIds.Add(config.steps[i].id);
+
+        // 停止所有教学协程（超时/提醒/队列），并复位队列运行标记、重启轮询心跳
+        StopAllCoroutines();
+        queueRunning = false;
+        queueRoutine = null;
+        pollRoutine = StartCoroutine(PollActiveSteps());
+
+        // 恢复波门（跳过阻断教学不卡波次）
+        WaveStartGateOpen = true;
+
+        // 持久化：用户已主动跳过（跨 Run 标记，供设置面板/后续准入判定使用）
+        TutorialProfileStore.MarkSkippedByUser();
+
+        // 跳过按钮消失，换出「重看引导」按钮
+        SwapButtons(showSkip: false);
+
+        Debug.Log("[TutorialController] 用户跳过教程：已结束本局所有剩余教学。");
+    }
+
+    /// <summary>重新开始引导（new tutorial 按钮）：从头重放完整引导，并把按钮切回跳过态。</summary>
+    public void RestartTutorial()
+    {
+        ForceReplay();
+        SwapButtons(showSkip: true);
+        Debug.Log("[TutorialController] 重新开始引导。");
+    }
+
+    /// <summary>切换跳过/重看按钮显隐：showSkip=true 显示跳过按钮，否则显示「重看引导」按钮。</summary>
+    void SwapButtons(bool showSkip)
+    {
+        if (skipTutorialButton != null) skipTutorialButton.gameObject.SetActive(showSkip);
+        if (newTutorialButton != null) newTutorialButton.gameObject.SetActive(!showSkip);
     }
 
     /// <summary>

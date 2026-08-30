@@ -24,6 +24,14 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public GameObject confirmedMark;
     public GameObject rerolledMark;
 
+    [Header("Monster Type Image")]
+    [Tooltip("怪物类型图片（prefab 上配；显示该卡对应怪物的类型归属，无怪物类型时隐藏）。")]
+    public Image monsterTypeImage;
+
+    [Header("Hover Tooltip")]
+    [Tooltip("hover 提示目标（默认 cardImage）。hover 时显示卡片名 + MonsterSkillIconConfig 里对应技能的详情。")]
+    public RectTransform hoverTarget;
+
     [Header("Card Layers (assign on prefab, optional)")]
     public Image foregroundImage;
     public Image middlegroundImage;
@@ -144,6 +152,8 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (cardImage != null) { cardImage.sprite = sprite; cardImage.color = ResolveIconColor(sprite); }
         if (descriptionText != null) descriptionText.text = description;
         ApplyLayers(data);
+        ApplyMonsterTypeImage(data);
+        ApplyHoverTooltip(text, sprite, description);
         if (confirmedMark != null) confirmedMark.SetActive(false);
         if (rerolledMark != null) rerolledMark.SetActive(false);
 
@@ -237,6 +247,8 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (cardImage != null) { cardImage.sprite = sprite; cardImage.color = ResolveIconColor(sprite); }
         if (descriptionText != null) descriptionText.text = description;
         ApplyLayers(data);
+        ApplyMonsterTypeImage(data);
+        ApplyHoverTooltip(text, sprite, description);
         if (confirmedMark != null) confirmedMark.SetActive(false);
         if (rerolledMark != null) rerolledMark.SetActive(false);
         if (confirmButton != null) confirmButton.interactable = true;
@@ -270,6 +282,47 @@ public class CoreChoiceCard : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         var cfg = ResolveIconConfig();
         if (cfg != null && cfg.TryGetColorByIcon(sprite, out var color)) return color;
         return Color.white;
+    }
+
+    /// <summary>按卡片怪物类型（data.monsterType）从 MonsterSkillIconConfig 填充怪物类型图片；无类型/无配置则隐藏。</summary>
+    void ApplyMonsterTypeImage(CardData data)
+    {
+        if (monsterTypeImage == null) return;
+        if (data == null || data.monsterType == SinType.None)
+        {
+            monsterTypeImage.gameObject.SetActive(false);
+            return;
+        }
+        var cfg = ResolveIconConfig();
+        Sprite icon = null;
+        Color color = Color.white;
+        bool has = cfg != null && cfg.TryGetMonsterType(data.monsterType, out icon, out color);
+        if (has)
+        {
+            monsterTypeImage.sprite = icon;
+            monsterTypeImage.color = color;
+            monsterTypeImage.gameObject.SetActive(true);
+        }
+        else
+        {
+            monsterTypeImage.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>给卡片主图挂 hover 提示：显示卡片名 + MonsterSkillIconConfig 里对应技能的详情（无配置则回退卡片描述）。</summary>
+    void ApplyHoverTooltip(string cardName, Sprite sprite, string cardDescription)
+    {
+        RectTransform target = hoverTarget != null ? hoverTarget : (cardImage != null ? cardImage.rectTransform : null);
+        if (target == null) return;
+
+        var cfg = ResolveIconConfig();
+        string desc = null;
+        if (cfg != null && sprite != null) cfg.TryGetDescriptionByIcon(sprite, out desc);
+        if (string.IsNullOrEmpty(desc)) desc = cardDescription;
+
+        var hover = target.GetComponent<HoverTooltipText>();
+        if (hover == null) hover = target.gameObject.AddComponent<HoverTooltipText>();
+        hover.SetText(cardName, desc);
     }
 
     // ── 动态生成的额外并列素材层（extraXxxSprites[0..N-1]），随 ApplyLayers 清理 ──

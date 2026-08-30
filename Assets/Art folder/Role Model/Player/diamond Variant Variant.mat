@@ -42,5 +42,5 @@ Material:
     m_Floats:
     - _Smoothness: 0.115
     m_Colors:
-    - _EmissionColor: {r: 0.07740195, g: 0.08403607, b: 1.2954684, a: 1}
+    - _EmissionColor: {r: 4.341264, g: 4.713353, b: 72.65928, a: 1}
   m_BuildTextureStacks: []

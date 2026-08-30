@@ -1991,7 +1991,7 @@ MonoBehaviour:
   dissolveEdgeIntensity: 4.5
   fxMaterialTemplate: {fileID: 2100000, guid: 78ccb6d748534876be7f625c6a92d9b3, type: 2}
   possessionImprintMeteorSpeed: 2000
-  possessionImprintMeteorWidth: 60
+  possessionImprintMeteorWidth: 10
   possessionImprintMeteorTailLength: 0.327
   possessionImprintMeteorGlow: 1.8
   possessionImprintMeteorColor: {r: 1, g: 0.38679236, b: 0.38679236, a: 1}

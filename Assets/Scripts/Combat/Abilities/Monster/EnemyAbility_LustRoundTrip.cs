@@ -37,6 +37,8 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
     public float a03Damage = 30f;
     public float a03Radius = 2.5f;
     public GameObject a03BlastVfx;
+    [Tooltip("LU-A03 死亡爆炸 VFX 相对爆炸点的偏移。")]
+    public Vector3 a03BlastVfxOffset = Vector3.zero;
 
     private LustBodyState _state;
     private readonly HashSet<int> _watchedLinkIds = new HashSet<int>();
@@ -386,7 +388,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         float radius = GetCardParameter("R", a03Radius);
         if (a03BlastVfx != null)
         {
-            GameObject blast = Object.Instantiate(a03BlastVfx, pos, Quaternion.identity);
+            GameObject blast = Object.Instantiate(a03BlastVfx, pos + a03BlastVfxOffset, Quaternion.identity);
             blast.transform.localScale *= OwnerCombatScaleMultiplier;
         }
         DamageEnemiesInSphere(pos, radius, dmg);
