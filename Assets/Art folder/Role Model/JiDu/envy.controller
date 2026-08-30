@@ -70,7 +70,7 @@ AnimatorStateMachine:
     m_Position: {x: -130, y: 280, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1394427329750422413}
-    m_Position: {x: 40, y: 160, z: 0}
+    m_Position: {x: 120, y: 170, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1163905153987433822}
     m_Position: {x: 440, y: 280, z: 0}
@@ -312,7 +312,7 @@ BlendTree:
       type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 1
+    m_TimeScale: 0.1
     m_CycleOffset: 0
     m_DirectBlendParameter: Speed
     m_Mirror: 0
