@@ -256,6 +256,13 @@ public class UIManager : SceneSingleton<UIManager>
             // 切换暂停状态
             TogglePause();
         }
+
+        // 死亡/结算面板上按 P：直接复活并继续当前对局（灵魂生命回满，其余状态不变）
+        if (Input.GetKeyDown(KeyCode.P) && gameOverPanel != null && gameOverPanel.activeSelf)
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.RevivePlayer();
+        }
     }
 
     /// <summary>
@@ -286,6 +293,25 @@ public class UIManager : SceneSingleton<UIManager>
 
         // 结算冻结（GameOver 域已由 GameManager Push；此处保险补 Pause 域，缺失 UI 场景下仍冻结）
         TimeScaleManager.Push(TimeDomain.Pause, 0f);
+    }
+
+    /// <summary>
+    /// 收起终局结算面板：与 ShowResult 对称，解除结算冻结并锁回光标。
+    /// 供死亡界面复活继续对局使用（时间域的 GameOver 由 GameManager 负责解除）。
+    /// </summary>
+    public void HideResult()
+    {
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+
+        // 与 ShowResult 的 Push(Pause) 对称
+        TimeScaleManager.Pop(TimeDomain.Pause);
+
+        // 回到游戏内光标状态
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
+        Debug.Log("UIManager: Result panel hidden (revive)");
     }
 
     /// <summary>失败结算（GameManager 失败路径调用，委托 ShowResult(false)）。</summary>

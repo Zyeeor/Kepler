@@ -69,6 +69,20 @@ public class RunSession : MonoBehaviour
         OpeningCardGemsSpawned = true;
     }
 
+    /// <summary>
+    /// 复活专用：从 Failed 终态恢复到 Waves，继续原对局（不清档、不重开）。
+    /// Failed 在阶段机里是终态（无合法出边），正常流程不会走到这里，仅由死亡界面复活调用。
+    /// </summary>
+    public bool ReviveFromFailed()
+    {
+        if (CurrentPhase != RunPhase.Failed) return false;
+        RunPhase prev = CurrentPhase;
+        CurrentPhase = RunPhase.Waves;
+        Debug.Log($"[RunFlow] 复活：{prev} → {RunPhase.Waves}（继续原对局，进度与构筑不变）");
+        OnPhaseChanged?.Invoke(CurrentPhase);
+        return true;
+    }
+
     /// <summary>阶段切换事件（UI/子系统订阅，事件驱动——不直接跨系统调用）。</summary>
     public event Action<RunPhase> OnPhaseChanged;
 

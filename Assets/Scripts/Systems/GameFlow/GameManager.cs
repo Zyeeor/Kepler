@@ -361,6 +361,36 @@ public class GameManager : MonoBehaviour
         OnStateChanged?.Invoke(newState);   // 广播状态变更（订阅方如 PossessionManager 自取所需状态处理）
         Debug.Log($"State: {newState}");
     }
+
+    /// <summary>
+    /// 复活玩家：死亡界面调用，灵魂生命回满并继续当前对局（不清档、不重开、不重置关卡进度）。
+    /// 与死亡链路对称地撤销：死亡标记、结算面板、GameOver/Pause 两个时间域、Run 的 Failed 终态、玩家状态。
+    /// </summary>
+    public void RevivePlayer()
+    {
+        if (currentState != GameState.GameOver) return;
+
+        // 1) 灵魂生命回满并清除死亡标记（Die() 的 isDead 幂等闸门在此解开）
+        if (PlayerHealth.Instance != null)
+            PlayerHealth.Instance.ResetHealth();
+
+        // 2) 收起结算面板（内部会解除它 Push 的 Pause 域并锁回光标）
+        if (UIManager.Instance != null)
+            UIManager.Instance.HideResult();
+        else if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+
+        // 3) 解除死亡时的时间冻结（ShowGameOverUI 里 Push 的 GameOver 域）
+        TimeScaleManager.Pop(TimeDomain.GameOver);
+
+        // 4) Run 阶段从 Failed 恢复到 Waves（终态无出边，走专用复活出口）
+        RunSession.EnsureInstance().ReviveFromFailed();
+
+        // 5) 回到灵魂态：恢复灵魂衰减计时，玩家可继续移动/附身
+        SwitchState(GameState.Soul);
+
+        Debug.Log("GameManager: 玩家复活，继续当前对局（灵魂生命已回满）。");
+    }
     
     void ShowGameOverUI()
     {
