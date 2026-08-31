@@ -26,7 +26,7 @@ MonoBehaviour:
     mustGenerate: 0
     maxCount: 2
     weight: 0
-  templateWeight: 0.1
+  templateWeight: 0.05
   normalTiles:
   - {fileID: 1891706088245170632, guid: 182a60b71271da144991ddd9cab6589a, type: 3}
   - {fileID: 2898380885021715338, guid: 681037e680563f34fa477926b1450484, type: 3}
@@ -90,7 +90,7 @@ MonoBehaviour:
   decorationTilesLegacy: []
   triggerPatterns:
   - shape: 2
-    weight: 3
+    weight: 2
   - shape: 0
     weight: 0
   - shape: 1
@@ -98,13 +98,13 @@ MonoBehaviour:
   - shape: 3
     weight: 5
   - shape: 5
-    weight: 1
+    weight: 0.5
   - shape: 6
-    weight: 1
+    weight: 0.5
   - shape: 7
-    weight: 1
+    weight: 0.5
   - shape: 8
-    weight: 1
+    weight: 0.5
   decorationPatterns:
   - shape: 0
     weight: 10
