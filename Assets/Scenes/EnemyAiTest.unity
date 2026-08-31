@@ -7861,7 +7861,7 @@ MonoBehaviour:
   linePrefab: {fileID: 8381635622479553599, guid: f050647c2e7706a4ea5f6e01e3419de2,
     type: 3}
   noMonsterVisibleSeconds: 5
-  noPossessableMonsterSeconds: 5
+  noPossessableMonsterSeconds: 3
   pulseTravelTime: 0.5
   pulseHoldTime: 0.5
   pulseFadeTime: 1
@@ -7876,8 +7876,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.1896161
-      value: -0.029082358
+      time: 0.0060226023
+      value: 0.102160096
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -7885,8 +7885,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.5
-      value: 0.55
+      time: 0.4901582
+      value: 0.50105333
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -7894,17 +7894,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.65875244
-      value: -0.012084961
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.8420819
-      value: -0.03857178
+      time: 0.9879132
+      value: 0.106683694
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -7914,10 +7905,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  widthMultiplier: 3
+  widthMultiplier: 2
   heightOffset: 0.05
+  lineAlignment: 0
   waveAmplitude: 0.2
-  waveCount: 3
+  waveCount: 2
   waveSpeed: 1
 --- !u!114 &1178878876
 MonoBehaviour:
@@ -7950,8 +7942,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.22774354
-      value: -0.074902445
+      time: 0.0060226023
+      value: 0.102160096
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -7959,8 +7951,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.5
-      value: 0.55
+      time: 0.4901582
+      value: 0.50105333
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -7968,17 +7960,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.7173413
-      value: -0.008542482
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.9623108
-      value: -0.15280151
+      time: 0.9879132
+      value: 0.106683694
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -7988,10 +7971,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  widthMultiplier: 3
+  widthMultiplier: 2
   heightOffset: 0.05
+  lineAlignment: 0
   waveAmplitude: 0.2
-  waveCount: 3
+  waveCount: 2
   waveSpeed: 1
 --- !u!4 &1178878877
 Transform:
@@ -8039,8 +8023,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.16041794
-      value: -0.058087256
+      time: 0.0060226023
+      value: 0.102160096
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -8048,8 +8032,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.5
-      value: 0.55
+      time: 0.4901582
+      value: 0.50105333
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -8057,17 +8041,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.7933301
-      value: -0.094785154
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.85253906
-      value: -0.12786865
+      time: 0.9879132
+      value: 0.106683694
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -8077,10 +8052,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  widthMultiplier: 3
+  widthMultiplier: 2
   heightOffset: 0.05
+  lineAlignment: 0
   waveAmplitude: 0.2
-  waveCount: 3
+  waveCount: 2
   waveSpeed: 1
 --- !u!1 &1231796456
 GameObject:
