@@ -66,6 +66,12 @@ public class PossessionBodyProvider : MonoBehaviour
     [Tooltip("接近提示触发圈的半径（≤0 = 与 triggerRadius 相同）。")]
     public float audioProximityRadius = 3f;
 
+    [Header("死局兜底")]
+    [Tooltip("开启：当玩家处于灵魂态、场上没有任何可附身躯体、且所有神龛都已提供过躯体时，重置全部神龛使其可再次提供，避免玩家无躯体可用形成死局。")]
+    public bool deadlockRecoveryEnabled = true;
+    [Tooltip("死局检测节流间隔（秒）。检测需扫描全场怪物，不宜每帧执行。")]
+    [Min(0.1f)] public float deadlockCheckInterval = 1f;
+
     [Header("状态（调试可重置）")]
     [Tooltip("已提供过（只一次）。调试时可手动取消勾选重置。")]
     public bool used;
@@ -169,11 +175,83 @@ public class PossessionBodyProvider : MonoBehaviour
             providedBodyConsumed = true;
     }
 
+    /// <summary>死局检测的下一次可执行时刻（静态节流：全场每秒最多检测一次）。</summary>
+    static float nextDeadlockCheckTime;
+
+    /// <summary>
+    /// 死局兜底：玩家处于灵魂态、场上没有任何可附身躯体、且所有神龛都已提供过躯体（无未失效目标）时，
+    /// 重置全部神龛使其可再次提供，避免玩家陷入"无躯体可附身"的死局。
+    /// 由任一神龛的 Update 驱动，静态时间戳保证同一时刻只有一个真正执行。
+    /// </summary>
+    static void CheckDeadlockAndRefresh(float interval)
+    {
+        if (Time.unscaledTime < nextDeadlockCheckTime) return;
+        nextDeadlockCheckTime = Time.unscaledTime + Mathf.Max(0.1f, interval);
+
+        if (activeProviders.Count == 0) return;
+
+        // 仅玩家处于灵魂态时才有"无躯体可用"的问题；附身中/飞行切换中一律不算死局，
+        // 否则会把玩家正骑着的躯体判成"没有可附身躯体"而误触发重置。
+        var pm = PossessionManager.Instance;
+        if (pm != null && (pm.CurrentBody != null || pm.State != PossessionManager.SwitchState.Idle)) return;
+
+        // 1) 场上是否还有任何可附身躯体：全场景扫描而非只查 MonsterSpawner 追踪表——
+        //    开场载体等躯体由 TutorialController 直接 Instantiate，不在追踪表内。
+        if (HasAnyPossessableBody()) return;
+
+        // 2) 是否仍存在可引导（未失效）的神龛；只要还有一个可用，就不是死局
+        bool anyUsable = false;
+        foreach (var provider in activeProviders)
+        {
+            if (provider == null || !provider.isActiveAndEnabled || !provider.gameObject.activeInHierarchy) continue;
+            if (provider.IsValidForGuide) { anyUsable = true; break; }
+        }
+        if (anyUsable) return;
+
+        // 3) 死局成立：重置全部神龛，使其重新具备提供躯体的能力
+        int refreshed = 0;
+        foreach (var provider in activeProviders)
+        {
+            if (provider == null) continue;
+            provider.ResetForDeadlockRecovery();
+            refreshed++;
+        }
+        Debug.LogWarning($"[PossessionBodyProvider] 死局兜底：场上无可用躯体且全部神龛均已提供过，已重置 {refreshed} 个神龛。");
+    }
+
+    /// <summary>场景中是否存在任何可附身躯体（全扫，含未纳入 MonsterSpawner 追踪的躯体）。</summary>
+    static bool HasAnyPossessableBody()
+    {
+        MonsterActor[] monsters = FindObjectsOfType<MonsterActor>(true);
+        for (int i = 0; i < monsters.Length; i++)
+        {
+            var monster = monsters[i];
+            if (monster == null || !monster.gameObject.activeInHierarchy) continue;
+            if (monster.CanBePossessed) return true;
+        }
+        return false;
+    }
+
+    /// <summary>死局兜底重置：恢复提供能力，并清掉上一次提供的躯体记录。</summary>
+    public void ResetForDeadlockRecovery()
+    {
+        used = false;
+        providedBody = null;
+        providedBodyConsumed = false;
+        proximitySfxPlayed = false;
+        lastWarnTime = -999f;
+    }
+
     void Update()
     {
         TryBindPossessionManager();
         if (providedBody != null && providedBody.isPossessed)
             providedBodyConsumed = true;
+
+        // 死局兜底检测（静态节流；须放在 used 早退之前，已提供过的神龛也要参与判定）
+        if (deadlockRecoveryEnabled)
+            CheckDeadlockAndRefresh(deadlockCheckInterval);
+
         if (used) return;
         if (!HasValidSource())
         {

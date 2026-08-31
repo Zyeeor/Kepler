@@ -307,9 +307,11 @@ public class UIManager : SceneSingleton<UIManager>
         // 与 ShowResult 的 Push(Pause) 对称
         TimeScaleManager.Pop(TimeDomain.Pause);
 
-        // 回到游戏内光标状态
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        // 恢复游戏内光标：本项目不使用锁定光标（游戏为鼠标操作，正常态光标可见），
+        // 且游戏光标是自定义纹理，需经 GameCursorManager.Apply() 重新应用，
+        // 仅置 visible 会退化成系统默认光标。
+        Cursor.lockState = CursorLockMode.None;
+        GameCursorManager.Apply();
 
         Debug.Log("UIManager: Result panel hidden (revive)");
     }
