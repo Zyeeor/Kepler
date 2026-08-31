@@ -1380,7 +1380,7 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: EN-M01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

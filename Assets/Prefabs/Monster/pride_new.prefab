@@ -1122,11 +1122,11 @@ MonoBehaviour:
   - effectId: Pride.ChargeEmpowered
     unlocked: 0
   - effectId: PR-M01
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-A03
-    unlocked: 1
+    unlocked: 0
   - effectId: PR-TG01
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

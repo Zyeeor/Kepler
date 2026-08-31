@@ -49,9 +49,9 @@ MonoBehaviour:
   type: 3
   upgrades:
   - effectId: GR-M01
-    unlocked: 1
+    unlocked: 0
   - effectId: GR-M02
-    unlocked: 1
+    unlocked: 0
   vfxPrefab: {fileID: 0}
   vfxSpawnPoint: {fileID: 0}
   weaponVfxPrefab: {fileID: 0}

@@ -330,6 +330,13 @@ public class TutorialController : SceneSingleton<TutorialController>
                 yield break;
             }
 
+            // 开场载体绕过 MonsterPool 直接 Instantiate，也必须从当前 Run 卡牌集合重建能力状态。
+            if (CardManager.Instance != null)
+            {
+                CardManager.Instance.ResetAbilityUnlockState(carrier);
+                CardManager.Instance.ApplyAllUnlocksTo(carrier);
+            }
+
             // 载体以"永久附身等待尸体"出场（AI 休眠 + 附身窗口无限）——
             // BeginPossessionFlight 要求目标处于 Downed 可附身态，且避免活怪 AI 在附身动画期间攻击灵魂。
             actor.SpawnAsPermanentCorpse();

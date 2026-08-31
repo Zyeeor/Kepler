@@ -506,7 +506,7 @@ MonoBehaviour:
   enemyCastHudScreenOffset: {x: 40, y: 200}
   formDuration: 3
   scaleMultiplier: 0.5
-  speedMultiplier: 2
+  speedMultiplier: 3
   glM01SpeedBonus: 1.25
   glM01TurnResponsiveness: 1.25
   normalModelRoot: {fileID: 2336044664155016860}

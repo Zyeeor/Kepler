@@ -214,6 +214,17 @@ public class RunSession : MonoBehaviour
     /// </summary>
     public void InitWorldSeed()
     {
+        // 直接 Play 且没有活动 Run 时也视作一局新调试对局：清掉上一轮内存态、
+        // 池化怪物与能力，避免编辑器反复 Play 时继承上一局构筑。
+        if (!HasActiveRun)
+        {
+            ChoicePicks.Clear();
+            UnlockedEffects.Clear();
+            GlobalMissStreak = 0;
+            CardManager.Instance?.ResetAllUnlocks();
+            MonsterPool.Instance.ClearAll();
+        }
+
         var gm = GameManager.Instance;
         WorldSeed = (gm != null && gm.useFixedSeed) ? gm.fixedSeed
                                                     : (uint)UnityEngine.Random.Range(1, int.MaxValue);
@@ -244,6 +255,9 @@ public class RunSession : MonoBehaviour
         PendingChoice = false;
         ChoicePicks.Clear();
         UnlockedEffects.Clear();
+        // 新局必须清理常驻对象池与当前场景实例上的运行时卡牌状态，避免上一局能力残留。
+        CardManager.Instance?.ResetAllUnlocks();
+        MonsterPool.Instance.ClearAll();
         GlobalMissStreak = 0;
         SoulPosition = Vector3.zero;
         SoulHealth = 0f;
@@ -289,6 +303,9 @@ public class RunSession : MonoBehaviour
         PendingChoice = false;
         ChoicePicks.Clear();
         UnlockedEffects.Clear();
+        // Boss 新局同样不能继承普通局/上一场 Boss 的池化能力状态。
+        CardManager.Instance?.ResetAllUnlocks();
+        MonsterPool.Instance.ClearAll();
         GlobalMissStreak = 0;
         SoulPosition = Vector3.zero;
         SoulHealth = 0f;

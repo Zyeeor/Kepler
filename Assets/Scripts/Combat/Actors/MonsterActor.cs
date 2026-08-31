@@ -988,6 +988,27 @@ public class MonsterActor : Actor
     }
 
     /// <summary>
+    /// Ability 位移复用与普通移动相同的环境碰撞滑动。
+    /// 只允许修改水平位移，调用方负责维护跳跃/落差的 Y 坐标。
+    /// </summary>
+    public void MoveWithAbilityCollision(Vector3 displacement)
+    {
+        MoveWithSpherecast(displacement);
+    }
+
+    /// <summary>
+    /// Ability 落地后单独执行一次重叠脱困。零位移不会进入普通移动路径，
+    /// 因此这里显式跑一次 SlideMove 的起点重叠校正，避免从空中落下时把根节点写进建筑。
+    /// </summary>
+    public void ResolveAbilityPenetration()
+    {
+        int obstacleMask = ~((1 << 8) | (1 << 9));
+        Vector3 resolved = SlideMove(transform.position, 0.75f, 0.4f, Vector3.zero, obstacleMask);
+        resolved.y = transform.position.y;
+        transform.position = resolved;
+    }
+
+    /// <summary>
     /// 游戏视图调试：用 LineRenderer 圆环可视化索敌/攻击距离（随怪移动）。
     /// 显示条件：Inspector 勾选 showDebugRanges，且怪处于可作战的 AI 态（未附身/未倒地/未消失）。
     /// 池化复用：Return 时整物体 SetActive(false) 自动隐藏，Spawn 后本方法按勾选状态自动恢复。

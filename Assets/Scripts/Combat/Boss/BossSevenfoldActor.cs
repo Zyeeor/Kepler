@@ -7,6 +7,9 @@ public sealed class BossSevenfoldActor : Enemy
 {
     public const int AbilityCount = 14;
     const float DefaultBossMaxHealth = 6500f;
+    // Temporary combat tuning: keep the two flight abilities and blink invisibility disabled;
+    // Boss Void Walk teleport remains enabled so the Boss can close distance to the player.
+    const bool EnableTemporaryBannedFlight = false;
     public bool IsDefeated { get; private set; }
     public bool CanAct { get; private set; }
     public BossCombatBrain CombatBrain { get; private set; }
@@ -265,8 +268,16 @@ public sealed class BossSevenfoldActor : Enemy
     {
         EnemyAbility[] abilities = GetBossAbilities();
         for (int i = 0; i < abilities.Length; i++)
-            if (abilities[i] != null && abilities[i].type == EnemyAbility.AbilityType.Mobility)
-                abilities[i].enabled = false;
+        {
+            EnemyAbility ability = abilities[i];
+            if (ability == null) continue;
+            if (ability is EnemyAbility_EnvyFlight || ability is EnemyAbility_SlothLaunch)
+                ability.enabled = EnableTemporaryBannedFlight;
+
+            EnemyAbility_PrideBlinkChain blink = ability as EnemyAbility_PrideBlinkChain;
+            if (blink != null)
+                blink.hideOwnerMeshes = false;
+        }
     }
 
     public override void BeginDisappearing()

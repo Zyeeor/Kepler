@@ -958,7 +958,7 @@ MonoBehaviour:
   markStorageCap: 100
   markWriteRatio: 0.2
   markGraceDuration: 0
-  maxConnectDuration: 8
+  maxConnectDuration: 3
   markEffect: {fileID: 11400000, guid: d35abb93af99477880e7abb901d8ffd6, type: 2}
   laserHitEffect: {fileID: 11400000, guid: f508e4b3df584aa8b175b8b16c65a0a7, type: 2}
   rampMaxDamagePerSecond: 50

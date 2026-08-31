@@ -60,6 +60,15 @@ public class AbilityCooldownUI : MonoBehaviour
     private EnemyAbility enemyMobilityAbility;
     private SinType enemySkillIconSin = SinType.None;
 
+    Canvas pausePresentationCanvas;
+    GraphicRaycaster pausePresentationRaycaster;
+    bool pauseCanvasStateCaptured;
+    bool pauseCanvasWasCreated;
+    bool pauseRaycasterWasCreated;
+    bool pauseRaycasterStateCaptured;
+    bool pauseRaycasterOriginalEnabled;
+    bool pauseCanvasOriginalOverrideSorting;
+    int pauseCanvasOriginalSortingOrder;
 
     // 场景默认图标作为配置缺省值；在玩家/怪物状态切换时避免沿用上一个角色的覆盖图。
     private Sprite defaultBasicIcon;
@@ -80,6 +89,73 @@ public class AbilityCooldownUI : MonoBehaviour
         ResolveIconConfig();
         SetupIcons();
         RefreshIcons();
+    }
+
+    /// <summary>
+    /// 暂停时将技能 HUD 提到暂停遮罩之上，保持图标可见且可接收 hover；
+    /// 恢复游戏后还原原 Canvas 状态，不改变正常态层级。
+    /// </summary>
+    public void SetPausePresentation(bool showOnTop)
+    {
+        if (showOnTop)
+        {
+            if (pausePresentationCanvas == null)
+            {
+                pausePresentationCanvas = GetComponent<Canvas>();
+                if (pausePresentationCanvas == null)
+                {
+                    pausePresentationCanvas = gameObject.AddComponent<Canvas>();
+                    pauseCanvasWasCreated = true;
+                }
+            }
+
+            if (!pauseCanvasStateCaptured)
+            {
+                pauseCanvasOriginalOverrideSorting = pausePresentationCanvas.overrideSorting;
+                pauseCanvasOriginalSortingOrder = pausePresentationCanvas.sortingOrder;
+                pauseCanvasStateCaptured = true;
+            }
+
+            pausePresentationCanvas.overrideSorting = true;
+            pausePresentationCanvas.sortingOrder = 210;
+
+            // 嵌套 Canvas 只负责显示时，根 UICanvas 的 GraphicRaycaster 仍可能被暂停遮罩抢先命中。
+            // 给技能 Canvas 补一个独立 Raycaster，确保图标上的 HoverTooltipText 能收到 PointerEnter。
+            pausePresentationRaycaster = pausePresentationCanvas.GetComponent<GraphicRaycaster>();
+            if (pausePresentationRaycaster == null)
+            {
+                pausePresentationRaycaster = pausePresentationCanvas.gameObject.AddComponent<GraphicRaycaster>();
+                pauseRaycasterWasCreated = true;
+            }
+            else if (!pauseRaycasterStateCaptured)
+            {
+                pauseRaycasterOriginalEnabled = pausePresentationRaycaster.enabled;
+                pauseRaycasterStateCaptured = true;
+            }
+            pausePresentationRaycaster.enabled = true;
+            return;
+        }
+
+        if (!pauseCanvasStateCaptured || pausePresentationCanvas == null) return;
+        pausePresentationCanvas.overrideSorting = pauseCanvasOriginalOverrideSorting;
+        pausePresentationCanvas.sortingOrder = pauseCanvasOriginalSortingOrder;
+        pauseCanvasStateCaptured = false;
+
+        if (pauseRaycasterWasCreated && pausePresentationRaycaster != null)
+            Destroy(pausePresentationRaycaster);
+        else if (pauseRaycasterStateCaptured && pausePresentationRaycaster != null)
+            pausePresentationRaycaster.enabled = pauseRaycasterOriginalEnabled;
+        pausePresentationRaycaster = null;
+        pauseRaycasterWasCreated = false;
+        pauseRaycasterStateCaptured = false;
+
+        // 未暂停时不保留运行时新增的嵌套 Canvas，避免改变普通 HUD 的渲染/批处理路径。
+        if (pauseCanvasWasCreated)
+        {
+            Destroy(pausePresentationCanvas);
+            pausePresentationCanvas = null;
+            pauseCanvasWasCreated = false;
+        }
     }
 
     void ResolveIconConfig()
