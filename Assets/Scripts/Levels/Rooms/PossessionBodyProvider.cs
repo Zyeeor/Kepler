@@ -79,6 +79,8 @@ public class PossessionBodyProvider : MonoBehaviour
     [System.NonSerialized] MonsterActor providedBody;
     /// <summary>生成的躯体是否已被玩家真正接管过；脱离后仍保持已使用。</summary>
     [System.NonSerialized] bool providedBodyConsumed;
+    /// <summary>本局累计成功提供次数（死局兜底重置不清零）：混入随机 salt，重复提供不再固定同种怪。</summary>
+    [System.NonSerialized] int provideCount;
     PossessionManager observedPossessionManager;
 
     /// <summary>
@@ -323,10 +325,12 @@ public class PossessionBodyProvider : MonoBehaviour
             }
             if (valid.Count > 0)
             {
-                // 种子确定性：用一次性的 DomainAI 流（salt=固定锚点坐标哈希，同种子下同雕像同结果）
+                // 种子确定性：同种子下第 k 次提供可复现；k 随成功提供递增（死局兜底重置不清零），
+                // 使同一神龛经死局兜底重置后再次提供时不再固定刷出同一种怪。
                 int salt = Mathf.RoundToInt(transform.position.x * 1000f) * 131
                          + Mathf.RoundToInt(transform.position.y * 1000f) * 17
-                         + Mathf.RoundToInt(transform.position.z * 1000f);
+                         + Mathf.RoundToInt(transform.position.z * 1000f)
+                         + provideCount * 7919;
                 var rng = SeedSystem.CreateFlow(SeedSystem.DomainAI, salt);
                 return valid[rng.Next(0, valid.Count)].prefab;
             }
@@ -367,6 +371,7 @@ public class PossessionBodyProvider : MonoBehaviour
         providedBody = monster;
         providedBodyConsumed = false;
         used = true;
+        provideCount++;
         // 提供躯体音（默认 3D 定位在神龛位置；未配置 clip 静默）
         if (audioEnabled)
             AudioManager.Instance?.Play(SfxId.ShrineProvide, transform.position);
