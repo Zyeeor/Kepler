@@ -30,6 +30,9 @@ public class PlayerHealth : MonoBehaviour
     [Range(0f, 1f)] public float dangerThreshold = 0.35f;
 
     public float maxHealth; // 灵魂当前上限（附身切换时由 PossessionManager 同步）
+    // 复活加成基准：soulMaxHealth 会被复活倍数改写，且 DDOL 灵魂跨局复用，
+    // 必须保留策划配置的原始上限，否则多次复活/多局之间会不断累积污染。
+    private float authoredSoulMaxHealth = -1f;
     private float decayTimer;
     private bool isDead; // 死亡幂等：0 HP 后重复伤害不再触发 Die（防主菜单衰减重复 GameOver 污染下一局）
     private PlayerCombat combat;
@@ -48,6 +51,7 @@ public class PlayerHealth : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        if (authoredSoulMaxHealth < 0f) authoredSoulMaxHealth = soulMaxHealth;
         combat = GetComponent<PlayerCombat>();
         soulComponents = GetComponents<MonoBehaviour>();
         soulRenderers = GetComponentsInChildren<Renderer>(true);
@@ -220,9 +224,28 @@ public class PlayerHealth : MonoBehaviour
     {
         isDead = false;
         _nextHurtAudioTime = 0f;
+        // 上限回到策划配置值：上一局的复活加成不得带入新局
+        if (authoredSoulMaxHealth > 0f) soulMaxHealth = authoredSoulMaxHealth;
         currentHealth = soulMaxHealth;
         maxHealth = soulMaxHealth;
         UpdateHealthUI();
+    }
+
+    /// <summary>
+    /// 复活：按本局累计加成提升灵魂上限并回满，同时清除死亡标记。
+    /// totalBonus 为累计倍数（相对策划原始上限），由 GameManager.ReviveHealthBonus 提供。
+    /// 注意灵魂衰减是按 soulMaxHealth 的百分比计算，上限提升后每秒衰减量同比例增加（存活时长不变，抗伤能力提升）。
+    /// </summary>
+    public void ApplyReviveHealthBonus(float totalBonus)
+    {
+        if (authoredSoulMaxHealth <= 0f) authoredSoulMaxHealth = soulMaxHealth;
+        isDead = false;
+        _nextHurtAudioTime = 0f;
+        soulMaxHealth = authoredSoulMaxHealth * Mathf.Max(0.01f, totalBonus);
+        currentHealth = soulMaxHealth;
+        maxHealth = soulMaxHealth;
+        UpdateHealthUI();
+        Debug.Log($"[Revive] 灵魂上限 {authoredSoulMaxHealth:F0} × {totalBonus:F2} = {soulMaxHealth:F0}（已回满）。");
     }
 
     /// <summary>刷新玩家血条/危险UI（PossessionManager 附身切换时也调用）。</summary>

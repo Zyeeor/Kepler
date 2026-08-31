@@ -20,6 +20,16 @@ public class GameManager : MonoBehaviour
     [Header("GameOver UI")]
     public GameObject gameOverPanel;
 
+    [Header("Revive（死亡界面按 P 复活）")]
+    [Tooltip("每次复活后灵魂体与所附身躯体的血量上限倍数。多次复活累乘（1.5 → 2.25 → 3.375…）。设为 1 则复活不加血量。")]
+    [Min(0.01f)] public float reviveHealthMultiplier = 1.5f;
+
+    /// <summary>
+    /// 本局累计的复活血量加成（初始 1，每次复活乘一次 reviveHealthMultiplier）。
+    /// 同时作用于灵魂体上限与附身躯体上限（含复活后新附身的躯体）。新局由 ResetGame 归 1。
+    /// </summary>
+    public float ReviveHealthBonus { get; private set; } = 1f;
+
     [Header("World Seed（地图种子）")]
     [Tooltip("是否使用固定种子：开启后新对局使用固定Seed（便于复现特定地图/调试）；关闭则每局随机。")]
     public bool useFixedSeed = false;
@@ -370,9 +380,17 @@ public class GameManager : MonoBehaviour
     {
         if (currentState != GameState.GameOver) return;
 
-        // 1) 灵魂生命回满并清除死亡标记（Die() 的 isDead 幂等闸门在此解开）
+        // 0) 累计复活加成：每次复活乘一次，后续新附身的躯体也按该倍数提升上限
+        ReviveHealthBonus *= Mathf.Max(0.01f, reviveHealthMultiplier);
+
+        // 1) 灵魂上限按累计加成提升并回满，同时清除死亡标记（解开 Die() 的 isDead 幂等闸门）
         if (PlayerHealth.Instance != null)
-            PlayerHealth.Instance.ResetHealth();
+            PlayerHealth.Instance.ApplyReviveHealthBonus(ReviveHealthBonus);
+
+        // 2) 当前正被附身的躯体立即套用新倍数（复活时仍在附身状态的情况）
+        var possessed = PossessionManager.Instance != null ? PossessionManager.Instance.CurrentBody : null;
+        if (possessed != null)
+            possessed.ApplyReviveHealthBonus(ReviveHealthBonus);
 
         // 2) 收起结算面板（内部会解除它 Push 的 Pause 域并锁回光标）
         if (UIManager.Instance != null)
@@ -429,6 +447,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("GameManager: Resetting game state for restart");
         soulTime = 15f;
         gameTimer = 0f;
+        ReviveHealthBonus = 1f;   // 复活加成为本局内状态，新局/重开不带入
         currentDrainRate = soulDrainRate;
         currentState = GameState.Soul;
         TimeScaleManager.ResetAll();   // 场景重开：清空全部时间请求，恢复 1

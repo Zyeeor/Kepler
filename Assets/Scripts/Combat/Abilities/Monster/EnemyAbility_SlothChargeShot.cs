@@ -61,6 +61,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
     [Header("Targeting")]
     public LayerMask targetMask = -1;
+    [Tooltip("保留以兼容既有 prefab 配置。怠惰朝向已改为始终跟随鼠标（MonsterActor.alwaysFaceAimWhenPossessed），出膛时不再使用该转向速率。")]
     public float aimTurnSpeed = 720f;
 
     [Header("Upgrade - Sloth.Scatter")]
@@ -123,6 +124,9 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     {
         base.Update();
         if (owner == null) return;
+        // 怠惰躯体朝向始终跟随鼠标（走位与射击解耦），出膛前不再做转向。
+        if (!owner.alwaysFaceAimWhenPossessed)
+            owner.alwaysFaceAimWhenPossessed = true;
         if (owner is BossSevenfoldActor) return;
 
         bool wantFire = false;
@@ -234,32 +238,24 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     }
 
     /// <summary>
-    /// 启动出膛协程：复用单一句柄，先停掉尚未走完的上一次。
-    /// 高频射击（松手即再次按下）会让多个 FireShotRoutine 并发，各自驱动转向协程把
-    /// 朝向拉向不同目标，互相拉扯导致角度无法收敛、转向锁永久残留。
+    /// 出膛：怠惰朝向已始终跟随鼠标（MonsterActor.alwaysFaceAimWhenPossessed），
+    /// 出膛前不再需要转向等待，因此直接同步结算，不再起协程。
+    /// 这样也从根本上消除了「高频射击时多个转向协程并发拉扯朝向、转向锁永久残留」的隐患。
     /// </summary>
     void StartFireShot(float chargeTime)
     {
+        // 兼容旧路径：若仍有残留协程（如从旧版本热重载进来），先停掉并复位转向锁。
         if (fireShotRoutine != null)
         {
             StopCoroutine(fireShotRoutine);
             fireShotRoutine = null;
-            isFiringRoutineActive = false;
-            // 被停掉的协程不会执行到末尾的解锁，这里补复位。
             if (owner != null) owner.IsAbilityFacingLocked = false;
         }
-        fireShotRoutine = StartCoroutine(FireShotRoutine(chargeTime));
-    }
 
-    IEnumerator FireShotRoutine(float chargeTime)
-    {
+        // isFiringRoutineActive 维持 IsActivationInProgress 语义：出膛结算期间为真。
         isFiringRoutineActive = true;
-        if (owner != null && owner.isPossessed && TryGetPossessedMouseDirection(out Vector3 aimDirection))
-            yield return StartCoroutine(RotatePossessedOwnerTowards(aimDirection, aimTurnSpeed));
-
         FireShot(chargeTime);
         isFiringRoutineActive = false;
-        fireShotRoutine = null;
     }
 
     void FireShot(float chargeTime)

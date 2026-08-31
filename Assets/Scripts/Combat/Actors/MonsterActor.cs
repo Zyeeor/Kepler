@@ -411,6 +411,12 @@ public class MonsterActor : Actor
     public bool IsAbilityFacingLocked { get; set; }
     /// <summary>When true, ExecuteMovement skips locomotion so ability-driven dashes keep ownership of position.</summary>
     public bool IsAbilityLocomotionLocked { get; set; }
+    /// <summary>
+    /// 附身时朝向是否始终跟随瞄准点（鼠标），忽略移动方向——走位与射击方向解耦。
+    /// 开启后出膛前无需再做一次转向（技能侧不再调用 RotatePossessedOwnerTowards）。
+    /// 怠惰（sloth）由 EnemyAbility_SlothChargeShot 自动开启。
+    /// </summary>
+    public bool alwaysFaceAimWhenPossessed = false;
     private EnemyAbility activeAbilityTelegraph;
     private bool locomotionLockBeforeTelegraph;
 
@@ -770,13 +776,18 @@ public class MonsterActor : Actor
 
         if (playerControlled)
         {
+            // 始终朝向鼠标的躯体（如怠惰）：朝向完全由瞄准点决定，与移动方向解耦。
+            // 出膛时因此无需再转向，技能侧也不再调用 RotatePossessedOwnerTowards。
+            if (alwaysFaceAimWhenPossessed && cmd.HasAim && !IsAbilityFacingLocked)
+                TurnTowardsAim(cmd.AimPoint, movementDeltaTime);
+
             // 玩家附身态：加速度平滑
             Vector3 dir = cmd.HasMove ? cmd.MoveDirection : Vector3.zero;
             dir.y = 0f;
             if (dir.sqrMagnitude > 0.0001f)
             {
-                // 平滑旋转朝移动方向
-                if (!IsAbilityFacingLocked)
+                // 平滑旋转朝移动方向（始终朝鼠标的躯体跳过，避免移动方向抢走朝向）
+                if (!IsAbilityFacingLocked && !alwaysFaceAimWhenPossessed)
                 {
                     Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
                     float turnRate = 12f;
@@ -798,8 +809,8 @@ public class MonsterActor : Actor
             else
             {
                 possessVelocity = Vector3.MoveTowards(possessVelocity, Vector3.zero, (deceleration > 0f ? deceleration : 25f) * movementDeltaTime);
-                // 静止：面向鼠标
-                if (cmd.HasAim && !IsAbilityFacingLocked)
+                // 静止：面向鼠标（始终朝鼠标的躯体已在上面平滑处理，此处跳过以免直接覆盖）
+                if (cmd.HasAim && !IsAbilityFacingLocked && !alwaysFaceAimWhenPossessed)
                 {
                     Vector3 aimDir = cmd.AimPoint - transform.position;
                     aimDir.y = 0f;
@@ -808,6 +819,25 @@ public class MonsterActor : Actor
                 }
             }
             return;
+        }
+
+        /// <summary>
+        /// 附身时把朝向平滑转到瞄准点（鼠标）方向。用于「走位与射击方向解耦」的躯体（如怠惰）。
+        /// 与朝移动方向的转向使用同一套平滑速率，保证手感一致。
+        /// </summary>
+        void TurnTowardsAim(Vector3 aimPoint, float deltaTime)
+        {
+            Vector3 aimDir = aimPoint - transform.position;
+            aimDir.y = 0f;
+            if (aimDir.sqrMagnitude <= 0.01f) return;
+
+            Quaternion targetRot = Quaternion.LookRotation(aimDir, Vector3.up);
+            float turnRate = 12f;
+            GluttonyBodyState gluttonyState = GetCachedGluttonyBodyState();
+            if (gluttonyState != null && gluttonyState.SmallCatTurnMult > 0.01f)
+                turnRate *= gluttonyState.SmallCatTurnMult;
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, deltaTime * turnRate);
         }
 
         // AI 态：以速度和角速度加速/减速，避免决策刷新时抽动。
@@ -1740,6 +1770,15 @@ public class MonsterActor : Actor
             // again, even if the possessed stat block has a different absolute max HP.
             currentHealth = maxHealth * reservedHealthRatio;
         }
+        // 复活加成：本局每次按 P 复活都会提升上限，复活后新附身的躯体同样受益。
+        // 必须在写入 authoredPossessedMaxHealth 之前应用，使罪印倍数以含加成的上限为基准叠加。
+        float reviveBonus = GameManager.Instance != null ? GameManager.Instance.ReviveHealthBonus : 1f;
+        if (reviveBonus > 1.0001f)
+        {
+            float ratioBeforeBonus = maxHealth > 0f ? Mathf.Clamp01(currentHealth / maxHealth) : 1f;
+            maxHealth *= reviveBonus;
+            currentHealth = maxHealth * ratioBeforeBonus;
+        }
         authoredPossessedMaxHealth = maxHealth;
         if (PossessionImprintManager.Instance != null)
             PossessionImprintManager.Instance.ApplyBodyEffects(this);
@@ -2217,6 +2256,31 @@ public class MonsterActor : Actor
             : maxHealth * healthRatio;
         currentTenacity = Mathf.Min(currentTenacity, maxTenacity);
         UpdateHealthUI();
+    }
+
+    /// <summary>
+    /// 复活加成：把当前附身躯体的上限重置为「原始附身上限 × 累计倍数」并回满。
+    /// 供复活时对已附身躯体即时生效；复活后新附身的躯体在附身流程里自动套用。
+    /// 以 authoredPossessedMaxHealth 为基准而非当前 maxHealth，避免与罪印倍数重复累乘。
+    /// </summary>
+    public void ApplyReviveHealthBonus(float totalBonus)
+    {
+        if (!isPossessed) return;
+        float bonus = Mathf.Max(0.01f, totalBonus);
+        float baseMax = authoredPossessedMaxHealth > 0f ? authoredPossessedMaxHealth : maxHealth;
+        if (baseMax <= 0f) return;
+
+        authoredPossessedMaxHealth = baseMax * bonus;
+        maxHealth = authoredPossessedMaxHealth;
+        currentHealth = maxHealth;
+        currentTenacity = maxTenacity;
+
+        // 罪印倍数以 authoredPossessedMaxHealth 为基准，需重算以免加成被下次罪印刷新覆盖。
+        if (PossessionImprintManager.Instance != null)
+            PossessionImprintManager.Instance.ApplyBodyEffects(this);
+
+        UpdateHealthUI();
+        Debug.Log($"[Revive] 附身躯体 {displayName} 上限 ×{bonus:F2} → {maxHealth:F0}（已回满）。", this);
     }
 
     public void ApplyPossessionVisualScale(float multiplier)
