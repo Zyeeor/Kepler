@@ -156,12 +156,20 @@ public class CardManager : SceneSingleton<CardManager>
 
     // ── 卡牌随机流（种子确定性，经 SeedSystem 统一派生）──
     // 本局卡牌（初始三张 + 每次刷新/重抽）由会话种子派生，与全局 UnityEngine.Random 隔离：
-    // 同一种子下（读档恢复同 worldSeed），整局卡牌序列完全可复现。
-    // 每波用独立子种子：SeedSystem.CreateFlow(DomainCard, waveIndex)。
-    private int currentWaveCardSeed = -1;
+    // 同一种子下，整局"第 N 次抽卡会话"的结果完全可复现，且各次会话之间 salt 不同、各自随机。
+    // salt = offerSessionIndex（整局递增的抽卡会话序号）。
+    // ⚠️ 不能用 waveIndex：宝石拾取允许同一波内多次弹卡，同波两次抽卡同 salt 会重建同一流，
+    //    导致第二次抽卡从序列头开始、复现第一次的结果（已修）。
+    private int currentWaveCardSeed = -1;   // 仅用于 Known Type 波次解锁表（RefreshKnownTypes）
+    // 整局递增的抽卡会话序号：每次新 DrawCards 会话 +1（双选第二轮/读档补弹不推进）。
+    // 同一种子重玩时第 N 次抽卡结果可复现；不同次数之间各自随机。
+    [System.NonSerialized] int offerSessionIndex;
+    // 读档恢复的会话流已消费样本数：补弹后首次 reroll 建流时快进对齐（读档级复现）。
+    [System.NonSerialized] int pendingSkipSamples;
     // 会话级随机流：DrawCards 时创建一次，本次会话内持续消费
     // （刷新/重抽复用同一流——正确范式，避免每次新建流取首值的反模式）。
-    private System.Random sessionCardRng;
+    // 带消费计数：随机状态可随存档落盘/恢复，实现读档级复现。
+    private CountingRandom sessionCardRng;
 
     // ── Known Type 波次解锁表（文档 §3 W1-W8 首版解锁结构，TUNABLE）──
     // W1 Pride+Gluttony → W2 +Wrath → W3 +Sloth → W4 +Greed → W5 +Lust → W6 +Envy；W7/W8 无新增。
@@ -185,10 +193,50 @@ public class CardManager : SceneSingleton<CardManager>
     const int kGlobalPityStart = 2;
     const float kGlobalPityStep = 0.25f;
 
-    /// <summary>局部随机流：每波独立子种子（SeedSystem 统一入口，质数混合防跨域/跨波关联）。</summary>
-    System.Random CardRandom()
+    /// <summary>
+    /// 取当前抽卡会话流（惰性）：无流时按会话序号新建，并快进已消费样本数
+    /// （读档补弹后首次 reroll 经此对齐到存档时刻的序列位置，实现读档级复现）。
+    /// </summary>
+    CountingRandom EnsureSessionRng()
     {
-        return SeedSystem.CreateFlow(SeedSystem.DomainCard, currentWaveCardSeed);
+        if (sessionCardRng == null)
+            sessionCardRng = new CountingRandom(SeedSystem.CreateFlow(SeedSystem.DomainCard, offerSessionIndex), pendingSkipSamples);
+        pendingSkipSamples = 0;
+        return sessionCardRng;
+    }
+
+    /// <summary>
+    /// 带消费计数的随机流包装：业务侧每次调用恰好消耗 1 个内部样本（本项目仅用
+    /// Next/Next(min,max)/NextDouble，均在 .NET/Mono 中单样本推进），因此可用
+    /// 「已消费次数」在重建流后逐次快进，精确对齐到存档时刻的序列位置。
+    /// </summary>
+    sealed class CountingRandom : System.Random
+    {
+        readonly System.Random inner;
+        /// <summary>本流自创建（含快进）以来已消耗的内部样本数（= 存档字段 cardStreamConsumed）。</summary>
+        public int Consumed { get; private set; }
+
+        public CountingRandom(System.Random inner, int skipSamples = 0)
+        {
+            this.inner = inner;
+            for (int i = 0; i < skipSamples; i++)
+                this.inner.Next();   // 快进：逐样本对齐，与业务侧 1 调用/样本 等价
+            Consumed = skipSamples;
+        }
+
+        public override int Next() { Consumed++; return inner.Next(); }
+        public override int Next(int maxValue) { Consumed++; return inner.Next(maxValue); }
+        public override int Next(int minValue, int maxValue) { Consumed++; return inner.Next(minValue, maxValue); }
+        public override double NextDouble() { Consumed++; return inner.NextDouble(); }
+        public override void NextBytes(byte[] buffer) { Consumed += buffer.Length; inner.NextBytes(buffer); }
+    }
+
+    /// <summary>把随机流状态同步到对局会话（存档点落盘）：会话序号 + 已消费样本数。</summary>
+    void SyncRandomStateToSession()
+    {
+        if (RunSession.Instance == null) return;
+        RunSession.Instance.CardOfferSessionIndex = offerSessionIndex;
+        RunSession.Instance.CardStreamConsumed = sessionCardRng != null ? sessionCardRng.Consumed : pendingSkipSamples;
     }
 
     /// <summary>新一波选卡会话开始时固定子种子（由 CardManager 外部在弹卡前调用）。</summary>
@@ -214,6 +262,8 @@ public class CardManager : SceneSingleton<CardManager>
                 if (!string.IsNullOrEmpty(id)) unlockedEffects.Add(id);
             completedWaves = run.CompletedWaveIndex;
             globalMissStreak = run.GlobalMissStreak;
+            offerSessionIndex = run.CardOfferSessionIndex;
+            pendingSkipSamples = run.CardStreamConsumed;   // 补弹后首次 reroll 建流时快进对齐
             if (unlockedEffects.Count > 0)
                 Debug.Log($"[CardManager] 会话恢复已解锁效果 {unlockedEffects.Count} 个。");
         }
@@ -231,6 +281,8 @@ public class CardManager : SceneSingleton<CardManager>
                 }
                 completedWaves = resume.completedWaveIndex;
                 globalMissStreak = resume.globalMissStreak;
+                offerSessionIndex = resume.cardOfferSessionIndex;
+                pendingSkipSamples = resume.cardStreamConsumed;
             }
         }
 
@@ -976,10 +1028,18 @@ public class CardManager : SceneSingleton<CardManager>
         // Known Type Set 随波次刷新（幂等；补弹路径走 RestoreChoicePicks 不经过这里，由 Awake 恢复推导保证一致）
         if (currentWaveCardSeed >= 0) RefreshKnownTypes(currentWaveCardSeed);
 
-        // 会话级流：新会话才重建（双选第二轮 keepSession=true 沿用第一轮已推进的流，保持序列连续）
+        // 会话级流：新会话才重建，salt 用递增的会话序号（双选第二轮 keepSession=true
+        // 沿用第一轮已推进的流，保持序列连续且不消耗序号；读档补弹用当前序号重建不推进）
         if (!keepSession || sessionCardRng == null)
-            sessionCardRng = CardRandom();
-        var rng = sessionCardRng;
+        {
+            if (!keepSession)
+            {
+                offerSessionIndex++;
+                pendingSkipSamples = 0;   // 新会话从序列头开始
+            }
+            sessionCardRng = null;
+        }
+        var rng = EnsureSessionRng();
         var offered = new HashSet<string>();                 // 本次 Offer 已占用的 effectId（§10.5 去重）
 
         // ── 槽位合法池（已排除已取得的卡）──
@@ -1042,6 +1102,7 @@ public class CardManager : SceneSingleton<CardManager>
             RunSession.Instance.GlobalMissStreak = globalMissStreak;   // 同步会话（存档点落盘）
 
         SyncChoicePicksToSession(); // 候选变化即同步会话（选卡界面任意时刻退出，补弹候选都一致）
+        SyncRandomStateToSession(); // 随机流状态落会话（读档级复现：会话序号 + 已消费样本数）
         OnCardOffered?.Invoke();    // 叙事事件：候选落定广播（§3.2 CardOffered）
     }
 
@@ -1146,6 +1207,7 @@ public class CardManager : SceneSingleton<CardManager>
             if (found != null) shownThisSession.Add(found.effectId);
         }
         SyncChoicePicksToSession();
+        SyncRandomStateToSession(); // 随机流状态落会话（补弹后 reroll 经 EnsureSessionRng 快进对齐）
         Debug.Log($"[CardManager] 恢复选卡候选 {effectIds.Count} 张（与退出时一致）。");
     }
 
@@ -1195,13 +1257,13 @@ public class CardManager : SceneSingleton<CardManager>
         }
 
         // 复用会话流持续消费（勿新建流：同 salt 新建流会回到序列首值，同 Count 槽位必取同索引）
-        var rng = sessionCardRng ?? CardRandom();
-        sessionCardRng = rng;
+        var rng = EnsureSessionRng();
         var picked = available[rng.Next(0, available.Count)];
         shownThisSession.Add(picked.effectId);
         if (currentPicks != null && slotIndex >= 0 && slotIndex < currentPicks.Length)
             currentPicks[slotIndex] = picked;
         SyncChoicePicksToSession(); // 重抽后同步（退出时补弹候选含重抽结果）
+        SyncRandomStateToSession(); // 随机流状态落会话（读档级复现：reroll 消费即时同步）
         OnCardRerolled?.Invoke();    // 图鉴采集：重抽后候选变化，标记已知
         return picked;
     }
@@ -1333,6 +1395,8 @@ public class CardManager : SceneSingleton<CardManager>
         rerollCounts.Clear();
         sessionCardRng = null;
         currentWaveCardSeed = -1;
+        offerSessionIndex = 0;          // 新局从第 0 次抽卡会话开始，保证同种子重玩逐次可复现
+        pendingSkipSamples = 0;
         reverseBDHintShown = false;
         starterGemSpawned = false;
 

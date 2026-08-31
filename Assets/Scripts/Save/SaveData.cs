@@ -43,6 +43,10 @@ public class SaveData
     public List<string> unlockedEffects = new List<string>();
     /// <summary>Global 卡软保底 streak（§11）：连续多少次 Offer 三张都没有 Global 卡。>=2 时 Global 候选权重开始提高。</summary>
     public int globalMissStreak;
+    /// <summary>抽卡会话序号（CardManager 每次新抽卡会话 ++）：同一种子下第 N 次抽卡的 salt（读档级复现）。</summary>
+    public int cardOfferSessionIndex;
+    /// <summary>当前抽卡会话随机流已消费样本数：读档补弹后重抽快进对齐用（读档级复现）。</summary>
+    public int cardStreamConsumed;
     /// <summary>灵魂位置（世界坐标）。</summary>
     public Vector3 soulPosition;
     /// <summary>灵魂当前 HP。</summary>

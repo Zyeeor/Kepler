@@ -158,6 +158,18 @@ public class RunSession : MonoBehaviour
     /// </summary>
     public int GlobalMissStreak { get; set; }
 
+    /// <summary>
+    /// 抽卡会话序号（CardManager 每次新抽卡会话 ++，双选第二轮/补弹不消耗）：
+    /// 同一种子下第 N 次抽卡的 salt。存档落盘实现读档级复现。
+    /// </summary>
+    public int CardOfferSessionIndex { get; set; }
+
+    /// <summary>
+    /// 当前抽卡会话随机流已消费样本数：读档补弹后首次重抽用它快进对齐，
+    /// 使会话内 reroll 序列与退出前完全一致（读档级复现）。
+    /// </summary>
+    public int CardStreamConsumed { get; set; }
+
     /// <summary>灵魂位置（最近一次波间存档点的玩家位置 = 下一波起点）。</summary>
     public Vector3 SoulPosition { get; private set; }
 
@@ -221,6 +233,8 @@ public class RunSession : MonoBehaviour
             ChoicePicks.Clear();
             UnlockedEffects.Clear();
             GlobalMissStreak = 0;
+            CardOfferSessionIndex = 0;
+            CardStreamConsumed = 0;
             CardManager.Instance?.ResetAllUnlocks();
             MonsterPool.Instance.ClearAll();
         }
@@ -259,6 +273,8 @@ public class RunSession : MonoBehaviour
         CardManager.Instance?.ResetAllUnlocks();
         MonsterPool.Instance.ClearAll();
         GlobalMissStreak = 0;
+        CardOfferSessionIndex = 0;
+        CardStreamConsumed = 0;
         SoulPosition = Vector3.zero;
         SoulHealth = 0f;
         SoulTime = 0f;
@@ -307,6 +323,8 @@ public class RunSession : MonoBehaviour
         CardManager.Instance?.ResetAllUnlocks();
         MonsterPool.Instance.ClearAll();
         GlobalMissStreak = 0;
+        CardOfferSessionIndex = 0;
+        CardStreamConsumed = 0;
         SoulPosition = Vector3.zero;
         SoulHealth = 0f;
         SoulTime = 0f;
@@ -356,6 +374,8 @@ public class RunSession : MonoBehaviour
         UnlockedEffects.Clear();
         if (data.unlockedEffects != null) UnlockedEffects.AddRange(data.unlockedEffects);
         GlobalMissStreak = data.globalMissStreak;
+        CardOfferSessionIndex = data.cardOfferSessionIndex;
+        CardStreamConsumed = data.cardStreamConsumed;
         SoulPosition = data.soulPosition;
         SoulHealth = data.soulHealth;
         SoulTime = data.soulTime;
@@ -441,7 +461,7 @@ public class RunSession : MonoBehaviour
             PossessionImprintManager.EnsureInstance().LustHealProgress, BossSpawned, BossDefeated,
             NarrativeScheduler.Instance?.CaptureSnapshot(),
             ContinuousNormalOrderIndex, ContinuousNextNormalSpawnTime, ContinuousEliteSpawned, snapshotPhase,
-            MonsterSnapshots);
+            MonsterSnapshots, CardOfferSessionIndex, CardStreamConsumed);
         Debug.Log($"[RunSession] 对局快照存档完成：波索引={completedWaveIndex} 位置={SoulPosition} HP={SoulHealth} 时间={SoulTime} 附身={(PossessedBody != null ? PossessedBody.prefabId : "无")} 尸体={Corpses.Count} 场上怪物={MonsterSnapshots.Count}");
     }
 
@@ -594,6 +614,8 @@ public class RunSession : MonoBehaviour
         ChoicePicks.Clear();
         UnlockedEffects.Clear();
         GlobalMissStreak = 0;
+        CardOfferSessionIndex = 0;
+        CardStreamConsumed = 0;
         SoulPosition = Vector3.zero;
         SoulHealth = 0f;
         SoulTime = 0f;

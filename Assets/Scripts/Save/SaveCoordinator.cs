@@ -79,7 +79,9 @@ public static class SaveCoordinator
         float continuousNextNormalSpawnTime = 0f,
         List<bool> continuousEliteSpawned = null,
         RunPhase runPhase = RunPhase.Waves,
-        List<SaveData.MonsterSnapshotSave> monsterSnapshots = null)
+        List<SaveData.MonsterSnapshotSave> monsterSnapshots = null,
+        int cardOfferSessionIndex = 0,
+        int cardStreamConsumed = 0)
     {
         var data = new SaveData
         {
@@ -103,6 +105,8 @@ public static class SaveCoordinator
             continuousNormalOrderIndex = continuousNormalOrderIndex,
             continuousNextNormalSpawnTime = continuousNextNormalSpawnTime,
             runPhase = runPhase,
+            cardOfferSessionIndex = cardOfferSessionIndex,
+            cardStreamConsumed = cardStreamConsumed,
         };
         if (unlockedEffects != null)
             data.unlockedEffects.AddRange(unlockedEffects);

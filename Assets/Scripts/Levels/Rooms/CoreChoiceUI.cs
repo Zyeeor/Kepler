@@ -118,7 +118,8 @@ public class CoreChoiceUI : MonoBehaviour
                 Destroy(cardParent.GetChild(i).gameObject);
         }
 
-        // 种子确定性：本波弹卡前固定卡牌随机流（种子+波次号派生），同一种子整局卡牌可复现
+        // 弹卡前固定 Known Type 波次解锁上下文；卡牌随机流的 salt 由 CardManager 内部
+        // 按整局递增的抽卡会话序号派生（同一种子下第 N 次抽卡可复现，各次之间独立随机）
         if (CardManager.Instance != null && waveIndex >= 0)
             CardManager.Instance.PrepareCardSession(waveIndex);
 
