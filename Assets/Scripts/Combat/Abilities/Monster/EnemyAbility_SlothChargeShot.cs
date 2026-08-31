@@ -276,6 +276,24 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             : OwnerCombatScaleMultiplier;
 
         Vector3 forward = owner.transform.forward;
+        // AI 态：出膛瞬间对准玩家，避免蓄力期间目标走位导致弹道打空。
+        // 附身态无需处理——MonsterActor.alwaysFaceAimWhenPossessed 已让朝向每帧跟随鼠标。
+        // 两个排除条件：
+        // - Boss：其出膛路径会先调用 FaceBossTarget(GetBossTargetPosition())，
+        //   目标口径为「玩家附身的躯体」，与 targetPlayer（按 tag 查找）并不等价，
+        //   在此覆盖会破坏 Boss 刚算好的朝向。
+        // - IsAbilityFacingLocked：尊重转向锁，避免打断其它技能正在进行的转向。
+        if (!owner.isPossessed && !(owner is BossSevenfoldActor)
+            && !owner.IsAbilityFacingLocked && owner.targetPlayer != null)
+        {
+            Vector3 toTarget = owner.targetPlayer.position - owner.transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.0001f)
+            {
+                forward = toTarget.normalized;
+                owner.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+            }
+        }
         Vector3 origin = projectileSpawnPoint != null
             ? projectileSpawnPoint.position
             : owner.transform.position + forward * 1f + Vector3.up * 1f;
