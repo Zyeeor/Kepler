@@ -1072,17 +1072,23 @@ public class MonsterActor : Actor
     {
         // Preserve the legacy root Animator contract: callers may drive it even when the
         // component/object is disabled. Child-model swaps use the active hierarchy fallback.
-        if (bodyAnimator != null)
+        // 额外要求根 Animator 必须绑定了 Controller：sloth_new 的根节点上留有一个无 Avatar、
+        // 无 Controller 的空壳 Animator，若直接返回它，每帧 SetFloat/SetTrigger 都会抛
+        // "Animator is not playing an AnimatorController"，且真正带 Controller 的子节点
+        // Animator 永远轮不到（该怪动画全部失效）。
+        if (bodyAnimator != null && bodyAnimator.runtimeAnimatorController != null)
             return bodyAnimator;
 
         Animator[] animators = GetCachedAnimators();
         for (int i = 0; i < animators.Length; i++)
         {
             Animator animator = animators[i];
-            if (animator != null && animator.gameObject.activeInHierarchy)
+            if (animator != null && animator.runtimeAnimatorController != null && animator.gameObject.activeInHierarchy)
                 return animator;
         }
-        return null;
+
+        // 全都没有 Controller 时维持旧行为，返回根 Animator（可能为 null），不改变调用方契约。
+        return bodyAnimator;
     }
 
     private void CacheAnimators()

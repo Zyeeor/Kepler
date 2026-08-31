@@ -77,6 +77,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
     private bool isCharging;
     private bool isFiringRoutineActive;
+    private Coroutine fireShotRoutine;
 
     private float chargeTimer;
     /// <summary>AI 怪物本次蓄力的目标时长（0 ~ maxChargeTime 随机），蓄到即自动出手。</summary>
@@ -160,14 +161,14 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             // AI 怪物蓄到随机目标时长自动出手（否则会因 targetPlayer 恒存在而无限蓄力不出手）
             if (!owner.isPossessed && chargeTimer >= aiChargeTargetTime)
             {
-                StartCoroutine(FireShotRoutine(chargeTimer));
+                StartFireShot(chargeTimer);
                 StopCharging();
                 return;
             }
         }
         else if (isCharging)
         {
-            StartCoroutine(FireShotRoutine(chargeTimer));
+            StartFireShot(chargeTimer);
             StopCharging();
         }
     }
@@ -232,6 +233,24 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         if (visual != null) visual.End();
     }
 
+    /// <summary>
+    /// 启动出膛协程：复用单一句柄，先停掉尚未走完的上一次。
+    /// 高频射击（松手即再次按下）会让多个 FireShotRoutine 并发，各自驱动转向协程把
+    /// 朝向拉向不同目标，互相拉扯导致角度无法收敛、转向锁永久残留。
+    /// </summary>
+    void StartFireShot(float chargeTime)
+    {
+        if (fireShotRoutine != null)
+        {
+            StopCoroutine(fireShotRoutine);
+            fireShotRoutine = null;
+            isFiringRoutineActive = false;
+            // 被停掉的协程不会执行到末尾的解锁，这里补复位。
+            if (owner != null) owner.IsAbilityFacingLocked = false;
+        }
+        fireShotRoutine = StartCoroutine(FireShotRoutine(chargeTime));
+    }
+
     IEnumerator FireShotRoutine(float chargeTime)
     {
         isFiringRoutineActive = true;
@@ -240,6 +259,7 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
 
         FireShot(chargeTime);
         isFiringRoutineActive = false;
+        fireShotRoutine = null;
     }
 
     void FireShot(float chargeTime)
@@ -634,6 +654,8 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
             ReleaseVfx(chargeVfxInstance);
             chargeVfxInstance = null;
         }
+        if (fireShotRoutine != null) StopCoroutine(fireShotRoutine);
+        fireShotRoutine = null;
         if (recoilRoutine != null) StopCoroutine(recoilRoutine);
         if (recoilTarget != null && hasRecoilBasePosition) recoilTarget.transform.localPosition = recoilBasePosition;
         recoilRoutine = null;

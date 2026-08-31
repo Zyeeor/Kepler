@@ -380,12 +380,22 @@ public abstract class EnemyAbility : MonoBehaviour
 
         Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         owner.IsAbilityFacingLocked = true;
-        while (owner != null && Quaternion.Angle(owner.transform.rotation, targetRotation) > 0.1f)
+
+        // 兜底上限：若同一 transform 上有多个转向协程并发（高频连点会多次出膛），
+        // 它们各自把朝向拉向不同目标，角度可能长期无法收敛到阈值内，导致本协程永久挂起、
+        // IsAbilityFacingLocked 永不解锁 —— 表现为怪物转向卡死且无法释放技能。
+        // 用最长时长强制收口，保证任何情况下都会走到解锁。
+        const float maxRotateDuration = 1.5f;
+        float rotateElapsed = 0f;
+        while (owner != null
+               && Quaternion.Angle(owner.transform.rotation, targetRotation) > 0.1f
+               && rotateElapsed < maxRotateDuration)
         {
             owner.transform.rotation = Quaternion.RotateTowards(
                 owner.transform.rotation,
                 targetRotation,
                 turnSpeed * AbilityDeltaTime);
+            rotateElapsed += AbilityDeltaTime;
             yield return null;
         }
 
@@ -406,6 +416,10 @@ public abstract class EnemyAbility : MonoBehaviour
         CancelEnemyTelegraph();
         EndActivationEffect();
         CancelInvoke();
+        // 组件被禁用时 Unity 会杀掉其上运行的所有协程，转向协程末尾的解锁语句因此不会执行。
+        // 这里统一兜底复位，否则 IsAbilityFacingLocked 会永久残留，怪物再也无法转向。
+        // 放在基类可让所有使用 RotatePossessedOwnerTowards 的技能一并受益。
+        if (owner != null) owner.IsAbilityFacingLocked = false;
     }
 
     public virtual void ResetForOwnerReuse()
