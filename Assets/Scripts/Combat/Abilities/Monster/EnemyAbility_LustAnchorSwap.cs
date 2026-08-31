@@ -18,6 +18,8 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
     public float m03BlastDamage = 30f;
     public float m03BlastRadius = 2.5f;
     public GameObject m03BlastVfx;
+    [Tooltip("LU-M03 爆炸 VFX 相对爆炸点的偏移。")]
+    public Vector3 m03BlastVfxOffset = Vector3.zero;
 
     private LustBodyState _state;
 
@@ -140,7 +142,7 @@ public class EnemyAbility_LustAnchorSwap : EnemyAbility
         float dmg = GetCardParameter("Dmg", m03BlastDamage);
         float radius = GetCardParameter("R", m03BlastRadius);
         if (m03BlastVfx != null)
-            Object.Instantiate(m03BlastVfx, blastPos, Quaternion.identity);
+            PlayVfx(Object.Instantiate(m03BlastVfx, blastPos + m03BlastVfxOffset, Quaternion.identity));
         DamageEnemiesInSphere(blastPos, radius, dmg, null, -1f);
         if (!owner.isPossessed)
             TryDamagePlayerInRadius(blastPos, radius, dmg, -1f);

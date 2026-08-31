@@ -576,7 +576,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 294}
-  m_SizeDelta: {x: 600, y: 50}
+  m_SizeDelta: {x: 800, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &177364663
 MonoBehaviour:
@@ -5775,7 +5775,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.65}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.92941177}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7868,7 +7868,7 @@ MonoBehaviour:
   pulseCooldown: 4
   persistentGuide: 1
   followPlayerAfterFire: 0
-  guideColor: {r: 0.7490197, g: 0.59921575, b: 0.11235296, a: 0.6431373}
+  guideColor: {r: 0.7490197, g: 0.59921575, b: 0.11235296, a: 0.7882353}
   brightness: 0.75
   breatheAmount: 0.35
   breatheSpeed: 2
@@ -7942,7 +7942,7 @@ MonoBehaviour:
   pulseCooldown: 4
   persistentGuide: 1
   followPlayerAfterFire: 0
-  guideColor: {r: 0.61875534, g: 0.659463, b: 0.7490196, a: 0.56078434}
+  guideColor: {r: 0.61875534, g: 0.659463, b: 0.7490196, a: 0.72156864}
   brightness: 0.75
   breatheAmount: 0.35
   breatheSpeed: 2
@@ -8031,7 +8031,7 @@ MonoBehaviour:
   pulseCooldown: 3
   persistentGuide: 1
   followPlayerAfterFire: 0
-  guideColor: {r: 0.7490195, g: 0.124836594, b: 0.124836594, a: 0.6117647}
+  guideColor: {r: 0.7490195, g: 0.124836594, b: 0.124836594, a: 0.7411765}
   brightness: 0.75
   breatheAmount: 0.35
   breatheSpeed: 2
@@ -16613,7 +16613,7 @@ MonoBehaviour:
   barHeight: 20
   panelAnchor: {x: 0.5, y: 1}
   panelPivot: {x: 0.5, y: 1}
-  panelOffset: {x: 0, y: -22}
+  panelOffset: {x: 0, y: -300}
 --- !u!1 &1757868705
 GameObject:
   m_ObjectHideFlags: 0
@@ -17829,6 +17829,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9606cfb7c93da42f392be5947ee62bb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  activate: 0
   duration: 2
   timeScale: 0.2
   bulletTimeChargesPerBody: 1
@@ -24433,7 +24434,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.812404, g: 0.5503144, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -24999,6 +25000,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Choice1
       objectReference: {fileID: 0}
+    - target: {fileID: 2800742191005174462, guid: 228748b3cfc377548a419b4e00df7920,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_Pivot.x
@@ -25077,12 +25083,12 @@ PrefabInstance:
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 960
+      value: 960.0815
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -519.5
+      value: -519.4541
       objectReference: {fileID: 0}
     - target: {fileID: 7110942763274156293, guid: 228748b3cfc377548a419b4e00df7920,
         type: 3}

@@ -151,7 +151,7 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
                     (progress * 100f).ToString("0"), (fractionalProgress * 100f).ToString("0"));
             case SinType.Envy:
                 return TextCatalog.Get("imprint.effect.envy",
-                    PossessionImprintMath.EnvyBulletTimeBonus(stacks).ToString("0.00"));
+                    (PossessionImprintMath.EnvyMoveSpeedBonus(stacks) * 100f).ToString("0"));
             case SinType.Lust:
                 return TextCatalog.Get("imprint.effect.lust",
                     (PossessionImprintMath.LustLifestealMultiplier(stacks) * 100f).ToString("0"));

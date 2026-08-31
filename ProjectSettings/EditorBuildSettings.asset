@@ -17,4 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/EnemyAiTest.unity
     guid: 8715901ec1171d345aedc2917151079e
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: c23b5b19889a1d446879042a1c127a96,
+      type: 2}
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000,
+      guid: 39ad40489bdd29f40ac8682134e1397f, type: 2}

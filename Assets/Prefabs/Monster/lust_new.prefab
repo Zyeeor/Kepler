@@ -785,6 +785,8 @@ MonoBehaviour:
   enemyIndicatorShape: 0
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
+  enemyTelegraphLiveAim: 0
+  enemyTelegraphAimLockLead: 0.2
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 0, y: 150}
   pullWindow: 0.6
@@ -797,7 +799,7 @@ MonoBehaviour:
   tetherVfxLength: 5
   impactVfx: {fileID: 8949070131204023080, guid: 01dc36019ed38604a829139b57515fd0,
     type: 3}
-  impactVfxOffset: {x: 0, y: 0, z: 0}
+  impactVfxOffset: {x: 0, y: 1, z: 0}
   telegraphVfx: {fileID: 0}
   s05CollisionDistance: 0.75
   s05BlastDamage: 25
@@ -989,6 +991,7 @@ MonoBehaviour:
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
   enemyTelegraphLiveAim: 1
+  enemyTelegraphAimLockLead: 0.2
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: -40, y: 150}
   segmentDamage: 20
@@ -1152,6 +1155,8 @@ MonoBehaviour:
   enemyIndicatorShape: 0
   enemyIndicatorLength: 0
   enemyIndicatorWidth: 0
+  enemyTelegraphLiveAim: 0
+  enemyTelegraphAimLockLead: 0.2
   enemyCastHudSize: 40
   enemyCastHudScreenOffset: {x: 40, y: 150}
   dashDistance: 4
@@ -1163,6 +1168,7 @@ MonoBehaviour:
   m03BlastRadius: 2.5
   m03BlastVfx: {fileID: 8949070131204023080, guid: 01dc36019ed38604a829139b57515fd0,
     type: 3}
+  m03BlastVfxOffset: {x: 0, y: 1, z: 0}
 --- !u!1 &7718348592882287749
 GameObject:
   m_ObjectHideFlags: 0

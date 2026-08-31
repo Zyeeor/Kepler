@@ -112,7 +112,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.mainmenu.play
-      text: "Play"
+      text: Play
       mythicText: 
       systemText: 
       carrier: 0
@@ -392,7 +392,8 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.entry.raw_line
-      text: "\u6784\u7B51\u5361\u6570 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740 {2}"
+      text: "\u6784\u7B51\u5361\u6570 {0}\uFF5C\u63A7\u5236 {1} \u79D2\uFF5C\u672C\u5C40\u51FB\u6740
+        {2}"
       mythicText: 
       systemText: 
       carrier: 0
@@ -402,7 +403,8 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: ui.hof.entry.stats_line
-      text: "\u51FA\u6218 {0} \u6B21\uFF5C\u88AB\u6D88\u706D {1} \u6B21\uFF5C\u906D\u9644\u8EAB {2} \u6B21\uFF5C\u5BFC\u81F4\u5BF9\u5C40\u5931\u8D25 {3} \u6B21"
+      text: "\u51FA\u6218 {0} \u6B21\uFF5C\u88AB\u6D88\u706D {1} \u6B21\uFF5C\u906D\u9644\u8EAB
+        {2} \u6B21\uFF5C\u5BFC\u81F4\u5BF9\u5C40\u5931\u8D25 {3} \u6B21"
       mythicText: 
       systemText: 
       carrier: 0
@@ -551,7 +553,7 @@ MonoBehaviour:
       systemText: 
       carrier: 0
     - key: imprint.effect.envy
-      text: "\u5B50\u5F39\u65F6\u95F4\u5EF6\u957F {0}\u79D2"
+      text: "\u589E\u52A0\u5168\u5C40\u79FB\u52A8\u901F\u5EA6%{0}"
       mythicText: 
       systemText: 
       carrier: 0

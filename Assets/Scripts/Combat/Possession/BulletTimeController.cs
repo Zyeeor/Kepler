@@ -12,6 +12,8 @@ public sealed class BulletTimeController : MonoBehaviour
     public static BulletTimeController Instance { get; private set; }
 
     [Header("Bullet Time")]
+    [Tooltip("子弹时间总开关：关闭后整个游戏不应用子弹时间（不触发、不消耗充能）。")]
+    public bool activate = true;
     [Min(0.01f)] public float duration = 2f;
     [Range(0.05f, 1f)] public float timeScale = 0.2f;
 
@@ -72,6 +74,12 @@ public sealed class BulletTimeController : MonoBehaviour
         get { return Instance != null ? Mathf.Clamp(Instance.timeScale, 0.05f, 1f) : 0.2f; }
     }
 
+    /// <summary>子弹时间总开关：Instance 未创建时视为激活（默认开启）。</summary>
+    public static bool ConfiguredActive
+    {
+        get { return Instance == null || Instance.activate; }
+    }
+
     public static int ConfiguredChargesPerBody
     {
         get { return Instance != null ? Mathf.Max(1, Instance.bulletTimeChargesPerBody) : 1; }
@@ -122,6 +130,7 @@ public sealed class BulletTimeController : MonoBehaviour
     public void Trigger(MonsterActor currentBody)
     {
         if (currentBody == null) return;
+        if (!activate) return; // 总开关关闭，不触发子弹时间
 
         if (isActive || bulletTimeRoutine != null)
             Stop(GameManager.GameState.Possessed);

@@ -787,6 +787,9 @@ public class MonsterActor : Actor
                 }
 
                 float effectiveMoveSpeed = Combat != null ? Combat.ModifyMoveSpeed(moveSpeed) : moveSpeed;
+                // Envy 罪印：全局移动速度加成（附身态，每层 +1%，上限 +50%）
+                if (PossessionImprintManager.Instance != null)
+                    effectiveMoveSpeed *= PossessionImprintManager.Instance.GetMoveSpeedMultiplier(this);
                 Vector3 desired = dir * effectiveMoveSpeed;
                 float accel = acceleration > 0f ? acceleration : 30f;
                 possessVelocity = Vector3.MoveTowards(possessVelocity, desired, accel * movementDeltaTime);
@@ -1839,7 +1842,7 @@ public class MonsterActor : Actor
         possessionWindowEndsAt = 0f;
         corpseDissipationTriggered = false;
         isPossessionReserved = false;
-        transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Euler(0f, transform.rotation.eulerAngles.y, 0f);
         Transform corpseRoot = transform.root != null ? transform.root : transform;
         corpseRoot.position = new Vector3(corpseRoot.position.x, corpseY, corpseRoot.position.z);
         foreach (Collider collider in GetComponentsInChildren<Collider>(true))
@@ -1894,7 +1897,7 @@ public class MonsterActor : Actor
         corpseDissipationTriggered = false;
         possessionWindowEndsAt = float.PositiveInfinity; // 永久等待附身，不自动消散
         isPossessionReserved = false;
-        transform.rotation = Quaternion.Euler(90f, transform.rotation.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Euler(0f, transform.rotation.eulerAngles.y, 0f);
         Transform corpseRoot = transform.root != null ? transform.root : transform;
         corpseRoot.position = new Vector3(corpseRoot.position.x, corpseY, corpseRoot.position.z);
         foreach (Collider collider in GetComponentsInChildren<Collider>(true)) collider.enabled = true;

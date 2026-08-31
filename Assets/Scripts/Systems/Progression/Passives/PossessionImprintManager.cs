@@ -247,7 +247,14 @@ public sealed class PossessionImprintManager : MonoBehaviour
 
     public float GetBulletTimeDuration(float baseDuration)
     {
-        return baseDuration + PossessionImprintMath.EnvyBulletTimeBonus(GetStacks(SinType.Envy));
+        return baseDuration; // Envy 罪印已改为全局移动速度，不再加成子弹时间
+    }
+
+    /// <summary>Envy 全局移动速度倍率（附身态生效，每层 +1%，上限 +50%）。</summary>
+    public float GetMoveSpeedMultiplier(MonsterActor body)
+    {
+        return body != null && body.isPossessed
+            ? 1f + PossessionImprintMath.EnvyMoveSpeedBonus(GetStacks(SinType.Envy)) : 1f;
     }
 
     public float GetLustLifestealMultiplier(MonsterActor body)

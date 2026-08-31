@@ -395,6 +395,7 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         {
             GameObject blast = Object.Instantiate(a03BlastVfx, pos + a03BlastVfxOffset, Quaternion.identity);
             blast.transform.localScale *= OwnerCombatScaleMultiplier;
+            PlayVfx(blast);
         }
         DamageEnemiesInSphere(pos, radius, dmg);
         if (!owner.isPossessed)

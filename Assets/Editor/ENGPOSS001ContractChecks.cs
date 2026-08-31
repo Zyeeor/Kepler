@@ -46,7 +46,8 @@ public static class ENGPOSS001ContractChecks
         Require(Approximately(PossessionImprintMath.GluttonyScaleMultiplier(20), 2f), "Gluttony 20-stack scale cap is wrong.");
         Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(20), 0.3f), "Sloth 20-stack drain reduction is wrong.");
         Require(Approximately(PossessionImprintMath.SlothDrainMultiplier(1000), PossessionImprintMath.SlothDrainMultiplier(100)), "Sloth stack cap is not enforced.");
-        Require(Approximately(PossessionImprintMath.EnvyBulletTimeBonus(20), 0.6f), "Envy 20-stack bullet time is wrong.");
+        Require(Approximately(PossessionImprintMath.EnvyMoveSpeedBonus(20), 0.20f), "Envy 20-stack move speed bonus is wrong.");
+        Require(Approximately(PossessionImprintMath.EnvyMoveSpeedBonus(100), 0.50f), "Envy move speed cap is not enforced.");
         Require(Approximately(PossessionImprintMath.LustLifestealMultiplier(20), 0.2f), "Lust formula is wrong.");
         Require(Approximately(PossessionImprintMath.LustLifestealMultiplier(100), 1f), "Lust lifesteal formula is wrong.");
     }

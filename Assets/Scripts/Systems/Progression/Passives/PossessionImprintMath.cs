@@ -12,7 +12,8 @@ public static class PossessionImprintMath
     const float GluttonyHealthPerStack = 0.10f;
     const float GluttonyScalePerStack = 0.05f;
     const float GreedProgressPerStack = 0.10f;
-    const float EnvyBulletTimePerStack = 0.03f;
+    const float EnvyMoveSpeedPerStack = 0.01f;
+    const float EnvyMoveSpeedMaxBonus = 0.50f;
     const float LustLifestealPerStack = 0.01f;
     const float SlothDrainFactorPerStack = 7f / 60f;
 
@@ -46,9 +47,10 @@ public static class PossessionImprintMath
         return ClampStacks(oldStacks) * GreedProgressPerStack;
     }
 
-    public static float EnvyBulletTimeBonus(int stacks)
+    /// <summary>Envy 全局移动速度加成（每层 +1%，上限 +50%）。</summary>
+    public static float EnvyMoveSpeedBonus(int stacks)
     {
-        return ClampStacks(stacks) * EnvyBulletTimePerStack;
+        return Mathf.Min(EnvyMoveSpeedMaxBonus, ClampStacks(stacks) * EnvyMoveSpeedPerStack);
     }
 
     public static float LustLifestealMultiplier(int stacks)

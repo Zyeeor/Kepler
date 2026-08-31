@@ -22,15 +22,15 @@ public class CardLibrary : ScriptableObject
             (disabledEffectIds == null || !disabledEffectIds.Contains(effectId));
     }
 
-    // 资产路径：Assets/Configs/CardLibrary.asset（与 MonsterAIConfig 等配置同级）
-    const string AssetPath = "Assets/Configs/CardLibrary.asset";
+    // 资产路径：Assets/Resources/UI/CardLibrary.asset（位于 Resources，Editor 与打包构建统一可用）
+    const string AssetPath = "Assets/Resources/UI/CardLibrary.asset";
 
     static CardLibrary instance;
     /// <summary>
     /// 运行时单例。主菜单/图鉴等无 CardManager 的场景用它读取卡面等数据。
-    /// 资产位于 Assets/Configs（非 Resources），因此：
+    /// 资产位于 Assets/Resources/UI，因此：
     ///   - 编辑器（含 Play 模式）：用 AssetDatabase 按路径加载；
-    ///   - 打包构建：回退到 Resources.Load（需确保构建时该资产被打包进 Resources）。
+    ///   - 打包构建：用 Resources.Load 加载（同一份资产，Editor 与构建保持一致）。
     /// </summary>
     public static CardLibrary Instance
     {

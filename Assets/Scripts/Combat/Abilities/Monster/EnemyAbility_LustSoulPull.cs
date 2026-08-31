@@ -341,7 +341,7 @@ public class EnemyAbility_LustSoulPull : EnemyAbility
             float dmg = GetCardParameter("CollisionDmg", s05BlastDamage);
             float radius = GetCardParameter("R", s05BlastRadius);
             if (s05BlastVfx != null)
-                Object.Instantiate(s05BlastVfx, pair.mid + s05BlastVfxOffset, Quaternion.identity);
+                PlayVfx(Object.Instantiate(s05BlastVfx, pair.mid + s05BlastVfxOffset, Quaternion.identity));
             DamageEnemiesInSphere(pair.mid, radius, dmg, null, -1f);
             if (!owner.isPossessed)
                 TryDamagePlayerInRadius(pair.mid, radius, dmg, -1f);

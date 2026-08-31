@@ -347,6 +347,12 @@ public class PossessionManager : SceneSingleton<PossessionManager>
             Debug.LogWarning($"[BT-Debug] TriggerBulletTime 被拦截：State={State}（需 Possessing），CurrentBody={(CurrentBody != null ? CurrentBody.displayName : "NULL")}。");
             return;
         }
+        // 子弹时间总开关：关闭时不触发、不消耗充能。
+        if (!BulletTimeController.ConfiguredActive)
+        {
+            Debug.LogWarning("[BT-Debug] TriggerBulletTime 被拦截：Bullet Time 总开关 activate=false。");
+            return;
+        }
         // Pass v1 §8.2：Charge 检查，0 时同 Body 不可再使用（换 Body 后重新刷新）。
         if (CurrentBody.bulletTimeChargesRemaining <= 0)
         {
