@@ -361,22 +361,9 @@ public class UIManager : SceneSingleton<UIManager>
 
     public void OnPauseClicked()
     {
-        isPaused = !isPaused;
-
-        if (isPaused)
-        {
-            TimeScaleManager.Push(TimeDomain.Pause, 0f);
-            Debug.Log("UIManager: Game paused");
-        }
-        else
-        {
-            // 退出暂停：Pop 本 Pause 请求。若选卡会话仍在进行（CoreChoiceUI 自己也 Push 了 Pause 域），
-            // 栈中仍有 Pause 请求 → 保持暂停；否则恢复 1。原 IsDraftingActive 特判由优先级栈天然消解。
-            TimeScaleManager.Pop(TimeDomain.Pause);
-            Debug.Log("UIManager: Game resumed");
-        }
-
-        UpdatePauseButtonText();
+        // 与 ESC 共用同一入口：暂停面板、技能栏置顶、选卡 Canvas 层级、光标和时间域
+        // 都走 TogglePause 的完整处理，避免按钮和 ESC 出现两套不一致的暂停语义。
+        TogglePause();
     }
 
     void UpdatePauseButtonText()
@@ -422,6 +409,11 @@ public class UIManager : SceneSingleton<UIManager>
         if (pauseMenuPanel != null)
             pauseMenuPanel.SetActive(true);
 
+        // 技能栏与罪印栏/卡牌栏统一：暂停时保持可见并置于暂停遮罩之上，继续支持 hover。
+        AbilityCooldownUI abilityHud = FindObjectOfType<AbilityCooldownUI>();
+        if (abilityHud != null)
+            abilityHud.SetPausePresentation(true);
+
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
@@ -440,6 +432,10 @@ public class UIManager : SceneSingleton<UIManager>
         TimeScaleManager.Pop(TimeDomain.Pause);
         if (pauseMenuPanel != null)
             pauseMenuPanel.SetActive(false);
+
+        AbilityCooldownUI abilityHud = FindObjectOfType<AbilityCooldownUI>();
+        if (abilityHud != null)
+            abilityHud.SetPausePresentation(false);
 
         // 恢复选卡界面 Canvas 层级（暂停时被降到 -10）
         if (CoreChoiceUI.Instance != null)
