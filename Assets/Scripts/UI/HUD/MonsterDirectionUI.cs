@@ -238,9 +238,10 @@ public class MonsterDirectionUI : MonoBehaviour
             }
         }
 
-        // 2) 有怪可见 → 隐藏并重置计时、解锁。
-        // 常驻引导下仅在"未锁定"时据此停止引导；已锁定交由下方按"锁定目标是否进视野"处理。
-        if (anyInView && (!persistentGuide || LockedTarget == null))
+        // 2) 任意活怪进入视野 → 立即隐藏并重置计时、解锁。
+        // 触发条件是"视野内没有怪"，不是"当前引导目标进入视野"；
+        // 因此即使 persistentGuide 开启，也不能让引导线继续显示到锁定目标出现为止。
+        if (anyInView)
         {
             noMonsterTimer = 0f;
             LockedTarget = null;
