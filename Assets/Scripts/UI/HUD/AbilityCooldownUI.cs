@@ -60,15 +60,10 @@ public class AbilityCooldownUI : MonoBehaviour
     private EnemyAbility enemyMobilityAbility;
     private SinType enemySkillIconSin = SinType.None;
 
-    Canvas pausePresentationCanvas;
-    GraphicRaycaster pausePresentationRaycaster;
-    bool pauseCanvasStateCaptured;
-    bool pauseCanvasWasCreated;
-    bool pauseRaycasterWasCreated;
-    bool pauseRaycasterStateCaptured;
-    bool pauseRaycasterOriginalEnabled;
-    bool pauseCanvasOriginalOverrideSorting;
-    int pauseCanvasOriginalSortingOrder;
+    // 暂停置顶改用兄弟顺序而非嵌套 Canvas：运行时 AddComponent<Canvas> 会让 TMP 文字
+    // 走嵌套 Canvas 渲染路径，像素对齐变化导致按键提示文字发虚（视觉像被蒙了一层）。
+    int pauseOriginalSiblingIndex = -1;
+    bool pauseSiblingMoved;
 
     // 场景默认图标作为配置缺省值；在玩家/怪物状态切换时避免沿用上一个角色的覆盖图。
     private Sprite defaultBasicIcon;
@@ -92,70 +87,32 @@ public class AbilityCooldownUI : MonoBehaviour
     }
 
     /// <summary>
-    /// 暂停时将技能 HUD 提到暂停遮罩之上，保持图标可见且可接收 hover；
-    /// 恢复游戏后还原原 Canvas 状态，不改变正常态层级。
+    /// 暂停时将技能 HUD 的兄弟顺序移到父容器末尾：渲染与射线都落在暂停遮罩
+    /// （兄弟节点 PauseMenuPanel，无独立 Canvas）之上，图标可见且 hover 可用。
+    /// 不引入嵌套 Canvas，文字渲染路径与正常态完全一致，避免暂停后文字发虚。
+    /// 恢复游戏后还原原兄弟位置。
     /// </summary>
     public void SetPausePresentation(bool showOnTop)
     {
+        Transform parent = transform.parent;
+        if (parent == null) return;
+
         if (showOnTop)
         {
-            if (pausePresentationCanvas == null)
-            {
-                pausePresentationCanvas = GetComponent<Canvas>();
-                if (pausePresentationCanvas == null)
-                {
-                    pausePresentationCanvas = gameObject.AddComponent<Canvas>();
-                    pauseCanvasWasCreated = true;
-                }
-            }
-
-            if (!pauseCanvasStateCaptured)
-            {
-                pauseCanvasOriginalOverrideSorting = pausePresentationCanvas.overrideSorting;
-                pauseCanvasOriginalSortingOrder = pausePresentationCanvas.sortingOrder;
-                pauseCanvasStateCaptured = true;
-            }
-
-            pausePresentationCanvas.overrideSorting = true;
-            pausePresentationCanvas.sortingOrder = 210;
-
-            // 嵌套 Canvas 只负责显示时，根 UICanvas 的 GraphicRaycaster 仍可能被暂停遮罩抢先命中。
-            // 给技能 Canvas 补一个独立 Raycaster，确保图标上的 HoverTooltipText 能收到 PointerEnter。
-            pausePresentationRaycaster = pausePresentationCanvas.GetComponent<GraphicRaycaster>();
-            if (pausePresentationRaycaster == null)
-            {
-                pausePresentationRaycaster = pausePresentationCanvas.gameObject.AddComponent<GraphicRaycaster>();
-                pauseRaycasterWasCreated = true;
-            }
-            else if (!pauseRaycasterStateCaptured)
-            {
-                pauseRaycasterOriginalEnabled = pausePresentationRaycaster.enabled;
-                pauseRaycasterStateCaptured = true;
-            }
-            pausePresentationRaycaster.enabled = true;
+            if (pauseSiblingMoved) return;
+            pauseOriginalSiblingIndex = transform.GetSiblingIndex();
+            // SetSiblingIndex 是"先移除再插入"：插入末尾索引即 childCount-1，
+            // 此时原末尾的 PauseMenuPanel 前移一位，本节点落在它之后（最上层）。
+            transform.SetSiblingIndex(parent.childCount - 1);
+            pauseSiblingMoved = true;
             return;
         }
 
-        if (!pauseCanvasStateCaptured || pausePresentationCanvas == null) return;
-        pausePresentationCanvas.overrideSorting = pauseCanvasOriginalOverrideSorting;
-        pausePresentationCanvas.sortingOrder = pauseCanvasOriginalSortingOrder;
-        pauseCanvasStateCaptured = false;
-
-        if (pauseRaycasterWasCreated && pausePresentationRaycaster != null)
-            Destroy(pausePresentationRaycaster);
-        else if (pauseRaycasterStateCaptured && pausePresentationRaycaster != null)
-            pausePresentationRaycaster.enabled = pauseRaycasterOriginalEnabled;
-        pausePresentationRaycaster = null;
-        pauseRaycasterWasCreated = false;
-        pauseRaycasterStateCaptured = false;
-
-        // 未暂停时不保留运行时新增的嵌套 Canvas，避免改变普通 HUD 的渲染/批处理路径。
-        if (pauseCanvasWasCreated)
-        {
-            Destroy(pausePresentationCanvas);
-            pausePresentationCanvas = null;
-            pauseCanvasWasCreated = false;
-        }
+        if (!pauseSiblingMoved) return;
+        if (pauseOriginalSiblingIndex >= 0)
+            transform.SetSiblingIndex(Mathf.Min(pauseOriginalSiblingIndex, parent.childCount - 1));
+        pauseOriginalSiblingIndex = -1;
+        pauseSiblingMoved = false;
     }
 
     void ResolveIconConfig()
