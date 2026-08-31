@@ -64,6 +64,10 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
     [Tooltip("保留以兼容既有 prefab 配置。怠惰朝向已改为始终跟随鼠标（MonsterActor.alwaysFaceAimWhenPossessed），出膛时不再使用该转向速率。")]
     public float aimTurnSpeed = 720f;
 
+    [Header("AI Pacing")]
+    [Tooltip("AI 每次开炮后的走位/转向窗口（秒）。引导(站桩)+蓄力+冷却0 会占满整个循环，为 0 时怪物永久站桩且朝向冻结在首次锁定方向（UpdateLocomotion 在 LocomotionLocked 时连转向一并清零）。")]
+    [SerializeField, Min(0f)] float aiRecoveryInterval = 0.5f;
+
     [Header("Upgrade - Sloth.Scatter")]
     public float scatterBulletMult = 2f;
     public float scatterBulletScale = 0.5f;
@@ -547,7 +551,12 @@ public class EnemyAbility_SlothChargeShot : EnemyAbility
         EndChargeTelegraph();
         EndActivationEffect();
         chargeTimer = 0f;
-        currentCooldown = EffectiveCooldown;
+        // AI 态出手后保留走位/转向窗口：telegraph(站桩读条)+蓄力+冷却0 占满循环时，
+        // 怪物将永久站桩且朝向冻结（UpdateLocomotion 在 LocomotionLocked 时连转向一并清零）。
+        // 仅 AI 非附身生效；附身与 Boss 节奏不变。
+        currentCooldown = owner != null && !owner.isPossessed
+            ? Mathf.Max(EffectiveCooldown, aiRecoveryInterval)
+            : EffectiveCooldown;
 
         if (chargeVfxInstance != null)
         {
