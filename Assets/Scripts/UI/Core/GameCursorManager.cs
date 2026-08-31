@@ -14,6 +14,8 @@ public static class GameCursorManager
     /// <summary>应用配置的光标（纹理 + 热点 + 缩放 + 可见性）。找不到配置则回退为系统可见光标。</summary>
     public static void Apply()
     {
+        if (Application.isEditor) return;
+
         GameCursorSettings settings = Resources.Load<GameCursorSettings>(SettingsPath);
         if (settings == null)
         {
@@ -51,19 +53,45 @@ public static class GameCursorManager
         Debug.Log($"[GameCursor] 已应用游戏光标：{texture.name}，hotspot={hotspot}，scale={scale}，mode={mode}。");
     }
 
-    /// <summary>把源纹理缩放到指定尺寸（经 RenderTexture 双线性重采样，不依赖源纹理 Read/Write）。</summary>
+    /// <summary>把源纹理分级缩小到指定尺寸，避免无 mipmap 的大幅一次性缩放产生锯齿。</summary>
     static Texture2D ScaleTexture(Texture2D source, int width, int height)
     {
-        RenderTexture rt = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-        Graphics.Blit(source, rt);
+        Texture sourceTexture = source;
+        RenderTexture current = null;
+        int currentWidth = source.width;
+        int currentHeight = source.height;
 
-        RenderTexture prev = RenderTexture.active;
-        RenderTexture.active = rt;
+        while (currentWidth > width || currentHeight > height)
+        {
+            int nextWidth = Mathf.Max(width, Mathf.CeilToInt(currentWidth * 0.5f));
+            int nextHeight = Mathf.Max(height, Mathf.CeilToInt(currentHeight * 0.5f));
+            RenderTexture next = RenderTexture.GetTemporary(nextWidth, nextHeight, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            next.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(sourceTexture, next);
+
+            if (current != null) RenderTexture.ReleaseTemporary(current);
+            current = next;
+            sourceTexture = current;
+            currentWidth = nextWidth;
+            currentHeight = nextHeight;
+        }
+
+        if (current == null)
+        {
+            current = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            current.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(sourceTexture, current);
+        }
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = current;
         Texture2D result = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        result.filterMode = FilterMode.Bilinear;
+        result.wrapMode = TextureWrapMode.Clamp;
         result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
         result.Apply();
-        RenderTexture.active = prev;
-        RenderTexture.ReleaseTemporary(rt);
+        RenderTexture.active = previous;
+        if (current != null) RenderTexture.ReleaseTemporary(current);
         return result;
     }
 }
