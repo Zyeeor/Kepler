@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cursorTexture: {fileID: 2800000, guid: 6183f27e70b2cca4490af03169ad6467, type: 3}
   hotspot: {x: 0, y: 0}
-  cursorScale: 0.1
+  cursorScale: 1
   visible: 1
