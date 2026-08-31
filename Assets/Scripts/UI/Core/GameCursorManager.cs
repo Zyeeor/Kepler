@@ -28,7 +28,11 @@ public static class GameCursorManager
 
         Texture2D texture = settings.cursorTexture;
         Vector2 hotspot = settings.hotspot;
-        CursorMode mode = CursorMode.Auto;
+        // 硬件光标（Auto）有尺寸上限（约 64x64，视平台而定），大图必须走软件光标，
+        // 否则 Cursor.SetCursor 静默失败、光标不替换。
+        CursorMode mode = texture.width > 64 || texture.height > 64
+            ? CursorMode.ForceSoftware
+            : CursorMode.Auto;
 
         float scale = Mathf.Max(0.01f, settings.cursorScale);
         if (Mathf.Abs(scale - 1f) > 0.001f)
