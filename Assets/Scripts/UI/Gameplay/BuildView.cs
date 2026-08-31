@@ -54,6 +54,8 @@ public class BuildView : MonoBehaviour
     public Vector2 stackOffset = Vector2.zero;
     [Tooltip("左上角两种模式（迷你一排 / 堆叠）要隐藏的卡面子物体名：卡面预制体里溢出卡框的装饰图层（如 Image (1)）缩小后会变成碍眼的色块，这里按需裁掉。留空则不裁剪；扇形放大模式不受影响。")]
     public List<string> miniHiddenChildren = new List<string> { "Image (1)" };
+    [Tooltip("仅「左上收起」（模式 2）额外隐藏的卡面子物体名：收起时所有卡完全重叠，卡面立绘与装饰图层（如 monster、若干 Image）会糊成一片，这里按需裁掉。迷你一排与扇形放大模式不受影响，切回即恢复显示。名字按全名匹配，同名物体会全部隐藏。")]
+    public List<string> stackHiddenChildren = new List<string> { "monster", "Image", "Image (1)", "Image (2)" };
     [Tooltip("左上收起状态的卡面中心位置（屏幕空间 RectTransform）。留空则回退到 miniAnchor 位置。")]
     public RectTransform stackAnchor;
 
@@ -674,7 +676,7 @@ public class BuildView : MonoBehaviour
             if (card.descriptionText != null) card.descriptionText.gameObject.SetActive(false);
             var choiceCard = go.GetComponent<ChoiceCard>();
             if (choiceCard != null) Destroy(choiceCard);
-            HideCardChildren(go);
+            HideCardChildren(go, stacked);
             // 迷你图标纯展示，关闭卡面内部所有 Graphic 的射线，只保留 MiniSlot 作为完整命中区域。
             var graphics = go.GetComponentsInChildren<Graphic>(true);
             foreach (var graphic in graphics) graphic.raycastTarget = false;
@@ -697,9 +699,18 @@ public class BuildView : MonoBehaviour
         }
 
         if (buildButton != null && miniBar.transform.parent == buildButton.transform.parent)
-            miniBar.transform.SetSiblingIndex(buildButton.transform.GetSiblingIndex());
-        else
-            miniBar.transform.SetAsFirstSibling();
+        {
+            int targetIndex = buildButton.transform.GetSiblingIndex();
+            int currentIndex = miniBar.transform.GetSiblingIndex();
+            // SetSiblingIndex 是「先移除再插入」：miniBar 被移除后，buildButton 的索引会前移一位。
+            // 因此 miniBar 原本排在 buildButton 之前时要减 1，否则每次调用都会把两者顺序翻转一次
+            // ——收起态获得新卡会再次调用本方法，翻到错误一侧就成了「新卡盖住卡背」。
+            int insertIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
+            if (insertIndex >= 0) miniBar.transform.SetSiblingIndex(insertIndex);
+            return;
+        }
+
+        miniBar.transform.SetAsFirstSibling();
     }
 
     /// <summary>
@@ -707,15 +718,42 @@ public class BuildView : MonoBehaviour
     /// 这些图层（如 Image (1)）在原始卡面尺寸下是卡外光效，缩小后会糊成一团碍眼的色块。
     /// 仅在实例化后立即调用；扇形放大模式保持完整卡面，不做裁剪。
     /// </summary>
-    void HideCardChildren(GameObject go)
+    void HideCardChildren(GameObject go, bool stacked = false)
     {
-        if (miniHiddenChildren == null || miniHiddenChildren.Count == 0) return;
-        for (int i = 0; i < miniHiddenChildren.Count; i++)
+        // miniHiddenChildren 沿用历史语义：只隐藏第一个同名物体。
+        // 卡面里存在多个 "Image (1)"，若一并隐藏，左上展开会少显示一个图层。
+        ApplyHiddenChildren(go, miniHiddenChildren, onlyFirstMatch: true);
+        // 收起态卡片完全重叠，额外裁掉立绘与装饰图层（同名全部隐藏，确保裁干净）。
+        if (stacked) ApplyHiddenChildren(go, stackHiddenChildren, onlyFirstMatch: false);
+    }
+
+    /// <summary>
+    /// 按全名隐藏卡面子孙。
+    /// onlyFirstMatch=true 只隐藏第一个同名（历史行为，用于两种迷你态共用的裁剪）；
+    /// false 则隐藏所有同名（收起态需要把重复图层全部裁掉）。
+    /// </summary>
+    static void ApplyHiddenChildren(GameObject go, List<string> names, bool onlyFirstMatch)
+    {
+        if (go == null || names == null || names.Count == 0) return;
+        for (int n = 0; n < names.Count; n++)
         {
-            var name = miniHiddenChildren[i];
+            var name = names[n];
             if (string.IsNullOrEmpty(name)) continue;
-            var t = FindDescendant(go.transform, name);
-            if (t != null) t.gameObject.SetActive(false);
+
+            if (onlyFirstMatch)
+            {
+                var first = FindDescendant(go.transform, name);
+                if (first != null && first != go.transform) first.gameObject.SetActive(false);
+                continue;
+            }
+
+            var all = go.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                var t = all[i];
+                if (t == null || t == go.transform) continue;   // 不隐藏卡面根，避免整张卡消失
+                if (t.name == name) t.gameObject.SetActive(false);
+            }
         }
     }
 

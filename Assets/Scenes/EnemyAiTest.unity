@@ -16555,6 +16555,11 @@ MonoBehaviour:
   stackOffset: {x: 3, y: 0}
   miniHiddenChildren:
   - Image (1)
+  stackHiddenChildren:
+  - monster
+  - Image
+  - Image (1)
+  - Image (2)
   stackAnchor: {fileID: 927676052}
   transitionDuration: 0.2
   transitionStagger: 0.05
