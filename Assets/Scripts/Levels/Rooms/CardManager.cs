@@ -243,12 +243,33 @@ public class CardManager : SceneSingleton<CardManager>
             UnlockAllEffectsForBossMode();
     }
 
+    /// <summary>
+    /// Rebuild all currently loaded monsters from the authoritative current-run card set.
+    /// Static scene bodies and direct-instantiated tutorial bodies do not always pass through
+    /// MonsterPool, so they need the same synchronization path once CardManager is ready.
+    /// </summary>
+    void ReapplyCurrentRunToExistingMonsters()
+    {
+        var monsters = FindObjectsOfType<MonsterActor>(true);
+        foreach (var monster in monsters)
+        {
+            if (monster == null) continue;
+            ResetAbilityUnlockState(monster.gameObject);
+            ApplyAllUnlocksTo(monster.gameObject);
+        }
+    }
+
     void Start()
     {
         // Awake ordering is not guaranteed across the persistent RunSession and the
         // scene CardManager. Retry once after all scene Awake calls have completed.
         if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
             UnlockAllEffectsForBossMode();
+
+        // CardManager 的解锁集合此时已从 RunSession/存档恢复；统一重建场景里
+        // 已存在的怪物，避免能力组件与 BuildView 卡牌状态因初始化顺序分叉。
+        ReapplyCurrentRunToExistingMonsters();
+
         var run = RunSession.Instance;
         bool isResumeRun = run != null && run.HasActiveRun && !run.StartedFromMainMenu;
         if (debugDoublePickOnStart
@@ -1165,6 +1186,7 @@ public class CardManager : SceneSingleton<CardManager>
         // It makes Boss mode independent of Unity's cross-object initialization order.
         if (RunSession.Instance != null && RunSession.Instance.IsBossMode)
             UnlockAllEffectsForBossMode();
+
         if (unlockedEffects.Count == 0) return;
         var abilities = go.GetComponentsInChildren<EnemyAbility>(true);
         int applied = 0;
@@ -1242,6 +1264,32 @@ public class CardManager : SceneSingleton<CardManager>
     }
 
     /// <summary>
+    /// 清空一个怪物实例上的运行时卡牌解锁状态。
+    /// 只复位 upgrade.unlocked，不删除能力槽位，避免破坏各技能 OnEnable 注册的基础槽位。
+    /// </summary>
+    public int ResetAbilityUnlockState(GameObject go)
+    {
+        if (go == null) return 0;
+        int cleared = 0;
+        var abilities = go.GetComponentsInChildren<EnemyAbility>(true);
+        foreach (var ability in abilities)
+        {
+            if (ability == null) continue;
+            ability.ResetRuntimeCardEffects();
+            if (ability.upgrades == null) continue;
+            foreach (var slot in ability.upgrades)
+            {
+                if (slot != null && slot.unlocked)
+                {
+                    slot.unlocked = false;
+                    cleared++;
+                }
+            }
+        }
+        return cleared;
+    }
+
+    /// <summary>
     /// 清空本局所有卡牌解锁，并把场上所有怪物技能的每一个 upgrade 全部取消勾选。
     /// 供结束对局/退出游戏时调用，确保下一局从零开始（卡牌与技能构筑不跨局残留）。
     /// </summary>
@@ -1252,21 +1300,19 @@ public class CardManager : SceneSingleton<CardManager>
         knownTypes.Clear();
         globalMissStreak = 0;
         bossModeBuildsInitialized = false;
+        currentPicks = new CardData[3];
+        shownThisSession.Clear();
+        rerollCounts.Clear();
+        sessionCardRng = null;
+        currentWaveCardSeed = -1;
+        reverseBDHintShown = false;
+        starterGemSpawned = false;
 
         var abilities = FindObjectsOfType<EnemyAbility>(true);
         int cleared = 0;
-        foreach (var a in abilities)
-        {
-            if (a == null || a.upgrades == null) continue;
-            foreach (var slot in a.upgrades)
-            {
-                if (slot != null && slot.unlocked)
-                {
-                    slot.unlocked = false;
-                    cleared++;
-                }
-            }
-        }
+        foreach (var ability in abilities)
+            cleared += ResetAbilityUnlockState(ability != null ? ability.gameObject : null);
+
         Debug.Log($"[CardManager] 已重置本局卡牌解锁与 {cleared} 个怪物技能 upgrade。");
     }
 

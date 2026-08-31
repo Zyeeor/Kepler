@@ -105,12 +105,12 @@ public class MonsterPool : MonoBehaviour
         instanceToSpawn.transform.SetPositionAndRotation(position, rotation);
         instanceToSpawn.SetActive(true);
 
-        // CardManager unlocks existing abilities when a card is selected, but pooled
-        // monsters may be instantiated or reused after that point. Apply the current
-        // run build after activation so ability OnEnable has already stamped its stable
-        // ability tags; this also covers Boss mode's Boss and seven reserve corpses.
+        // 先重建池化实例的能力状态，再应用当前 Run 的卡牌。
         if (CardManager.Instance != null)
+        {
+            CardManager.Instance.ResetAbilityUnlockState(instanceToSpawn);
             CardManager.Instance.ApplyAllUnlocksTo(instanceToSpawn);
+        }
 
         return instanceToSpawn;
     }

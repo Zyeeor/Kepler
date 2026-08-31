@@ -52,6 +52,11 @@ public abstract class EnemyAbility : MonoBehaviour
     [Tooltip("Each upgrade slot: effectId + unlocked checkbox. Set by CardManager.")]
     public List<UpgradeSlot> upgrades = new List<UpgradeSlot>();
 
+    // Prefab/Inspector authored effect tags are the immutable baseline. Card unlocks and
+    // elite/build systems append runtime tags; resetting a pooled/new-run ability must
+    // remove only those runtime additions, not the authored tags already on the prefab.
+    List<string> authoredAppliedEffectTags = new List<string>();
+
     /// <summary>Check if a specific upgrade is unlocked (case-insensitive).</summary>
     public bool IsUpgradeUnlocked(string id)
     {
@@ -94,6 +99,27 @@ public abstract class EnemyAbility : MonoBehaviour
             if (string.IsNullOrEmpty(effectTag) || appliedEffectTags.Exists(value => string.Equals(value, effectTag, StringComparison.OrdinalIgnoreCase))) continue;
             appliedEffectTags.Add(effectTag);
         }
+    }
+
+    /// <summary>
+    /// Restore authored effect tags and remove runtime card/build additions.
+    /// Upgrade unlock flags are reset by CardManager alongside this method.
+    /// </summary>
+    public void ResetRuntimeCardEffects()
+    {
+        if (authoredAppliedEffectTags == null)
+            authoredAppliedEffectTags = new List<string>();
+        if (authoredAppliedEffectTags.Count == 0 && appliedEffectTags != null && appliedEffectTags.Count > 0)
+        {
+            // Awake normally captures this baseline; this fallback protects objects created
+            // by older hot-reload paths before the baseline field existed.
+            authoredAppliedEffectTags.AddRange(appliedEffectTags);
+        }
+
+        if (appliedEffectTags == null)
+            appliedEffectTags = new List<string>();
+        appliedEffectTags.Clear();
+        appliedEffectTags.AddRange(authoredAppliedEffectTags);
     }
 
     [Header("VFX")]
@@ -344,6 +370,9 @@ public abstract class EnemyAbility : MonoBehaviour
 
     protected virtual void Awake()
     {
+        authoredAppliedEffectTags = appliedEffectTags != null
+            ? new List<string>(appliedEffectTags)
+            : new List<string>();
         owner = GetComponentInParent<Enemy>();
         currentCooldown = 0f;
         if (owner != null) owner.RegisterAbility(this);
