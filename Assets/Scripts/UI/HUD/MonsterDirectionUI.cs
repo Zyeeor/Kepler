@@ -76,6 +76,10 @@ public class MonsterDirectionUI : MonoBehaviour
     [Tooltip("线贴地高度（米）：0 = 脚底。")]
     public float heightOffset = 0.05f;
 
+    [Header("对齐方式")]
+    [Tooltip("线带对齐方式。View = 始终正对相机（推荐）：宽度方向按「线段方向 × 视线方向」求得，只要线段不平行于视线就不会退化，各朝向视觉宽度一致；正交相机下更无近大远小差异，宽度完全恒定。TransformZ/Local = 朝向 Transform 的 Z 轴，当线段接近 Z 轴时叉积退化会导致宽度骤减，故不推荐。")]
+    public LineAlignment lineAlignment = LineAlignment.View;
+
     [Header("蛇形波动")]
     [Tooltip("波动幅度（米）：弯曲程度，越大越明显。")]
     [Min(0f)] public float waveAmplitude = 0.2f;
@@ -138,6 +142,7 @@ public class MonsterDirectionUI : MonoBehaviour
         {
             line.widthMultiplier = widthMultiplier;
             line.widthCurve = widthCurve;
+            line.alignment = lineAlignment;
         }
     }
 
@@ -843,12 +848,14 @@ public class MonsterDirectionUI : MonoBehaviour
             go.transform.SetParent(transform, false);
             lr = go.AddComponent<LineRenderer>();
             lr.useWorldSpace = true;
-            lr.alignment = LineAlignment.TransformZ; // 世界单位宽度（拖尾同款；View 是像素语义，会失真）
         }
 
         // 动态参数来自检查器（其余渲染参数由美术在 Prefab 中配置）
         lr.widthMultiplier = widthMultiplier;
         lr.widthCurve = widthCurve;
+        // 覆盖 Prefab 的对齐方式：TransformZ/Local 的宽度方向为「线段方向 × Z 轴」，
+        // 线段接近 Z 轴时叉积退化会导致视觉宽度骤减，故统一由检查器控制（默认 View）。
+        lr.alignment = lineAlignment;
 
         mat = null;
         Material template = lr.sharedMaterial;
