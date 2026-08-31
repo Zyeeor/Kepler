@@ -39,6 +39,9 @@ public enum TutorialFact
     // ---- TUT-01 移动完成条件（WASD 有效移动，TutorialController.Update 轮询边沿报告） ----
     /// <summary>玩家按过 WASD 产生有效移动（TUT-01 完成条件；契约"有效移动且 Aim 方向发生变化"的移动半支，Aim 半支暂缓）。</summary>
     InputMovementPressed,
+
+    /// <summary>GEM 选卡宝石第一次出现（玩家首次生成选卡宝石时报告，只报一次；供教程 startFacts 使用）。</summary>
+    GemFirstSpawned,
 }
 
 /// <summary>

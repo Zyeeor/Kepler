@@ -45,11 +45,13 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 1
+    pauseDuringStep: 1
+    nextStepDelay: 2
   - id: TUT-GEM
     title: "\u795E\u683C\u7CBE\u9B44"
     text: "\u795E\u683C\u7CBE\u9B44\uFF0C \u6361\u8D77\u795E\u683C\u7CBE\u9B44\u53EF\u4EE5\u5347\u7EA7\u795E\u683C"
     textKey: 
-    startFacts: 00000000
+    startFacts: 0c000000
     completeFacts: 
     blocking: 0
     remindInterval: 0
@@ -189,6 +191,8 @@ MonoBehaviour:
     nextStepId: TUT-03B
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 1
+    nextStepDelay: 2
   - id: TUT-03B
     title: "\u6280\u80FD"
     text: "\u6309\u3010{SKILL}\u3011\u91CA\u653E\u6280\u80FD\u3002\u6BCF\u4E2A\u602A\u7269\u6709\u7279\u6B8A\u6280\u80FD"
@@ -205,6 +209,8 @@ MonoBehaviour:
     nextStepId: TUT-03C
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 1
+    nextStepDelay: 2
   - id: TUT-03C
     title: "\u4F4D\u79FB"
     text: "\u6309\u3010{MOBILITY}\u3011\u4F4D\u79FB\u95EA\u907F\u3002\u6BCF\u4E2A\u602A\u7269\u6709\u4E0D\u540C\u4F4D\u79FB\u65B9\u5F0F"
@@ -221,6 +227,8 @@ MonoBehaviour:
     nextStepId: TUT-04
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 1
+    nextStepDelay: 2
   - id: TUT-04
     title: "\u51FB\u8D25\u602A\u7269"
     text: "\u51FB\u8D25\u602A\u7269\u540E\uFF0C\u4F1A\u7559\u4E0B\u53EF\u9644\u8EAB\u7684\u8EAF\u4F53\u3002"

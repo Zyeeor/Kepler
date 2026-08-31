@@ -38,6 +38,8 @@ public class CardManager : SceneSingleton<CardManager>
     public GameObject cardOfferGemPrefab;
     [Tooltip("新局出生点附近生成的宝石数量。")]
     [Min(0)] public int openingGemCount = 2;
+    [Tooltip("开局宝石生成延迟（秒）：战斗就绪后延迟该秒数，再在玩家脚下生成开局宝石。0 = 立即生成。")]
+    [Min(0f)] public float openingGemSpawnDelay = 0f;
     [Tooltip("Starter Gem 生成时刻（战斗开始后的秒数）。Pass v1：删除开局 2 Gem 后，战斗计时达到该值时生成 1 颗 Starter Gem（单次选卡）。")]
     [Min(0f)] public float starterGemTime = 30f;
     [Tooltip("Starter Gem 相对玩家锚点的生成偏移（前方，避免落在玩家身后永久丢失）。")]
@@ -113,6 +115,7 @@ public class CardManager : SceneSingleton<CardManager>
     bool openingGemRoutineStarted;
     string openingGemRunId;
     bool starterGemSpawned;
+    bool gemFirstSpawnFactReported;
 
     /// <summary>首次正式选卡已触发「罪印双刃」提示（Pass v1 §2.6，仅一次）。</summary>
     bool reverseBDHintShown;
@@ -487,6 +490,24 @@ public class CardManager : SceneSingleton<CardManager>
             yield break;
         }
 
+        // 开局宝石生成延迟：延迟结束后在玩家脚下生成。
+        if (openingGemSpawnDelay > 0f)
+        {
+            float delayWait = 0f;
+            while (delayWait < openingGemSpawnDelay)
+            {
+                delayWait += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            // 延迟期间玩家可能移动，重新取真实战斗灵魂位置。
+            soul = FindBattleSoul();
+            if (soul == null)
+            {
+                Debug.LogWarning("[CardManager] 开局宝石：延迟后未找到战斗灵魂，跳过生成。");
+                yield break;
+            }
+        }
+
         int desired = Mathf.Max(0, openingGemCount);
         if (desired == 0)
         {
@@ -688,6 +709,13 @@ public class CardManager : SceneSingleton<CardManager>
         pickup.Initialize(this, doublePick, keepPicks, waveIndex, source,
             cardOfferGemPickupRadius, onChoiceCompleted);
         activeOfferGems.Add(pickup);
+
+        // GEM 选卡宝石第一次出现：报告教学事实（只报一次，供教程 startFacts 使用）。
+        if (!gemFirstSpawnFactReported)
+        {
+            gemFirstSpawnFactReported = true;
+            TutorialFactBus.Report(TutorialFact.GemFirstSpawned);
+        }
         return pickup;
     }
 

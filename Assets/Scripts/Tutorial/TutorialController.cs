@@ -81,6 +81,8 @@ public class TutorialController : SceneSingleton<TutorialController>
     TutorialStepConfig activeQueueStep; // 当前正在展示的队列步骤（供"脱离即结束"定位）
     bool _forceReplayArmed;              // 强制模式(forceTutorial)上升沿检测，避免每帧重复重放
 
+    bool pauseHeldByTutorial;            // 教学暂停（pauseDuringStep）当前是否持有 Pause 时间域（Push/Pop 对称 + 兜底复位）
+
     /// <summary>
     /// 教学波门（WaveManager.WaveRoutine 首波前等待）：
     /// - 教学未配置/关闭 → 恒开（战斗无感知，等价原直通）
@@ -247,6 +249,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         if (ui != null) ui.Hide();
         HideAllExtraPanels();
         StopAllCoroutines();
+        SetTutorialPause(false);   // 兜底：强制重放时释放教学暂停，防 Pause 域残留冻结游戏
         // StopAllCoroutines 会杀掉正在运行的 PromptQueueRoutine 但不复位其 queueRunning 标记，
         // 必须手动复位，否则下方 EnqueuePrompt 因误判"队列仍在运行"而停摆、首条提示不显示。
         queueRunning = false;
@@ -769,6 +772,8 @@ public class TutorialController : SceneSingleton<TutorialController>
 
                 // 自动入队 nextStepId（怪介绍 → 按键提示链；此前定时分支缺此链，怪介绍后队列断流）
                 AdvanceToNextStep(step);
+                if (step.nextStepDelay > 0f)
+                    yield return new WaitForSeconds(step.nextStepDelay);
                 continue;
             }
 
@@ -776,8 +781,17 @@ public class TutorialController : SceneSingleton<TutorialController>
             float elapsed = 0f;
             float idleElapsed = 0f;
             bool idleFired = false;
+            // 教学暂停（pauseDuringStep）：展示期间冻结游戏，玩家按对应按键后恢复（完成该步骤）。
+            if (step.pauseDuringStep)
+            {
+                SetTutorialPause(true);
+                Debug.Log($"[TutorialController] 队列提示暂停游戏：{step.id}（{step.title}），等待玩家按对应按键。");
+            }
             while (!AreCompleteFactsSatisfied(step) && !forceCompleteActiveQueue)
             {
+                // 暂停期间 PlayerController.Tick 因 timeScale=0 被屏蔽，由这里独立检测对应按键。
+                if (step.pauseDuringStep)
+                    PollPauseStepInput(step);
                 if (step.timeoutSeconds > 0f)
                 {
                     elapsed += Time.unscaledDeltaTime;
@@ -796,6 +810,8 @@ public class TutorialController : SceneSingleton<TutorialController>
                 }
                 yield return null;
             }
+            if (step.pauseDuringStep)
+                SetTutorialPause(false);   // 恢复游戏（与进入时 Push 对称）
             forceCompleteActiveQueue = false;   // 消费"按 F 脱离"提前结束标记
 
             RecordStepCompletion(step, "fact");
@@ -806,6 +822,9 @@ public class TutorialController : SceneSingleton<TutorialController>
 
             // 自动入队 nextStepId（如怪介绍 → 按键提示）
             AdvanceToNextStep(step);
+            // 步骤间间隔：下一个提示（尤其是下一个暂停步骤）出现前留出自由操作时间，避免连续暂停
+            if (step.nextStepDelay > 0f)
+                yield return new WaitForSeconds(step.nextStepDelay);
         }
         queueRunning = false;
         activeQueueStep = null;
@@ -927,6 +946,7 @@ public class TutorialController : SceneSingleton<TutorialController>
 
         // 停止所有教学协程（超时/提醒/队列），并复位队列运行标记、重启轮询心跳
         StopAllCoroutines();
+        SetTutorialPause(false);   // 兜底：跳过时若教学暂停仍持有 Pause 域，立即恢复游戏
         queueRunning = false;
         queueRoutine = null;
         pollRoutine = StartCoroutine(PollActiveSteps());
@@ -991,6 +1011,57 @@ public class TutorialController : SceneSingleton<TutorialController>
             if (!IsFactSatisfied(step.completeFacts[i])) return false;
         }
         return true;
+    }
+
+    /// <summary>
+    /// 教学暂停（pauseDuringStep）开关：对称 Push/Pop Pause 时间域，带幂等与兜底复位。
+    /// 时间域用 Pause（与选卡/暂停菜单同级）：timeScale=0 会屏蔽 PlayerController.Tick 的输入，
+    /// 但 GameInputBindings.GetDown（帧级 Input 检测）不受 timeScale 影响，仍可在此检测"对应按键"。
+    /// </summary>
+    void SetTutorialPause(bool pause)
+    {
+        if (pause && !pauseHeldByTutorial)
+        {
+            TimeScaleManager.Push(TimeDomain.Pause, 0f);
+            pauseHeldByTutorial = true;
+        }
+        else if (!pause && pauseHeldByTutorial)
+        {
+            TimeScaleManager.Pop(TimeDomain.Pause);
+            pauseHeldByTutorial = false;
+        }
+    }
+
+    /// <summary>
+    /// 暂停教学步骤的对应按键检测（PromptQueueRoutine 完成条件模式每帧调用）。
+    /// 按键类完成条件（TUT-03A/B/C）：检测到对应按键 → 报告对应事实 → AreCompleteFactsSatisfied 判定完成。
+    /// 附身类完成条件（TUT-02 PossessedFirstBody）：真实附身需靠近尸体 + 游戏时间流动，暂停态无法完成，
+    /// 故按附身键（中键 Skill1）即视为学会该操作，置 forceCompleteActiveQueue 放行并结束本步骤。
+    /// </summary>
+    void PollPauseStepInput(TutorialStepConfig step)
+    {
+        foreach (var fact in step.completeFacts)
+        {
+            switch (fact)
+            {
+                case TutorialFact.InputBasicPressed:
+                    if (GameInputBindings.GetDown(CommandButtons.Basic))
+                        TutorialFactBus.Report(TutorialFact.InputBasicPressed);
+                    break;
+                case TutorialFact.InputSkillPressed:
+                    if (GameInputBindings.GetDown(CommandButtons.Skill2))
+                        TutorialFactBus.Report(TutorialFact.InputSkillPressed);
+                    break;
+                case TutorialFact.InputMobilityPressed:
+                    if (GameInputBindings.GetDown(CommandButtons.Mobility))
+                        TutorialFactBus.Report(TutorialFact.InputMobilityPressed);
+                    break;
+                case TutorialFact.PossessedFirstBody:
+                    if (GameInputBindings.GetDown(CommandButtons.Skill1))
+                        forceCompleteActiveQueue = true;
+                    break;
+            }
+        }
     }
 
     // ---------------- 协程：轮询 / 超时 / 提醒 ----------------
@@ -1091,6 +1162,7 @@ public class TutorialController : SceneSingleton<TutorialController>
         // 防止 queueRunning 残留 true 导致 EnqueuePrompt 误判队列仍在运行而停摆。
         queueRunning = false;
         queueRoutine = null;
+        SetTutorialPause(false);   // 兜底：协程中断导致的教学暂停残留 → 恢复游戏
     }
 
     void OnDestroy()

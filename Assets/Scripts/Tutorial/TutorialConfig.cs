@@ -87,6 +87,12 @@ public class TutorialStepConfig
 
     [Tooltip("本 Step 激活期间保护场上尸体不消散（TUT-04 用：教学读提示/走位时尸体不因 5s 窗口消失）")]
     public bool protectCorpseDuringStep = false;
+
+    [Tooltip("本 Step 展示期间暂停游戏（timeScale=0），玩家按对应按键（完成条件对应的操作）后恢复。仅 queueDelivery 完成条件模式（displaySeconds=0）生效；按键教学类步骤用。")]
+    public bool pauseDuringStep = false;
+
+    [Tooltip("本 Step 完成后、下一个 Step 显示前的间隔（秒）。暂停类步骤间用它留出自由操作时间，避免连续暂停。0 = 无间隔立即接下一步。")]
+    [Min(0f)] public float nextStepDelay = 0f;
 }
 
 /// <summary>
