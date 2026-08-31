@@ -9,8 +9,8 @@ using UnityEngine;
 public static class GameCursorManager
 {
     const string SettingsPath = "GameCursorSettings";
-    const int WinSmCx = 32; // SM_CXCURSOR
-    const int WinSmCy = 33; // SM_CYCURSOR
+    const int WinSmCx = 13; // SM_CXCURSOR（GetSystemMetrics 索引值；典型返回值 32×DPI 缩放）
+    const int WinSmCy = 14; // SM_CYCURSOR
 
     static Texture2D cachedScaledTexture;
 
