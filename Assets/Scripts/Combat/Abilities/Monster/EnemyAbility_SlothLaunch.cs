@@ -110,17 +110,31 @@ public class EnemyAbility_SlothLaunch : EnemyAbility
         {
             elapsed += AbilityDeltaTime;
             float t = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, jumpDuration));
-            Vector3 pos = Vector3.Lerp(start, end, t);
-            pos.y = start.y + 4f * jumpHeight * t * (1f - t);
-            owner.transform.position = pos;
+            Vector3 target = Vector3.Lerp(start, end, t);
+            target.y = start.y + 4f * jumpHeight * t * (1f - t);
+
+            // 水平位移复用 MonsterActor 的 SphereCast + CollideAndSlide：
+            // 不能直接写 transform.position，否则大体型精英会穿过建筑并把落点写进装饰物内部。
+            Vector3 current = owner.transform.position;
+            Vector3 horizontalTarget = new Vector3(target.x, current.y, target.z);
+            owner.MoveWithAbilityCollision(horizontalTarget - current);
+
+            // 碰撞只约束 XZ，Y 仍由跳跃曲线驱动。
+            current = owner.transform.position;
+            current.y = target.y;
+            owner.transform.position = current;
             yield return null;
         }
 
         if (owner != null)
         {
-            Vector3 land = end;
+            // 不再把位置强行写回 nominal end；若途中撞到建筑，保持最后一个安全落点。
+            Vector3 land = owner.transform.position;
             land.y = start.y;
             owner.transform.position = land;
+            // 水平碰撞检测是在腾空高度进行的；落地时再做一次起点重叠校正，
+            // 防止障碍物低矮/顶部可穿过但地面占位仍把根节点卡在建筑内部。
+            owner.ResolveAbilityPenetration();
             owner.IsAbilityFacingLocked = false;
             if (IsUpgradeUnlocked("SL-M02"))
 
