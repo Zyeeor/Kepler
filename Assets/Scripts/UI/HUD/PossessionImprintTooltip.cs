@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public sealed class PossessionImprintTooltip : MonoBehaviour
@@ -13,6 +15,9 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
     RectTransform parentRect;
     Canvas canvas;
     bool visible;
+    EventSystem pointerEventSystem;
+    PointerEventData pointerEventData;
+    readonly List<RaycastResult> raycastResults = new List<RaycastResult>(16);
 
     void Awake()
     {
@@ -58,7 +63,38 @@ public sealed class PossessionImprintTooltip : MonoBehaviour
 
     void Update()
     {
-        if (visible && panel != null && panel.activeSelf) PositionNearCursor();
+        if (!visible || panel == null || !panel.activeSelf) return;
+        if (!IsPointerOverTooltipSource())
+        {
+            Hide();
+            return;
+        }
+        PositionNearCursor();
+    }
+
+    bool IsPointerOverTooltipSource()
+    {
+        EventSystem currentEventSystem = EventSystem.current;
+        if (currentEventSystem == null) return false;
+        if (pointerEventData == null || pointerEventSystem != currentEventSystem)
+        {
+            pointerEventSystem = currentEventSystem;
+            pointerEventData = new PointerEventData(currentEventSystem);
+        }
+
+        pointerEventData.position = Input.mousePosition;
+        raycastResults.Clear();
+        currentEventSystem.RaycastAll(pointerEventData, raycastResults);
+        for (int i = 0; i < raycastResults.Count; i++)
+        {
+            GameObject hit = raycastResults[i].gameObject;
+            if (hit == null || (panel != null && (hit == panel || hit.transform.IsChildOf(panel.transform)))) continue;
+            if (hit.GetComponentInParent<GameplayTooltipTarget>() != null
+                || hit.GetComponentInParent<PossessionImprintIcon>() != null
+                || hit.GetComponentInParent<HoverTooltipText>() != null)
+                return true;
+        }
+        return false;
     }
 
     public void Show(SinType sin, int stacks)
