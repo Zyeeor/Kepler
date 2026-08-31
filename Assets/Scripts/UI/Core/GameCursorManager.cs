@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 /// <summary>
@@ -8,8 +9,24 @@ using UnityEngine;
 public static class GameCursorManager
 {
     const string SettingsPath = "GameCursorSettings";
+    const int WinSmCx = 32; // SM_CXCURSOR
+    const int WinSmCy = 33; // SM_CYCURSOR
 
     static Texture2D cachedScaledTexture;
+
+    [DllImport("user32.dll")]
+    static extern int GetSystemMetrics(int nIndex);
+
+    /// <summary>系统光标基准尺寸（物理像素，已含系统 DPI 缩放）。非 Windows 平台回退 32x32。</summary>
+    static Vector2Int GetSystemCursorSize()
+    {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        int w = GetSystemMetrics(WinSmCx);
+        int h = GetSystemMetrics(WinSmCy);
+        if (w > 0 && h > 0) return new Vector2Int(w, h);
+#endif
+        return new Vector2Int(32, 32);
+    }
 
     /// <summary>应用配置的光标（纹理 + 热点 + 缩放 + 可见性）。找不到配置则回退为系统可见光标。</summary>
     public static void Apply()
@@ -32,11 +49,15 @@ public static class GameCursorManager
         Vector2 hotspot = settings.hotspot;
         CursorMode mode = CursorMode.Auto;
 
-        float scale = Mathf.Max(0.01f, settings.cursorScale);
-        if (Mathf.Abs(scale - 1f) > 0.001f)
+        // 光标统一对齐系统光标尺寸：与 Player Settings 默认光标（编辑器内表现）同源，
+        // 不随打包分辨率 / 显示器分辨率变化；cursorScale 仅作为相对系统尺寸的微调乘数。
+        Vector2Int sysCursor = GetSystemCursorSize();
+        float fitScale = Mathf.Min((float)sysCursor.x / texture.width, (float)sysCursor.y / texture.height);
+        float scale = Mathf.Max(0.01f, fitScale * Mathf.Max(0.01f, settings.cursorScale));
+        int targetW = Mathf.Max(1, Mathf.RoundToInt(texture.width * scale));
+        int targetH = Mathf.Max(1, Mathf.RoundToInt(texture.height * scale));
+        if (targetW != texture.width || targetH != texture.height)
         {
-            int targetW = Mathf.Max(1, Mathf.RoundToInt(texture.width * scale));
-            int targetH = Mathf.Max(1, Mathf.RoundToInt(texture.height * scale));
             if (cachedScaledTexture == null
                 || cachedScaledTexture.width != targetW
                 || cachedScaledTexture.height != targetH)
