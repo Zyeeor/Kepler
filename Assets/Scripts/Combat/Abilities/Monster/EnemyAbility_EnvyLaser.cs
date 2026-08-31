@@ -40,6 +40,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     [Min(0f)] public float enemyLaserTargetRangeCap = 15f;
     [Tooltip("Beam 期间玩家超出此距离（米）即断束。建议 16–17m（略高于锁定上限，留出走位余量）。0 表示不断束。仅作用于非 Boss、非附身的 Enemy。")]
     [Min(0f)] public float enemyLaserBreakRange = 17f;
+    [Tooltip("Enemy/Boss 版激光最终射程倍率（乘在 maxRange / 视觉缩放 / 封顶之后）。玩家附身版不受影响。0.8 = 敌方激光射程缩短 20%。")]
+    [Min(0.1f)] public float enemyLaserRangeMultiplier = 0.8f;
+    [Tooltip("敌方（普通 envy / Boss）一束激光结束后的重启冷却秒数，防止玩家留在射程内被无缝连照。玩家附身版不受影响。")]
+    [Min(0f)] public float enemyLaserRecastDelay = 2f;
 
     public GameplayEffectDefinition markEffect;
     public GameplayEffectDefinition laserHitEffect;
@@ -70,6 +74,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     public float hitImpactDuration = 0.3f;
 
     private bool _isFiring;
+    private bool _bossAiFireRequested;
     private CombatAudioManager.SfxLoopHandle _castLoop;
     private float _damageTimer;
     private float _fireDuration;
@@ -108,8 +113,12 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         else
         {
             Transform playerTarget = GetEnemyPlayerTarget();
-            wantFire = playerTarget != null
-                       && Vector3.Distance(owner.transform.position, playerTarget.position) <= GetEffectiveRange();
+            bool targetInRange = playerTarget != null
+                && Vector3.Distance(owner.transform.position, playerTarget.position) <= GetEffectiveRange();
+            // 普通 Enemy 保持原有的自主激光逻辑；只有 Boss 必须由 BossCombatBrain 授权起手。
+            wantFire = boss != null
+                ? targetInRange && (_bossAiFireRequested || _isFiring)
+                : targetInRange;
         }
 
         if (wantFire && CanTrigger())
@@ -151,6 +160,13 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     {
         if (!base.CanTrigger()) return false;
         return owner != null && (owner.isPossessed || GetEnemyPlayerTarget() != null);
+    }
+
+    /// <summary>BossCombatBrain 选中本能力后调用；请求只负责启动下一次 Cast，当前 Cast 的持续由 _isFiring 保持。</summary>
+    public void RequestBossAiFire()
+    {
+        if (owner is BossSevenfoldActor)
+            _bossAiFireRequested = true;
     }
 
     /// <summary>
@@ -207,7 +223,10 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         if (_fireDuration > connectCap)
         {
             StopLaser();
-            currentCooldown = EffectiveCooldown;
+            // 敌方一束照满时长后进入重启冷却：玩家留在射程内也不会被无缝连照；玩家版冷却仍为 EffectiveCooldown。
+            currentCooldown = owner != null && !owner.isPossessed
+                ? Mathf.Max(EffectiveCooldown, enemyLaserRecastDelay)
+                : EffectiveCooldown;
             return;
         }
 
@@ -225,7 +244,9 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
             // Pass v1 §13.3：玩家甩掉激光（绕侧/横移超速）→ 本次 Cast 结束，下次 Cast 重新锁定。
             // Pass v1.1 §3：Beam 期间玩家超出 Break Range（断束）同样结束本次 Cast。
             StopLaser();
-            currentCooldown = EffectiveCooldown;
+            currentCooldown = owner != null && !owner.isPossessed
+                ? Mathf.Max(EffectiveCooldown, enemyLaserRecastDelay)
+                : EffectiveCooldown;
             return;
         }
         bool pierceActive = IsPierceActive();
@@ -406,6 +427,9 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
         // 造成全图锁人。此处对非 Boss、非附身的 Enemy 锁定距离封顶；Player 版与 Boss 版不受影响。
         if (owner != null && !owner.isPossessed && !(owner is BossSevenfoldActor) && enemyLaserTargetRangeCap > 0f)
             effective = Mathf.Min(effective, enemyLaserTargetRangeCap);
+        // 敌方（AI 控制的普通 envy 与 Boss）激光射程统一乘此倍率；玩家附身版不受影响。
+        if (owner != null && !owner.isPossessed)
+            effective *= Mathf.Max(0.1f, enemyLaserRangeMultiplier);
         return effective;
     }
 
@@ -612,6 +636,7 @@ public class EnemyAbility_EnvyLaser : EnemyAbility
     private void StopLaser()
     {
         _isFiring = false;
+        _bossAiFireRequested = false;
         _enemyBeamDirection = Vector3.zero;   // Pass v1 §13.3：下次 Cast 重新锁定
         CombatAudioManager.StopCastLoop(_castLoop);
         _castLoop = default;

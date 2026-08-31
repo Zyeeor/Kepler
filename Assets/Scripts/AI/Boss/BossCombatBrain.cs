@@ -59,6 +59,8 @@ public sealed class BossCombatBrain : MonoBehaviour
             profile.minRange = 0f;
             profile.maxRange = laser.maxRange;
             profile.preferredRange = laser.maxRange * 0.7f;
+            // 权重回归默认 1；激光 Cast 期间不再打断决策已由 Evaluate 循环处理。
+            profile.baseWeight = 1f;
         }
         else if (ability is EnemyAbility_SlothChargeShot chargeShot)
         {
@@ -153,6 +155,19 @@ public sealed class BossCombatBrain : MonoBehaviour
         if (owner.IsAbilitySequenceLocked) return;
 
         owner.FaceBossTarget(targetPosition);
+
+        // 持续型普攻（如 Envy 激光）Cast 进行期间不打断：跳过选技决策，
+        // 让 Cast 走完自身的时长上限 / 断束 / 丢失目标逻辑后再恢复。
+        // 基类 IsActivationInProgress 默认 false，只有激光等持续型覆写，不会波及普通技能。
+        for (int i = 0; i < profiles.Count; i++)
+        {
+            EnemyAbility activeBasic = profiles[i] != null ? profiles[i].ability : null;
+            if (activeBasic != null
+                && activeBasic.type == EnemyAbility.AbilityType.BasicAttack
+                && activeBasic.IsActivationInProgress)
+                return;
+        }
+
         if (Time.unscaledTime < nextDecisionTime) return;
         nextDecisionTime = Time.unscaledTime + decisionInterval;
         EnemyAbility choice = ChooseAbility(targetPosition);
@@ -170,6 +185,9 @@ public sealed class BossCombatBrain : MonoBehaviour
             return;
         }
         failedDecisionCount = 0;
+        EnemyAbility_EnvyLaser envyLaser = choice as EnemyAbility_EnvyLaser;
+        if (envyLaser != null)
+            envyLaser.RequestBossAiFire();
         choice.Trigger();
         owner.CompleteVoidWalkFollowUp(choice);
         Record(choice, FindFamily(choice));
@@ -181,7 +199,10 @@ public sealed class BossCombatBrain : MonoBehaviour
         if (owner.HasVoidWalkFollowUp)
         {
             owner.TryGetVoidWalkFollowUp(targetPosition, out EnemyAbility followUp);
-            return followUp;
+            // FollowUp 可用时仍优先接近战；不可用（传送落点在剑气/吞噬射程外，或两者冷却中）
+            // 时回退普通评分选技，避免卡死在「只闪现不放技能」的循环。
+            // 标志保留：后续决策仍先试 FollowUp，玩家进入射程或冷却结束后会正常接上近战。
+            if (followUp != null) return followUp;
         }
 
         for (int i = 0; i < profiles.Count; i++)
