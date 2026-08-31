@@ -200,7 +200,9 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         HashSet<int> outboundHits = new HashSet<int>();
         yield return TravelSegment(origin, end, dmg, outboundHits);
         HashSet<int> returnHits = new HashSet<int>();
-        yield return TravelSegment(end, origin, dmg, returnHits);
+        // 回程始终每帧追踪当前色欲本体位置：玩家控制时跟随玩家身体，AI 控制时跟随怪物。
+        // 不再让 AI 固定返回旧施放点，避免怪物移动后回程轨迹与本体脱节。
+        yield return TravelSegmentToOwner(end, dmg, returnHits);
     }
 
     private IEnumerator TravelSegment(Vector3 from, Vector3 to, float dmg, HashSet<int> hitIds)
@@ -221,6 +223,72 @@ public class EnemyAbility_LustRoundTrip : EnemyAbility
         }
 
         RegisterHitsAlong(from, to, mistWidth * 0.5f, dmg, hitIds);
+        if (mist != null) Object.Destroy(mist, 0.05f);
+    }
+
+    /// <summary>回程每帧追踪当前色欲本体位置，玩家和 AI 控制共用。</summary>
+    private IEnumerator TravelSegmentToOwner(Vector3 from, float dmg, HashSet<int> hitIds)
+    {
+        if (owner == null) yield break;
+
+        Vector3 initialDirection = owner.transform.position - from;
+        initialDirection.y = 0f;
+        if (initialDirection.sqrMagnitude < 0.0001f) initialDirection = Vector3.forward;
+        GameObject mist = SpawnMistVisual(from, Quaternion.LookRotation(initialDirection.normalized, Vector3.up));
+        Vector3 current = from;
+        float arrivalDistance = Mathf.Max(0.05f, ScaleAbilityRadius(mistWidth * 0.5f));
+        float initialReturnSpeed = Mathf.Max(0.1f, mistSpeed);
+        float targetMoveSpeed = owner.moveSpeed;
+        if (owner.isPossessed && owner.Combat != null)
+            targetMoveSpeed = owner.Combat.ModifyMoveSpeed(owner.moveSpeed);
+        if (owner.isPossessed && PossessionImprintManager.Instance != null)
+            targetMoveSpeed *= PossessionImprintManager.Instance.GetMoveSpeedMultiplier(owner);
+        float catchUpSpeed = Mathf.Max(initialReturnSpeed + 1f, targetMoveSpeed * 2f);
+        float returnAcceleration = Mathf.Max(1f, (catchUpSpeed - initialReturnSpeed) / 0.5f);
+        float returnSpeed = initialReturnSpeed;
+        float maxReturnDuration = Mathf.Max(0.5f,
+            Vector3.Distance(from, owner.transform.position) / Mathf.Max(0.1f, catchUpSpeed) + 1.5f);
+        float elapsed = 0f;
+        bool reachedTarget = false;
+
+        while (owner != null && elapsed < maxReturnDuration)
+        {
+            Vector3 target = owner.transform.position;
+            Vector3 toTarget = target - current;
+            if (toTarget.sqrMagnitude <= arrivalDistance * arrivalDistance)
+            {
+                if (mist != null) mist.transform.position = target;
+                RegisterHitsAlong(current, target, mistWidth * 0.5f, dmg, hitIds);
+                current = target;
+                reachedTarget = true;
+                break;
+            }
+
+            float step = Mathf.Max(0.1f, returnSpeed) * AbilityDeltaTime;
+            Vector3 next = Vector3.MoveTowards(current, target, step);
+            if (mist != null)
+            {
+                mist.transform.position = next;
+                Vector3 moveDirection = next - current;
+                if (moveDirection.sqrMagnitude > 0.0001f)
+                    mist.transform.rotation = Quaternion.LookRotation(moveDirection.normalized, Vector3.up);
+            }
+            RegisterHitsAlong(current, next, mistWidth * 0.5f, dmg, hitIds);
+            current = next;
+            float deltaTime = AbilityDeltaTime;
+            returnSpeed = Mathf.MoveTowards(returnSpeed, catchUpSpeed, returnAcceleration * deltaTime);
+            elapsed += deltaTime;
+            yield return null;
+        }
+
+        // 目标持续移动导致超时也必须收束：将雾落到色欲当前坐标后结束，不能留下永久协程。
+        if (!reachedTarget && owner != null)
+        {
+            Vector3 finalTarget = owner.transform.position;
+            if (mist != null) mist.transform.position = finalTarget;
+            RegisterHitsAlong(current, finalTarget, mistWidth * 0.5f, dmg, hitIds);
+        }
+
         if (mist != null) Object.Destroy(mist, 0.05f);
     }
 
