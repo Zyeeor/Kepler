@@ -16618,7 +16618,7 @@ MonoBehaviour:
   barHeight: 20
   panelAnchor: {x: 0.5, y: 1}
   panelPivot: {x: 0.5, y: 1}
-  panelOffset: {x: 0, y: -300}
+  panelOffset: {x: 0, y: -180}
 --- !u!1 &1757868705
 GameObject:
   m_ObjectHideFlags: 0
@@ -17652,6 +17652,7 @@ MonoBehaviour:
   currentState: 0
   gameTimer: 0
   gameOverPanel: {fileID: 0}
+  reviveHealthMultiplier: 1.5
   useFixedSeed: 0
   fixedSeed: 12345
   forceTutorial: 1

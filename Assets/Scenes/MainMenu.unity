@@ -812,7 +812,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &76660912
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24985,7 +24985,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f1a5e3830626ea47b2080aa081dd7b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardPrefab: {fileID: 0}
+  tilePrefab: {fileID: 0}
   unknownCardSilhouette: {fileID: 0}
   cardNewUnlockTintSprite: {fileID: 0}
   filterNewUnlockTintSprite: {fileID: 0}
@@ -25019,7 +25019,9 @@ MonoBehaviour:
   scrollViewport: {fileID: 0}
   scrollRect: {fileID: 0}
   refreshButton: {fileID: 0}
+  refreshIconSprite: {fileID: 0}
   closeButton: {fileID: 0}
+  closeIconSprite: {fileID: 0}
   tabStyles:
   - image: {fileID: 0}
     normalSprite: {fileID: 0}
@@ -25056,7 +25058,6 @@ MonoBehaviour:
     selectedSprite: {fileID: 0}
     normalColor: {r: 1, g: 1, b: 1, a: 1}
     selectedColor: {r: 1, g: 1, b: 1, a: 1}
-  titleText: {fileID: 0}
   progressText: {fileID: 0}
   statusText: {fileID: 0}
   tabRow: {fileID: 0}
