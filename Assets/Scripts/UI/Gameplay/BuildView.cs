@@ -822,7 +822,9 @@ public class BuildView : MonoBehaviour
     void AddHoverToFront(GameObject go)
     {
         var ct = go.AddComponent<EventTrigger>();
-        float baseScale = 0f;
+        // 基准每次进入时捕获：三态切换（迷你 0.15 / 放大 ≈1.2）会改同一实例的 localScale，
+        // 若缓存首次 hover 时的基准，跨模式 hover 会把卡瞬间缩/放大到错误尺寸（基准漂移）。
+        float scaleOnEnter = 0f;
         var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
         enter.callback.AddListener((_) =>
         {
@@ -830,16 +832,17 @@ public class BuildView : MonoBehaviour
             var rt = go.GetComponent<RectTransform>();
             if (rt != null)
             {
-                if (baseScale <= 0f) baseScale = rt.localScale.x;
-                rt.localScale = new Vector3(baseScale * 1.12f, baseScale * 1.12f, 1f);
+                scaleOnEnter = rt.localScale.x;
+                rt.localScale = new Vector3(scaleOnEnter * 1.12f, scaleOnEnter * 1.12f, 1f);
             }
         });
         var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
         exit.callback.AddListener((_) =>
         {
             var rt = go.GetComponent<RectTransform>();
-            if (rt != null && baseScale > 0f)
-                rt.localScale = new Vector3(baseScale, baseScale, 1f);
+            if (rt != null && scaleOnEnter > 0f)
+                rt.localScale = new Vector3(scaleOnEnter, scaleOnEnter, 1f);
+            scaleOnEnter = 0f;
         });
         ct.triggers.Add(enter);
         ct.triggers.Add(exit);
