@@ -29,6 +29,8 @@ MonoBehaviour:
     nextStepId: TUT-02
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: TUT-02
     title: "\u9644\u8EAB\u8EAF\u4F53"
     text: "\u9760\u8FD1\u795E\u9F9B\u524D\u7684\u8EAF\u4F53\uFF0C\u6309\u3010{SKILL1}\u3011\u9644\u8EAB\u3002\u9644\u8EAB\u540E\u5373\u53EF\u64CD\u63A7\u8FD9\u5177\u8EAF\u4F53\u6218\u6597\u3002"
@@ -63,9 +65,11 @@ MonoBehaviour:
     nextStepId: 
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u50B2\u6162"
     title: "\u50B2\u6162\u7C7B\u602A\u7269"
-    text: "\u64C5\u957F\u5251\u6C14\u3001\u7A81\u8FDB\u4E0E\u8FDE\u7EED\u65A9\u51FB\u3002\u4E0E\u5B83\u6B63\u9762\u5BF9\u653B\u65F6\uFF0C\u7559\u610F\u8FCE\u9762\u5251\u6C14\u3002"
+    text: "\u64C5\u957F\u5251\u6C14\u3001\u7A81\u8FDB\u4E0E\u8FDE\u7EED\u65A9\u51FB\u3002\u4E0E\u5B83\u6B63\u9762\u5BF9\u653B\u65F6\uFF0C\u7559\u610F\u8FCE\u9762\u5251\u6C14\u3002\u6309\u3010\u7A7A\u683C\u3011\u7EE7\u7EED\u6E38\u620F"
     textKey: 
     startFacts: 
     completeFacts: 
@@ -79,6 +83,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u8272\u6B32"
     title: "\u8272\u6B32\u7C7B\u602A\u7269"
     text: "\u64C5\u957F\u6B8B\u5F71\u6362\u4F4D\u4E0E\u7075\u9B42\u7275\u5F15\u3002\u4E0D\u8981\u88AB\u5B83\u548C\u6B8B\u5F71\u5939\u4F4F\u3002"
@@ -95,6 +101,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u6124\u6012"
     title: "\u6124\u6012\u7C7B\u602A\u7269"
     text: "\u64C5\u957F\u94A9\u7D22\u7A81\u8FDB\u4E0E\u70C8\u7130\u653B\u51FB\u3002\u88AB\u94A9\u4F4F\u540E\u5C3D\u5FEB\u62C9\u5F00\u8DDD\u79BB\u3002"
@@ -111,6 +119,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u8D2A\u5A6A"
     title: "\u8D2A\u5A6A\u7C7B\u602A\u7269"
     text: "\u4F1A\u53EC\u51FA\u9B54\u624B\u56F4\u653B\uFF0C\u5E76\u5728\u5730\u9762\u7559\u4E0B\u51CF\u901F\u9ED1\u6CB9\u3002"
@@ -127,6 +137,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u66B4\u98DF"
     title: "\u66B4\u98DF\u7C7B\u602A\u7269"
     text: "\u4F1A\u5316\u4E3A\u5C0F\u732B\u903C\u8FD1\uFF0C\u518D\u53EC\u4E0B\u6DF1\u6E0A\u5DE8\u53E3\u3002\u770B\u89C1\u843D\u70B9\u65F6\u53CA\u65F6\u95EA\u907F\u3002"
@@ -143,6 +155,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u5AC9\u5992"
     title: "\u5AC9\u5992\u7C7B\u602A\u7269"
     text: "\u64C5\u957F\u8FDC\u7A0B\u6FC0\u5149\u4E0E\u96F7\u66B4\u3002\u6301\u7EED\u79FB\u52A8\uFF0C\u907F\u5F00\u843D\u96F7\u8303\u56F4\u3002"
@@ -159,6 +173,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: "TUT-MONSTER-\u6020\u60F0"
     title: "\u6020\u60F0\u7C7B\u602A\u7269"
     text: "\u884C\u52A8\u8FDF\u7F13\uFF0C\u5374\u64C5\u957F\u84C4\u529B\u91CD\u70AE\u3001\u8DF3\u7838\u4E0E\u6728\u7075\u56F4\u653B\u3002"
@@ -175,6 +191,8 @@ MonoBehaviour:
     nextStepId: TUT-03A
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: TUT-03A
     title: "\u666E\u901A\u653B\u51FB"
     text: "\u6309\u3010{BASIC}\u3011\u666E\u901A\u653B\u51FB\u3002 \u6BCF\u4E2A\u602A\u7269\u6709\u4E0D\u540C\u7684\u666E\u653B\u65B9\u5F0F"
@@ -245,6 +263,8 @@ MonoBehaviour:
     nextStepId: TUT-05
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: TUT-05
     title: "\u4E3B\u52A8\u6362\u8EAB"
     text: "\u6309\u3010{RELEASE}\u3011\u8131\u79BB\u5F53\u524D\u8EAF\u4F53\uFF1B\u9760\u8FD1\u53E6\u4E00\u5177\u8EAF\u4F53\uFF0C\u6309\u3010{SKILL1}\u3011\u76F4\u63A5\u6362\u8EAB\u3002"
@@ -261,6 +281,8 @@ MonoBehaviour:
     nextStepId: 
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0
   - id: TUT-REVERSE-BD
     title: "\u7F6A\u5370"
     text: "\u51FB\u6740\u654C\u4EBA\u83B7\u5F97\u7F6A\u5370\uFF0C\u53EF\u53E0\u52A0\u9644\u8EAB\u540E\u7684\u7EFC\u5408\u80FD\u529B"
@@ -277,3 +299,5 @@ MonoBehaviour:
     nextStepId: 
     reacquireOnTargetLost: 1
     protectCorpseDuringStep: 0
+    pauseDuringStep: 0
+    nextStepDelay: 0

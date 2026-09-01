@@ -17683,6 +17683,7 @@ MonoBehaviour:
   cardOfferGemPrefab: {fileID: 8073317858350061725, guid: 43f3c1ede4145e742891dfcc35c2f8fb,
     type: 3}
   openingGemCount: 2
+  openingGemSpawnDelay: 60
   starterGemTime: 30
   starterGemOffset: {x: 0, y: 0, z: 2.75}
   openingGemDoublePick: 0
@@ -17709,8 +17710,8 @@ MonoBehaviour:
   gemPlayerPreferredDistance: 2.75
   gemPickupArmingDelay: 0.5
   openingGemOffsets:
-  - {x: -2, y: 0, z: 1.25}
-  - {x: 2, y: 0, z: 1.25}
+  - {x: 3, y: 0, z: 3}
+  - {x: -3, y: 0, z: -2}
   debugDoublePickOnStart: 0
   currentPicks:
   - cardName: 
