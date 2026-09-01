@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using System.Collections;
 
 /// <summary>
 /// 升级选卡弹窗。触发方调 Show(onClosed, doublePick) 打开，UI 不依赖触发方类型。
@@ -29,10 +30,18 @@ public class CoreChoiceUI : MonoBehaviour
     public Button confirmAllButton;
     public TextMeshProUGUI titleText;
 
+    [Header("Spawn Protection (防误点)")]
+    [Tooltip("弹窗弹出后该秒数内拦截所有鼠标点击（玩家高频点击时不误选卡）。0 = 不拦截。")]
+    [SerializeField, Min(0f)] float clickLockDuration = 0.5f;
+    [Tooltip("弹窗淡入+缩放入场动画时长（秒，unscaled）。0 = 无动画。")]
+    [SerializeField, Min(0f)] float popupAnimDuration = 0.35f;
+
     // 卡音统一走 SfxBank → AudioManager.Play(SfxId.CardOpen/Select/Reroll)；不再持有字段 override 入口。
 
     // State
     private CoreChoiceCard[] cards;
+    private GameObject inputBlocker;      // 弹出防护期全屏透明点击拦截层
+    private Coroutine popupIntroRoutine;  // 入场动画/锁定期协程
     private int selectedIndex = -1;
     private int picksRemaining = 1;
     private bool doublePick;
@@ -159,6 +168,9 @@ public class CoreChoiceUI : MonoBehaviour
         // 弹窗期间暂停（Pause 域请求，关闭时 Pop 恢复）+ 屏蔽玩家输入
         TimeScaleManager.Push(TimeDomain.Pause, 0f);
         PlayerController.SetGameplayInputBlocked(true, "CoreChoiceUI");
+
+        // 弹出防护：拦截高频点击 + 入场动画（§Spawn Protection）
+        StartPopupProtection();
     }
 
     /// <summary>根据 CardManager.currentPicks 重建卡片 UI。public：Debug 卡面浏览器替换候选后调用。</summary>
@@ -272,6 +284,88 @@ public class CoreChoiceUI : MonoBehaviour
     /// 下方按钮：切换选卡界面显隐（隐藏看场景，仍暂停；再点又弹出）。
     /// 注意：按钮在 panelRoot 外（UIChoicePopupCanvas 下），隐藏面板时按钮仍可见。
     /// </summary>
+    // ───────────────────────── 弹出防误点（§Spawn Protection） ─────────────────────────
+
+    /// <summary>
+    /// 弹窗弹出防护：全屏透明拦截层吃掉所有指针事件（玩家高频点击时不误选卡/误刷新），
+    /// 并播放淡入+缩放入场动画。选卡时 timeScale=0，全部使用 unscaled 时间。
+    /// </summary>
+    void StartPopupProtection()
+    {
+        EndPopupProtection(); // 重入安全：清掉上一轮残留
+
+        if (clickLockDuration > 0f)
+        {
+            // 拦截层与 confirmAll（panelRoot 外）同父级并置顶，锁定期内卡与按钮均不可点
+            Transform host = panelRoot != null && panelRoot.transform.parent != null
+                ? panelRoot.transform.parent
+                : panelRoot != null ? (Transform)panelRoot.transform : transform;
+            inputBlocker = new GameObject("ChoiceInputBlocker", typeof(RectTransform), typeof(Image));
+            inputBlocker.transform.SetParent(host, false);
+            var brt = inputBlocker.GetComponent<RectTransform>();
+            brt.anchorMin = Vector2.zero;
+            brt.anchorMax = Vector2.one;
+            brt.offsetMin = Vector2.zero;
+            brt.offsetMax = Vector2.zero;
+            var bimg = inputBlocker.GetComponent<Image>();
+            bimg.color = new Color(0f, 0f, 0f, 0f); // 全透明但 raycastTarget=true，吃掉点击
+            inputBlocker.transform.SetAsLastSibling();
+        }
+
+        if (popupAnimDuration > 0f && panelRoot != null)
+            popupIntroRoutine = StartCoroutine(PopupIntroRoutine());
+        else if (inputBlocker != null)
+            popupIntroRoutine = StartCoroutine(DestroyBlockerAfter(clickLockDuration));
+    }
+
+    IEnumerator PopupIntroRoutine()
+    {
+        var cg = panelRoot.GetComponent<CanvasGroup>();
+        if (cg == null) cg = panelRoot.AddComponent<CanvasGroup>();
+        var parent = cardParent != null ? (Transform)cardParent : panelRoot.transform;
+        Vector3 scaleTo = parent.localScale;
+        Vector3 scaleFrom = scaleTo * 0.88f;
+        float anim = Mathf.Max(popupAnimDuration, 0.01f);
+        float t = 0f;
+        while (t < anim)
+        {
+            if (panelRoot == null) yield break;
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / anim));
+            cg.alpha = u;
+            parent.localScale = Vector3.Lerp(scaleFrom, scaleTo, u);
+            yield return null;
+        }
+        if (panelRoot == null) yield break;
+        cg.alpha = 1f;
+        parent.localScale = scaleTo;
+
+        // 动画结束后剩余的锁定期继续拦截
+        float remain = clickLockDuration - anim;
+        if (remain > 0f) yield return new WaitForSecondsRealtime(remain);
+        EndPopupProtection();
+    }
+
+    IEnumerator DestroyBlockerAfter(float seconds)
+    {
+        yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, seconds));
+        EndPopupProtection();
+    }
+
+    void EndPopupProtection()
+    {
+        if (popupIntroRoutine != null)
+        {
+            StopCoroutine(popupIntroRoutine);
+            popupIntroRoutine = null;
+        }
+        if (inputBlocker != null)
+        {
+            Destroy(inputBlocker);
+            inputBlocker = null;
+        }
+    }
+
     void OnConfirmAll()
     {
         Debug.Log("[CoreChoiceUI] Toggle panel visibility");
@@ -284,6 +378,7 @@ public class CoreChoiceUI : MonoBehaviour
 
     private void Close()
     {
+        EndPopupProtection(); // 清掉拦截层与动画协程，避免残留遮挡
         _isDrafting = false;
         MonsterPreloadService service = FindObjectOfType<MonsterPreloadService>(true);
         if (service != null) service.CancelPreload();
